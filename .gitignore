@@ -2,6 +2,7 @@
 data/*.db
 data/*.jsonl
 data/*.json
+!data/articles.jsonl.gz
 
 # Python
 __pycache__/

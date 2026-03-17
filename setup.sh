@@ -34,8 +34,12 @@ else
     cd "$APP_DIR"
 fi
 
-# Create data directory
+# Create data directory and unpack articles
 mkdir -p data
+if [ -f "data/articles.jsonl.gz" ] && [ ! -f "data/articles.jsonl" ]; then
+    echo "Unpacking articles data..."
+    gunzip -k data/articles.jsonl.gz
+fi
 
 # Build and start
 echo "Building and starting containers..."
@@ -77,8 +81,12 @@ echo ""
 echo "=== Setup Complete ==="
 echo "Dashboard: http://$(hostname -I | awk '{print $1}'):3847"
 echo ""
+# Auto-import if data exists
+if [ -f "data/articles.jsonl" ]; then
+    echo "Importing articles into database..."
+    docker compose exec -T web python scraper/import_data.py
+fi
+
 echo "Next steps:"
-echo "  1. Place articles.jsonl in $APP_DIR/data/"
-echo "  2. Import: docker compose exec web python scraper/import_data.py"
-echo "  3. (Optional) Run scraper: docker compose exec web python scraper/scrape_urls.py"
+echo "  (Optional) Run scraper: docker compose exec web python scraper/scrape_urls.py"
 echo ""
