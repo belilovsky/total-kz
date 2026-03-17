@@ -4,7 +4,7 @@ services:
     container_name: total-kz-web
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "3847:8000"
     volumes:
       - ./data:/app/data
     environment:

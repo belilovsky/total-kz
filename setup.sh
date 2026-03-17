@@ -45,7 +45,7 @@ docker compose up -d --build
 # Wait for health check
 echo "Waiting for service to start..."
 for i in $(seq 1 30); do
-    if curl -sf http://localhost:8000/api/stats > /dev/null 2>&1; then
+    if curl -sf http://localhost:3847/api/stats > /dev/null 2>&1; then
         echo "Service is running!"
         break
     fi
@@ -61,7 +61,7 @@ server {
     server_name $DOMAIN;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:3847;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -75,7 +75,7 @@ fi
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Dashboard: http://$(hostname -I | awk '{print $1}'):8000"
+echo "Dashboard: http://$(hostname -I | awk '{print $1}'):3847"
 echo ""
 echo "Next steps:"
 echo "  1. Place articles.jsonl in $APP_DIR/data/"
