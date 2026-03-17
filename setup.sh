@@ -34,11 +34,15 @@ else
     cd "$APP_DIR"
 fi
 
-# Create data directory and unpack articles
+# Create data directory and reassemble + unpack articles
 mkdir -p data
-if [ -f "data/articles.jsonl.gz" ] && [ ! -f "data/articles.jsonl" ]; then
-    echo "Unpacking articles data..."
-    gunzip -k data/articles.jsonl.gz
+if [ ! -f "data/articles.jsonl" ]; then
+    if ls data/articles.jsonl.gz.part_* 1>/dev/null 2>&1; then
+        echo "Reassembling articles archive..."
+        cat data/articles.jsonl.gz.part_* > data/articles.jsonl.gz
+        echo "Unpacking articles data..."
+        gunzip -f data/articles.jsonl.gz
+    fi
 fi
 
 # Build and start
