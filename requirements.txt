@@ -4,3 +4,6 @@ jinja2==3.1.5
 python-multipart==0.0.18
 httpx==0.28.1
 selectolax==0.3.29
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0

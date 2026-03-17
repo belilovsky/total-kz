@@ -1,81 +1,242 @@
-"""Collect article URLs from total.kz with pagination."""
-import asyncio
-import json
-import httpx
-from pathlib import Path
-from datetime import datetime, timedelta
-from selectolax.parser import HTMLParser
+#!/usr/bin/env python3
+"""
+Сбор URL статей с total.kz.
+Использует многопоточные запросы, пагинация по категориям.
+Автоматически определяет, какие статьи уже есть в базе, и собирает только новые.
 
-BASE = "https://total.kz"
-CATEGORIES = [
-    "politika", "ekonomika", "obshchestvo", "drugoe", "media", "special"
-]
-DATA_DIR = Path(__file__).parent.parent / "data"
+Запуск:
+    python scraper/scrape_urls.py                    # собрать за последний год
+    python scraper/scrape_urls.py --days 30          # собрать за последние 30 дней
+    python scraper/scrape_urls.py --since 2024-01-01 # собрать с конкретной даты
+"""
+import re
+import json
+import time
+import sys
+import argparse
+from datetime import datetime, timedelta
+from urllib.parse import urljoin
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
+from bs4 import BeautifulSoup
+
+# Paths
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
 URLS_FILE = DATA_DIR / "urls.jsonl"
 
-# DB integration
-import sys; sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(BASE_DIR))
 from app.database import get_db, init_db
 
+BASE_URL = "https://total.kz"
+PARENT_CATEGORIES = ["politika", "ekonomika", "obshchestvo", "drugoe", "media", "special"]
+DATE_RE = re.compile(r'_date_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})')
 
-async def collect_category(client: httpx.AsyncClient, category: str, since_days: int = 365):
-    """Collect URLs from a category, paginating until we hit old articles."""
-    cutoff = datetime.now() - timedelta(days=since_days)
-    urls = []
-    page = 1
 
-    while True:
-        url = f"{BASE}/ru/news/{category}/page-{page}"
+def parse_date_from_url(url):
+    """Извлечь дату публикации из URL."""
+    m = DATE_RE.search(url)
+    if m:
         try:
-            resp = await client.get(url, timeout=30)
-            if resp.status_code != 200:
+            return datetime(
+                int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                int(m.group(4)), int(m.group(5)), int(m.group(6))
+            )
+        except ValueError:
+            return None
+    return None
+
+
+def extract_sub_category(url):
+    """Извлечь подкатегорию из URL."""
+    parts = url.strip("/").split("/")
+    for i, p in enumerate(parts):
+        if p == "news" and i + 1 < len(parts):
+            return parts[i + 1]
+    return "unknown"
+
+
+def fetch_listing_page(session, category, page):
+    """Загрузить одну страницу листинга и вернуть найденные статьи."""
+    url = (
+        f"{BASE_URL}/ru/news/{category}"
+        if page == 1
+        else f"{BASE_URL}/ru/news/{category}/page-{page}"
+    )
+    try:
+        resp = session.get(url, timeout=20)
+        if resp.status_code != 200:
+            return page, []
+    except Exception:
+        return page, []
+
+    soup = BeautifulSoup(resp.text, "lxml")
+    articles = []
+    seen = set()
+
+    # Главная карточка
+    featured = soup.find("a", class_="image-news-card")
+    if featured:
+        href = featured.get("href", "")
+        full_url = urljoin(BASE_URL, href)
+        if DATE_RE.search(href) and full_url not in seen:
+            seen.add(full_url)
+            articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": ""})
+
+    # Стандартные карточки
+    for card in soup.find_all("div", class_="b-news-list__item"):
+        link = card.find("a", href=DATE_RE)
+        if link:
+            href = link.get("href", "")
+            full_url = urljoin(BASE_URL, href)
+            if full_url not in seen:
+                seen.add(full_url)
+                title_el = card.find("h3", class_="item-title")
+                text_el = card.find("div", class_="item-text")
+                cat_el = card.find("a", class_="category")
+                img = card.find("img")
+                articles.append({
+                    "url": full_url,
+                    "title": title_el.get_text(strip=True) if title_el else "",
+                    "excerpt": text_el.get_text(strip=True) if text_el else "",
+                    "category_label": cat_el.get_text(strip=True) if cat_el else "",
+                    "thumbnail": urljoin(BASE_URL, img.get("src", "")) if img else "",
+                })
+
+    # Боковые карточки
+    for card_div in soup.find_all("div", class_="card"):
+        link = card_div.find("a", href=DATE_RE)
+        if link:
+            href = link.get("href", "")
+            full_url = urljoin(BASE_URL, href)
+            if full_url not in seen:
+                seen.add(full_url)
+                articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": ""})
+
+    return page, articles
+
+
+def scrape_category(category, cutoff_date, seen_urls):
+    """Собрать все URL одной категории до даты cutoff_date."""
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "ru-RU,ru;q=0.9",
+    })
+
+    all_new = []
+    page = 1
+    done = False
+    batch_size = 5
+    consecutive_past_cutoff = 0
+
+    print(f"\n{'='*60}")
+    print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
+    print(f"{'='*60}")
+
+    while not done:
+        # Загружаем пачку страниц параллельно
+        batch_results = {}
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = {
+                executor.submit(fetch_listing_page, session, category, p): p
+                for p in range(page, page + batch_size)
+            }
+            for future in as_completed(futures):
+                p, arts = future.result()
+                batch_results[p] = arts
+
+        # Обрабатываем по порядку
+        batch_records = []
+        for p in range(page, page + batch_size):
+            articles = batch_results.get(p, [])
+
+            if not articles:
+                done = True
                 break
-        except Exception as e:
-            print(f"  Error on {url}: {e}")
-            break
 
-        tree = HTMLParser(resp.text)
-        links = tree.css("a[href*='/ru/news/']")
-        if not links:
-            break
+            new_count = 0
+            old_count = 0
+            dates = []
 
-        found = 0
-        too_old = False
-        for link in links:
-            href = link.attributes.get("href", "")
-            if "_date_" not in href:
-                continue
-            full_url = href if href.startswith("http") else BASE + href
-            if full_url not in [u["url"] for u in urls]:
-                # Parse date from URL
-                try:
-                    parts = full_url.split("_date_")[1].split("_")
-                    pub_date = f"{parts[0]}-{parts[1]}-{parts[2]}T{parts[3]}:{parts[4]}:{parts[5]}"
-                    dt = datetime.fromisoformat(pub_date)
-                    if dt < cutoff:
-                        too_old = True
-                        continue
-                except (IndexError, ValueError):
-                    pub_date = None
+            for art in articles:
+                pub_date = parse_date_from_url(art["url"])
+                if pub_date:
+                    dates.append(pub_date)
 
-                sub = href.split("/ru/news/")[-1].split("/")[0] if "/ru/news/" in href else category
-                urls.append({"url": full_url, "sub_category": sub, "pub_date": pub_date})
-                found += 1
+                if art["url"] in seen_urls:
+                    continue
 
-        print(f"  {category} page {page}: +{found} URLs")
-        if too_old or found == 0:
-            break
-        page += 1
-        await asyncio.sleep(0.3)
+                if pub_date and pub_date < cutoff_date:
+                    old_count += 1
+                    continue
 
-    return urls
+                seen_urls.add(art["url"])
+                record = {
+                    "url": art["url"],
+                    "pub_date": pub_date.isoformat() if pub_date else None,
+                    "sub_category": extract_sub_category(art["url"]),
+                    "category_label": art.get("category_label", ""),
+                    "title": art.get("title", ""),
+                    "excerpt": art.get("excerpt", ""),
+                    "thumbnail": art.get("thumbnail", ""),
+                }
+                batch_records.append(record)
+                new_count += 1
+
+            # Проверяем, вышли ли за cutoff
+            if dates and all(d < cutoff_date for d in dates):
+                consecutive_past_cutoff += 1
+            else:
+                consecutive_past_cutoff = 0
+
+            oldest = min(dates).strftime("%Y-%m-%d") if dates else "?"
+
+            # Выводим прогресс
+            if p <= 5 or p % 25 == 0 or new_count > 0:
+                print(f"  p{p:>4}: +{new_count} new, {old_count} old | oldest: {oldest} | total: {len(all_new) + len(batch_records)}", flush=True)
+
+            # Стоп после 10 страниц подряд за пределами cutoff
+            if consecutive_past_cutoff >= 10:
+                print(f"  → Дошли до cutoff на странице {p}", flush=True)
+                done = True
+                break
+
+        # Записываем сразу после каждой пачки (защита от таймаутов)
+        if batch_records:
+            with open(URLS_FILE, "a") as f:
+                for record in batch_records:
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            all_new.extend(batch_records)
+
+        page += batch_size
+        time.sleep(0.2)
+
+        if page > 8000:
+            done = True
+
+    print(f"  → {category}: {len(all_new)} новых URL")
+    return len(all_new)
 
 
-async def main():
+def main():
+    parser = argparse.ArgumentParser(description="Сбор URL статей с total.kz")
+    parser.add_argument("--days", type=int, default=365, help="За сколько дней собирать (по умолчанию 365)")
+    parser.add_argument("--since", type=str, help="Собирать начиная с даты (YYYY-MM-DD)")
+    args = parser.parse_args()
+
+    if args.since:
+        cutoff_date = datetime.strptime(args.since, "%Y-%m-%d")
+    else:
+        cutoff_date = datetime.now() - timedelta(days=args.days)
+
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     init_db()
 
-    # Log run
+    # Логируем запуск в БД
     with get_db() as conn:
         cursor = conn.execute(
             "INSERT INTO scrape_runs (started_at, phase, status) VALUES (?, 'urls', 'running')",
@@ -83,40 +244,40 @@ async def main():
         )
         run_id = cursor.lastrowid
 
-    all_urls = []
-    async with httpx.AsyncClient(
-        headers={"User-Agent": "Mozilla/5.0"},
-        follow_redirects=True,
-        limits=httpx.Limits(max_connections=5)
-    ) as client:
-        for cat in CATEGORIES:
-            print(f"Collecting {cat}...")
-            urls = await collect_category(client, cat)
-            all_urls.extend(urls)
-            print(f"  {cat}: {len(urls)} URLs")
+    # Загружаем уже известные URL
+    seen_urls = set()
+    if URLS_FILE.exists():
+        with open(URLS_FILE) as f:
+            for line in f:
+                if line.strip():
+                    seen_urls.add(json.loads(line)["url"])
 
-    # Deduplicate
-    seen = set()
-    unique = []
-    for u in all_urls:
-        if u["url"] not in seen:
-            seen.add(u["url"])
-            unique.append(u)
+    # Также из БД
+    with get_db() as conn:
+        rows = conn.execute("SELECT url FROM articles").fetchall()
+        for row in rows:
+            seen_urls.add(row[0])
 
-    # Save to JSONL
-    with open(URLS_FILE, "w") as f:
-        for u in unique:
-            f.write(json.dumps(u, ensure_ascii=False) + "\n")
+    print(f"Уже известно URL: {len(seen_urls)}")
+    print(f"Cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
 
-    # Update run
+    total_new = 0
+    for cat in PARENT_CATEGORIES:
+        count = scrape_category(cat, cutoff_date, seen_urls)
+        total_new += count
+
+    # Обновляем статус запуска
+    total_urls = sum(1 for _ in open(URLS_FILE)) if URLS_FILE.exists() else 0
     with get_db() as conn:
         conn.execute(
             "UPDATE scrape_runs SET finished_at=?, status='completed', articles_found=? WHERE id=?",
-            (datetime.now().isoformat(), len(unique), run_id)
+            (datetime.now().isoformat(), total_new, run_id)
         )
 
-    print(f"\nTotal: {len(unique)} unique URLs saved to {URLS_FILE}")
+    print(f"\n{'='*60}")
+    print(f"  ГОТОВО: {total_new} новых URL (всего в файле: {total_urls})")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
