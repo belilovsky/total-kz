@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% set active = "dashboard" %}
+
+{% block title %}Дашборд — Total.kz{% endblock %}
+{% block page_title %}Дашборд{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ "{:,}".format(stats.total) }}</span>
+            <span class="stat-label">Всего статей</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.categories|length }}</span>
+            <span class="stat-label">Категорий</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.authors|length }}</span>
+            <span class="stat-label">Авторов</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.date_from[:10] if stats.date_from else '—' }}</span>
+            <span class="stat-label">С даты</span>
+        </div>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-card">
+        <h3 class="chart-title">Публикации по месяцам</h3>
+        <canvas id="monthsChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3 class="chart-title">Топ-10 категорий</h3>
+        <canvas id="catsChart"></canvas>
+    </div>
+</div>
+
+<div class="charts-grid">
+    <div class="chart-card full-width">
+        <h3 class="chart-title">Топ-20 авторов</h3>
+        <div class="authors-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Автор</th>
+                        <th>Статей</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in stats.authors %}
+                    <tr>
+                        <td class="num">{{ loop.index }}</td>
+                        <td><a href="/articles?q={{ a.author|urlencode }}">{{ a.author }}</a></td>
+                        <td class="num">{{ a.cnt }}</td>
+                        <td class="bar-cell">
+                            <div class="bar" style="width: {{ (a.cnt / stats.authors[0].cnt * 100)|int }}%"></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if stats.runs %}
+<div class="chart-card full-width" style="margin-top: 1.5rem">
+    <h3 class="chart-title">Последние запуски парсера</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Фаза</th>
+                <th>Начало</th>
+                <th>Конец</th>
+                <th>Статус</th>
+                <th>Найдено</th>
+                <th>Загружено</th>
+                <th>Ошибки</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in stats.runs[:5] %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td><span class="badge badge-phase">{{ r.phase }}</span></td>
+                <td>{{ r.started_at[:16] if r.started_at else '—' }}</td>
+                <td>{{ r.finished_at[:16] if r.finished_at else '—' }}</td>
+                <td>
+                    <span class="badge badge-{{ r.status }}">{{ r.status }}</span>
+                </td>
+                <td class="num">{{ r.articles_found or 0 }}</td>
+                <td class="num">{{ r.articles_downloaded or 0 }}</td>
+                <td class="num">{{ r.errors or 0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if stats.runs|length > 5 %}
+    <a href="/runs" class="view-all-link">Все запуски →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const months = {{ chart_months|safe }};
+    const counts = {{ chart_counts|safe }};
+    const cats = {{ chart_cats|safe }};
+    const catCounts = {{ chart_cat_counts|safe }};
+
+    // Monthly chart
+    new Chart(document.getElementById('monthsChart'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Статей',
+                data: counts,
+                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Categories chart
+    const palette = [
+        '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
+        '#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'
+    ];
+    new Chart(document.getElementById('catsChart'), {
+        type: 'doughnut',
+        data: {
+            labels: cats,
+            datasets: [{
+                data: catCounts,
+                backgroundColor: palette,
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { boxWidth: 12, padding: 12, font: { size: 12 } }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

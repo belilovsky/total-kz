@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% set active = "articles" %}
+
+{% block title %}{{ article.title }} — Total.kz{% endblock %}
+{% block page_title %}Просмотр статьи{% endblock %}
+
+{% block actions %}
+<a href="{{ article.url }}" target="_blank" class="btn btn-ghost btn-sm">
+    Оригинал ↗
+</a>
+{% endblock %}
+
+{% block content %}
+<article class="article-view">
+    <div class="article-header">
+        <div class="article-meta-row">
+            <span class="badge badge-cat">{{ cat_label(article.sub_category) }}</span>
+            <time>{{ article.pub_date[:16] if article.pub_date else '' }}</time>
+        </div>
+        <h1 class="article-view-title">{{ article.title }}</h1>
+        {% if article.author %}
+        <div class="article-author-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{{ article.author }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if article.main_image %}
+    <div class="article-hero">
+        <img src="{{ article.main_image }}" alt="{{ article.title }}">
+        {% if article.image_credit %}
+        <span class="image-credit">{{ article.image_credit }}</span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if article.excerpt %}
+    <div class="article-lead">{{ article.excerpt }}</div>
+    {% endif %}
+
+    <div class="article-body">{{ article.body_html|safe if article.body_html else article.body_text }}</div>
+
+    {% if article.tags %}
+    <div class="article-tags">
+        {% for tag in article.tags %}
+        <a href="/articles?q={{ tag|urlencode }}" class="tag">{{ tag }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="article-meta-footer">
+        <div>
+            <strong>ID:</strong> {{ article.id }} &middot;
+            <strong>Импортировано:</strong> {{ article.imported_at[:16] if article.imported_at else '—' }}
+        </div>
+        <a href="/articles" class="btn btn-ghost btn-sm">← Назад к списку</a>
+    </div>
+</article>
+{% endblock %}
