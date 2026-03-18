@@ -94,12 +94,28 @@ def import_jsonl(jsonl_path: str) -> dict:
                     continue
                 try:
                     art = json.loads(line)
+                    tags_json = json.dumps(art.get("tags", []), ensure_ascii=False)
+                    images_json = json.dumps(art.get("inline_images", []), ensure_ascii=False)
+
+                    # Используем INSERT OR REPLACE чтобы обновлять существующие записи
                     conn.execute("""
-                        INSERT OR IGNORE INTO articles
+                        INSERT INTO articles
                         (url, pub_date, sub_category, category_label, title, author,
                          excerpt, body_text, body_html, main_image, image_credit,
                          thumbnail, tags, inline_images)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(url) DO UPDATE SET
+                            title = excluded.title,
+                            author = excluded.author,
+                            excerpt = excluded.excerpt,
+                            body_text = excluded.body_text,
+                            body_html = excluded.body_html,
+                            main_image = excluded.main_image,
+                            image_credit = excluded.image_credit,
+                            thumbnail = excluded.thumbnail,
+                            tags = excluded.tags,
+                            inline_images = excluded.inline_images,
+                            imported_at = datetime('now')
                     """, (
                         art.get("url"),
                         art.get("pub_date"),
@@ -113,13 +129,10 @@ def import_jsonl(jsonl_path: str) -> dict:
                         art.get("main_image"),
                         art.get("image_credit"),
                         art.get("thumbnail"),
-                        json.dumps(art.get("tags", []), ensure_ascii=False),
-                        json.dumps(art.get("inline_images", []), ensure_ascii=False),
+                        tags_json,
+                        images_json,
                     ))
-                    if conn.total_changes:
-                        imported += 1
-                    else:
-                        skipped += 1
+                    imported += 1
                 except Exception as e:
                     errors += 1
 
