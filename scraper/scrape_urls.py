@@ -31,7 +31,35 @@ sys.path.insert(0, str(BASE_DIR))
 from app.database import get_db, init_db
 
 BASE_URL = "https://total.kz"
-PARENT_CATEGORIES = ["politika", "ekonomika", "obshchestvo", "drugoe", "media", "special"]
+# 20 subcategories — обходим каждую напрямую для полного покрытия
+# (Старые parent: politika, ekonomika, obshchestvo, drugoe, media, special — агрегировали подкатегории,
+#  из-за чего пропускались статьи в глубокой пагинации)
+SUBCATEGORIES = [
+    # Политика
+    "vnutrennyaya_politika",
+    "vneshnyaya_politika",
+    "mir",
+    "bezopasnost",
+    "mneniya",
+    # Экономика
+    "ekonomika_sobitiya",
+    "biznes",
+    "finansi",
+    "gossektor",
+    "tehno",
+    # Общество
+    "obshchestvo_sobitiya",
+    "proisshestviya",
+    "zhizn",
+    "kultura",
+    "religiya",
+    "den_v_istorii",
+    # Другое / Медиа / Спецпроекты
+    "sport",
+    "nauka",
+    "stil_zhizni",
+    "redaktsiya_tandau",
+]
 DATE_RE = re.compile(r'_date_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})')
 
 
@@ -221,9 +249,9 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 if line.strip():
                     rec = json.loads(line)
                     sub = rec.get("sub_category", "")
-                    # Проверяем, относится ли URL к этой родительской категории
                     url = rec.get("url", "")
-                    if f"/news/{category}/" in url or f"/news/{category}" in url:
+                    # Проверяем по подкатегории (точное совпадение slug в URL)
+                    if f"/news/{category}/" in url:
                         d = parse_date_from_url(url)
                         if d:
                             known_dates.append(d)
@@ -233,7 +261,8 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
         rows = conn.execute("SELECT url FROM articles").fetchall()
         for row in rows:
             url = row[0]
-            if f"/news/{category}/" in url or f"/news/{category}" in url:
+            # Проверяем по подкатегории (точное совпадение slug в URL)
+            if f"/news/{category}/" in url:
                 d = parse_date_from_url(url)
                 if d:
                     known_dates.append(d)
@@ -457,7 +486,7 @@ def main():
     print(f"Cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
 
     total_new = 0
-    for cat in PARENT_CATEGORIES:
+    for cat in SUBCATEGORIES:
         count = scrape_category(cat, cutoff_date, seen_urls, force=args.force)
         total_new += count
 
