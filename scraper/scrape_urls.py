@@ -337,8 +337,8 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')}, cutoff {cutoff_date.strftime('%Y-%m-%d')} — пропускаем")
                 return 0
         elif force:
-            print(f"  → Принудительный пересбор (--force)")
-            start_page = find_start_page(session, category, cutoff_date, seen_urls)
+            print(f"  → Принудительный пересбор (--force) — начинаем с page 1")
+            start_page = 1
         else:
             # Нужно собрать от oldest_known вниз до cutoff_date
             # Быстро находим стартовую страницу через бинарный поиск
