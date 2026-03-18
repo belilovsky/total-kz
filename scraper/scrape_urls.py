@@ -200,7 +200,7 @@ def find_start_page(session, category, target_date, seen_urls):
     return start
 
 
-def scrape_category(category, cutoff_date, seen_urls):
+def scrape_category(category, cutoff_date, seen_urls, force=False):
     """Собрать все URL одной категории до даты cutoff_date."""
     session = requests.Session()
     session.headers.update({
@@ -210,7 +210,7 @@ def scrape_category(category, cutoff_date, seen_urls):
     })
 
     print(f"\n{'='*60}")
-    print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
+    print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}{' [FORCE]' if force else ''}")
     print(f"{'='*60}")
 
     # Определяем самую старую дату среди уже известных URL этой категории
@@ -243,13 +243,31 @@ def scrape_category(category, cutoff_date, seen_urls):
         newest_known = max(known_dates)
         print(f"  Известно: {len(known_dates)} URL, от {oldest_known.strftime('%Y-%m-%d')} до {newest_known.strftime('%Y-%m-%d')}")
 
-        if oldest_known <= cutoff_date:
-            print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')}, cutoff {cutoff_date.strftime('%Y-%m-%d')} — пропускаем")
-            return 0
-
-        # Нужно собрать от oldest_known вниз до cutoff_date
-        # Быстро находим стартовую страницу через бинарный поиск
-        start_page = find_start_page(session, category, oldest_known, seen_urls)
+        if not force and oldest_known <= cutoff_date:
+            # Дополнительная проверка: смотрим покрытие по месяцам
+            # Если есть месяцы с < 50 статей — собираем заново
+            from collections import Counter
+            month_counts = Counter(d.strftime('%Y-%m') for d in known_dates)
+            sparse_months = [
+                m for m in month_counts
+                if m >= cutoff_date.strftime('%Y-%m') and month_counts[m] < 50
+            ]
+            if sparse_months:
+                print(f"  ⚠ Обнаружены месяцы с неполным покрытием: {', '.join(sorted(sparse_months)[:6])}...")
+                print(f"  → Пересобираем для заполнения пробелов")
+                # Ищем стартовую страницу для самого раннего sparse месяца
+                earliest_sparse = datetime.strptime(min(sparse_months), '%Y-%m')
+                start_page = find_start_page(session, category, earliest_sparse, seen_urls)
+            else:
+                print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')}, cutoff {cutoff_date.strftime('%Y-%m-%d')} — пропускаем")
+                return 0
+        elif force:
+            print(f"  → Принудительный пересбор (--force)")
+            start_page = find_start_page(session, category, cutoff_date, seen_urls)
+        else:
+            # Нужно собрать от oldest_known вниз до cutoff_date
+            # Быстро находим стартовую страницу через бинарный поиск
+            start_page = find_start_page(session, category, oldest_known, seen_urls)
     else:
         start_page = 1
         print(f"  Нет известных URL — начинаем с начала")
@@ -402,6 +420,7 @@ def main():
     parser = argparse.ArgumentParser(description="Сбор URL статей с total.kz")
     parser.add_argument("--days", type=int, default=365, help="За сколько дней собирать (по умолчанию 365)")
     parser.add_argument("--since", type=str, help="Собирать начиная с даты (YYYY-MM-DD)")
+    parser.add_argument("--force", action="store_true", help="Принудительный пересбор (игнорировать проверку oldest_known)")
     args = parser.parse_args()
 
     if args.since:
@@ -439,7 +458,7 @@ def main():
 
     total_new = 0
     for cat in PARENT_CATEGORIES:
-        count = scrape_category(cat, cutoff_date, seen_urls)
+        count = scrape_category(cat, cutoff_date, seen_urls, force=args.force)
         total_new += count
 
     # Обновляем статус запуска
