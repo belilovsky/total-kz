@@ -6,7 +6,7 @@
 
 {% block content %}
 <!-- ===== KPI CARDS ===== -->
-<div class="kpi-grid">
+<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
     <div class="kpi-card">
         <div class="kpi-header">
             <span class="kpi-label">Всего статей</span>
@@ -113,7 +113,7 @@
 </div>
 
 <!-- ===== ENTITIES: Persons / Orgs / Locations ===== -->
-<div class="entity-section-grid">
+<div class="entity-section-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
     {% if persons %}
     <div class="chart-card">
         <div class="chart-header">
@@ -125,12 +125,12 @@
         </div>
         <div class="entity-bars">
             {% for p in persons[:12] %}
-            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ p.name }}</span>
-                <div class="entity-bar-track">
-                    <div class="entity-bar-fill person" style="width: {{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div>
+            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid #eef0f3">
+                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
+                <div class="entity-bar-track" style="width:100%;height:6px;background:#f5f6f8;border-radius:3px;overflow:hidden">
+                    <div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%;height:100%;background:#2563eb;border-radius:3px"></div>
                 </div>
-                <span class="entity-bar-value">{{ p.article_count }}</span>
+                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:#9099a8;text-align:right">{{ p.article_count }}</span>
             </a>
             {% endfor %}
         </div>
@@ -148,12 +148,12 @@
         </div>
         <div class="entity-bars">
             {% for o in orgs[:12] %}
-            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ o.name }}</span>
-                <div class="entity-bar-track">
-                    <div class="entity-bar-fill org" style="width: {{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div>
+            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid #eef0f3">
+                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.name }}</span>
+                <div class="entity-bar-track" style="width:100%;height:6px;background:#f5f6f8;border-radius:3px;overflow:hidden">
+                    <div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%;height:100%;background:#059669;border-radius:3px"></div>
                 </div>
-                <span class="entity-bar-value">{{ o.article_count }}</span>
+                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:#9099a8;text-align:right">{{ o.article_count }}</span>
             </a>
             {% endfor %}
         </div>
@@ -171,12 +171,12 @@
         </div>
         <div class="entity-bars">
             {% for l in locations[:12] %}
-            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ l.name }}</span>
-                <div class="entity-bar-track">
-                    <div class="entity-bar-fill location" style="width: {{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div>
+            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid #eef0f3">
+                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.name }}</span>
+                <div class="entity-bar-track" style="width:100%;height:6px;background:#f5f6f8;border-radius:3px;overflow:hidden">
+                    <div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%;height:100%;background:#d97706;border-radius:3px"></div>
                 </div>
-                <span class="entity-bar-value">{{ l.article_count }}</span>
+                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:#9099a8;text-align:right">{{ l.article_count }}</span>
             </a>
             {% endfor %}
         </div>
@@ -223,8 +223,8 @@
                     <td class="num rank">{{ loop.index }}</td>
                     <td class="author-name"><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
                     <td class="bar-cell">
-                        <div class="bar-track">
-                            <div class="bar-fill" style="width: {{ (a.cnt / stats.authors[0].cnt * 100)|int }}%"></div>
+                        <div class="bar-track" style="width:100%;height:6px;background:#f5f6f8;border-radius:3px;overflow:hidden">
+                            <div class="bar-fill" style="width:{{ (a.cnt / stats.authors[0].cnt * 100)|int }}%;height:100%;background:#2563eb;border-radius:3px"></div>
                         </div>
                     </td>
                     <td class="num">{{ "{:,}".format(a.cnt) }}</td>
