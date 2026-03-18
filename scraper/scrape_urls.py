@@ -259,6 +259,7 @@ def scrape_category(category, cutoff_date, seen_urls):
     done = False
     batch_size = 5
     consecutive_past_cutoff = 0
+    consecutive_all_known = 0  # счётчик страниц где все URL уже known
     prev_oldest_date = None
     stale_date_count = 0
 
@@ -338,6 +339,12 @@ def scrape_category(category, cutoff_date, seen_urls):
                 stale_date_count = 0
                 prev_oldest_date = oldest_date
 
+            # Счётчик «все known» — когда на странице 0 new и 0 old
+            if new_count == 0 and old_count == 0 and already_known > 0:
+                consecutive_all_known += 1
+            else:
+                consecutive_all_known = 0
+
             # Выводим прогресс
             if p <= start_page + 4 or p % 50 == 0 or new_count > 0:
                 print(f"  p{p:>4}: +{new_count} new, {already_known} known, {old_count} old | oldest: {oldest_date or '?'} | total: {len(all_new) + len(batch_records)}", flush=True)
@@ -347,6 +354,25 @@ def scrape_category(category, cutoff_date, seen_urls):
                 print(f"  → Дошли до cutoff на странице {p}", flush=True)
                 done = True
                 break
+
+            # Стоп: все URL known 30 страниц подряд — прыгаем или стопаем
+            if consecutive_all_known >= 30:
+                # Пробуем прыгнуть на 200 страниц вперёд
+                jump_page = p + 200
+                print(f"  → 30 стр подряд all-known, прыгаем на стр {jump_page}...", flush=True)
+                _, jump_arts = fetch_listing_page(session, category, jump_page)
+                jump_new = sum(1 for a in jump_arts if a["url"] not in seen_urls)
+                if jump_new == 0:
+                    # И после прыжка ничего нового — заканчиваем
+                    print(f"  → После прыжка тоже 0 new — заканчиваем {category}", flush=True)
+                    done = True
+                    break
+                else:
+                    # Есть новые — перемещаемся туда
+                    print(f"  → После прыжка +{jump_new} new — продолжаем с {jump_page}", flush=True)
+                    page = jump_page
+                    consecutive_all_known = 0
+                    continue  # пропускаем page += batch_size внизу
 
             # Стоп: зацикливание (50 страниц подряд с одной и той же oldest датой)
             if stale_date_count >= 50:
