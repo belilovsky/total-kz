@@ -25,6 +25,14 @@ sys.path.insert(0, str(BASE_DIR))
 from app.database import get_db, init_db
 
 try:
+    # pymorphy2 сломан на Python 3.12+ (pkg_resources)
+    # Подменяем на pymorphy3
+    import pymorphy3
+    sys.modules['pymorphy2'] = pymorphy3
+    sys.modules['pymorphy2.analyzer'] = pymorphy3.analyzer
+    sys.modules['pymorphy2.tagset'] = pymorphy3.tagset
+    sys.modules['pymorphy2.shapes'] = pymorphy3.shapes
+
     from natasha import (
         Segmenter, MorphVocab,
         NewsEmbedding, NewsMorphTagger, NewsNERTagger,
@@ -33,7 +41,7 @@ try:
     HAS_NATASHA = True
 except ImportError:
     HAS_NATASHA = False
-    print("⚠ Natasha не установлена. Запустите: pip install natasha")
+    print("⚠ Natasha не установлена. Запустите: pip install natasha pymorphy3 pymorphy3-dicts-ru")
     print("  Будут обработаны только теги.")
 
 
@@ -134,11 +142,9 @@ def extract_ner(conn, batch_size=500):
             doc.tag_morph(morph_tagger)
             doc.tag_ner(ner_tagger)
 
-            # Разрешаем имена
+            # Нормализуем спаны
             for span in doc.spans:
                 span.normalize(morph_vocab)
-                if span.type == "PER":
-                    span.extract_name(names_extractor)
 
             # Считаем упоминания
             mentions = {}  # (normalized, type) -> count
@@ -151,18 +157,6 @@ def extract_ner(conn, batch_size=500):
                 name = span.normal or span.text
                 if not name or len(name) < 2:
                     continue
-
-                # Для персон — собираем полное имя
-                if span.type == "PER" and hasattr(span, "fact") and span.fact:
-                    parts = []
-                    if span.fact.last:
-                        parts.append(span.fact.last)
-                    if span.fact.first:
-                        parts.append(span.fact.first)
-                    if span.fact.middle:
-                        parts.append(span.fact.middle)
-                    if parts:
-                        name = " ".join(parts)
 
                 norm = normalize_name(name)
                 if len(norm) < 2:
