@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+{% set active = "seo" %}
+{% block title %}SEO / GEO Аналитика — Total.kz{% endblock %}
+{% block page_title %}SEO / GEO Аналитика{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+{% endblock %}
+
+{% block content %}
+{% set geo = report.geo_readiness %}
+{% set meta = report.meta_audit %}
+{% set cq = report.content_quality %}
+{% set schema = report.schema_readiness %}
+{% set ea = report.entity_authority %}
+{% set tc = report.topical_coverage %}
+{% set fresh = report.freshness %}
+{% set dupes = report.duplicates %}
+
+<!-- ═══════════════ GEO READINESS HERO ═══════════════ -->
+<section class="seo-hero">
+    <div class="seo-hero-score">
+        <div class="score-ring" data-score="{{ geo.overall_score }}">
+            <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                <circle cx="60" cy="60" r="52" class="ring-fill"
+                    stroke-dasharray="{{ (geo.overall_score / 100 * 326.7)|round }}, 326.7"
+                    stroke-dashoffset="0"/>
+            </svg>
+            <div class="score-value">{{ geo.overall_score }}</div>
+            <div class="score-label">GEO Score</div>
+        </div>
+    </div>
+    <div class="seo-hero-bars">
+        <h3 class="section-subtitle">Готовность к AI-поиску</h3>
+        <div class="score-bars">
+            {% for key, label in [("structured_data", "Schema.org"), ("content_structure", "Структура контента"), ("meta_tags", "Мета-теги"), ("entity_authority", "Авторитет сущностей")] %}
+            <div class="score-bar-row">
+                <span class="score-bar-label">{{ label }}</span>
+                <div class="score-bar-track">
+                    <div class="score-bar-fill {% if geo.scores[key] >= 70 %}bar-green{% elif geo.scores[key] >= 40 %}bar-orange{% else %}bar-red{% endif %}"
+                         style="width: {{ geo.scores[key] }}%"></div>
+                </div>
+                <span class="score-bar-value">{{ geo.scores[key] }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ RECOMMENDATIONS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Рекомендации
+    </h2>
+    <div class="rec-grid">
+        {% for rec in geo.recommendations %}
+        <div class="rec-card rec-{{ rec.priority }}">
+            <div class="rec-priority">
+                {% if rec.priority == "high" %}Высокий{% elif rec.priority == "medium" %}Средний{% else %}Низкий{% endif %}
+            </div>
+            <div class="rec-area">{{ rec.area }}</div>
+            <div class="rec-text">{{ rec.text }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ═══════════════ META AUDIT ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Аудит мета-полей
+    </h2>
+    <div class="seo-stats-row">
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if meta.avg_score >= 70 %}text-green{% elif meta.avg_score >= 40 %}text-orange{% else %}text-red{% endif %}">{{ meta.avg_score }}%</div>
+            <div class="seo-stat-label">Средний балл</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ meta.total_audited }}</div>
+            <div class="seo-stat-label">Проверено статей</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value text-red">{{ meta.issues|length }}</div>
+            <div class="seo-stat-label">Проблемных (&lt;70%)</div>
+        </div>
+    </div>
+
+    <div class="seo-two-col">
+        <!-- Field completeness chart -->
+        <div class="seo-card">
+            <h3 class="card-subtitle">Заполненность полей</h3>
+            <canvas id="fieldChart" height="280"></canvas>
+        </div>
+        <!-- Score distribution chart -->
+        <div class="seo-card">
+            <h3 class="card-subtitle">Распределение оценок</h3>
+            <canvas id="scoreDistChart" height="280"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ CONTENT QUALITY ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Качество контента
+    </h2>
+    <div class="seo-stats-row seo-stats-row-5">
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_word_count }}</div>
+            <div class="seo-stat-label">Ср. слов</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_headings }}</div>
+            <div class="seo-stat-label">Ср. подзаголовков</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_internal_links }}</div>
+            <div class="seo-stat-label">Ср. внутр. ссылок</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_images }}</div>
+            <div class="seo-stat-label">Ср. изображений</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if cq.thin_content_count > 100 %}text-red{% elif cq.thin_content_count > 30 %}text-orange{% else %}text-green{% endif %}">{{ cq.thin_content_count }}</div>
+            <div class="seo-stat-label">Тонкий контент</div>
+        </div>
+    </div>
+
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">Объём контента (слова)</h3>
+            <canvas id="wordCountChart" height="280"></canvas>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Мета-теги SEO</h3>
+            <div class="meta-gauge-row">
+                <div class="meta-gauge">
+                    <div class="gauge-ring" data-pct="{{ cq.title_ok_pct }}">
+                        <svg viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="34" class="ring-bg"/>
+                            <circle cx="40" cy="40" r="34" class="ring-fill {% if cq.title_ok_pct >= 70 %}stroke-green{% elif cq.title_ok_pct >= 40 %}stroke-orange{% else %}stroke-red{% endif %}"
+                                stroke-dasharray="{{ (cq.title_ok_pct / 100 * 213.6)|round }}, 213.6"/>
+                        </svg>
+                        <span class="gauge-val">{{ cq.title_ok_pct }}%</span>
+                    </div>
+                    <span class="gauge-label">Title (25–70)</span>
+                </div>
+                <div class="meta-gauge">
+                    <div class="gauge-ring" data-pct="{{ cq.excerpt_ok_pct }}">
+                        <svg viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="34" class="ring-bg"/>
+                            <circle cx="40" cy="40" r="34" class="ring-fill {% if cq.excerpt_ok_pct >= 70 %}stroke-green{% elif cq.excerpt_ok_pct >= 40 %}stroke-orange{% else %}stroke-red{% endif %}"
+                                stroke-dasharray="{{ (cq.excerpt_ok_pct / 100 * 213.6)|round }}, 213.6"/>
+                        </svg>
+                        <span class="gauge-val">{{ cq.excerpt_ok_pct }}%</span>
+                    </div>
+                    <span class="gauge-label">Description (50–160)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ SCHEMA.ORG READINESS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        Schema.org / NewsArticle
+    </h2>
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">Готовность к разметке</h3>
+            <canvas id="schemaChart" height="260"></canvas>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Недостающие поля</h3>
+            <div class="missing-fields-list">
+                {% for field, count in schema.missing_fields.items() %}
+                <div class="missing-field-row">
+                    <span class="mf-name">{{ field }}</span>
+                    <div class="mf-bar-track">
+                        <div class="mf-bar-fill" style="width: {{ (count / schema.total * 100)|round }}%"></div>
+                    </div>
+                    <span class="mf-count">{{ count }} <span class="mf-pct">({{ (count / schema.total * 100)|round }}%)</span></span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="schema-tip">
+                <strong>JSON-LD шаблон:</strong>
+                <code>@type: NewsArticle</code> — headline, datePublished, dateModified, author, image (1:1, 4:3, 16:9), description, mainEntityOfPage
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ ENTITY AUTHORITY ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Авторитет сущностей (E-E-A-T)
+    </h2>
+    <div class="entity-table-wrap">
+        <table class="seo-table">
+            <thead>
+                <tr>
+                    <th>Сущность</th>
+                    <th>Тип</th>
+                    <th>Статей</th>
+                    <th>Упоминаний</th>
+                    <th>Охват</th>
+                    <th>Рубрик</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in ea.entities[:20] %}
+                <tr>
+                    <td class="entity-name"><a href="/articles?entity_id={{ e.id }}">{{ e.name }}</a></td>
+                    <td><span class="entity-badge badge-{{ e.entity_type }}">{{ e.entity_type }}</span></td>
+                    <td>{{ e.article_count }}</td>
+                    <td>{{ e.total_mentions }}</td>
+                    <td>{{ e.coverage_pct }}%</td>
+                    <td>{{ e.category_span }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ TOPICAL COVERAGE ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+        Тематическое покрытие
+    </h2>
+    <div class="topic-grid">
+        {% for c in tc.categories[:15] %}
+        <div class="topic-card">
+            <div class="topic-header">
+                <span class="topic-name">{{ cat_label(c.sub_category) }}</span>
+                <span class="topic-count">{{ c.cnt }}</span>
+            </div>
+            <div class="topic-bar-track">
+                <div class="topic-bar-fill" style="width: {{ c.share_pct }}%"></div>
+            </div>
+            <div class="topic-meta">
+                <span>{{ c.share_pct }}% контента</span>
+                <span>{{ c.authors }} авторов</span>
+            </div>
+            {% if c.top_tags %}
+            <div class="topic-tags">
+                {% for tag in c.top_tags %}
+                <span class="mini-tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ═══════════════ FRESHNESS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Свежесть контента
+    </h2>
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">Публикации за 24 месяца</h3>
+            <canvas id="freshnessChart" height="260"></canvas>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Возраст контента</h3>
+            <canvas id="ageChart" height="260"></canvas>
+        </div>
+    </div>
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">День недели</h3>
+            <canvas id="dowChart" height="220"></canvas>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Час публикации</h3>
+            <canvas id="hourChart" height="220"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ DUPLICATES ═══════════════ -->
+{% if dupes %}
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"/><path d="M4 15a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+        Дублированные заголовки
+    </h2>
+    <div class="dupes-table-wrap">
+        <table class="seo-table">
+            <thead><tr><th>Заголовок</th><th>Дублей</th><th>ID статей</th></tr></thead>
+            <tbody>
+                {% for d in dupes %}
+                <tr>
+                    <td>{{ d.title[:90] }}</td>
+                    <td><span class="badge-dup">{{ d.cnt }}</span></td>
+                    <td class="ids-cell">{{ d.ids }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- ═══════════════ AI CRAWLER GUIDE ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 110 2h-1.07A7 7 0 0113 22h-2a7 7 0 01-6.93-6H3a1 1 0 110-2h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/><circle cx="9" cy="14" r="1.25" fill="currentColor"/><circle cx="15" cy="14" r="1.25" fill="currentColor"/></svg>
+        AI-краулеры: robots.txt и llms.txt
+    </h2>
+    <div class="seo-two-col">
+        <div class="seo-card code-card">
+            <h3 class="card-subtitle">robots.txt — рекомендация</h3>
+            <pre class="code-block"><code># Поисковые боты
+User-agent: *
+Allow: /
+
+# AI-боты — разрешить для цитирования
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://total.kz/sitemap.xml</code></pre>
+        </div>
+        <div class="seo-card code-card">
+            <h3 class="card-subtitle">llms.txt — рекомендация</h3>
+            <pre class="code-block"><code># Total.kz — Казахстанское информационное агентство
+# Архив новостей с 2011 года на русском и казахском языках
+
+> Total.kz — крупнейший архив казахстанских новостей.
+> Более 76 000 статей: политика, экономика,
+> общество, спорт, культура, технологии.
+
+## Рубрики
+- Внутренняя политика
+- Внешняя политика
+- Экономика / Бизнес / Финансы
+- Безопасность / Происшествия
+- Общество / Культура / Спорт
+- Технологии / Наука
+
+## Авторы
+Штат профессиональных журналистов
+
+## Контакт
+https://total.kz</code></pre>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+    const textColor = isDark ? '#9ca3af' : '#6b7280';
+    const accent = '#2563eb';
+    const green = '#059669';
+    const orange = '#d97706';
+    const red = '#dc2626';
+    const purple = '#7c3aed';
+
+    // ── Field completeness bar chart ──
+    const fieldData = {{ meta.field_rates | tojson }};
+    const fieldLabels = {
+        title: 'Заголовок', excerpt: 'Описание', author: 'Автор',
+        pub_date: 'Дата', main_image: 'Изображение', thumbnail: 'Превью',
+        category: 'Рубрика', body_text: 'Текст', tags: 'Теги'
+    };
+    const fLabels = Object.keys(fieldData).map(k => fieldLabels[k] || k);
+    const fValues = Object.values(fieldData);
+    const fColors = fValues.map(v => v >= 80 ? green : v >= 50 ? orange : red);
+
+    new Chart(document.getElementById('fieldChart'), {
+        type: 'bar',
+        data: {
+            labels: fLabels,
+            datasets: [{ data: fValues, backgroundColor: fColors, borderRadius: 6, barPercentage: 0.65 }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ctx.raw + '%' } }
+            },
+            scales: {
+                x: { max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: v => v + '%' } },
+                y: { grid: { display: false }, ticks: { color: textColor, font: { size: 12 } } }
+            }
+        }
+    });
+
+    // ── Score distribution ──
+    const scoreDist = {{ meta.score_distribution | tojson }};
+    new Chart(document.getElementById('scoreDistChart'), {
+        type: 'bar',
+        data: {
+            labels: scoreDist.map(d => d.label),
+            datasets: [{
+                data: scoreDist.map(d => d.count),
+                backgroundColor: [red, orange, '#eab308', green, accent],
+                borderRadius: 6, barPercentage: 0.7
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor } }
+            }
+        }
+    });
+
+    // ── Word count distribution ──
+    const wcDist = {{ cq.word_count_distribution | tojson }};
+    new Chart(document.getElementById('wordCountChart'), {
+        type: 'bar',
+        data: {
+            labels: wcDist.map(d => d.label),
+            datasets: [{
+                data: wcDist.map(d => d.count),
+                backgroundColor: [red, orange, '#eab308', green, accent, purple],
+                borderRadius: 6, barPercentage: 0.7
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor } }
+            }
+        }
+    });
+
+    // ── Schema readiness donut ──
+    new Chart(document.getElementById('schemaChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Готово', 'Частично', 'Не готово'],
+            datasets: [{
+                data: [{{ schema.ready }}, {{ schema.partial }}, {{ schema.not_ready }}],
+                backgroundColor: [green, orange, red],
+                borderWidth: 0, hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { position: 'bottom', labels: { color: textColor, padding: 16, usePointStyle: true, pointStyleWidth: 12 } },
+                tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' (' + Math.round(ctx.raw / {{ schema.total }} * 100) + '%)' } }
+            }
+        }
+    });
+
+    // ── Freshness line chart ──
+    const freshData = {{ fresh.monthly | tojson }};
+    new Chart(document.getElementById('freshnessChart'), {
+        type: 'line',
+        data: {
+            labels: freshData.map(d => d.month),
+            datasets: [{
+                data: freshData.map(d => d.cnt),
+                borderColor: accent,
+                backgroundColor: isDark ? 'rgba(37,99,235,0.1)' : 'rgba(37,99,235,0.06)',
+                fill: true, tension: 0.35, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, maxTicksLimit: 12 } }
+            }
+        }
+    });
+
+    // ── Age distribution donut ──
+    const ageData = {{ fresh.age_distribution | tojson }};
+    new Chart(document.getElementById('ageChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['До 30 дней', '30–90 дней', '90 дней – 1 год', '1–3 года', 'Старше 3 лет'],
+            datasets: [{
+                data: [ageData.last_30d, ageData.last_90d, ageData.last_year, ageData.last_3y, ageData.older],
+                backgroundColor: [green, accent, purple, orange, 'rgba(156,163,175,0.4)'],
+                borderWidth: 0, hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { color: textColor, padding: 12, usePointStyle: true, pointStyleWidth: 12 } }
+            }
+        }
+    });
+
+    // ── Day of week ──
+    const dowData = {{ fresh.day_of_week | tojson }};
+    new Chart(document.getElementById('dowChart'), {
+        type: 'bar',
+        data: {
+            labels: dowData.map(d => d.day_name),
+            datasets: [{
+                data: dowData.map(d => d.cnt),
+                backgroundColor: accent + '99',
+                borderRadius: 6, barPercentage: 0.65
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor } }
+            }
+        }
+    });
+
+    // ── Hour chart ──
+    const hourData = {{ fresh.hours | tojson }};
+    const allHours = Array.from({length: 24}, (_, i) => i);
+    const hourMap = {};
+    hourData.forEach(h => { hourMap[h.hour] = h.cnt; });
+    new Chart(document.getElementById('hourChart'), {
+        type: 'bar',
+        data: {
+            labels: allHours.map(h => h + ':00'),
+            datasets: [{
+                data: allHours.map(h => hourMap[h] || 0),
+                backgroundColor: purple + '80',
+                borderRadius: 4, barPercentage: 0.8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 0, maxTicksLimit: 12 } }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import database as db
+from . import seo_analytics as seo
 
 app = FastAPI(title="Total.kz Dashboard")
 
@@ -223,3 +224,60 @@ async def api_tags(limit: int = 100):
 @app.get("/api/entities")
 async def api_entities(entity_type: str = "", limit: int = 50):
     return db.get_entities(entity_type=entity_type, limit=limit)
+
+
+# ── SEO / GEO / SGEO analytics ─────────────────────
+
+@app.get("/seo", response_class=HTMLResponse)
+async def seo_dashboard(request: Request):
+    report = seo.get_full_seo_report()
+    return templates.TemplateResponse("seo.html", {
+        "request": request,
+        "report": report,
+        "cat_label": cat_label,
+    })
+
+
+@app.get("/api/seo")
+async def api_seo_report():
+    return seo.get_full_seo_report()
+
+
+@app.get("/api/seo/meta")
+async def api_seo_meta(limit: int = 500):
+    return seo.get_meta_audit(limit)
+
+
+@app.get("/api/seo/content")
+async def api_seo_content(limit: int = 500):
+    return seo.get_content_quality(limit)
+
+
+@app.get("/api/seo/schema")
+async def api_seo_schema(limit: int = 500):
+    return seo.get_schema_readiness(limit)
+
+
+@app.get("/api/seo/geo")
+async def api_seo_geo():
+    return seo.get_geo_readiness()
+
+
+@app.get("/api/seo/freshness")
+async def api_seo_freshness():
+    return seo.get_freshness_analysis()
+
+
+@app.get("/api/seo/entities")
+async def api_seo_entities(limit: int = 30):
+    return seo.get_entity_authority(limit)
+
+
+@app.get("/api/seo/topics")
+async def api_seo_topics():
+    return seo.get_topical_coverage()
+
+
+@app.get("/api/seo/duplicates")
+async def api_seo_duplicates(limit: int = 30):
+    return seo.get_duplicate_titles(limit)
