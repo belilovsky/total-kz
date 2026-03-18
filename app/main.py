@@ -71,8 +71,14 @@ async def dashboard(request: Request):
     # Chart data
     chart_months = json.dumps([m["month"] for m in stats["months"]])
     chart_counts = json.dumps([m["cnt"] for m in stats["months"]])
-    chart_cats = json.dumps([cat_label(c["sub_category"]) for c in stats["categories"][:10]])
-    chart_cat_counts = json.dumps([c["cnt"] for c in stats["categories"][:10]])
+    chart_cats = json.dumps([cat_label(c["sub_category"]) for c in stats["categories"]])
+    chart_cat_counts = json.dumps([c["cnt"] for c in stats["categories"]])
+    chart_cat_slugs = json.dumps([c["sub_category"] for c in stats["categories"]])
+    chart_years = json.dumps([y["year"] for y in stats["years"]])
+    chart_year_counts = json.dumps([y["cnt"] for y in stats["years"]])
+
+    # Category-by-year heatmap data
+    cat_by_year_json = json.dumps(stats["cat_by_year"])
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
@@ -85,6 +91,10 @@ async def dashboard(request: Request):
         "chart_counts": chart_counts,
         "chart_cats": chart_cats,
         "chart_cat_counts": chart_cat_counts,
+        "chart_cat_slugs": chart_cat_slugs,
+        "chart_years": chart_years,
+        "chart_year_counts": chart_year_counts,
+        "cat_by_year_json": cat_by_year_json,
         "cat_label": cat_label,
         "entity_type_label": entity_type_label,
     })

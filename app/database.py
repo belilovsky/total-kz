@@ -217,6 +217,13 @@ def get_stats() -> dict:
             GROUP BY month ORDER BY month
         """).fetchall()
         
+        # Годовая агрегация для sparkline
+        years = conn.execute("""
+            SELECT substr(pub_date, 1, 4) as year, COUNT(*) as cnt
+            FROM articles WHERE pub_date IS NOT NULL
+            GROUP BY year ORDER BY year
+        """).fetchall()
+        
         authors = conn.execute("""
             SELECT author, COUNT(*) as cnt
             FROM articles WHERE author IS NOT NULL AND author != ''
@@ -230,15 +237,56 @@ def get_stats() -> dict:
         runs = conn.execute("""
             SELECT * FROM scrape_runs ORDER BY started_at DESC LIMIT 20
         """).fetchall()
+
+        # Среднее за последние 12 месяцев vs предыдущие 12
+        avg_recent = conn.execute("""
+            SELECT ROUND(AVG(cnt)) FROM (
+                SELECT COUNT(*) as cnt FROM articles
+                WHERE pub_date >= date('now', '-12 months')
+                GROUP BY substr(pub_date, 1, 7)
+            )
+        """).fetchone()[0] or 0
+        avg_prev = conn.execute("""
+            SELECT ROUND(AVG(cnt)) FROM (
+                SELECT COUNT(*) as cnt FROM articles
+                WHERE pub_date >= date('now', '-24 months')
+                  AND pub_date < date('now', '-12 months')
+                GROUP BY substr(pub_date, 1, 7)
+            )
+        """).fetchone()[0] or 0
+
+        # Статьи за текущий и прошлый месяц
+        this_month = conn.execute("""
+            SELECT COUNT(*) FROM articles
+            WHERE substr(pub_date, 1, 7) = strftime('%Y-%m', 'now')
+        """).fetchone()[0]
+        last_month = conn.execute("""
+            SELECT COUNT(*) FROM articles
+            WHERE substr(pub_date, 1, 7) = strftime('%Y-%m', 'now', '-1 month')
+        """).fetchone()[0]
+
+        # Топ-5 категорий по году для heatmap
+        cat_by_year = conn.execute("""
+            SELECT sub_category, substr(pub_date, 1, 4) as year, COUNT(*) as cnt
+            FROM articles WHERE pub_date IS NOT NULL
+            GROUP BY sub_category, year
+            ORDER BY sub_category, year
+        """).fetchall()
         
         return {
             "total": total,
             "categories": [dict(r) for r in cats],
             "months": [dict(r) for r in months],
+            "years": [dict(r) for r in years],
             "authors": [dict(r) for r in authors],
             "date_from": date_range[0],
             "date_to": date_range[1],
             "runs": [dict(r) for r in runs],
+            "avg_recent": int(avg_recent),
+            "avg_prev": int(avg_prev),
+            "this_month": this_month,
+            "last_month": last_month,
+            "cat_by_year": [dict(r) for r in cat_by_year],
         }
 
 
