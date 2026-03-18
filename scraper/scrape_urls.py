@@ -132,7 +132,9 @@ def scrape_category(category, cutoff_date, seen_urls):
     done = False
     batch_size = 5
     consecutive_past_cutoff = 0
-    consecutive_no_new = 0  # страниц подряд без новых URL
+    # Для обнаружения зацикливания: отслеживаем самую старую дату на каждой странице
+    prev_oldest_date = None
+    stale_date_count = 0  # сколько страниц подряд oldest дата не меняется
 
     print(f"\n{'='*60}")
     print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
@@ -161,6 +163,7 @@ def scrape_category(category, cutoff_date, seen_urls):
 
             new_count = 0
             old_count = 0
+            already_known = 0
             dates = []
 
             for art in articles:
@@ -169,6 +172,7 @@ def scrape_category(category, cutoff_date, seen_urls):
                     dates.append(pub_date)
 
                 if art["url"] in seen_urls:
+                    already_known += 1
                     continue
 
                 if pub_date and pub_date < cutoff_date:
@@ -194,17 +198,17 @@ def scrape_category(category, cutoff_date, seen_urls):
             else:
                 consecutive_past_cutoff = 0
 
-            # Считаем страницы без новых URL
-            if new_count == 0:
-                consecutive_no_new += 1
+            # Обнаружение зацикливания: если oldest дата не продвигается
+            oldest_date = min(dates).strftime("%Y-%m-%d") if dates else None
+            if oldest_date and oldest_date == prev_oldest_date:
+                stale_date_count += 1
             else:
-                consecutive_no_new = 0
-
-            oldest = min(dates).strftime("%Y-%m-%d") if dates else "?"
+                stale_date_count = 0
+                prev_oldest_date = oldest_date
 
             # Выводим прогресс
-            if p <= 5 or p % 25 == 0 or new_count > 0:
-                print(f"  p{p:>4}: +{new_count} new, {old_count} old | oldest: {oldest} | total: {len(all_new) + len(batch_records)}", flush=True)
+            if p <= 5 or p % 50 == 0 or new_count > 0:
+                print(f"  p{p:>4}: +{new_count} new, {already_known} known, {old_count} old | oldest: {oldest_date or '?'} | total: {len(all_new) + len(batch_records)}", flush=True)
 
             # Стоп после 10 страниц подряд за пределами cutoff
             if consecutive_past_cutoff >= 10:
@@ -212,9 +216,9 @@ def scrape_category(category, cutoff_date, seen_urls):
                 done = True
                 break
 
-            # Стоп если 50 страниц подряд без новых URL (конец контента или зацикливание)
-            if consecutive_no_new >= 50:
-                print(f"  → 50 страниц без новых URL — стоп на странице {p}", flush=True)
+            # Стоп: зацикливание (100 страниц подряд с одной и той же oldest датой)
+            if stale_date_count >= 100:
+                print(f"  → Зацикливание: oldest дата {oldest_date} не меняется 100 страниц — стоп на p{p}", flush=True)
                 done = True
                 break
 
@@ -228,7 +232,8 @@ def scrape_category(category, cutoff_date, seen_urls):
         page += batch_size
         time.sleep(0.2)
 
-        if page > 8000:
+        if page > 15000:
+            print(f"  → Достигнут лимит 15000 страниц", flush=True)
             done = True
 
     print(f"  → {category}: {len(all_new)} новых URL")
