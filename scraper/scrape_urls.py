@@ -382,9 +382,14 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
             already_known = 0
             content_dates = []  # даты только из основного контента (не сайдбар)
 
+            all_page_dates = []  # даты ВСЕХ статей на странице (включая known)
+
             for art in articles:
                 # Дата: из URL (новый формат) или из текста карточки (старый формат)
                 pub_date = art.get("card_date") or parse_date_from_url(art["url"])
+
+                if pub_date:
+                    all_page_dates.append(pub_date)
 
                 if art["url"] in seen_urls:
                     already_known += 1
@@ -412,20 +417,23 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 new_count += 1
 
             # Проверяем, вышли ли за cutoff
-            # Используем content_dates (без known/sidebar) для точной проверки
+            # Используем content_dates для новых/старых, all_page_dates для known
             if content_dates and all(d < cutoff_date for d in content_dates):
                 consecutive_past_cutoff += 1
             elif new_count == 0 and old_count > 0 and already_known > 0:
-                # Нет новых, есть старые — тоже считаем как past cutoff
                 consecutive_past_cutoff += 1
             elif new_count == 0 and old_count == 0 and already_known > 0:
-                # Все known — не сбрасываем счётчик, но и не увеличиваем
-                pass
+                # Все known — проверяем даты known-статей для cutoff
+                if all_page_dates and all(d < cutoff_date for d in all_page_dates):
+                    consecutive_past_cutoff += 1
+                # Иначе — не сбрасываем, но и не увеличиваем
             else:
                 consecutive_past_cutoff = 0
 
             # Обнаружение зацикливания: если oldest дата не продвигается
-            oldest_date = min(content_dates).strftime("%Y-%m-%d") if content_dates else None
+            # Используем all_page_dates чтобы видеть прогресс даже на known-страницах
+            dates_for_tracking = all_page_dates or content_dates
+            oldest_date = min(dates_for_tracking).strftime("%Y-%m-%d") if dates_for_tracking else None
             if oldest_date and oldest_date == prev_oldest_date:
                 stale_date_count += 1
             else:
@@ -448,24 +456,26 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 done = True
                 break
 
-            # Стоп: все URL known 30 страниц подряд — прыгаем или стопаем
-            if consecutive_all_known >= 30:
+            # Стоп: все URL known N страниц подряд
+            # В режиме --force не останавливаемся по all-known — идём до cutoff
+            if not force and consecutive_all_known >= 30:
                 # Пробуем прыгнуть на 200 страниц вперёд
                 jump_page = p + 200
                 print(f"  → 30 стр подряд all-known, прыгаем на стр {jump_page}...", flush=True)
                 _, jump_arts = fetch_listing_page(session, category, jump_page)
                 jump_new = sum(1 for a in jump_arts if a["url"] not in seen_urls)
                 if jump_new == 0:
-                    # И после прыжка ничего нового — заканчиваем
                     print(f"  → После прыжка тоже 0 new — заканчиваем {category}", flush=True)
                     done = True
                     break
                 else:
-                    # Есть новые — перемещаемся туда
                     print(f"  → После прыжка +{jump_new} new — продолжаем с {jump_page}", flush=True)
                     page = jump_page
                     consecutive_all_known = 0
-                    continue  # пропускаем page += batch_size внизу
+                    continue
+            elif force and consecutive_all_known >= 50 and consecutive_all_known % 50 == 0:
+                # В force-режиме: просто логируем, но продолжаем до cutoff
+                print(f"  → {consecutive_all_known} стр all-known (force-режим, продолжаем)...", flush=True)
 
             # Стоп: зацикливание (50 страниц подряд с одной и той же oldest датой)
             if stale_date_count >= 50:
