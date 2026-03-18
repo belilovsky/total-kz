@@ -74,16 +74,27 @@ async def articles_list(
     request: Request,
     q: str = "",
     category: str = "",
+    author: str = "",
+    date_from: str = "",
+    date_to: str = "",
     page: int = Query(1, ge=1),
 ):
-    result = db.search_articles(query=q, category=category, page=page)
-    categories = db.get_stats()["categories"]
+    result = db.search_articles(
+        query=q, category=category, author=author,
+        date_from=date_from, date_to=date_to, page=page,
+    )
+    stats = db.get_stats()
+    authors = db.get_authors()
     return templates.TemplateResponse("articles.html", {
         "request": request,
         "result": result,
         "q": q,
         "category": category,
-        "categories": categories,
+        "author": author,
+        "date_from": date_from,
+        "date_to": date_to,
+        "categories": stats["categories"],
+        "authors": authors,
         "cat_label": cat_label,
     })
 
@@ -116,8 +127,14 @@ async def api_stats():
 
 
 @app.get("/api/articles")
-async def api_articles(q: str = "", category: str = "", page: int = 1):
-    return db.search_articles(query=q, category=category, page=page)
+async def api_articles(
+    q: str = "", category: str = "", author: str = "",
+    date_from: str = "", date_to: str = "", page: int = 1,
+):
+    return db.search_articles(
+        query=q, category=category, author=author,
+        date_from=date_from, date_to=date_to, page=page,
+    )
 
 
 @app.get("/api/article/{article_id}")

@@ -180,26 +180,46 @@ def get_stats() -> dict:
         }
 
 
-def search_articles(query: str = "", category: str = "", page: int = 1, per_page: int = 50) -> dict:
-    """Search and paginate articles."""
+def search_articles(
+    query: str = "",
+    category: str = "",
+    author: str = "",
+    date_from: str = "",
+    date_to: str = "",
+    page: int = 1,
+    per_page: int = 30,
+) -> dict:
+    """Search and paginate articles with extended filters."""
     with get_db() as conn:
         conditions = []
         params = []
-        
+
         if query:
             conditions.append("(title LIKE ? OR body_text LIKE ?)")
             params.extend([f"%{query}%", f"%{query}%"])
-        
+
         if category:
             conditions.append("sub_category = ?")
             params.append(category)
-        
+
+        if author:
+            conditions.append("author = ?")
+            params.append(author)
+
+        if date_from:
+            conditions.append("pub_date >= ?")
+            params.append(date_from)
+
+        if date_to:
+            conditions.append("pub_date <= ? || ' 23:59:59'")
+            params.append(date_to)
+
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
-        
+
         total = conn.execute(
             f"SELECT COUNT(*) FROM articles {where}", params
         ).fetchone()[0]
-        
+
         offset = (page - 1) * per_page
         rows = conn.execute(f"""
             SELECT id, url, pub_date, sub_category, category_label,
@@ -208,14 +228,27 @@ def search_articles(query: str = "", category: str = "", page: int = 1, per_page
             ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
         """, params + [per_page, offset]).fetchall()
-        
+
         return {
             "articles": [dict(r) for r in rows],
             "total": total,
             "page": page,
             "per_page": per_page,
-            "pages": (total + per_page - 1) // per_page,
+            "pages": max(1, (total + per_page - 1) // per_page),
         }
+
+
+def get_authors() -> list:
+    """Get all distinct authors sorted by article count."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT author, COUNT(*) as cnt
+            FROM articles
+            WHERE author IS NOT NULL AND author != ''
+            GROUP BY author
+            ORDER BY cnt DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
 
 
 def get_article(article_id: int) -> dict | None:

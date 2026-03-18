@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Total.kz Dashboard{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     {% block head %}{% endblock %}
 </head>
 <body>
+    <div class="sidebar-overlay" onclick="document.body.classList.remove('sidebar-open')"></div>
+    
     <aside class="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">T</div>
@@ -31,7 +33,7 @@
             </a>
         </nav>
         <div class="sidebar-footer">
-            <div class="version-badge">v1.0.0</div>
+            <div class="version-badge">v2.0.0 — Архив Total.kz</div>
         </div>
     </aside>
 
@@ -50,6 +52,7 @@
         </div>
     </main>
 
+    <script src="/static/js/app.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
