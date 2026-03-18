@@ -286,12 +286,10 @@ def scrape_category(category, cutoff_date, seen_urls):
             new_count = 0
             old_count = 0
             already_known = 0
-            dates = []
+            content_dates = []  # даты только из основного контента (не сайдбар)
 
             for art in articles:
                 pub_date = parse_date_from_url(art["url"])
-                if pub_date:
-                    dates.append(pub_date)
 
                 if art["url"] in seen_urls:
                     already_known += 1
@@ -299,7 +297,12 @@ def scrape_category(category, cutoff_date, seen_urls):
 
                 if pub_date and pub_date < cutoff_date:
                     old_count += 1
+                    if pub_date:
+                        content_dates.append(pub_date)
                     continue
+
+                if pub_date:
+                    content_dates.append(pub_date)
 
                 seen_urls.add(art["url"])
                 record = {
@@ -315,13 +318,20 @@ def scrape_category(category, cutoff_date, seen_urls):
                 new_count += 1
 
             # Проверяем, вышли ли за cutoff
-            if dates and all(d < cutoff_date for d in dates):
+            # Используем content_dates (без known/sidebar) для точной проверки
+            if content_dates and all(d < cutoff_date for d in content_dates):
                 consecutive_past_cutoff += 1
+            elif new_count == 0 and old_count > 0 and already_known > 0:
+                # Нет новых, есть старые — тоже считаем как past cutoff
+                consecutive_past_cutoff += 1
+            elif new_count == 0 and old_count == 0 and already_known > 0:
+                # Все known — не сбрасываем счётчик, но и не увеличиваем
+                pass
             else:
                 consecutive_past_cutoff = 0
 
             # Обнаружение зацикливания: если oldest дата не продвигается
-            oldest_date = min(dates).strftime("%Y-%m-%d") if dates else None
+            oldest_date = min(content_dates).strftime("%Y-%m-%d") if content_dates else None
             if oldest_date and oldest_date == prev_oldest_date:
                 stale_date_count += 1
             else:
@@ -332,15 +342,15 @@ def scrape_category(category, cutoff_date, seen_urls):
             if p <= start_page + 4 or p % 50 == 0 or new_count > 0:
                 print(f"  p{p:>4}: +{new_count} new, {already_known} known, {old_count} old | oldest: {oldest_date or '?'} | total: {len(all_new) + len(batch_records)}", flush=True)
 
-            # Стоп после 10 страниц подряд за пределами cutoff
+            # Стоп: нет новых URL и есть old — дошли до cutoff
             if consecutive_past_cutoff >= 10:
                 print(f"  → Дошли до cutoff на странице {p}", flush=True)
                 done = True
                 break
 
-            # Стоп: зацикливание (100 страниц подряд с одной и той же oldest датой)
-            if stale_date_count >= 100:
-                print(f"  → Зацикливание: oldest дата {oldest_date} не меняется 100 страниц — стоп на p{p}", flush=True)
+            # Стоп: зацикливание (50 страниц подряд с одной и той же oldest датой)
+            if stale_date_count >= 50:
+                print(f"  → Зацикливание: oldest дата {oldest_date} не меняется 50 страниц — стоп на p{p}", flush=True)
                 done = True
                 break
 
