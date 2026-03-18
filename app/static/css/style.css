@@ -1559,7 +1559,7 @@ body.sidebar-open .sidebar-overlay { display: block; }
 }
 .score-bar-row {
     display: grid;
-    grid-template-columns: 140px 1fr 48px;
+    grid-template-columns: 160px 1fr 48px;
     align-items: center;
     gap: 12px;
 }
@@ -1567,9 +1567,6 @@ body.sidebar-open .sidebar-overlay { display: block; }
     font-size: 13px;
     font-weight: 550;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .score-bar-track {
     height: 8px;
@@ -1643,6 +1640,9 @@ body.sidebar-open .sidebar-overlay { display: block; }
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow-sm);
+}
+.seo-card canvas {
+    max-height: 280px;
 }
 .card-subtitle {
     font-size: 13px;

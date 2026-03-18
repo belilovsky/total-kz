@@ -4,7 +4,6 @@
 {% block page_title %}SEO / GEO Аналитика{% endblock %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -92,12 +91,12 @@
         <!-- Field completeness chart -->
         <div class="seo-card">
             <h3 class="card-subtitle">Заполненность полей</h3>
-            <canvas id="fieldChart" height="280"></canvas>
+            <div style="position:relative;height:280px"><canvas id="fieldChart"></canvas></div>
         </div>
         <!-- Score distribution chart -->
         <div class="seo-card">
             <h3 class="card-subtitle">Распределение оценок</h3>
-            <canvas id="scoreDistChart" height="280"></canvas>
+            <div style="position:relative;height:280px"><canvas id="scoreDistChart"></canvas></div>
         </div>
     </div>
 </section>
@@ -134,7 +133,7 @@
     <div class="seo-two-col">
         <div class="seo-card">
             <h3 class="card-subtitle">Объём контента (слова)</h3>
-            <canvas id="wordCountChart" height="280"></canvas>
+            <div style="position:relative;height:280px"><canvas id="wordCountChart"></canvas></div>
         </div>
         <div class="seo-card">
             <h3 class="card-subtitle">Мета-теги SEO</h3>
@@ -175,7 +174,7 @@
     <div class="seo-two-col">
         <div class="seo-card">
             <h3 class="card-subtitle">Готовность к разметке</h3>
-            <canvas id="schemaChart" height="260"></canvas>
+            <div style="position:relative;height:260px"><canvas id="schemaChart"></canvas></div>
         </div>
         <div class="seo-card">
             <h3 class="card-subtitle">Недостающие поля</h3>
@@ -274,21 +273,21 @@
     <div class="seo-two-col">
         <div class="seo-card">
             <h3 class="card-subtitle">Публикации за 24 месяца</h3>
-            <canvas id="freshnessChart" height="260"></canvas>
+            <div style="position:relative;height:260px"><canvas id="freshnessChart"></canvas></div>
         </div>
         <div class="seo-card">
             <h3 class="card-subtitle">Возраст контента</h3>
-            <canvas id="ageChart" height="260"></canvas>
+            <div style="position:relative;height:260px"><canvas id="ageChart"></canvas></div>
         </div>
     </div>
     <div class="seo-two-col">
         <div class="seo-card">
             <h3 class="card-subtitle">День недели</h3>
-            <canvas id="dowChart" height="220"></canvas>
+            <div style="position:relative;height:220px"><canvas id="dowChart"></canvas></div>
         </div>
         <div class="seo-card">
             <h3 class="card-subtitle">Час публикации</h3>
-            <canvas id="hourChart" height="220"></canvas>
+            <div style="position:relative;height:220px"><canvas id="hourChart"></canvas></div>
         </div>
     </div>
 </section>
