@@ -4,10 +4,13 @@
 
 Удаляет:
 - Сущности из чёрного списка (Total.kz и т.д.)
-- Персоны с мусорными префиксами ("делАрман Исетов" → "Арман Исетов")
-- Персоны из одного слова (ложные срабатывания)
-- Слишком короткие сущности
+- Сущности с мусорными слипшимися словами ("государстваКасым-Жомарт Токаевподписал")
 - URL-ы и числа, ошибочно распознанные как сущности
+
+Переименовывает:
+- "делАрман Исетов" → "Арман Исетов" (мусорные префиксы)
+- "наТАСС" → "ТАСС"
+- "здравоохраненияАжар Гиният" → "Ажар Гиният"
 
 Запуск:
     python scraper/cleanup_entities.py              # показать что будет удалено
@@ -42,8 +45,8 @@ def analyze_entities(conn):
         ORDER BY article_count DESC
     """).fetchall()
 
-    to_delete = []       # id -> причина удаления
-    to_rename = []       # (id, old_name, new_name, new_normalized)
+    to_delete = []       # (id, name, etype, art_count, reason)
+    to_rename = []       # (id, old_name, new_name, new_normalized, etype, art_count)
     ok_count = 0
 
     for ent in entities:
@@ -64,11 +67,6 @@ def analyze_entities(conn):
         if cleaned != name:
             new_norm = normalize_name(cleaned)
             to_rename.append((eid, name, cleaned, new_norm, etype, art_count))
-            continue
-
-        # 4. Персоны из одного слова
-        if etype == "person" and len(name.split()) < 2:
-            to_delete.append((eid, name, etype, art_count, "одно слово (персона)"))
             continue
 
         ok_count += 1
@@ -136,9 +134,8 @@ def run_cleanup(apply=False, fix=False):
                 if existing:
                     # Мержим: переносим article_entities на существующую сущность
                     target_id = existing[0]
-                    # Обновляем mention_count — суммируем
                     conn.execute("""
-                        INSERT OR REPLACE INTO article_entities (article_id, entity_id, mention_count)
+                        INSERT OR IGNORE INTO article_entities (article_id, entity_id, mention_count)
                         SELECT ae.article_id, ?, ae.mention_count
                         FROM article_entities ae
                         WHERE ae.entity_id = ?
