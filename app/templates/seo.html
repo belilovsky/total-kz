@@ -392,7 +392,7 @@ https://total.kz</code></pre>
     const purple = '#7c3aed';
 
     // ── Field completeness bar chart ──
-    const fieldData = {{ meta.field_rates | tojson }};
+    const fieldData = {{ report.meta_audit.field_rates | tojson }};
     const fieldLabels = {
         title: 'Заголовок', excerpt: 'Описание', author: 'Автор',
         pub_date: 'Дата', main_image: 'Изображение', thumbnail: 'Превью',
@@ -423,7 +423,7 @@ https://total.kz</code></pre>
     });
 
     // ── Score distribution ──
-    const scoreDist = {{ meta.score_distribution | tojson }};
+    const scoreDist = {{ report.meta_audit.score_distribution | tojson }};
     new Chart(document.getElementById('scoreDistChart'), {
         type: 'bar',
         data: {
@@ -445,7 +445,7 @@ https://total.kz</code></pre>
     });
 
     // ── Word count distribution ──
-    const wcDist = {{ cq.word_count_distribution | tojson }};
+    const wcDist = {{ report.content_quality.word_count_distribution | tojson }};
     new Chart(document.getElementById('wordCountChart'), {
         type: 'bar',
         data: {
@@ -472,7 +472,7 @@ https://total.kz</code></pre>
         data: {
             labels: ['Готово', 'Частично', 'Не готово'],
             datasets: [{
-                data: [{{ schema.ready }}, {{ schema.partial }}, {{ schema.not_ready }}],
+                data: [{{ report.schema_readiness.ready }}, {{ report.schema_readiness.partial }}, {{ report.schema_readiness.not_ready }}],
                 backgroundColor: [green, orange, red],
                 borderWidth: 0, hoverOffset: 8
             }]
@@ -482,13 +482,13 @@ https://total.kz</code></pre>
             cutout: '65%',
             plugins: {
                 legend: { position: 'bottom', labels: { color: textColor, padding: 16, usePointStyle: true, pointStyleWidth: 12 } },
-                tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' (' + Math.round(ctx.raw / {{ schema.total }} * 100) + '%)' } }
+                tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' (' + Math.round(ctx.raw / {{ report.schema_readiness.total }} * 100) + '%)' } }
             }
         }
     });
 
     // ── Freshness line chart ──
-    const freshData = {{ fresh.monthly | tojson }};
+    const freshData = {{ report.freshness.monthly | tojson }};
     new Chart(document.getElementById('freshnessChart'), {
         type: 'line',
         data: {
@@ -511,7 +511,7 @@ https://total.kz</code></pre>
     });
 
     // ── Age distribution donut ──
-    const ageData = {{ fresh.age_distribution | tojson }};
+    const ageData = {{ report.freshness.age_distribution | tojson }};
     new Chart(document.getElementById('ageChart'), {
         type: 'doughnut',
         data: {
@@ -532,7 +532,7 @@ https://total.kz</code></pre>
     });
 
     // ── Day of week ──
-    const dowData = {{ fresh.day_of_week | tojson }};
+    const dowData = {{ report.freshness.day_of_week | tojson }};
     new Chart(document.getElementById('dowChart'), {
         type: 'bar',
         data: {
@@ -554,7 +554,7 @@ https://total.kz</code></pre>
     });
 
     // ── Hour chart ──
-    const hourData = {{ fresh.hours | tojson }};
+    const hourData = {{ report.freshness.hours | tojson }};
     const allHours = Array.from({length: 24}, (_, i) => i);
     const hourMap = {};
     hourData.forEach(h => { hourMap[h.hour] = h.cnt; });
