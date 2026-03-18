@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
 Загрузка полного контента статей по собранным URL.
-Скачивает параллельно, записывает инкрементально.
+Надёжная версия: retry, batch checkpointing, graceful shutdown.
 
 Запуск:
     python scraper/download_content.py                 # скачать все недостающие
     python scraper/download_content.py --workers 20    # больше параллельных запросов
     python scraper/download_content.py --import-db     # после скачивания импортировать в БД
-    python scraper/download_content.py --redownload    # перекачать ВСЕ статьи (заменяет articles.jsonl)
+    python scraper/download_content.py --redownload    # перекачать ВСЕ статьи
 """
 import json
 import asyncio
 import time
 import sys
+import signal
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -29,9 +30,18 @@ BASE_URL = "https://total.kz"
 sys.path.insert(0, str(BASE_DIR))
 from app.database import get_db, init_db, import_jsonl
 
+# Graceful shutdown
+_shutdown = False
+def _signal_handler(sig, frame):
+    global _shutdown
+    _shutdown = True
+    print("\n  ⚠ Получен сигнал завершения, сохраняю прогресс...", flush=True)
+
+signal.signal(signal.SIGINT, _signal_handler)
+signal.signal(signal.SIGTERM, _signal_handler)
+
 
 def make_full_url(src):
-    """Превратить относительный URL в абсолютный."""
     if not src:
         return ""
     if src.startswith("http"):
@@ -39,25 +49,44 @@ def make_full_url(src):
     return BASE_URL + src
 
 
-async def download_article(client, url_data, semaphore):
-    """Скачать и распарсить одну статью."""
+async def download_article(client, url_data, semaphore, max_retries=3):
+    """Скачать и распарсить одну статью с retry."""
     async with semaphore:
         url = url_data["url"]
-        try:
-            resp = await client.get(url, timeout=httpx.Timeout(10, read=25))
-            if resp.status_code != 200:
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                resp = await client.get(url, timeout=httpx.Timeout(10, read=20))
+                if resp.status_code == 429:
+                    # Rate limited — wait and retry
+                    wait = 5 * (attempt + 1)
+                    await asyncio.sleep(wait)
+                    continue
+                if resp.status_code != 200:
+                    return None
+                break
+            except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError) as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2 * (attempt + 1))
+                continue
+            except Exception as e:
+                last_error = e
                 return None
-        except Exception:
+        else:
             return None
 
-        tree = HTMLParser(resp.text)
+        try:
+            tree = HTMLParser(resp.text)
+        except Exception:
+            return None
 
         # === Заголовок ===
         title_el = tree.css_first("h1.article__title") or tree.css_first("h1")
         title = title_el.text(strip=True) if title_el else ""
 
         # === Автор ===
-        # Автор находится в span.gray-text внутри .article__meta, но не в span.meta__date
         author = ""
         meta_el = tree.css_first(".article__meta")
         if meta_el:
@@ -66,31 +95,27 @@ async def download_article(client, url_data, semaphore):
                     author = span.text(strip=True)
                     break
 
-        # === Дата из текста ===
+        # === Дата ===
         date_el = tree.css_first("span.meta__date")
         date_text = date_el.text(strip=True) if date_el else ""
 
-        # === Тело статьи ===
+        # === Тело ===
         body_el = tree.css_first("div.article__post__body")
         if body_el:
-            # Удаляем рекламные скрипты и блоки из body
             for script in body_el.css("script"):
                 script.decompose()
             for ad in body_el.css(".adfox, .ya-partner, [id^='adfox'], ins"):
                 ad.decompose()
-
             body_html = body_el.html
             body_text = body_el.text(strip=True)
         else:
             body_html = ""
             body_text = ""
 
-        # Если body пустой — статья не загрузилась (404 или JS-only)
         if not body_text:
             return None
 
-        # === Аннотация (excerpt) ===
-        # Обычно первый <strong><p>...</p></strong> в body
+        # === Excerpt ===
         excerpt = ""
         strong_el = body_el.css_first("strong > p") if body_el else None
         if strong_el:
@@ -102,23 +127,19 @@ async def download_article(client, url_data, semaphore):
         if not excerpt:
             excerpt = body_text[:300]
 
-        # === Главное изображение ===
+        # === Изображения ===
         img_el = tree.css_first("div.post__image img.img-responsive")
         main_image = ""
         if img_el:
             main_image = make_full_url(img_el.attributes.get("src", ""))
-
-        # Фолбэк на og:image
         if not main_image:
             og = tree.css_first("meta[property='og:image']")
             if og:
                 main_image = make_full_url(og.attributes.get("content", ""))
 
-        # === Кредит фото ===
         credit_el = tree.css_first("div.post__image_author")
         image_credit = credit_el.text(strip=True) if credit_el else ""
 
-        # === Миниатюра ===
         og_img = tree.css_first("meta[property='og:image']")
         thumbnail = make_full_url(og_img.attributes.get("content", "")) if og_img else main_image
 
@@ -129,7 +150,7 @@ async def download_article(client, url_data, semaphore):
             if t:
                 tags.append(t)
 
-        # === Картинки из тела ===
+        # === Inline images ===
         inline_images = []
         if body_el:
             for img in body_el.css("img"):
@@ -158,15 +179,15 @@ async def download_article(client, url_data, semaphore):
 
 async def main():
     parser = argparse.ArgumentParser(description="Загрузка контента статей total.kz")
-    parser.add_argument("--workers", type=int, default=15, help="Параллельных запросов (по умолчанию 15)")
-    parser.add_argument("--import-db", action="store_true", help="Импортировать в БД после скачивания")
-    parser.add_argument("--redownload", action="store_true", help="Перекачать ВСЕ статьи (заменяет articles.jsonl)")
+    parser.add_argument("--workers", type=int, default=15, help="Параллельных запросов")
+    parser.add_argument("--import-db", action="store_true", help="Импортировать в БД")
+    parser.add_argument("--redownload", action="store_true", help="Перекачать ВСЕ")
     args = parser.parse_args()
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     init_db()
 
-    # Загружаем список URL
+    # Загружаем URLs
     urls = []
     if URLS_FILE.exists():
         with open(URLS_FILE) as f:
@@ -174,46 +195,51 @@ async def main():
                 if line.strip():
                     urls.append(json.loads(line))
 
-    # Также добавляем URL из БД, которых нет в urls.jsonl
     url_set = {u["url"] for u in urls}
     with get_db() as conn:
         rows = conn.execute("SELECT url, pub_date, sub_category FROM articles").fetchall()
         for row in rows:
             if row[0] not in url_set:
-                urls.append({
-                    "url": row[0],
-                    "pub_date": row[1],
-                    "sub_category": row[2] or "",
-                })
+                urls.append({"url": row[0], "pub_date": row[1], "sub_category": row[2] or ""})
                 url_set.add(row[0])
 
     if not urls:
-        print("Нет URL для скачивания. Сначала запустите scrape_urls.py")
+        print("Нет URL для скачивания.")
         sys.exit(1)
 
-    # Определяем, что уже скачано
+    # Определяем что скачано
     if args.redownload:
         to_download = urls
-        # Создаём новый файл
         ARTICLES_FILE.unlink(missing_ok=True)
-        print(f"Режим перекачки: будет скачано {len(urls)} статей")
+        print(f"Перекачка: {len(urls)} статей")
     else:
         existing = set()
         if ARTICLES_FILE.exists():
             with open(ARTICLES_FILE) as f:
                 for line in f:
                     if line.strip():
-                        existing.add(json.loads(line).get("url"))
+                        try:
+                            existing.add(json.loads(line).get("url"))
+                        except json.JSONDecodeError:
+                            continue
+
+        # Также проверяем БД — если статья уже в БД с body_text, пропускаем
+        with get_db() as conn:
+            db_urls = conn.execute(
+                "SELECT url FROM articles WHERE body_text IS NOT NULL AND body_text != ''"
+            ).fetchall()
+            for row in db_urls:
+                existing.add(row[0])
 
         to_download = [u for u in urls if u["url"] not in existing]
-        print(f"Всего URL: {len(urls)}, уже скачано: {len(existing)}, осталось: {len(to_download)}")
+        print(f"Всего URL: {len(urls)}, уже есть: {len(existing)}, осталось: {len(to_download)}")
 
     if not to_download:
         print("Все статьи уже скачаны.")
         if args.import_db:
-            print("Импортирую в базу данных...")
+            print("Импортирую в БД...")
             result = import_jsonl(str(ARTICLES_FILE))
-            print(f"Импорт: {result['imported']} новых, {result['skipped']} пропущено, {result['errors']} ошибок")
+            print(f"Импорт: {result['imported']} новых, {result['errors']} ошибок")
         return
 
     # Логируем запуск
@@ -229,24 +255,47 @@ async def main():
     start_time = time.time()
     semaphore = asyncio.Semaphore(args.workers)
 
+    # Клиент с connection limits и retry transport
+    transport = httpx.AsyncHTTPTransport(
+        retries=2,
+        limits=httpx.Limits(
+            max_connections=args.workers + 5,
+            max_keepalive_connections=args.workers,
+        ),
+    )
+
     async with httpx.AsyncClient(
         headers={
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "ru-RU,ru;q=0.9",
         },
         follow_redirects=True,
-        limits=httpx.Limits(max_connections=args.workers),
+        transport=transport,
     ) as client:
         batch_size = 50
         for i in range(0, len(to_download), batch_size):
+            if _shutdown:
+                break
+
             batch = to_download[i : i + batch_size]
             tasks = [download_article(client, u, semaphore) for u in batch]
-            results = await asyncio.gather(*tasks)
 
-            # Записываем сразу после каждой пачки
+            try:
+                results = await asyncio.wait_for(
+                    asyncio.gather(*tasks, return_exceptions=True),
+                    timeout=180  # 3 минуты на пачку из 50
+                )
+            except asyncio.TimeoutError:
+                print(f"  ⚠ Таймаут пачки {i}-{i+batch_size}, пропускаю", flush=True)
+                errors += len(batch)
+                continue
+
+            # Записываем
             with open(ARTICLES_FILE, "a") as f:
                 for art in results:
-                    if art and art.get("body_text"):
+                    if isinstance(art, Exception):
+                        errors += 1
+                    elif art and art.get("body_text"):
                         f.write(json.dumps(art, ensure_ascii=False) + "\n")
                         downloaded += 1
                     else:
@@ -262,19 +311,20 @@ async def main():
             )
 
     # Обновляем статус
+    status = 'completed' if not _shutdown else 'interrupted'
     with get_db() as conn:
         conn.execute(
-            "UPDATE scrape_runs SET finished_at=?, status='completed', articles_downloaded=?, errors=? WHERE id=?",
-            (datetime.now().isoformat(), downloaded, errors, run_id),
+            "UPDATE scrape_runs SET finished_at=?, status=?, articles_downloaded=?, errors=? WHERE id=?",
+            (datetime.now().isoformat(), status, downloaded, errors, run_id),
         )
 
-    print(f"\nГотово: {downloaded} скачано, {errors} ошибок")
+    print(f"\n{'ПРЕРВАНО' if _shutdown else 'Готово'}: {downloaded} скачано, {errors} ошибок")
 
     # Импорт в БД
-    if args.import_db:
-        print("\nИмпортирую в базу данных...")
+    if args.import_db and not _shutdown:
+        print("\nИмпортирую в БД...")
         result = import_jsonl(str(ARTICLES_FILE))
-        print(f"Импорт: {result['imported']} новых, {result['skipped']} пропущено, {result['errors']} ошибок")
+        print(f"Импорт: {result['imported']} новых, {result['errors']} ошибок")
 
 
 if __name__ == "__main__":
