@@ -118,6 +118,88 @@ def fetch_listing_page(session, category, page):
     return page, articles
 
 
+def get_oldest_date_on_page(session, category, page):
+    """Получить самую старую дату на конкретной странице листинга."""
+    _, articles = fetch_listing_page(session, category, page)
+    dates = []
+    for art in articles:
+        d = parse_date_from_url(art["url"])
+        if d:
+            dates.append(d)
+    return min(dates) if dates else None
+
+
+def find_start_page(session, category, target_date, seen_urls):
+    """
+    Бинарный поиск: найти страницу, где самая старая дата ≈ target_date.
+    Вместо пролистывания тысяч известных страниц — прыгаем сразу к нужному месту.
+    Возвращает номер страницы, с которой нужно начать полный сбор.
+    """
+    # Сначала проверим, сколько уникальных (не из сайдбара) URL на странице
+    # Из логов: ~4 уникальных на страницу для основных категорий
+    # Попробуем грубо оценить: page 50 -> oldest ~2 months ago
+
+    # Проверяем page 1 — если уже есть новые, начинаем с 1
+    _, arts = fetch_listing_page(session, category, 1)
+    has_new = any(a["url"] not in seen_urls for a in arts)
+    if has_new:
+        return 1
+
+    # Пробуем page 50
+    oldest_50 = get_oldest_date_on_page(session, category, 50)
+    if not oldest_50:
+        return 1
+
+    # Если page 50 уже ниже target_date — значит категория маленькая, начнём с 1
+    if oldest_50 <= target_date:
+        return 1
+
+    # Вычисляем скорость: сколько дней на страницу
+    now = datetime.now()
+    days_per_page = (now - oldest_50).days / 50.0
+    if days_per_page <= 0:
+        return 1
+
+    # Оценочная страница для target_date
+    days_to_target = (now - target_date).days
+    estimated_page = int(days_to_target / days_per_page)
+
+    # Бинарный поиск между page 50 и estimated_page * 1.5
+    lo = 50
+    hi = min(int(estimated_page * 1.5) + 100, 10000)
+
+    print(f"  → Быстрый поиск: ~{days_per_page:.1f} дн/стр, оценка: стр {estimated_page}, ищем в [{lo}..{hi}]")
+
+    # Проверяем верхнюю границу
+    oldest_hi = get_oldest_date_on_page(session, category, hi)
+    if oldest_hi and oldest_hi > target_date:
+        # Даже на странице hi дата новее target — расширяем
+        hi = min(hi * 2, 10000)
+
+    best_page = lo
+    for _ in range(15):  # максимум 15 итераций бинарного поиска
+        if hi - lo < 10:
+            break
+        mid = (lo + hi) // 2
+        oldest_mid = get_oldest_date_on_page(session, category, mid)
+        if not oldest_mid:
+            hi = mid
+            continue
+
+        if oldest_mid > target_date:
+            # Ещё не добрались до target — нужно дальше
+            lo = mid
+            best_page = mid
+        else:
+            # Перескочили — отступаем назад
+            hi = mid
+
+    # Отступаем на 20 страниц назад для подстраховки
+    start = max(1, best_page - 20)
+    print(f"  → Начинаем со страницы {start} (пропущено {start - 1} страниц)")
+    return start
+
+
 def scrape_category(category, cutoff_date, seen_urls):
     """Собрать все URL одной категории до даты cutoff_date."""
     session = requests.Session()
@@ -127,18 +209,58 @@ def scrape_category(category, cutoff_date, seen_urls):
         "Accept-Language": "ru-RU,ru;q=0.9",
     })
 
-    all_new = []
-    page = 1
-    done = False
-    batch_size = 5
-    consecutive_past_cutoff = 0
-    # Для обнаружения зацикливания: отслеживаем самую старую дату на каждой странице
-    prev_oldest_date = None
-    stale_date_count = 0  # сколько страниц подряд oldest дата не меняется
-
     print(f"\n{'='*60}")
     print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
     print(f"{'='*60}")
+
+    # Определяем самую старую дату среди уже известных URL этой категории
+    known_dates = []
+    if URLS_FILE.exists():
+        with open(URLS_FILE) as f:
+            for line in f:
+                if line.strip():
+                    rec = json.loads(line)
+                    sub = rec.get("sub_category", "")
+                    # Проверяем, относится ли URL к этой родительской категории
+                    url = rec.get("url", "")
+                    if f"/news/{category}/" in url or f"/news/{category}" in url:
+                        d = parse_date_from_url(url)
+                        if d:
+                            known_dates.append(d)
+
+    # Также из БД
+    with get_db() as conn:
+        rows = conn.execute("SELECT url FROM articles").fetchall()
+        for row in rows:
+            url = row[0]
+            if f"/news/{category}/" in url or f"/news/{category}" in url:
+                d = parse_date_from_url(url)
+                if d:
+                    known_dates.append(d)
+
+    if known_dates:
+        oldest_known = min(known_dates)
+        newest_known = max(known_dates)
+        print(f"  Известно: {len(known_dates)} URL, от {oldest_known.strftime('%Y-%m-%d')} до {newest_known.strftime('%Y-%m-%d')}")
+
+        if oldest_known <= cutoff_date:
+            print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')}, cutoff {cutoff_date.strftime('%Y-%m-%d')} — пропускаем")
+            return 0
+
+        # Нужно собрать от oldest_known вниз до cutoff_date
+        # Быстро находим стартовую страницу через бинарный поиск
+        start_page = find_start_page(session, category, oldest_known, seen_urls)
+    else:
+        start_page = 1
+        print(f"  Нет известных URL — начинаем с начала")
+
+    all_new = []
+    page = start_page
+    done = False
+    batch_size = 5
+    consecutive_past_cutoff = 0
+    prev_oldest_date = None
+    stale_date_count = 0
 
     while not done:
         # Загружаем пачку страниц параллельно
@@ -207,7 +329,7 @@ def scrape_category(category, cutoff_date, seen_urls):
                 prev_oldest_date = oldest_date
 
             # Выводим прогресс
-            if p <= 5 or p % 50 == 0 or new_count > 0:
+            if p <= start_page + 4 or p % 50 == 0 or new_count > 0:
                 print(f"  p{p:>4}: +{new_count} new, {already_known} known, {old_count} old | oldest: {oldest_date or '?'} | total: {len(all_new) + len(batch_records)}", flush=True)
 
             # Стоп после 10 страниц подряд за пределами cutoff
