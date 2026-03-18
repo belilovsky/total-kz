@@ -44,7 +44,7 @@ async def download_article(client, url_data, semaphore):
     async with semaphore:
         url = url_data["url"]
         try:
-            resp = await client.get(url, timeout=30)
+            resp = await client.get(url, timeout=httpx.Timeout(10, read=25))
             if resp.status_code != 200:
                 return None
         except Exception:

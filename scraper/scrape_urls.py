@@ -127,7 +127,7 @@ def fetch_listing_page(session, category, page):
         else f"{BASE_URL}/ru/news/{category}/page-{page}"
     )
     try:
-        resp = session.get(url, timeout=20)
+        resp = session.get(url, timeout=(10, 20))
         if resp.status_code != 200:
             return page, []
     except Exception:
@@ -359,14 +359,20 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
     while not done:
         # Загружаем пачку страниц параллельно
         batch_results = {}
-        with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            futures = {
-                executor.submit(fetch_listing_page, session, category, p): p
-                for p in range(page, page + batch_size)
-            }
-            for future in as_completed(futures):
-                p, arts = future.result()
-                batch_results[p] = arts
+        try:
+            with ThreadPoolExecutor(max_workers=batch_size) as executor:
+                futures = {
+                    executor.submit(fetch_listing_page, session, category, p): p
+                    for p in range(page, page + batch_size)
+                }
+                for future in as_completed(futures, timeout=120):
+                    try:
+                        p, arts = future.result(timeout=60)
+                        batch_results[p] = arts
+                    except Exception as e:
+                        print(f"  ⚠ Ошибка при загрузке страницы: {e}", flush=True)
+        except TimeoutError:
+            print(f"  ⚠ Таймаут пачки страниц {page}-{page+batch_size-1}, продолжаем...", flush=True)
 
         # Обрабатываем по порядку
         batch_records = []
