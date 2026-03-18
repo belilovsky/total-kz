@@ -12,8 +12,10 @@ NER-извлечение сущностей из статей Total.kz.
     python scraper/extract_entities.py              # обработать все статьи
     python scraper/extract_entities.py --batch 1000 # по 1000 за раз
     python scraper/extract_entities.py --tags-only   # только теги, без NER
+    python scraper/extract_entities.py --reprocess   # переобработать все (сброс)
 """
 import json
+import re
 import sys
 import argparse
 from pathlib import Path
@@ -45,9 +47,128 @@ except ImportError:
     print("  Будут обработаны только теги.")
 
 
+# ═══════════════════════════════════════════════════════════════════
+# ЧЁРНЫЙ СПИСОК — шумные сущности, которые NER ошибочно распознаёт
+# ═══════════════════════════════════════════════════════════════════
+BLACKLIST_EXACT = {
+    # Сайт / бренд
+    "total.kz", "total", "тотал", "тотал.kz",
+    # Общие слова, ложно распознанные как сущности
+    "казахстанец", "казахстанцы", "казахстанка",
+    "президент", "министр", "премьер", "депутат", "аким",
+    "мажилис", "сенат", "правительство",
+    "фото", "видео", "источник", "редакция", "автор",
+    "тенге", "доллар", "рубль", "евро",
+    "нур-султан",  # устаревшее, дубликат Астаны
+}
+
+# Паттерны — если normalized содержит эти подстроки, сущность отбрасывается
+BLACKLIST_PATTERNS = [
+    r"^https?://",      # URL-ы
+    r"^www\.",          # URL-ы
+    r"\.kz$",           # домены
+    r"\.ru$",           # домены
+    r"\.com$",          # домены
+    r"^\d+$",           # числа
+    r"^[а-яё]$",        # одиночные буквы
+]
+
+# Минимальная длина имени для каждого типа
+MIN_NAME_LENGTH = {
+    "person": 4,   # "Ли" — слишком коротко, ложные срабатывания
+    "org": 2,
+    "location": 2,
+}
+
+# Паттерн для очистки мусора в начале и конце строки
+# Ловит обрезки слов, прилипшие к реальному имени
+GARBAGE_PREFIX_RE = re.compile(
+    r'^[а-яёa-z]{1,4}(?=[А-ЯЁA-Z])'  # 1-4 строчных символа перед заглавной
+)
+GARBAGE_SUFFIX_RE = re.compile(
+    r'[а-яёa-z]{1,3}$'  # 1-3 строчных символа в конце (после пробела — не трогаем)
+)
+
+# Валидный формат имени персоны: минимум 2 слова, каждое с заглавной
+PERSON_NAME_RE = re.compile(r'^[А-ЯЁA-Z][а-яёa-z]+\s+[А-ЯЁA-Z][а-яёa-z]+')
+
+
 def normalize_name(name: str) -> str:
     """Нормализация имени для дедупликации."""
     return " ".join(name.strip().split()).lower()
+
+
+def clean_entity_name(raw_name: str, entity_type: str) -> str | None:
+    """
+    Очищает и валидирует имя сущности.
+    Возвращает очищенное имя или None, если сущность мусорная.
+    """
+    if not raw_name:
+        return None
+
+    name = raw_name.strip()
+
+    # Удаляем кавычки и скобки по краям
+    name = name.strip('«»""\'()[]{}')
+    name = name.strip()
+
+    if not name:
+        return None
+
+    # Проверяем чёрный список (точное совпадение)
+    if normalize_name(name) in BLACKLIST_EXACT:
+        return None
+
+    # Проверяем паттерны чёрного списка
+    norm = normalize_name(name)
+    for pattern in BLACKLIST_PATTERNS:
+        if re.search(pattern, norm):
+            return None
+
+    # Чистим мусорные префиксы: "делАрман" → "Арман"
+    # Только если в имени есть переход строчная→заглавная без пробела
+    if re.search(r'[а-яёa-z][А-ЯЁA-Z]', name):
+        # Находим первую заглавную после строчной
+        match = re.search(r'[А-ЯЁA-Z]', name)
+        if match:
+            prefix = name[:match.start()]
+            # Если перед заглавной нет пробела, а есть строчные — это мусор
+            if prefix and not prefix[-1].isspace() and prefix[-1].islower():
+                name = name[match.start():]
+
+    # Проверяем минимальную длину
+    min_len = MIN_NAME_LENGTH.get(entity_type, 2)
+    if len(name) < min_len:
+        return None
+
+    # Для персон — проверяем формат: минимум Имя Фамилия
+    if entity_type == "person":
+        words = name.split()
+        if len(words) < 2:
+            return None
+        # Каждое слово должно начинаться с заглавной
+        if not all(w[0].isupper() for w in words if w):
+            # Попробуем title case
+            name = name.title()
+            words = name.split()
+            if not all(w[0].isupper() for w in words if w):
+                return None
+
+    # Финальная проверка — не слишком длинное
+    if len(name) > 100:
+        return None
+
+    return name
+
+
+def is_blacklisted(normalized: str) -> bool:
+    """Проверка — шумная ли это сущность."""
+    if normalized in BLACKLIST_EXACT:
+        return True
+    for pattern in BLACKLIST_PATTERNS:
+        if re.search(pattern, normalized):
+            return True
+    return False
 
 
 def extract_tags(conn):
@@ -131,6 +252,7 @@ def extract_ner(conn, batch_size=500):
     entity_cache = {}  # (normalized, type) -> entity_id
     total_entities = 0
     errors = 0
+    filtered_out = 0
 
     for i, art in enumerate(articles):
         art_id, title, body = art[0], art[1] or "", art[2] or ""
@@ -146,27 +268,48 @@ def extract_ner(conn, batch_size=500):
             for span in doc.spans:
                 span.normalize(morph_vocab)
 
+            # Для персон — дополнительно извлекаем имена
+            for span in doc.spans:
+                if span.type == "PER":
+                    span.extract(names_extractor)
+
             # Считаем упоминания
-            mentions = {}  # (normalized, type) -> count
+            mentions = {}  # (clean_name, type) -> (count, display_name)
             for span in doc.spans:
                 etype_map = {"PER": "person", "ORG": "org", "LOC": "location"}
                 etype = etype_map.get(span.type)
                 if not etype:
                     continue
 
-                name = span.normal or span.text
-                if not name or len(name) < 2:
+                # Приоритет: span.normal (нормализованная форма Natasha)
+                raw_name = span.normal or span.text
+                if not raw_name:
                     continue
 
-                norm = normalize_name(name)
-                if len(norm) < 2:
+                # Очищаем и валидируем
+                clean = clean_entity_name(raw_name, etype)
+                if not clean:
+                    filtered_out += 1
+                    continue
+
+                norm = normalize_name(clean)
+                if not norm or len(norm) < 2:
+                    filtered_out += 1
+                    continue
+
+                # Проверяем чёрный список по нормализованному
+                if is_blacklisted(norm):
+                    filtered_out += 1
                     continue
 
                 key = (norm, etype)
-                mentions[key] = mentions.get(key, 0) + 1
+                if key in mentions:
+                    mentions[key] = (mentions[key][0] + 1, mentions[key][1])
+                else:
+                    mentions[key] = (1, clean)
 
             # Записываем в БД
-            for (norm, etype), count in mentions.items():
+            for (norm, etype), (count, display_name) in mentions.items():
                 # Получаем или создаём entity
                 cache_key = (norm, etype)
                 if cache_key in entity_cache:
@@ -180,14 +323,6 @@ def extract_ner(conn, batch_size=500):
                     if row:
                         eid = row[0]
                     else:
-                        # Создаём — используем оригинальное имя (с заглавных)
-                        display_name = norm.title() if etype == "person" else norm.capitalize()
-                        # Восстановим оригинальное написание из span
-                        for span in doc.spans:
-                            sn = span.normal or span.text
-                            if normalize_name(sn) == norm:
-                                display_name = sn
-                                break
                         cursor = conn.execute(
                             "INSERT OR IGNORE INTO entities (name, entity_type, normalized) VALUES (?, ?, ?)",
                             (display_name, etype, norm)
@@ -220,10 +355,10 @@ def extract_ner(conn, batch_size=500):
         if (i + 1) % batch_size == 0:
             conn.commit()
             pct = (i + 1) / total * 100
-            print(f"  [{i+1}/{total}] {pct:.1f}% | сущностей: {total_entities} | уникальных: {len(entity_cache)} | ошибок: {errors}", flush=True)
+            print(f"  [{i+1}/{total}] {pct:.1f}% | сущностей: {total_entities} | уникальных: {len(entity_cache)} | отфильтровано: {filtered_out} | ошибок: {errors}", flush=True)
 
     conn.commit()
-    print(f"\n  Готово: {total_entities} связей, {len(entity_cache)} уникальных сущностей, {errors} ошибок")
+    print(f"\n  Готово: {total_entities} связей, {len(entity_cache)} уникальных сущностей, {filtered_out} отфильтровано, {errors} ошибок")
     return total_entities
 
 
@@ -231,9 +366,17 @@ def main():
     parser = argparse.ArgumentParser(description="NER-извлечение из статей Total.kz")
     parser.add_argument("--batch", type=int, default=500, help="Размер батча для коммитов")
     parser.add_argument("--tags-only", action="store_true", help="Только теги, без NER")
+    parser.add_argument("--reprocess", action="store_true", help="Переобработать все (сбросить NER-данные)")
     args = parser.parse_args()
 
     init_db()
+
+    if args.reprocess:
+        print("⚠ Сброс NER-данных...")
+        with get_db() as conn:
+            conn.execute("DELETE FROM article_entities")
+            conn.execute("DELETE FROM entities")
+            print("  Удалено всё из entities и article_entities")
 
     # Логируем запуск
     with get_db() as conn:
