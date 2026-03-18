@@ -38,7 +38,7 @@ try:
     from natasha import (
         Segmenter, MorphVocab,
         NewsEmbedding, NewsMorphTagger, NewsNERTagger,
-        NamesExtractor, Doc,
+        Doc,
     )
     HAS_NATASHA = True
 except ImportError:
@@ -354,7 +354,6 @@ def extract_ner(conn, batch_size=500):
     emb = NewsEmbedding()
     morph_tagger = NewsMorphTagger(emb)
     ner_tagger = NewsNERTagger(emb)
-    names_extractor = NamesExtractor(morph_vocab)
 
     # Какие статьи уже обработаны
     processed_ids = set()
@@ -396,10 +395,8 @@ def extract_ner(conn, batch_size=500):
             for span in doc.spans:
                 span.normalize(morph_vocab)
 
-            # Для персон — дополнительно извлекаем имена
-            for span in doc.spans:
-                if span.type == "PER":
-                    span.extract(names_extractor)
+            # NB: span.extract(names_extractor) не работает в текущей версии Natasha
+            # (DocSpan has no attribute 'extract'). span.normal достаточно.
 
             # Считаем упоминания
             mentions = {}  # (clean_name, type) -> (count, display_name)
