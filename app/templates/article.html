@@ -45,8 +45,60 @@
     {% if article.tags %}
     <div class="article-tags">
         {% for tag in article.tags %}
-        <a href="/articles?q={{ tag|urlencode }}" class="tag">{{ tag }}</a>
+        <a href="/articles?tag={{ tag|urlencode }}" class="tag">{{ tag }}</a>
         {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Entities -->
+    {% set persons = article.entities|selectattr("entity_type", "equalto", "person")|list %}
+    {% set orgs = article.entities|selectattr("entity_type", "equalto", "org")|list %}
+    {% set locs = article.entities|selectattr("entity_type", "equalto", "location")|list %}
+
+    {% if persons or orgs or locs %}
+    <div class="article-entities">
+        <h3 class="article-entities-title">Упоминаются в статье</h3>
+        <div class="article-entities-grid">
+            {% if persons %}
+            <div class="entity-section">
+                <span class="entity-section-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Персоны
+                </span>
+                <div class="entity-section-items">
+                    {% for e in persons %}
+                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-person">{{ e.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if orgs %}
+            <div class="entity-section">
+                <span class="entity-section-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Организации
+                </span>
+                <div class="entity-section-items">
+                    {% for e in orgs %}
+                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-org">{{ e.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if locs %}
+            <div class="entity-section">
+                <span class="entity-section-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Локации
+                </span>
+                <div class="entity-section-items">
+                    {% for e in locs %}
+                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-location">{{ e.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 

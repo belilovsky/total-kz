@@ -44,49 +44,121 @@
     </div>
 </div>
 
+<!-- Charts row -->
 <div class="charts-grid">
     <div class="chart-card">
         <h3 class="chart-title">Публикации по месяцам</h3>
         <canvas id="monthsChart"></canvas>
     </div>
     <div class="chart-card">
-        <h3 class="chart-title">Топ-10 категорий</h3>
+        <h3 class="chart-title">Категории</h3>
         <canvas id="catsChart"></canvas>
     </div>
 </div>
 
-<div class="charts-grid">
-    <div class="chart-card full-width">
-        <h3 class="chart-title">Топ-20 авторов</h3>
-        <div class="authors-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Автор</th>
-                        <th>Статей</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in stats.authors %}
-                    <tr>
-                        <td class="num">{{ loop.index }}</td>
-                        <td><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
-                        <td class="num">{{ a.cnt }}</td>
-                        <td class="bar-cell">
-                            <div class="bar" style="width: {{ (a.cnt / stats.authors[0].cnt * 100)|int }}%"></div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Tags cloud -->
+{% if tags %}
+<div class="chart-card full-width" style="margin-bottom: 16px">
+    <h3 class="chart-title">Популярные теги</h3>
+    <div class="tag-cloud">
+        {% for t in tags %}
+        <a href="/articles?tag={{ t.tag|urlencode }}" class="tag-cloud-item" style="font-size: {{ [12, 11 + (t.cnt / tags[0].cnt * 14)|int]|max }}px; opacity: {{ [0.5, 0.4 + t.cnt / tags[0].cnt * 0.6]|max }}">
+            {{ t.tag }} <span class="tag-count">{{ t.cnt }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Entities: Persons, Orgs, Locations -->
+<div class="entity-grid">
+    {% if persons %}
+    <div class="chart-card">
+        <h3 class="chart-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Топ персоны
+        </h3>
+        <div class="entity-list">
+            {% for p in persons %}
+            <a href="/articles?entity_id={{ p.id }}" class="entity-item">
+                <span class="entity-name">{{ p.name }}</span>
+                <span class="entity-count">{{ p.article_count }}</span>
+            </a>
+            {% endfor %}
         </div>
+        <a href="/entities?type=person" class="view-all-link">Все персоны →</a>
+    </div>
+    {% endif %}
+
+    {% if orgs %}
+    <div class="chart-card">
+        <h3 class="chart-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Топ организации
+        </h3>
+        <div class="entity-list">
+            {% for o in orgs %}
+            <a href="/articles?entity_id={{ o.id }}" class="entity-item">
+                <span class="entity-name">{{ o.name }}</span>
+                <span class="entity-count">{{ o.article_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        <a href="/entities?type=org" class="view-all-link">Все организации →</a>
+    </div>
+    {% endif %}
+
+    {% if locations %}
+    <div class="chart-card">
+        <h3 class="chart-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Топ локации
+        </h3>
+        <div class="entity-list">
+            {% for l in locations %}
+            <a href="/articles?entity_id={{ l.id }}" class="entity-item">
+                <span class="entity-name">{{ l.name }}</span>
+                <span class="entity-count">{{ l.article_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        <a href="/entities?type=location" class="view-all-link">Все локации →</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Authors -->
+<div class="chart-card full-width" style="margin-top: 16px">
+    <h3 class="chart-title">Топ-20 авторов</h3>
+    <div class="authors-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Автор</th>
+                    <th>Статей</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in stats.authors %}
+                <tr>
+                    <td class="num">{{ loop.index }}</td>
+                    <td><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
+                    <td class="num">{{ a.cnt }}</td>
+                    <td class="bar-cell">
+                        <div class="bar" style="width: {{ (a.cnt / stats.authors[0].cnt * 100)|int }}%"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
+<!-- Runs -->
 {% if stats.runs %}
-<div class="chart-card full-width" style="margin-top: 4px">
+<div class="chart-card full-width" style="margin-top: 16px">
     <h3 class="chart-title">Последние запуски</h3>
     <table class="data-table">
         <thead>
@@ -141,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#5c6370';
 
-    // Monthly chart
     new Chart(document.getElementById('monthsChart'), {
         type: 'bar',
         data: {
@@ -160,46 +231,24 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                    ticks: { font: { size: 11 } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { size: 11 }, maxRotation: 45 }
-                }
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { font: { size: 11 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45 } }
             }
         }
     });
 
-    // Categories doughnut chart
-    const palette = [
-        '#2563eb','#059669','#d97706','#dc2626','#7c3aed',
-        '#db2777','#0891b2','#65a30d','#ea580c','#4f46e5'
-    ];
+    const palette = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#65a30d','#ea580c','#4f46e5'];
     new Chart(document.getElementById('catsChart'), {
         type: 'doughnut',
         data: {
             labels: cats,
-            datasets: [{
-                data: catCounts,
-                backgroundColor: palette,
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverOffset: 6,
-            }]
+            datasets: [{ data: catCounts, backgroundColor: palette, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '55%',
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { boxWidth: 12, padding: 14, font: { size: 12, weight: '500' } }
-                }
-            }
+            plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 14, font: { size: 12, weight: '500' } } } }
         }
     });
 });

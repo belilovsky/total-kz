@@ -32,11 +32,43 @@ CREATE INDEX IF NOT EXISTS idx_articles_pub_date ON articles(pub_date);
 CREATE INDEX IF NOT EXISTS idx_articles_sub_category ON articles(sub_category);
 CREATE INDEX IF NOT EXISTS idx_articles_author ON articles(author);
 
+-- NER-сущности: персоны, организации, события, локации
+CREATE TABLE IF NOT EXISTS entities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    entity_type TEXT NOT NULL,  -- 'person', 'org', 'event', 'location'
+    normalized TEXT,            -- нормализованное имя (для дедупликации)
+    UNIQUE(normalized, entity_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);
+CREATE INDEX IF NOT EXISTS idx_entities_normalized ON entities(normalized);
+
+-- Связь статья <-> сущность
+CREATE TABLE IF NOT EXISTS article_entities (
+    article_id INTEGER REFERENCES articles(id),
+    entity_id INTEGER REFERENCES entities(id),
+    mention_count INTEGER DEFAULT 1,
+    PRIMARY KEY (article_id, entity_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ae_article ON article_entities(article_id);
+CREATE INDEX IF NOT EXISTS idx_ae_entity ON article_entities(entity_id);
+
+-- Теги (денормализованные из JSON для быстрого поиска)
+CREATE TABLE IF NOT EXISTS article_tags (
+    article_id INTEGER REFERENCES articles(id),
+    tag TEXT NOT NULL,
+    PRIMARY KEY (article_id, tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tags_tag ON article_tags(tag);
+
 CREATE TABLE IF NOT EXISTS scrape_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     started_at TEXT NOT NULL,
     finished_at TEXT,
-    phase TEXT NOT NULL,  -- 'urls' or 'content'
+    phase TEXT NOT NULL,  -- 'urls', 'content', 'ner'
     status TEXT DEFAULT 'running',  -- running, completed, failed
     articles_found INTEGER DEFAULT 0,
     articles_downloaded INTEGER DEFAULT 0,
@@ -186,6 +218,8 @@ def search_articles(
     author: str = "",
     date_from: str = "",
     date_to: str = "",
+    tag: str = "",
+    entity_id: int = 0,
     page: int = 1,
     per_page: int = 30,
 ) -> dict:
@@ -193,39 +227,51 @@ def search_articles(
     with get_db() as conn:
         conditions = []
         params = []
+        joins = []
 
         if query:
-            conditions.append("(title LIKE ? OR body_text LIKE ?)")
+            conditions.append("(a.title LIKE ? OR a.body_text LIKE ?)")
             params.extend([f"%{query}%", f"%{query}%"])
 
         if category:
-            conditions.append("sub_category = ?")
+            conditions.append("a.sub_category = ?")
             params.append(category)
 
         if author:
-            conditions.append("author = ?")
+            conditions.append("a.author = ?")
             params.append(author)
 
         if date_from:
-            conditions.append("pub_date >= ?")
+            conditions.append("a.pub_date >= ?")
             params.append(date_from)
 
         if date_to:
-            conditions.append("pub_date <= ? || ' 23:59:59'")
+            conditions.append("a.pub_date <= ? || ' 23:59:59'")
             params.append(date_to)
 
+        if tag:
+            joins.append("JOIN article_tags at ON at.article_id = a.id")
+            conditions.append("at.tag = ?")
+            params.append(tag)
+
+        if entity_id:
+            joins.append("JOIN article_entities ae ON ae.article_id = a.id")
+            conditions.append("ae.entity_id = ?")
+            params.append(entity_id)
+
+        join_sql = " ".join(joins)
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
         total = conn.execute(
-            f"SELECT COUNT(*) FROM articles {where}", params
+            f"SELECT COUNT(DISTINCT a.id) FROM articles a {join_sql} {where}", params
         ).fetchone()[0]
 
         offset = (page - 1) * per_page
         rows = conn.execute(f"""
-            SELECT id, url, pub_date, sub_category, category_label,
-                   title, author, excerpt, thumbnail, main_image
-            FROM articles {where}
-            ORDER BY pub_date DESC
+            SELECT DISTINCT a.id, a.url, a.pub_date, a.sub_category, a.category_label,
+                   a.title, a.author, a.excerpt, a.thumbnail, a.main_image
+            FROM articles a {join_sql} {where}
+            ORDER BY a.pub_date DESC
             LIMIT ? OFFSET ?
         """, params + [per_page, offset]).fetchall()
 
@@ -251,8 +297,39 @@ def get_authors() -> list:
         return [dict(r) for r in rows]
 
 
+def get_tags(limit: int = 100) -> list:
+    """Get all tags sorted by usage count."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT tag, COUNT(*) as cnt
+            FROM article_tags
+            GROUP BY tag
+            ORDER BY cnt DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_entities(entity_type: str = "", limit: int = 50) -> list:
+    """Get entities sorted by mention count."""
+    with get_db() as conn:
+        where = "WHERE e.entity_type = ?" if entity_type else ""
+        params = [entity_type] if entity_type else []
+        rows = conn.execute(f"""
+            SELECT e.id, e.name, e.entity_type, e.normalized,
+                   COUNT(ae.article_id) as article_count
+            FROM entities e
+            JOIN article_entities ae ON ae.entity_id = e.id
+            {where}
+            GROUP BY e.id
+            ORDER BY article_count DESC
+            LIMIT ?
+        """, params + [limit]).fetchall()
+        return [dict(r) for r in rows]
+
+
 def get_article(article_id: int) -> dict | None:
-    """Get full article by ID."""
+    """Get full article by ID, including entities."""
     with get_db() as conn:
         row = conn.execute(
             "SELECT * FROM articles WHERE id = ?", (article_id,)
@@ -261,5 +338,14 @@ def get_article(article_id: int) -> dict | None:
             d = dict(row)
             d["tags"] = json.loads(d.get("tags") or "[]")
             d["inline_images"] = json.loads(d.get("inline_images") or "[]")
+            # Fetch entities for this article
+            entities = conn.execute("""
+                SELECT e.id, e.name, e.entity_type, ae.mention_count
+                FROM entities e
+                JOIN article_entities ae ON ae.entity_id = e.id
+                WHERE ae.article_id = ?
+                ORDER BY ae.mention_count DESC
+            """, (article_id,)).fetchall()
+            d["entities"] = [dict(e) for e in entities]
             return d
         return None

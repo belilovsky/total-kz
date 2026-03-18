@@ -7,3 +7,4 @@ selectolax==0.3.29
 requests==2.32.3
 beautifulsoup4==4.12.3
 lxml==5.3.0
+natasha==1.6.0

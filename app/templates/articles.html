@@ -48,6 +48,17 @@
             </select>
         </div>
         <div class="filter-group">
+            <label class="filter-label">Тег</label>
+            <select name="tag" class="filter-select">
+                <option value="">Все теги</option>
+                {% for t in tags %}
+                <option value="{{ t.tag }}" {% if tag == t.tag %}selected{% endif %}>
+                    {{ t.tag }} ({{ t.cnt }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
             <label class="filter-label">Дата от</label>
             <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
         </div>
@@ -55,48 +66,63 @@
             <label class="filter-label">Дата до</label>
             <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
         </div>
+        {% if entity_id %}
+        <input type="hidden" name="entity_id" value="{{ entity_id }}">
+        {% endif %}
         <div class="btn-actions">
             <button type="submit" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Найти
             </button>
-            {% if q or category or author or date_from or date_to %}
+            {% if q or category or author or date_from or date_to or tag or entity_id %}
             <a href="/articles" class="btn btn-ghost">Сбросить</a>
             {% endif %}
         </div>
     </form>
 </div>
 
-{% if q or category or author or date_from or date_to %}
+{% if q or category or author or date_from or date_to or tag or entity_id %}
 <div class="active-filters">
     {% if q %}
     <span class="active-filter-tag">
         Поиск: {{ q }}
-        <a href="/articles?category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}" class="remove">&times;</a>
+        <a href="/articles?category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if category %}
     <span class="active-filter-tag">
         {{ cat_label(category) }}
-        <a href="/articles?q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}" class="remove">&times;</a>
+        <a href="/articles?q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if author %}
     <span class="active-filter-tag">
         {{ author }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}" class="remove">&times;</a>
+        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+    </span>
+    {% endif %}
+    {% if tag %}
+    <span class="active-filter-tag">
+        Тег: {{ tag }}
+        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+    </span>
+    {% endif %}
+    {% if entity_id and entity_name %}
+    <span class="active-filter-tag">
+        {{ entity_type_label(entity_type) }}: {{ entity_name }}
+        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_from %}
     <span class="active-filter-tag">
         От: {{ date_from }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}" class="remove">&times;</a>
+        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_to %}
     <span class="active-filter-tag">
         До: {{ date_to }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}" class="remove">&times;</a>
+        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
 </div>
@@ -142,7 +168,7 @@
     {% endfor %}
 </div>
 
-<!-- List View (hidden by default) -->
+<!-- List View -->
 <div class="articles-list" id="viewList" style="display: none">
     {% for a in result.articles %}
     <a href="/article/{{ a.id }}" class="article-list-item">
@@ -182,30 +208,25 @@
 
 {% if result.pages > 1 %}
 <div class="pagination">
+    {% set base_url = "/articles?q=" + q|urlencode + "&category=" + category|urlencode + "&author=" + author|urlencode + "&date_from=" + date_from + "&date_to=" + date_to + "&tag=" + tag|urlencode + "&entity_id=" + entity_id|string %}
     {% if result.page > 1 %}
-    <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ result.page - 1 }}" class="page-link">← Назад</a>
+    <a href="{{ base_url }}&page={{ result.page - 1 }}" class="page-link">← Назад</a>
     {% endif %}
-    
     {% set start_page = [1, result.page - 3]|max %}
     {% set end_page = [result.pages, result.page + 3]|min %}
-    
     {% if start_page > 1 %}
-    <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page=1" class="page-link">1</a>
+    <a href="{{ base_url }}&page=1" class="page-link">1</a>
     {% if start_page > 2 %}<span class="page-dots">...</span>{% endif %}
     {% endif %}
-    
     {% for p in range(start_page, end_page + 1) %}
-    <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ p }}" 
-       class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    <a href="{{ base_url }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
     {% endfor %}
-    
     {% if end_page < result.pages %}
     {% if end_page < result.pages - 1 %}<span class="page-dots">...</span>{% endif %}
-    <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ result.pages }}" class="page-link">{{ result.pages }}</a>
+    <a href="{{ base_url }}&page={{ result.pages }}" class="page-link">{{ result.pages }}</a>
     {% endif %}
-    
     {% if result.page < result.pages %}
-    <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ result.page + 1 }}" class="page-link">Вперёд →</a>
+    <a href="{{ base_url }}&page={{ result.page + 1 }}" class="page-link">Вперёд →</a>
     {% endif %}
 </div>
 {% endif %}
