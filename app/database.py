@@ -112,6 +112,30 @@ def init_db():
         conn.executescript(SCHEMA)
 
 
+# Для парсинга русских дат из date_text ("ДД месяц YYYY, HH:MM")
+_RU_MONTHS = {
+    "января": "01", "февраля": "02", "марта": "03", "апреля": "04",
+    "мая": "05", "июня": "06", "июля": "07", "августа": "08",
+    "сентября": "09", "октября": "10", "ноября": "11", "декабря": "12",
+}
+
+def _parse_ru_date_text(text):
+    """Парсить '13 апреля 2016, 11:38' в ISO формат."""
+    if not text:
+        return None
+    import re
+    m = re.search(r'(\d{1,2})\s+(\S+)\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?', text)
+    if m:
+        day = int(m.group(1))
+        month = _RU_MONTHS.get(m.group(2).lower())
+        year = m.group(3)
+        hour = m.group(4) or "0"
+        minute = m.group(5) or "0"
+        if month:
+            return f"{year}-{month}-{day:02d}T{int(hour):02d}:{int(minute):02d}:00"
+    return None
+
+
 def import_jsonl(jsonl_path: str) -> dict:
     """Import articles from JSONL file into SQLite. Returns stats."""
     init_db()
@@ -129,6 +153,11 @@ def import_jsonl(jsonl_path: str) -> dict:
                     tags_json = json.dumps(art.get("tags", []), ensure_ascii=False)
                     images_json = json.dumps(art.get("inline_images", []), ensure_ascii=False)
 
+                    # Дата: из pub_date (URL/карточка), фолбэк на date_text (со страницы статьи)
+                    pub_date = art.get("pub_date")
+                    if not pub_date:
+                        pub_date = _parse_ru_date_text(art.get("date_text", ""))
+
                     # Используем INSERT OR REPLACE чтобы обновлять существующие записи
                     conn.execute("""
                         INSERT INTO articles
@@ -137,6 +166,7 @@ def import_jsonl(jsonl_path: str) -> dict:
                          thumbnail, tags, inline_images)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(url) DO UPDATE SET
+                            pub_date = COALESCE(excluded.pub_date, articles.pub_date),
                             title = excluded.title,
                             author = excluded.author,
                             excerpt = excluded.excerpt,
@@ -150,7 +180,7 @@ def import_jsonl(jsonl_path: str) -> dict:
                             imported_at = datetime('now')
                     """, (
                         art.get("url"),
-                        art.get("pub_date"),
+                        pub_date,
                         art.get("sub_category"),
                         art.get("category_label"),
                         art.get("title"),

@@ -62,9 +62,22 @@ SUBCATEGORIES = [
 ]
 DATE_RE = re.compile(r'_date_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})')
 
+# Для парсинга русских дат из текста карточек ("13 апреля 2016, 11:38")
+RU_MONTHS = {
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4,
+    "мая": 5, "июня": 6, "июля": 7, "августа": 8,
+    "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
+}
+RU_DATE_RE = re.compile(r'(\d{1,2})\s+(\S+)\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?')
+
+# Шаблон для определения ссылки на статью (не на категорию/тег)
+# Статьи: /ru/news/{category}/{slug} или /ru/news/{category}/{slug}_date_...
+# Не статьи: /ru/news/{category} (без slug'а), /ru/news/{category}/page-N
+ARTICLE_HREF_RE = re.compile(r'/ru/news/[^/]+/(?!page-)[^/]+')
+
 
 def parse_date_from_url(url):
-    """Извлечь дату публикации из URL."""
+    """Извлечь дату публикации из URL (только для нового формата с _date_)."""
     m = DATE_RE.search(url)
     if m:
         try:
@@ -74,6 +87,26 @@ def parse_date_from_url(url):
             )
         except ValueError:
             return None
+    return None
+
+
+def parse_date_from_text(text):
+    """Парсить русскую дату из текста карточки: '13 апреля 2016, 11:38'."""
+    if not text:
+        return None
+    m = RU_DATE_RE.search(text)
+    if m:
+        day = int(m.group(1))
+        month_name = m.group(2).lower()
+        year = int(m.group(3))
+        hour = int(m.group(4)) if m.group(4) else 0
+        minute = int(m.group(5)) if m.group(5) else 0
+        month = RU_MONTHS.get(month_name)
+        if month:
+            try:
+                return datetime(year, month, day, hour, minute)
+            except ValueError:
+                return None
     return None
 
 
@@ -104,18 +137,21 @@ def fetch_listing_page(session, category, page):
     articles = []
     seen = set()
 
-    # Главная карточка
+    # Главная карточка (featured)
     featured = soup.find("a", class_="image-news-card")
     if featured:
         href = featured.get("href", "")
         full_url = urljoin(BASE_URL, href)
-        if DATE_RE.search(href) and full_url not in seen:
+        if ARTICLE_HREF_RE.search(href) and full_url not in seen:
             seen.add(full_url)
-            articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": ""})
+            # Дата из URL или из ближайшего текста
+            pub_date = parse_date_from_url(full_url)
+            articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": "", "card_date": pub_date})
 
     # Стандартные карточки
     for card in soup.find_all("div", class_="b-news-list__item"):
-        link = card.find("a", href=DATE_RE)
+        # Ищем любую ссылку на статью (не только с _date_)
+        link = card.find("a", href=ARTICLE_HREF_RE)
         if link:
             href = link.get("href", "")
             full_url = urljoin(BASE_URL, href)
@@ -125,23 +161,33 @@ def fetch_listing_page(session, category, page):
                 text_el = card.find("div", class_="item-text")
                 cat_el = card.find("a", class_="category")
                 img = card.find("img")
+                # Дата: сначала из URL, потом из текста карточки
+                pub_date = parse_date_from_url(full_url)
+                if not pub_date:
+                    date_div = card.find("div", class_="item-date")
+                    if date_div:
+                        date_span = date_div.find("span")
+                        if date_span:
+                            pub_date = parse_date_from_text(date_span.get_text(strip=True))
                 articles.append({
                     "url": full_url,
                     "title": title_el.get_text(strip=True) if title_el else "",
                     "excerpt": text_el.get_text(strip=True) if text_el else "",
                     "category_label": cat_el.get_text(strip=True) if cat_el else "",
                     "thumbnail": urljoin(BASE_URL, img.get("src", "")) if img else "",
+                    "card_date": pub_date,
                 })
 
     # Боковые карточки
     for card_div in soup.find_all("div", class_="card"):
-        link = card_div.find("a", href=DATE_RE)
+        link = card_div.find("a", href=ARTICLE_HREF_RE)
         if link:
             href = link.get("href", "")
             full_url = urljoin(BASE_URL, href)
             if full_url not in seen:
                 seen.add(full_url)
-                articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": ""})
+                pub_date = parse_date_from_url(full_url)
+                articles.append({"url": full_url, "title": "", "excerpt": "", "category_label": "", "thumbnail": "", "card_date": pub_date})
 
     return page, articles
 
@@ -151,7 +197,7 @@ def get_oldest_date_on_page(session, category, page):
     _, articles = fetch_listing_page(session, category, page)
     dates = []
     for art in articles:
-        d = parse_date_from_url(art["url"])
+        d = art.get("card_date") or parse_date_from_url(art["url"])
         if d:
             dates.append(d)
     return min(dates) if dates else None
@@ -337,7 +383,8 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
             content_dates = []  # даты только из основного контента (не сайдбар)
 
             for art in articles:
-                pub_date = parse_date_from_url(art["url"])
+                # Дата: из URL (новый формат) или из текста карточки (старый формат)
+                pub_date = art.get("card_date") or parse_date_from_url(art["url"])
 
                 if art["url"] in seen_urls:
                     already_known += 1
@@ -345,8 +392,7 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
 
                 if pub_date and pub_date < cutoff_date:
                     old_count += 1
-                    if pub_date:
-                        content_dates.append(pub_date)
+                    content_dates.append(pub_date)
                     continue
 
                 if pub_date:
