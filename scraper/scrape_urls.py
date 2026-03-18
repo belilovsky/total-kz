@@ -132,6 +132,7 @@ def scrape_category(category, cutoff_date, seen_urls):
     done = False
     batch_size = 5
     consecutive_past_cutoff = 0
+    consecutive_no_new = 0  # страниц подряд без новых URL
 
     print(f"\n{'='*60}")
     print(f"  {category} | cutoff: {cutoff_date.strftime('%Y-%m-%d')}")
@@ -193,6 +194,12 @@ def scrape_category(category, cutoff_date, seen_urls):
             else:
                 consecutive_past_cutoff = 0
 
+            # Считаем страницы без новых URL
+            if new_count == 0:
+                consecutive_no_new += 1
+            else:
+                consecutive_no_new = 0
+
             oldest = min(dates).strftime("%Y-%m-%d") if dates else "?"
 
             # Выводим прогресс
@@ -202,6 +209,12 @@ def scrape_category(category, cutoff_date, seen_urls):
             # Стоп после 10 страниц подряд за пределами cutoff
             if consecutive_past_cutoff >= 10:
                 print(f"  → Дошли до cutoff на странице {p}", flush=True)
+                done = True
+                break
+
+            # Стоп если 50 страниц подряд без новых URL (конец контента или зацикливание)
+            if consecutive_no_new >= 50:
+                print(f"  → 50 страниц без новых URL — стоп на странице {p}", flush=True)
                 done = True
                 break
 
