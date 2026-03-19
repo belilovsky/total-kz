@@ -281,3 +281,161 @@ async def api_seo_topics():
 @app.get("/api/seo/duplicates")
 async def api_seo_duplicates(limit: int = 30):
     return seo.get_duplicate_titles(limit)
+
+
+# ── Data Audit endpoint ─────────────────────
+
+@app.get("/api/audit")
+async def api_audit():
+    """Full data quality audit."""
+    from collections import defaultdict
+    with db.get_db() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+
+        # 1. Content completeness
+        fields_check = {}
+        for field in ['title', 'body_text', 'body_html', 'excerpt', 'author',
+                       'main_image', 'thumbnail', 'image_credit', 'sub_category', 'category_label']:
+            empty = conn.execute(
+                f"SELECT COUNT(*) FROM articles WHERE {field} IS NULL OR {field} = ''"
+            ).fetchone()[0]
+            fields_check[field] = {"empty": empty, "pct": round(empty / total * 100, 1) if total else 0}
+
+        # Tags/images from JSON
+        no_tags = conn.execute(
+            "SELECT COUNT(*) FROM articles WHERE tags IS NULL OR tags = '' OR tags = '[]'"
+        ).fetchone()[0]
+        fields_check['tags_json'] = {"empty": no_tags, "pct": round(no_tags / total * 100, 1)}
+
+        no_inline = conn.execute(
+            "SELECT COUNT(*) FROM articles WHERE inline_images IS NULL OR inline_images = '' OR inline_images = '[]'"
+        ).fetchone()[0]
+        fields_check['inline_images_json'] = {"empty": no_inline, "pct": round(no_inline / total * 100, 1)}
+
+        # 2. Body text stats
+        avg_body = conn.execute(
+            "SELECT AVG(LENGTH(body_text)) FROM articles WHERE body_text IS NOT NULL AND body_text != ''"
+        ).fetchone()[0]
+        short_body = conn.execute(
+            "SELECT COUNT(*) FROM articles WHERE LENGTH(body_text) < 100 AND body_text IS NOT NULL AND body_text != ''"
+        ).fetchone()[0]
+
+        # 3. Monthly gaps
+        months = conn.execute("""
+            SELECT substr(pub_date, 1, 7) as month, COUNT(*) as cnt
+            FROM articles WHERE pub_date IS NOT NULL
+            GROUP BY month ORDER BY month
+        """).fetchall()
+        monthly = [{"month": r[0], "count": r[1]} for r in months]
+        gaps = [m for m in monthly if m["count"] < 200]
+
+        # 4. Categories
+        cats = conn.execute("""
+            SELECT sub_category, COUNT(*) as cnt
+            FROM articles GROUP BY sub_category ORDER BY cnt DESC
+        """).fetchall()
+        categories = [{"name": r[0] or "(empty)", "count": r[1]} for r in cats]
+
+        # 5. Authors top-30
+        authors = conn.execute("""
+            SELECT author, COUNT(*) as cnt
+            FROM articles WHERE author IS NOT NULL AND author != ''
+            GROUP BY author ORDER BY cnt DESC LIMIT 30
+        """).fetchall()
+        author_list = [{"name": r[0], "count": r[1]} for r in authors]
+        unique_authors = conn.execute(
+            "SELECT COUNT(DISTINCT author) FROM articles WHERE author IS NOT NULL AND author != ''"
+        ).fetchone()[0]
+
+        # 6. Tags audit
+        total_tag_links = conn.execute("SELECT COUNT(*) FROM article_tags").fetchone()[0]
+        unique_tags = conn.execute("SELECT COUNT(DISTINCT tag) FROM article_tags").fetchone()[0]
+        articles_with_tags = conn.execute("SELECT COUNT(DISTINCT article_id) FROM article_tags").fetchone()[0]
+
+        top_tags = conn.execute("""
+            SELECT tag, COUNT(*) as cnt FROM article_tags
+            GROUP BY tag ORDER BY cnt DESC LIMIT 50
+        """).fetchall()
+        tag_list = [{"tag": r[0], "count": r[1]} for r in top_tags]
+
+        # Tag duplicates (case variants)
+        all_tags_raw = conn.execute("SELECT tag, COUNT(*) as cnt FROM article_tags GROUP BY tag").fetchall()
+        tag_groups = defaultdict(list)
+        for t in all_tags_raw:
+            tag_groups[t[0].lower().strip()].append({"tag": t[0], "count": t[1]})
+        tag_dupes = []
+        for lower, variants in tag_groups.items():
+            if len(variants) > 1:
+                tag_dupes.append({"normalized": lower, "variants": variants})
+        tag_dupes.sort(key=lambda x: -sum(v["count"] for v in x["variants"]))
+
+        # Latin-only tags
+        latin_tags = conn.execute("""
+            SELECT tag, COUNT(*) as cnt FROM article_tags
+            WHERE tag NOT GLOB '*[а-яА-ЯёЁ]*' AND tag != ''
+            GROUP BY tag ORDER BY cnt DESC LIMIT 30
+        """).fetchall()
+        latin_tag_list = [{"tag": r[0], "count": r[1]} for r in latin_tags]
+
+        # 7. Entities audit
+        total_entities = conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+        total_entity_links = conn.execute("SELECT COUNT(*) FROM article_entities").fetchone()[0]
+        entity_types = conn.execute("""
+            SELECT entity_type, COUNT(*) FROM entities GROUP BY entity_type
+        """).fetchall()
+        entity_type_counts = {r[0]: r[1] for r in entity_types}
+
+        # Top entities per type
+        top_entities = {}
+        for etype in ['person', 'org', 'location', 'event']:
+            top = conn.execute("""
+                SELECT e.name, e.normalized, COUNT(ae.article_id) as cnt
+                FROM entities e
+                JOIN article_entities ae ON ae.entity_id = e.id
+                WHERE e.entity_type = ?
+                GROUP BY e.id ORDER BY cnt DESC LIMIT 20
+            """, (etype,)).fetchall()
+            top_entities[etype] = [{"name": r[0], "normalized": r[1], "articles": r[2]} for r in top]
+
+        # Entity duplicates
+        entity_dupes = conn.execute("""
+            SELECT normalized, entity_type, GROUP_CONCAT(name, ' | ') as names, COUNT(*) as cnt
+            FROM entities
+            GROUP BY normalized, entity_type
+            HAVING cnt > 1
+            ORDER BY cnt DESC
+            LIMIT 30
+        """).fetchall()
+        entity_dupe_list = [{"normalized": r[0], "type": r[1], "names": r[2], "variant_count": r[3]} for r in entity_dupes]
+
+        orphan_entities = conn.execute("""
+            SELECT COUNT(*) FROM entities e
+            LEFT JOIN article_entities ae ON ae.entity_id = e.id
+            WHERE ae.article_id IS NULL
+        """).fetchone()[0]
+
+        return {
+            "total_articles": total,
+            "content_completeness": fields_check,
+            "body_text_avg_length": int(avg_body or 0),
+            "body_text_short_count": short_body,
+            "monthly_gaps": gaps,
+            "categories": categories,
+            "authors": {"top_30": author_list, "unique_count": unique_authors},
+            "tags": {
+                "total_links": total_tag_links,
+                "unique": unique_tags,
+                "articles_with_tags": articles_with_tags,
+                "top_50": tag_list,
+                "case_duplicates": tag_dupes[:30],
+                "latin_only": latin_tag_list,
+            },
+            "entities": {
+                "total": total_entities,
+                "total_links": total_entity_links,
+                "by_type": entity_type_counts,
+                "top_by_type": top_entities,
+                "duplicates": entity_dupe_list,
+                "orphans": orphan_entities,
+            },
+        }
