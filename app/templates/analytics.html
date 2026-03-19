@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% set active = "analytics" %}
+{% block title %}Аналитика — Total.kz{% endblock %}
+{% block page_title %}Аналитика{% endblock %}
+
+{% block content %}
+{% set d = gsc %}
+{% set t = d.totals %}
+
+<!-- ═══════════════ GSC KPIs ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Google Search Console
+        <span class="section-badge">3 месяца</span>
+    </h2>
+    <div class="seo-stats-row seo-stats-row-4">
+        <div class="seo-stat-card">
+            <div class="seo-stat-value text-accent">{{ "{:,}".format(t.clicks) }}</div>
+            <div class="seo-stat-label">Кликов</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ "{:,}".format(t.impressions) }}</div>
+            <div class="seo-stat-label">Показов</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if t.avg_ctr >= 5 %}text-green{% elif t.avg_ctr >= 2 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_ctr }}%</div>
+            <div class="seo-stat-label">Средний CTR</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if t.avg_position <= 10 %}text-green{% elif t.avg_position <= 20 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_position }}</div>
+            <div class="seo-stat-label">Ср. позиция</div>
+        </div>
+    </div>
+
+    <!-- Brand + Devices + Positions -->
+    <div class="search-three-col">
+        <div class="seo-card">
+            <div class="card-subtitle">Брендовый vs Небрендовый</div>
+            <div class="chart-body-sm"><canvas id="brandChart"></canvas></div>
+            <div class="brand-legend">
+                <div class="brand-legend-item"><span class="dot dot-accent"></span><span>Бренд: {{ "{:,}".format(d.brand_split.brand_clicks) }}</span></div>
+                <div class="brand-legend-item"><span class="dot dot-secondary"></span><span>Не-бренд: {{ "{:,}".format(d.brand_split.nonbrand_clicks) }}</span></div>
+            </div>
+        </div>
+        <div class="seo-card">
+            <div class="card-subtitle">Устройства</div>
+            <div class="chart-body-sm"><canvas id="devicesChart"></canvas></div>
+            <div class="brand-legend">
+                {% for dev in d.devices %}
+                <div class="brand-legend-item"><span class="dot dot-{% if dev.device == 'MOBILE' %}accent{% elif dev.device == 'DESKTOP' %}green{% else %}orange{% endif %}"></span><span>{{ dev.device|capitalize }}: {{ "{:,}".format(dev.clicks) }}</span></div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="seo-card">
+            <div class="card-subtitle">Распределение по позициям</div>
+            <div class="chart-body-sm"><canvas id="positionChart"></canvas></div>
+            <div class="brand-legend">
+                {% for bucket, count in d.position_distribution.items() %}
+                <div class="brand-legend-item"><span class="dot dot-{% if loop.index == 1 %}green{% elif loop.index == 2 %}accent{% elif loop.index == 3 %}orange{% else %}red{% endif %}"></span><span>{{ bucket }}: {{ count }}</span></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Geography -->
+    <div class="seo-card" style="margin-bottom:16px">
+        <div class="card-subtitle">География трафика</div>
+        <div class="geo-bars">
+            {% set max_clicks = d.countries[0].clicks if d.countries else 1 %}
+            {% for c in d.countries[:10] %}
+            <div class="geo-bar-row">
+                <span class="geo-flag">{{ c.country|upper }}</span>
+                <span class="geo-bar-name">{{ c.country_name or c.country|upper }}</span>
+                <div class="geo-bar-track"><div class="geo-bar-fill" style="width: {{ (c.clicks / max_clicks * 100)|round }}%"></div></div>
+                <span class="geo-bar-clicks">{{ "{:,}".format(c.clicks) }}</span>
+                <span class="geo-bar-ctr {% if c.ctr >= 2 %}text-green{% elif c.ctr >= 1 %}text-orange{% else %}text-red{% endif %}">{{ c.ctr }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Top Queries -->
+    <div class="entity-table-wrap" style="margin-bottom:16px">
+        <table class="seo-table" id="queriesTable">
+            <thead><tr><th>#</th><th>Запрос</th><th class="num-col">Клики</th><th class="num-col">Показы</th><th class="num-col">CTR</th><th class="num-col">Позиция</th></tr></thead>
+            <tbody>
+                {% for q in d.top_queries[:30] %}
+                <tr>
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td class="query-cell">{{ q.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col {% if q.ctr >= 10 %}text-green{% elif q.ctr >= 3 %}text-orange{% else %}text-red{% endif %}">{{ q.ctr }}%</td>
+                    <td class="num-col {% if q.position <= 3 %}text-green{% elif q.position <= 10 %}text-orange{% else %}text-red{% endif %}">{{ q.position }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Growth Opportunities -->
+    {% if d.growth_opportunities %}
+    <h3 class="section-subtitle" style="margin-top:24px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="display:inline;vertical-align:-2px;margin-right:6px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Потенциал роста <span class="section-badge">{{ d.growth_opportunities|length }}</span>
+    </h3>
+    <p class="section-desc">Позиция 5-20, высокие показы. В топ-3 = дополнительные клики.</p>
+    <div class="entity-table-wrap" style="margin-bottom:16px">
+        <table class="seo-table">
+            <thead><tr><th>Запрос</th><th class="num-col">Клики</th><th class="num-col">Показы</th><th class="num-col">Позиция</th><th class="num-col">CTR</th><th class="num-col potential-col">Потенциал</th></tr></thead>
+            <tbody>
+                {% for g in d.growth_opportunities[:15] %}
+                <tr>
+                    <td class="query-cell">{{ g.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(g.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(g.impressions) }}</td>
+                    <td class="num-col text-orange">{{ "%.1f"|format(g.position) }}</td>
+                    <td class="num-col text-red">{{ "%.1f"|format(g.ctr * 100) }}%</td>
+                    <td class="num-col potential-val">+{{ "{:,}".format(g.potential_extra_clicks) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Quick Wins -->
+    {% if d.quick_wins %}
+    <h3 class="section-subtitle" style="margin-top:24px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="display:inline;vertical-align:-2px;margin-right:6px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Быстрые победы <span class="section-badge">{{ d.quick_wins|length }}</span>
+    </h3>
+    <p class="section-desc">На первой странице, CTR ниже 5%. Оптимизация сниппетов даст результат.</p>
+    <div class="entity-table-wrap">
+        <table class="seo-table">
+            <thead><tr><th>Запрос</th><th class="num-col">Клики</th><th class="num-col">Показы</th><th class="num-col">Позиция</th><th class="num-col">CTR</th></tr></thead>
+            <tbody>
+                {% for q in d.quick_wins[:10] %}
+                <tr>
+                    <td class="query-cell">{{ q.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col text-green">{{ q.position }}</td>
+                    <td class="num-col text-red">{{ q.ctr }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ GEO READINESS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Готовность к AI-поиску (GEO)
+    </h2>
+    <div class="seo-hero">
+        <div class="seo-hero-score">
+            <div class="score-ring" data-score="{{ geo.overall_score }}">
+                <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                    <circle cx="60" cy="60" r="52" class="ring-fill" stroke-dasharray="{{ (geo.overall_score / 100 * 326.7)|round }}, 326.7" stroke-dashoffset="0"/>
+                </svg>
+                <div class="score-value">{{ geo.overall_score }}</div>
+                <div class="score-label">GEO Score</div>
+            </div>
+        </div>
+        <div class="seo-hero-bars">
+            <div class="score-bars">
+                {% for key, label in [("structured_data", "Schema.org"), ("content_structure", "Структура"), ("meta_tags", "Мета-теги"), ("entity_authority", "Авторитет")] %}
+                <div class="score-bar-row">
+                    <span class="score-bar-label">{{ label }}</span>
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill {% if geo.scores[key] >= 70 %}bar-green{% elif geo.scores[key] >= 40 %}bar-orange{% else %}bar-red{% endif %}" style="width: {{ geo.scores[key] }}%"></div>
+                    </div>
+                    <span class="score-bar-value">{{ geo.scores[key] }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations (compact) -->
+    <div class="rec-grid">
+        {% for rec in geo.recommendations[:4] %}
+        <div class="rec-card rec-{{ rec.priority }}">
+            <div class="rec-priority">{% if rec.priority == "high" %}Высокий{% elif rec.priority == "medium" %}Средний{% else %}Низкий{% endif %}</div>
+            <div class="rec-area">{{ rec.area }}</div>
+            <div class="rec-text">{{ rec.text }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ═══════════════ SCHEMA READINESS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        Schema.org / NewsArticle
+    </h2>
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">Готовность к разметке</h3>
+            <div style="position:relative;height:260px"><canvas id="schemaChart"></canvas></div>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Недостающие поля</h3>
+            <div class="missing-fields-list">
+                {% for field, count in schema.missing_fields.items() %}
+                <div class="missing-field-row">
+                    <span class="mf-name">{{ field }}</span>
+                    <div class="mf-bar-track"><div class="mf-bar-fill" style="width: {{ (count / schema.total * 100)|round }}%"></div></div>
+                    <span class="mf-count">{{ count }} <span class="mf-pct">({{ (count / schema.total * 100)|round }}%)</span></span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ FRESHNESS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Свежесть контента
+    </h2>
+    <div class="seo-two-col">
+        <div class="seo-card">
+            <h3 class="card-subtitle">Публикации за 24 месяца</h3>
+            <div style="position:relative;height:260px"><canvas id="freshnessChart"></canvas></div>
+        </div>
+        <div class="seo-card">
+            <h3 class="card-subtitle">Возраст контента</h3>
+            <div style="position:relative;height:260px"><canvas id="ageChart"></canvas></div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DATA = {{ gsc_json|safe }};
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+const textColor = isDark ? '#9ca3af' : '#6b7280';
+const accent = isDark ? '#3b82f6' : '#2563eb';
+const green = isDark ? '#10b981' : '#059669';
+const orange = isDark ? '#f59e0b' : '#d97706';
+const red = isDark ? '#ef4444' : '#dc2626';
+const secondary = isDark ? '#6b7280' : '#9ca3af';
+const tooltipBg = isDark ? '#2a2d36' : '#1a1d26';
+
+const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: '#fff', bodyColor: isDark ? '#e8eaed' : '#e8eaed', padding: 12, cornerRadius: 8 } }
+};
+
+// Brand Split
+(function() {
+    const ctx = document.getElementById('brandChart');
+    if (!ctx) return;
+    const bs = DATA.brand_split;
+    const total = bs.brand_clicks + bs.nonbrand_clicks;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Бренд', 'Не-бренд'], datasets: [{ data: [bs.brand_clicks, bs.nonbrand_clicks], backgroundColor: [accent, secondary], borderWidth: 0, hoverOffset: 6 }] },
+        options: { ...chartDefaults, cutout: '70%', plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: function(ctx) { return ctx.label+': '+ctx.parsed.toLocaleString('ru-RU')+' ('+Math.round(ctx.parsed/total*100)+'%)'; } } } } }
+    });
+})();
+
+// Devices
+(function() {
+    const ctx = document.getElementById('devicesChart');
+    if (!ctx) return;
+    const devData = DATA.devices;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: devData.map(d=>d.device), datasets: [{ data: devData.map(d=>d.clicks), backgroundColor: [accent, green, orange], borderWidth: 0, hoverOffset: 6 }] },
+        options: { ...chartDefaults, cutout: '70%' }
+    });
+})();
+
+// Position Distribution
+(function() {
+    const ctx = document.getElementById('positionChart');
+    if (!ctx) return;
+    const pd = DATA.position_distribution;
+    const labels = Object.keys(pd).map(l => l.replace(/\(.*?\)/, '').trim());
+    const values = Object.values(pd);
+    const colors = [green, accent, orange, red];
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.map(c=>c+'30'), borderColor: colors, borderWidth: 1.5, borderRadius: 6, maxBarThickness: 48 }] },
+        options: { ...chartDefaults, indexAxis: 'y', scales: { x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } }, y: { grid: { display: false }, ticks: { color: textColor, font: { size: 11, weight: '500' } } } } }
+    });
+})();
+
+// Schema Chart
+(function() {
+    const ctx = document.getElementById('schemaChart');
+    if (!ctx) return;
+    const schema = {{ schema_json|safe }};
+    const ready = schema.ready_pct || 0;
+    const partial = schema.partial_pct || 0;
+    const missing = 100 - ready - partial;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Готовы', 'Частично', 'Нет данных'], datasets: [{ data: [ready, partial, missing], backgroundColor: [green, orange, isDark ? '#2a2d36' : '#e2e5ea'], borderWidth: 0 }] },
+        options: { ...chartDefaults, cutout: '65%', plugins: { ...chartDefaults.plugins, legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 12 }, padding: 16, usePointStyle: true } } } }
+    });
+})();
+
+// Freshness Chart
+(function() {
+    const ctx = document.getElementById('freshnessChart');
+    if (!ctx) return;
+    const fresh = {{ fresh_json|safe }};
+    if (!fresh.months || !fresh.months.length) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels: fresh.months.map(m => m.month), datasets: [{ data: fresh.months.map(m => m.count), backgroundColor: accent + '60', borderRadius: 3, borderSkipped: false }] },
+        options: { ...chartDefaults, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, font: { size: 10 } } } } }
+    });
+})();
+
+// Age Chart
+(function() {
+    const ctx = document.getElementById('ageChart');
+    if (!ctx) return;
+    const fresh = {{ fresh_json|safe }};
+    if (!fresh.age_buckets) return;
+    const buckets = fresh.age_buckets;
+    const labels = Object.keys(buckets);
+    const values = Object.values(buckets);
+    const colors = [green, accent, orange, red, isDark ? '#6b7280' : '#9ca3af'];
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
+        options: { ...chartDefaults, cutout: '55%', plugins: { ...chartDefaults.plugins, legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 11 }, padding: 12, usePointStyle: true } } } }
+    });
+})();
+</script>
+{% endblock %}

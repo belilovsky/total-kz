@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% set active = "content" %}
+{% block title %}Контент — Total.kz{% endblock %}
+{% block page_title %}Контент{% endblock %}
+
+{% block content %}
+<!-- ═══════════════ ENTITY BARS: Persons / Orgs / Locations ═══════════════ -->
+<div class="entity-section-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+    {% if persons %}
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Персоны ({{ persons|length }})
+            </h3>
+        </div>
+        <div class="entity-bars">
+            {% for p in persons %}
+            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ p.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if orgs %}
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Организации ({{ orgs|length }})
+            </h3>
+        </div>
+        <div class="entity-bars">
+            {% for o in orgs %}
+            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ o.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if locations %}
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Локации ({{ locations|length }})
+            </h3>
+        </div>
+        <div class="entity-bars">
+            {% for l in locations %}
+            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ l.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if not persons and not orgs and not locations %}
+<div class="empty-state" style="margin-bottom:24px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <h3>Сущности ещё не извлечены</h3>
+    <p>Запустите NER-обработку: <code>python scraper/extract_entities.py</code></p>
+</div>
+{% endif %}
+
+<!-- ═══════════════ TAGS CLOUD ═══════════════ -->
+{% if tags %}
+<div class="chart-card full-width" style="margin-bottom:24px">
+    <div class="chart-header">
+        <h3 class="chart-title">Теги ({{ tags|length }})</h3>
+    </div>
+    <div class="tag-cloud">
+        {% for t in tags %}
+        <a href="/articles?tag={{ t.tag|urlencode }}" class="tag-cloud-item" style="font-size: {{ [12, 11 + (t.cnt / tags[0].cnt * 14)|int]|max }}px; opacity: {{ [0.55, 0.45 + t.cnt / tags[0].cnt * 0.55]|max }}">
+            {{ t.tag }} <span class="tag-count">{{ t.cnt }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════ AUTHORS ═══════════════ -->
+<div class="chart-card full-width" style="margin-bottom:24px">
+    <div class="chart-header">
+        <h3 class="chart-title">Авторы ({{ authors|length }})</h3>
+    </div>
+    <div class="authors-table">
+        <table>
+            <thead>
+                <tr>
+                    <th class="th-num">#</th>
+                    <th>Автор</th>
+                    <th class="th-bar">Объём</th>
+                    <th class="th-cnt">Статей</th>
+                    <th class="th-pct">Доля</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in authors %}
+                <tr>
+                    <td class="num rank">{{ loop.index }}</td>
+                    <td class="author-name"><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
+                    <td class="bar-cell">
+                        <div class="bar-track" style="width:100%;height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden">
+                            <div class="bar-fill" style="width:{{ (a.cnt / authors[0].cnt * 100)|int }}%;height:100%;background:var(--accent);border-radius:3px"></div>
+                        </div>
+                    </td>
+                    <td class="num">{{ "{:,}".format(a.cnt) }}</td>
+                    <td class="num pct">{{ "%.1f"|format(a.cnt / total_articles * 100) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════ CONTENT QUALITY ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Качество контента
+    </h2>
+    <div class="seo-stats-row seo-stats-row-5">
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_word_count }}</div>
+            <div class="seo-stat-label">Ср. слов</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_headings }}</div>
+            <div class="seo-stat-label">Ср. подзаголовков</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_internal_links }}</div>
+            <div class="seo-stat-label">Ср. внутр. ссылок</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ cq.avg_images }}</div>
+            <div class="seo-stat-label">Ср. изображений</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if cq.thin_content_count > 100 %}text-red{% elif cq.thin_content_count > 30 %}text-orange{% else %}text-green{% endif %}">{{ cq.thin_content_count }}</div>
+            <div class="seo-stat-label">Тонкий контент</div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ DUPLICATE TITLES ═══════════════ -->
+{% if dupes %}
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"/><path d="M4 15a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+        Дублированные заголовки
+    </h2>
+    <div class="dupes-table-wrap">
+        <table class="seo-table">
+            <thead><tr><th>Заголовок</th><th>Дублей</th><th>ID статей</th></tr></thead>
+            <tbody>
+                {% for d in dupes %}
+                <tr>
+                    <td>{{ d.title[:90] }}</td>
+                    <td><span class="badge-dup">{{ d.cnt }}</span></td>
+                    <td class="ids-cell">{{ d.ids }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

@@ -1,4 +1,4 @@
-"""FastAPI application — Total.kz Scraper Dashboard."""
+"""FastAPI application — Total.kz Scraper Dashboard v4.0."""
 
 import json
 from pathlib import Path
@@ -62,10 +62,13 @@ def startup():
     db.init_db()
 
 
+# ══════════════════════════════════════════════
+# 1.  ДАШБОРД  /
+# ══════════════════════════════════════════════
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     stats = db.get_stats()
-    tags = db.get_tags(limit=60)
     persons = db.get_entities(entity_type="person", limit=15)
     orgs = db.get_entities(entity_type="org", limit=15)
     locations = db.get_entities(entity_type="location", limit=15)
@@ -79,13 +82,9 @@ async def dashboard(request: Request):
     chart_years = json.dumps([y["year"] for y in stats["years"]])
     chart_year_counts = json.dumps([y["cnt"] for y in stats["years"]])
 
-    # Category-by-year heatmap data
-    cat_by_year_json = json.dumps(stats["cat_by_year"])
-
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "stats": stats,
-        "tags": tags,
         "persons": persons,
         "orgs": orgs,
         "locations": locations,
@@ -96,11 +95,14 @@ async def dashboard(request: Request):
         "chart_cat_slugs": chart_cat_slugs,
         "chart_years": chart_years,
         "chart_year_counts": chart_year_counts,
-        "cat_by_year_json": cat_by_year_json,
         "cat_label": cat_label,
         "entity_type_label": entity_type_label,
     })
 
+
+# ══════════════════════════════════════════════
+# 2.  СТАТЬИ  /articles
+# ══════════════════════════════════════════════
 
 @app.get("/articles", response_class=HTMLResponse)
 async def articles_list(
@@ -166,34 +168,97 @@ async def article_detail(request: Request, article_id: int):
     })
 
 
-@app.get("/runs", response_class=HTMLResponse)
-async def scrape_runs(request: Request):
-    stats = db.get_stats()
-    return templates.TemplateResponse("runs.html", {
-        "request": request,
-        "runs": stats["runs"],
-    })
+# ══════════════════════════════════════════════
+# 3.  КОНТЕНТ  /content
+# ══════════════════════════════════════════════
 
-
-@app.get("/entities", response_class=HTMLResponse)
-async def entities_page(request: Request, entity_type: str = ""):
+@app.get("/content", response_class=HTMLResponse)
+async def content_page(request: Request):
     persons = db.get_entities(entity_type="person", limit=50)
     orgs = db.get_entities(entity_type="org", limit=50)
     locations = db.get_entities(entity_type="location", limit=50)
     tags = db.get_tags(limit=100)
+    authors = db.get_authors()
+    stats = db.get_stats()
 
-    return templates.TemplateResponse("entities.html", {
+    # Content quality from SEO module
+    cq = seo.get_content_quality(500)
+
+    # Duplicates
+    dupes = seo.get_duplicate_titles(20)
+
+    return templates.TemplateResponse("content.html", {
         "request": request,
         "persons": persons,
         "orgs": orgs,
         "locations": locations,
         "tags": tags,
-        "entity_type": entity_type,
+        "authors": authors,
+        "total_articles": stats["total"],
+        "cq": cq,
+        "dupes": dupes,
         "entity_type_label": entity_type_label,
     })
 
 
-# API endpoints
+# ══════════════════════════════════════════════
+# 4.  АНАЛИТИКА  /analytics
+# ══════════════════════════════════════════════
+
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request):
+    # GSC data
+    gsc = search.get_search_data()
+    gsc_json = json.dumps(gsc, ensure_ascii=False)
+
+    # SEO report parts
+    geo = seo.get_geo_readiness()
+    schema = seo.get_schema_readiness(500)
+    freshness = seo.get_freshness_analysis()
+
+    schema_json = json.dumps(schema, ensure_ascii=False)
+    fresh_json = json.dumps(freshness, ensure_ascii=False)
+
+    return templates.TemplateResponse("analytics.html", {
+        "request": request,
+        "gsc": gsc,
+        "gsc_json": gsc_json,
+        "geo": geo,
+        "schema": schema,
+        "schema_json": schema_json,
+        "fresh_json": fresh_json,
+        "cat_label": cat_label,
+    })
+
+
+# ══════════════════════════════════════════════
+# Redirects: старые URL → новые
+# ══════════════════════════════════════════════
+
+@app.get("/entities", response_class=RedirectResponse)
+async def redirect_entities():
+    return RedirectResponse(url="/content", status_code=301)
+
+
+@app.get("/seo", response_class=RedirectResponse)
+async def redirect_seo():
+    return RedirectResponse(url="/analytics", status_code=301)
+
+
+@app.get("/search", response_class=RedirectResponse)
+async def redirect_search():
+    return RedirectResponse(url="/analytics", status_code=301)
+
+
+@app.get("/runs", response_class=RedirectResponse)
+async def redirect_runs():
+    return RedirectResponse(url="/", status_code=301)
+
+
+# ══════════════════════════════════════════════
+# API endpoints (сохраняем все)
+# ══════════════════════════════════════════════
+
 @app.get("/api/stats")
 async def api_stats():
     return db.get_stats()
@@ -227,33 +292,9 @@ async def api_entities(entity_type: str = "", limit: int = 50):
     return db.get_entities(entity_type=entity_type, limit=limit)
 
 
-# ── Search Analytics (GSC) ─────────────────────
-
-@app.get("/search", response_class=HTMLResponse)
-async def search_dashboard(request: Request):
-    data = search.get_search_data()
-    return templates.TemplateResponse("search.html", {
-        "request": request,
-        "data": data,
-        "data_json": json.dumps(data, ensure_ascii=False),
-    })
-
-
 @app.get("/api/search")
 async def api_search_data():
     return search.get_search_data()
-
-
-# ── SEO / GEO / SGEO analytics ─────────────────────
-
-@app.get("/seo", response_class=HTMLResponse)
-async def seo_dashboard(request: Request):
-    report = seo.get_full_seo_report()
-    return templates.TemplateResponse("seo.html", {
-        "request": request,
-        "report": report,
-        "cat_label": cat_label,
-    })
 
 
 @app.get("/api/seo")

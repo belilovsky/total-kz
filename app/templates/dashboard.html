@@ -115,7 +115,7 @@
     </div>
 </div>
 
-<!-- ===== ENTITIES: Persons / Orgs / Locations ===== -->
+<!-- ===== COMPACT ENTITIES (top 6 each) ===== -->
 <div class="entity-section-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
     {% if persons %}
     <div class="chart-card">
@@ -124,17 +124,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Топ персоны
             </h3>
-            <a href="/entities?type=person" class="chart-link">Все →</a>
+            <a href="/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
-            {% for p in persons[:12] %}
-            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-light, #eef0f3)">
-                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
-                <div class="entity-bar-track" style="width:100%;height:6px;background:var(--bg-body, #f5f6f8);border-radius:3px;overflow:hidden">
-                    <div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%;height:100%;background:var(--accent, #2563eb);border-radius:3px"></div>
-                </div>
-                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:var(--text-muted, #9099a8);text-align:right">{{ "{:,}".format(p.article_count) }}</span>
-                <span class="entity-tooltip">{{ p.name }} — {{ "{:,}".format(p.article_count) }} статей</span>
+            {% for p in persons[:6] %}
+            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ p.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
             </a>
             {% endfor %}
         </div>
@@ -148,17 +145,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 Топ организации
             </h3>
-            <a href="/entities?type=org" class="chart-link">Все →</a>
+            <a href="/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
-            {% for o in orgs[:12] %}
-            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-light, #eef0f3)">
-                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.name }}</span>
-                <div class="entity-bar-track" style="width:100%;height:6px;background:var(--bg-body, #f5f6f8);border-radius:3px;overflow:hidden">
-                    <div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%;height:100%;background:var(--green, #059669);border-radius:3px"></div>
-                </div>
-                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:var(--text-muted, #9099a8);text-align:right">{{ "{:,}".format(o.article_count) }}</span>
-                <span class="entity-tooltip">{{ o.name }} — {{ "{:,}".format(o.article_count) }} статей</span>
+            {% for o in orgs[:6] %}
+            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ o.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
             </a>
             {% endfor %}
         </div>
@@ -172,17 +166,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 Топ локации
             </h3>
-            <a href="/entities?type=location" class="chart-link">Все →</a>
+            <a href="/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
-            {% for l in locations[:12] %}
-            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row" style="display:grid;grid-template-columns:1.2fr 1fr 44px;gap:8px;align-items:center;padding:7px 4px;text-decoration:none;color:inherit;border-bottom:1px solid var(--border-light, #eef0f3)">
-                <span class="entity-bar-name" style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.name }}</span>
-                <div class="entity-bar-track" style="width:100%;height:6px;background:var(--bg-body, #f5f6f8);border-radius:3px;overflow:hidden">
-                    <div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%;height:100%;background:var(--orange, #d97706);border-radius:3px"></div>
-                </div>
-                <span class="entity-bar-value" style="font-size:11px;font-weight:650;color:var(--text-muted, #9099a8);text-align:right">{{ "{:,}".format(l.article_count) }}</span>
-                <span class="entity-tooltip">{{ l.name }} — {{ "{:,}".format(l.article_count) }} статей</span>
+            {% for l in locations[:6] %}
+            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row">
+                <span class="entity-bar-name">{{ l.name }}</span>
+                <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
+                <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>
             </a>
             {% endfor %}
         </div>
@@ -190,67 +181,11 @@
     {% endif %}
 </div>
 
-<!-- ===== TAGS CLOUD ===== -->
-{% if tags %}
-<div class="chart-card full-width">
-    <div class="chart-header">
-        <h3 class="chart-title">Популярные теги</h3>
-        <span class="chart-subtitle">{{ tags|length }} тегов</span>
-    </div>
-    <div class="tag-cloud">
-        {% for t in tags %}
-        <a href="/articles?tag={{ t.tag|urlencode }}" class="tag-cloud-item" style="font-size: {{ [12, 11 + (t.cnt / tags[0].cnt * 14)|int]|max }}px; opacity: {{ [0.55, 0.45 + t.cnt / tags[0].cnt * 0.55]|max }}">
-            {{ t.tag }} <span class="tag-count">{{ t.cnt }}</span>
-        </a>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
-<!-- ===== AUTHORS ===== -->
-<div class="chart-card full-width">
-    <div class="chart-header">
-        <h3 class="chart-title">Топ-20 авторов</h3>
-    </div>
-    <div class="authors-table">
-        <table>
-            <thead>
-                <tr>
-                    <th class="th-num">#</th>
-                    <th>Автор</th>
-                    <th class="th-bar">Объём</th>
-                    <th class="th-cnt">Статей</th>
-                    <th class="th-pct">Доля</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for a in stats.authors %}
-                <tr>
-                    <td class="num rank">{{ loop.index }}</td>
-                    <td class="author-name"><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
-                    <td class="bar-cell">
-                        <div class="bar-track" style="width:100%;height:6px;background:var(--bg-body, #f5f6f8);border-radius:3px;overflow:hidden">
-                            <div class="bar-fill" style="width:{{ (a.cnt / stats.authors[0].cnt * 100)|int }}%;height:100%;background:var(--accent, #2563eb);border-radius:3px"></div>
-                        </div>
-                        <span class="bar-tooltip">{{ "{:,}".format(a.cnt) }} статей · {{ "%.1f"|format(a.cnt / stats.total * 100) }}%</span>
-                    </td>
-                    <td class="num">{{ "{:,}".format(a.cnt) }}</td>
-                    <td class="num pct">{{ "%.1f"|format(a.cnt / stats.total * 100) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- ===== SCRAPE RUNS ===== -->
+<!-- ===== LAST 3 SCRAPE RUNS ===== -->
 {% if stats.runs %}
 <div class="chart-card full-width">
     <div class="chart-header">
         <h3 class="chart-title">Последние запуски</h3>
-        {% if stats.runs|length > 5 %}
-        <a href="/runs" class="chart-link">Все запуски →</a>
-        {% endif %}
     </div>
     <div class="data-table-wrap">
     <table class="data-table">
@@ -267,7 +202,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for r in stats.runs[:5] %}
+            {% for r in stats.runs[:3] %}
             <tr>
                 <td class="num mono">{{ r.id }}</td>
                 <td><span class="badge badge-phase">{{ r.phase }}</span></td>
@@ -303,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var years = {{ chart_years|safe }};
     var yearCounts = {{ chart_year_counts|safe }};
 
-    // Detect dark mode
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     var gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
     var textColor = isDark ? '#9ca3af' : '#6b7280';
@@ -314,51 +248,21 @@ document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.color = textColor;
     Chart.defaults.font.size = 11;
 
-    // ===== SPARKLINE HELPER =====
     function createSparkline(canvasId, data, labels, color, fillColor) {
         var ctx = document.getElementById(canvasId);
         if (!ctx || !data.length) return;
         new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    borderColor: color,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    backgroundColor: fillColor,
-                    tension: 0.35,
-                }]
-            },
-            options: {
-                responsive: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: { x: { display: false }, y: { display: false } },
-                animation: { duration: 800 },
-            }
+            data: { labels: labels, datasets: [{ data: data, borderColor: color, borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: fillColor, tension: 0.35 }] },
+            options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, animation: { duration: 800 } }
         });
     }
 
-    // ===== KPI SPARKLINES =====
-    // Card 1: Yearly totals
     createSparkline('sparkTotal', yearCounts, years, '#2563eb', 'rgba(37,99,235,0.08)');
-
-    // Card 2: Monthly trend (last 12 months)
-    var last12m = counts.slice(-12);
-    var last12labels = months.slice(-12);
-    createSparkline('sparkMonth', last12m, last12labels, isDark ? '#10b981' : '#059669', isDark ? 'rgba(16,185,129,0.1)' : 'rgba(5,150,105,0.08)');
-
-    // Card 3: Monthly trend (last 24 months) for average context
-    var last24m = counts.slice(-24);
-    var last24labels = months.slice(-24);
-    createSparkline('sparkAvg', last24m, last24labels, isDark ? '#f59e0b' : '#d97706', isDark ? 'rgba(245,158,11,0.1)' : 'rgba(217,119,6,0.08)');
-
-    // Card 4: Yearly totals (purple)
+    createSparkline('sparkMonth', counts.slice(-12), months.slice(-12), isDark ? '#10b981' : '#059669', isDark ? 'rgba(16,185,129,0.1)' : 'rgba(5,150,105,0.08)');
+    createSparkline('sparkAvg', counts.slice(-24), months.slice(-24), isDark ? '#f59e0b' : '#d97706', isDark ? 'rgba(245,158,11,0.1)' : 'rgba(217,119,6,0.08)');
     createSparkline('sparkCats', yearCounts, years, isDark ? '#8b5cf6' : '#7c3aed', isDark ? 'rgba(139,92,246,0.1)' : 'rgba(124,58,237,0.08)');
 
-    // ===== CROSSHAIR PLUGIN =====
     var crosshairPlugin = {
         id: 'crosshair',
         afterDraw: function(chart) {
@@ -366,233 +270,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 var x = chart.tooltip._active[0].element.x;
                 var yAxis = chart.scales.y;
                 var ctx = chart.ctx;
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(x, yAxis.top);
-                ctx.lineTo(x, yAxis.bottom);
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = isDark ? 'rgba(59,130,246,0.3)' : 'rgba(37,99,235,0.25)';
-                ctx.setLineDash([4, 4]);
-                ctx.stroke();
-                ctx.restore();
+                ctx.save(); ctx.beginPath(); ctx.moveTo(x, yAxis.top); ctx.lineTo(x, yAxis.bottom);
+                ctx.lineWidth = 1; ctx.strokeStyle = isDark ? 'rgba(59,130,246,0.3)' : 'rgba(37,99,235,0.25)';
+                ctx.setLineDash([4, 4]); ctx.stroke(); ctx.restore();
             }
         }
     };
 
-    // ===== TIMELINE (area chart with crosshair) =====
-    var allMonths = months;
-    var allCounts = counts;
-
     var timelineChart = new Chart(document.getElementById('timelineChart'), {
-        type: 'line',
-        plugins: [crosshairPlugin],
-        data: {
-            labels: allMonths,
-            datasets: [{
-                label: 'Статей',
-                data: allCounts,
-                borderColor: isDark ? '#3b82f6' : '#2563eb',
-                borderWidth: 1.5,
-                backgroundColor: isDark ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.07)',
-                fill: true,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: isDark ? '#3b82f6' : '#2563eb',
-                pointHoverBorderColor: isDark ? '#1a1d26' : '#ffffff',
-                pointHoverBorderWidth: 2,
-                tension: 0.3,
-            }]
-        },
+        type: 'line', plugins: [crosshairPlugin],
+        data: { labels: months, datasets: [{ label: 'Статей', data: counts, borderColor: isDark ? '#3b82f6' : '#2563eb', borderWidth: 1.5, backgroundColor: isDark ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.07)', fill: true, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: isDark ? '#3b82f6' : '#2563eb', pointHoverBorderColor: isDark ? '#1a1d26' : '#ffffff', pointHoverBorderWidth: 2, tension: 0.3 }] },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: tooltipBg,
-                    titleColor: tooltipText,
-                    bodyColor: tooltipText,
-                    titleFont: { size: 12, weight: '600' },
-                    bodyFont: { size: 13, weight: '500' },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(items) {
-                            var m = items[0].label;
-                            var parts = m.split('-');
-                            var monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-                            return monthNames[parseInt(parts[1])-1] + ' ' + parts[0];
-                        },
-                        label: function(ctx) {
-                            return ctx.parsed.y.toLocaleString('ru-RU') + ' статей';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: { font: { size: 11 }, color: textColor, callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0) + 'k' : v; } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        font: { size: 10 },
-                        color: textColor,
-                        maxRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 18,
-                        callback: function(val, i) {
-                            var lbl = this.getLabelForValue(val);
-                            if (lbl && lbl.endsWith('-01')) return lbl.substring(0,4);
-                            return '';
-                        }
-                    }
-                }
-            }
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, titleFont: { size: 12, weight: '600' }, bodyFont: { size: 13, weight: '500' }, padding: 12, cornerRadius: 8, displayColors: false,
+                callbacks: { title: function(items) { var m=items[0].label; var p=m.split('-'); var mn=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек']; return mn[parseInt(p[1])-1]+' '+p[0]; }, label: function(ctx) { return ctx.parsed.y.toLocaleString('ru-RU')+' статей'; } } } },
+            scales: { y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { font: { size: 11 }, color: textColor, callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0)+'k' : v; } } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 18, callback: function(val) { var l=this.getLabelForValue(val); if(l&&l.endsWith('-01')) return l.substring(0,4); return ''; } } } }
         }
     });
 
-    // Range controls
     document.querySelectorAll('.chart-btn[data-range]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.chart-btn[data-range]').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.chart-btn[data-range]').forEach(function(b){b.classList.remove('active');});
             this.classList.add('active');
-            var range = this.dataset.range;
-            var startIdx = 0;
-            if (range !== 'all' && allMonths.length) {
-                var yearsBack = parseInt(range);
-                var now = new Date();
-                var cutoff = (now.getFullYear() - yearsBack) + '-' + String(now.getMonth()+1).padStart(2,'0');
-                startIdx = allMonths.findIndex(function(m) { return m >= cutoff; });
-                if (startIdx < 0) startIdx = 0;
-            }
-            timelineChart.data.labels = allMonths.slice(startIdx);
-            timelineChart.data.datasets[0].data = allCounts.slice(startIdx);
-            timelineChart.update('active');
+            var range=this.dataset.range; var startIdx=0;
+            if(range!=='all'&&months.length){var yb=parseInt(range);var now=new Date();var cut=(now.getFullYear()-yb)+'-'+String(now.getMonth()+1).padStart(2,'0');startIdx=months.findIndex(function(m){return m>=cut;});if(startIdx<0) startIdx=0;}
+            timelineChart.data.labels=months.slice(startIdx);timelineChart.data.datasets[0].data=counts.slice(startIdx);timelineChart.update('active');
         });
     });
 
-    // ===== CATEGORIES (horizontal bar) =====
-    var catPalette = [
-        '#2563eb','#0891b2','#059669','#65a30d','#d97706',
-        '#ea580c','#dc2626','#db2777','#7c3aed','#4f46e5',
-        '#0d9488','#ca8a04','#e11d48','#9333ea','#6366f1',
-        '#14b8a6','#f59e0b','#ef4444','#ec4899','#8b5cf6'
-    ];
+    var catPalette = ['#2563eb','#0891b2','#059669','#65a30d','#d97706','#ea580c','#dc2626','#db2777','#7c3aed','#4f46e5','#0d9488','#ca8a04','#e11d48','#9333ea','#6366f1','#14b8a6','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
 
     new Chart(document.getElementById('catsChart'), {
         type: 'bar',
-        data: {
-            labels: cats,
-            datasets: [{
-                data: catCounts,
-                backgroundColor: function(ctx) {
-                    return catPalette[ctx.dataIndex % catPalette.length];
-                },
-                hoverBackgroundColor: function(ctx) {
-                    var base = catPalette[ctx.dataIndex % catPalette.length];
-                    return base; // stays same, opacity handled by Chart.js hover
-                },
-                borderRadius: 4,
-                borderSkipped: false,
-                barThickness: 18,
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: tooltipBg,
-                    titleColor: tooltipText,
-                    bodyColor: tooltipText,
-                    titleFont: { size: 12, weight: '600' },
-                    bodyFont: { size: 12 },
-                    padding: 10,
-                    cornerRadius: 8,
-                    displayColors: true,
-                    boxWidth: 8,
-                    boxHeight: 8,
-                    boxPadding: 4,
-                    callbacks: {
-                        label: function(ctx) {
-                            var total = catCounts.reduce(function(a,b) { return a+b; }, 0);
-                            var pct = (ctx.parsed.x / total * 100).toFixed(1);
-                            return ' ' + ctx.parsed.x.toLocaleString('ru-RU') + ' (' + pct + '%)';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: { font: { size: 10 }, color: textColor, callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0) + 'k' : v; } }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: { font: { size: 11, weight: '500' }, color: textColor, padding: 4 }
-                }
-            }
+        data: { labels: cats, datasets: [{ data: catCounts, backgroundColor: function(ctx){return catPalette[ctx.dataIndex%catPalette.length];}, borderRadius: 4, borderSkipped: false, barThickness: 18 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, padding: 10, cornerRadius: 8, displayColors: true, boxWidth: 8, boxHeight: 8, callbacks: { label: function(ctx){var t=catCounts.reduce(function(a,b){return a+b;},0);return ' '+ctx.parsed.x.toLocaleString('ru-RU')+' ('+(ctx.parsed.x/t*100).toFixed(1)+'%)';} } } },
+            scales: { x: { grid: { color: gridColor }, ticks: { font: { size: 10 }, color: textColor, callback: function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;} } }, y: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: textColor } } }
         }
     });
 
-    // ===== YEARS (bar chart with intensity gradient) =====
     new Chart(document.getElementById('yearsChart'), {
         type: 'bar',
-        data: {
-            labels: years,
-            datasets: [{
-                label: 'Статей',
-                data: yearCounts,
-                backgroundColor: function(ctx) {
-                    var max = Math.max.apply(null, yearCounts);
-                    var ratio = yearCounts[ctx.dataIndex] / max;
-                    var alpha = 0.35 + ratio * 0.55;
-                    return isDark
-                        ? 'rgba(59, 130, 246, ' + alpha + ')'
-                        : 'rgba(37, 99, 235, ' + alpha + ')';
-                },
-                hoverBackgroundColor: isDark ? '#60a5fa' : '#2563eb',
-                borderRadius: 5,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: tooltipBg,
-                    titleColor: tooltipText,
-                    bodyColor: tooltipText,
-                    titleFont: { size: 12, weight: '600' },
-                    bodyFont: { size: 13, weight: '500' },
-                    padding: 10,
-                    cornerRadius: 8,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(ctx) { return ctx.parsed.y.toLocaleString('ru-RU') + ' статей'; }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: { font: { size: 11 }, color: textColor, callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0) + 'k' : v; } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { size: 11 }, color: textColor }
-                }
-            }
+        data: { labels: years, datasets: [{ label: 'Статей', data: yearCounts, backgroundColor: function(ctx){var max=Math.max.apply(null,yearCounts);var r=yearCounts[ctx.dataIndex]/max;var a=0.35+r*0.55;return isDark?'rgba(59,130,246,'+a+')':'rgba(37,99,235,'+a+')';}, hoverBackgroundColor: isDark?'#60a5fa':'#2563eb', borderRadius: 5, borderSkipped: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, padding: 10, cornerRadius: 8, displayColors: false, callbacks: { label: function(ctx){return ctx.parsed.y.toLocaleString('ru-RU')+' статей';} } } },
+            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor, callback: function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;} } }, x: { grid: { display: false }, ticks: { font: { size: 11 }, color: textColor } } }
         }
     });
 });
