@@ -115,6 +115,19 @@
     </div>
 </div>
 
+<!-- ===== CATEGORY × YEAR HEATMAP ===== -->
+<div class="chart-card full-width" style="margin-bottom:24px">
+    <div class="chart-header">
+        <h3 class="chart-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+            Категории × Годы
+        </h3>
+    </div>
+    <div class="heatmap-scroll">
+        <div id="heatmapContainer" class="heatmap-container"></div>
+    </div>
+</div>
+
 <!-- ===== COMPACT ENTITIES (top 6 each) ===== -->
 <div class="entity-section-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
     {% if persons %}
@@ -297,6 +310,70 @@ document.addEventListener('DOMContentLoaded', function() {
             timelineChart.data.labels=months.slice(startIdx);timelineChart.data.datasets[0].data=counts.slice(startIdx);timelineChart.update('active');
         });
     });
+
+    // ── Heatmap ──
+    (function() {
+        var raw = {{ heatmap_data|safe }};
+        var catLabels = {{ cat_labels_json|safe }};
+        if (!raw || !raw.length) return;
+
+        // Build matrix
+        var catSet = new Set();
+        var yearSet = new Set();
+        raw.forEach(function(r) { if (r.sub_category) catSet.add(r.sub_category); yearSet.add(r.year); });
+        var categories = Array.from(catSet);
+        var allYears = Array.from(yearSet).sort();
+
+        // Compute totals per category, sort desc
+        var catTotals = {};
+        raw.forEach(function(r) { if (r.sub_category) catTotals[r.sub_category] = (catTotals[r.sub_category] || 0) + r.cnt; });
+        categories.sort(function(a, b) { return (catTotals[b] || 0) - (catTotals[a] || 0); });
+
+        // Take top 15 categories for readability
+        categories = categories.slice(0, 15);
+
+        var matrix = {};
+        raw.forEach(function(r) { matrix[r.sub_category + '|' + r.year] = r.cnt; });
+
+        var maxVal = 0;
+        categories.forEach(function(cat) {
+            allYears.forEach(function(yr) {
+                var v = matrix[cat + '|' + yr] || 0;
+                if (v > maxVal) maxVal = v;
+            });
+        });
+
+        // Build HTML table
+        var html = '<table class="heatmap-table"><thead><tr><th class="heatmap-cat-col"></th>';
+        allYears.forEach(function(yr) { html += '<th class="heatmap-year">' + yr + '</th>'; });
+        html += '<th class="heatmap-total">Итого</th></tr></thead><tbody>';
+
+        categories.forEach(function(cat) {
+            var label = catLabels[cat] || cat;
+            var total = catTotals[cat] || 0;
+            html += '<tr><td class="heatmap-cat-label" title="' + label + '">' + label + '</td>';
+            allYears.forEach(function(yr) {
+                var v = matrix[cat + '|' + yr] || 0;
+                var intensity = maxVal > 0 ? v / maxVal : 0;
+                var bg, fg;
+                if (v === 0) {
+                    bg = isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
+                    fg = isDark ? '#4b5563' : '#9ca3af';
+                } else {
+                    var alpha = 0.12 + intensity * 0.75;
+                    bg = isDark ? 'rgba(59,130,246,' + alpha + ')' : 'rgba(37,99,235,' + alpha + ')';
+                    fg = intensity > 0.4 ? '#fff' : (isDark ? '#e8eaed' : '#374151');
+                }
+                html += '<td class="heatmap-cell" style="background:' + bg + ';color:' + fg + '" title="' + label + ' ' + yr + ': ' + v.toLocaleString('ru-RU') + '">';
+                html += v > 0 ? v.toLocaleString('ru-RU') : '—';
+                html += '</td>';
+            });
+            html += '<td class="heatmap-total-cell">' + total.toLocaleString('ru-RU') + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        document.getElementById('heatmapContainer').innerHTML = html;
+    })();
 
     var catPalette = ['#2563eb','#0891b2','#059669','#65a30d','#d97706','#ea580c','#dc2626','#db2777','#7c3aed','#4f46e5','#0d9488','#ca8a04','#e11d48','#9333ea','#6366f1','#14b8a6','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
 
