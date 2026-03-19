@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Total.kz — Новости Казахстана{% endblock %}</title>
+
+  {% block meta %}
+  <meta name="description" content="{% block description %}Total.kz — ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.{% endblock %}">
+  <link rel="canonical" href="https://total.kz{% block canonical %}{{ request.url.path }}{% endblock %}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}Total.kz — Новости Казахстана{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Ведущий новостной портал Казахстана{% endblock %}">
+  <meta property="og:url" content="https://total.kz{{ request.url.path }}">
+  <meta property="og:site_name" content="Total.kz">
+  <meta property="og:locale" content="ru_RU">
+  {% block og_image %}<meta property="og:image" content="https://total.kz/static/og-default.png">{% endblock %}
+  <meta name="twitter:card" content="summary_large_image">
+  {% endblock %}
+
+  {% block jsonld %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Total.kz",
+    "url": "https://total.kz",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://total.kz/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Total.kz",
+      "url": "https://total.kz"
+    }
+  }
+  </script>
+  {% endblock %}
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/public.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- ═══ TICKER BAR ═══ -->
+  <div class="ticker-bar">
+    <div class="ticker-inner">
+      <span class="ticker-label">● Сейчас</span>
+      {% if ticker_articles is defined and ticker_articles %}
+        {% for art in ticker_articles[:6] %}
+          <span class="ticker-item"><a href="{{ article_url(art) }}">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
+          {% if not loop.last %}<span class="ticker-dot">·</span>{% endif %}
+        {% endfor %}
+      {% elif hero_articles is defined and hero_articles %}
+        {% for art in hero_articles[:4] %}
+          <span class="ticker-item"><a href="{{ article_url(art) }}">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
+          {% if not loop.last %}<span class="ticker-dot">·</span>{% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <div class="header-top">
+      <a href="/" class="site-logo">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Total.kz">
+          <rect width="32" height="32" rx="6" fill="currentColor"/>
+          <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+                font-family="Inter, sans-serif" font-weight="800" font-size="16"
+                fill="var(--bg)">T</text>
+        </svg>
+        <span class="site-logo-text">Total<span>.kz</span></span>
+      </a>
+
+      <form action="/search" method="get" class="header-search">
+        <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" name="q" placeholder="Поиск новостей…" value="{{ q if q is defined else '' }}" autocomplete="off">
+      </form>
+
+      <div class="header-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Переключить тему">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+        <button class="mobile-menu-btn" aria-label="Меню">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="header-nav" aria-label="Категории">
+      <ul>
+        {% for cat_slug in nav_categories %}
+          <li><a href="/news/{{ cat_slug }}"{% if category is defined and category == cat_slug %} class="active"{% endif %}>{{ cat_label(cat_slug) }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="site-logo-text">Total<span style="color:var(--accent)">.kz</span></div>
+          <p>Ведущий новостной портал Казахстана. Независимая журналистика с 2016 года.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Рубрики</h4>
+            {% for cat_slug in nav_categories[:5] %}
+              <a href="/news/{{ cat_slug }}">{{ cat_label(cat_slug) }}</a>
+            {% endfor %}
+          </div>
+          <div class="footer-col">
+            <h4>Ещё</h4>
+            {% for cat_slug in nav_categories[5:] %}
+              <a href="/news/{{ cat_slug }}">{{ cat_label(cat_slug) }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2016–2026 Total.kz. Все права защищены.</span>
+        <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ Theme Toggle Script ═══ -->
+  <script>
+  (function(){
+    const toggle = document.querySelector('[data-theme-toggle]');
+    const root = document.documentElement;
+    let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.setAttribute('data-theme', theme);
+    updateIcon();
+
+    if (toggle) {
+      toggle.addEventListener('click', function() {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', theme);
+        updateIcon();
+      });
+    }
+
+    function updateIcon() {
+      if (!toggle) return;
+      toggle.innerHTML = theme === 'dark'
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      toggle.setAttribute('aria-label', theme === 'dark' ? 'Светлая тема' : 'Тёмная тема');
+    }
+  })();
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

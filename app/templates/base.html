@@ -26,25 +26,26 @@
             <span class="brand-name">Total.kz</span>
         </div>
         <nav class="sidebar-nav">
-            <a href="/" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
+            <a href="/admin" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>Дашборд</span>
             </a>
-            <a href="/articles" class="nav-item {% if active == 'articles' %}active{% endif %}">
+            <a href="/admin/articles" class="nav-item {% if active == 'articles' %}active{% endif %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 <span>Статьи</span>
             </a>
-            <a href="/content" class="nav-item {% if active == 'content' %}active{% endif %}">
+            <a href="/admin/content" class="nav-item {% if active == 'content' %}active{% endif %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Контент</span>
             </a>
-            <a href="/analytics" class="nav-item {% if active == 'analytics' %}active{% endif %}">
+            <a href="/admin/analytics" class="nav-item {% if active == 'analytics' %}active{% endif %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 <span>Аналитика</span>
             </a>
         </nav>
         <div class="sidebar-footer">
-            <div class="version-badge">v4.0 — Архив Total.kz</div>
+            <a href="/" class="version-badge" style="text-decoration:none;color:inherit">← На сайт</a>
+            <div class="version-badge">v5.0 — Total.kz Admin</div>
         </div>
     </aside>
 

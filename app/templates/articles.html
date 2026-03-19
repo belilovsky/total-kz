@@ -17,7 +17,7 @@
 
 {% block content %}
 <div class="filters-bar">
-    <form method="get" action="/articles" class="filters-form" id="filtersForm">
+    <form method="get" action="/admin/articles" class="filters-form" id="filtersForm">
         <div class="filter-group grow">
             <label class="filter-label">Поиск</label>
             <div class="search-box">
@@ -75,7 +75,7 @@
                 Найти
             </button>
             {% if q or category or author or date_from or date_to or tag or entity_id %}
-            <a href="/articles" class="btn btn-ghost">Сбросить</a>
+            <a href="/admin/articles" class="btn btn-ghost">Сбросить</a>
             {% endif %}
         </div>
     </form>
@@ -86,43 +86,43 @@
     {% if q %}
     <span class="active-filter-tag">
         Поиск: {{ q }}
-        <a href="/articles?category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if category %}
     <span class="active-filter-tag">
         {{ cat_label(category) }}
-        <a href="/articles?q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if author %}
     <span class="active-filter-tag">
         {{ author }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if tag %}
     <span class="active-filter-tag">
         Тег: {{ tag }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if entity_id and entity_name %}
     <span class="active-filter-tag">
         {{ entity_type_label(entity_type) }}: {{ entity_name }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_from %}
     <span class="active-filter-tag">
         От: {{ date_from }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_to %}
     <span class="active-filter-tag">
         До: {{ date_to }}
-        <a href="/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
 </div>
@@ -136,7 +136,7 @@
 <!-- Grid View -->
 <div class="articles-grid" id="viewGrid">
     {% for a in result.articles %}
-    <a href="/article/{{ a.id }}" class="article-card">
+    <a href="/admin/article/{{ a.id }}" class="article-card">
         <div class="article-card-image">
             {% if a.thumbnail or a.main_image %}
             <img src="{{ a.thumbnail or a.main_image }}" alt="" loading="lazy">
@@ -171,7 +171,7 @@
 <!-- List View -->
 <div class="articles-list" id="viewList" style="display: none">
     {% for a in result.articles %}
-    <a href="/article/{{ a.id }}" class="article-list-item">
+    <a href="/admin/article/{{ a.id }}" class="article-list-item">
         <div class="article-list-thumb">
             {% if a.thumbnail or a.main_image %}
             <img src="{{ a.thumbnail or a.main_image }}" alt="" loading="lazy">

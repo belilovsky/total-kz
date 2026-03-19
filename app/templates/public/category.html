@@ -1,0 +1,89 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ category_name }} — Total.kz{% endblock %}
+{% block description %}Последние новости в рубрике {{ category_name }} на Total.kz{% endblock %}
+{% block og_title %}{{ category_name }} — Total.kz{% endblock %}
+{% block og_description %}Последние новости в рубрике {{ category_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="category-header">
+    <h1>{{ category_name }}</h1>
+    <div class="count">{{ total }} {{ "статья" if total % 10 == 1 and total % 100 != 11 else "статей" }}</div>
+  </div>
+
+  <div class="main-grid">
+    <div class="main-content">
+      <div class="article-list">
+        {% for art in articles %}
+        <article class="article-card">
+          <div class="article-card-body">
+            <span class="cat-badge">{{ cat_label(art.sub_category) }}</span>
+            <h3><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+            {% if art.excerpt %}
+              <p class="excerpt">{{ art.excerpt }}</p>
+            {% endif %}
+            <div class="meta">{{ format_date_short(art.pub_date) }}{% if art.author %} · {{ art.author }}{% endif %}</div>
+          </div>
+          {% if art.thumbnail or art.main_image %}
+          <div class="article-card-thumb">
+            <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+          </div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+
+      {% if pages > 1 %}
+      <nav class="pagination" aria-label="Навигация по страницам">
+        {% if page > 1 %}
+          <a href="/news/{{ category }}?page={{ page - 1 }}" aria-label="Предыдущая страница">&larr;</a>
+        {% else %}
+          <span class="disabled">&larr;</span>
+        {% endif %}
+
+        {% set start = [1, page - 2] | max %}
+        {% set end = [pages, page + 2] | min %}
+
+        {% if start > 1 %}
+          <a href="/news/{{ category }}?page=1">1</a>
+          {% if start > 2 %}<span class="disabled">…</span>{% endif %}
+        {% endif %}
+
+        {% for p in range(start, end + 1) %}
+          {% if p == page %}
+            <span class="active">{{ p }}</span>
+          {% else %}
+            <a href="/news/{{ category }}?page={{ p }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if end < pages %}
+          {% if end < pages - 1 %}<span class="disabled">…</span>{% endif %}
+          <a href="/news/{{ category }}?page={{ pages }}">{{ pages }}</a>
+        {% endif %}
+
+        {% if page < pages %}
+          <a href="/news/{{ category }}?page={{ page + 1 }}" aria-label="Следующая страница">&rarr;</a>
+        {% else %}
+          <span class="disabled">&rarr;</span>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </div>
+
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Другие рубрики</h3>
+        <div style="display:flex;flex-direction:column;gap:var(--space-1)">
+          {% for cat_slug in nav_categories %}
+            {% if cat_slug != category %}
+            <a href="/news/{{ cat_slug }}" style="display:block;padding:var(--space-1) 0;font-size:var(--text-sm);color:var(--text-secondary);text-decoration:none">{{ cat_label(cat_slug) }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

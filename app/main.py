@@ -1,4 +1,4 @@
-"""FastAPI application — Total.kz Scraper Dashboard v4.0."""
+"""FastAPI application — Total.kz v5 (public frontend + admin dashboard)."""
 
 import json
 from pathlib import Path
@@ -10,14 +10,15 @@ from fastapi.templating import Jinja2Templates
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
+from .public_routes import router as public_router
 
-app = FastAPI(title="Total.kz Dashboard")
+app = FastAPI(title="Total.kz")
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
-# Category labels in Russian
+# Category labels in Russian (for admin dashboard)
 CATEGORY_LABELS = {
     "vnutrennyaya_politika": "Внутренняя политика",
     "vneshnyaya_politika": "Внешняя политика",
@@ -69,17 +70,23 @@ def startup():
 
 
 # ══════════════════════════════════════════════
-# 1.  ДАШБОРД  /
+#  PUBLIC FRONTEND (mounted at /)
+# ══════════════════════════════════════════════
+app.include_router(public_router)
+
+
+# ══════════════════════════════════════════════
+#  ADMIN DASHBOARD  /admin/
 # ══════════════════════════════════════════════
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
+@app.get("/admin", response_class=HTMLResponse)
+@app.get("/admin/", response_class=HTMLResponse)
+async def admin_dashboard(request: Request):
     stats = db.get_stats()
     persons = db.get_entities(entity_type="person", limit=15)
     orgs = db.get_entities(entity_type="org", limit=15)
     locations = db.get_entities(entity_type="location", limit=15)
 
-    # Chart data
     chart_months = json.dumps([m["month"] for m in stats["months"]])
     chart_counts = json.dumps([m["cnt"] for m in stats["months"]])
     chart_cats = json.dumps([cat_label(c["sub_category"]) for c in stats["categories"]])
@@ -88,7 +95,6 @@ async def dashboard(request: Request):
     chart_years = json.dumps([y["year"] for y in stats["years"]])
     chart_year_counts = json.dumps([y["cnt"] for y in stats["years"]])
 
-    # Heatmap data: category × year
     heatmap_data = json.dumps(stats.get("cat_by_year", []), ensure_ascii=False)
     cat_labels_json = json.dumps(CATEGORY_LABELS, ensure_ascii=False)
 
@@ -112,12 +118,8 @@ async def dashboard(request: Request):
     })
 
 
-# ══════════════════════════════════════════════
-# 2.  СТАТЬИ  /articles
-# ══════════════════════════════════════════════
-
-@app.get("/articles", response_class=HTMLResponse)
-async def articles_list(
+@app.get("/admin/articles", response_class=HTMLResponse)
+async def admin_articles_list(
     request: Request,
     q: str = "",
     category: str = "",
@@ -137,7 +139,6 @@ async def articles_list(
     authors = db.get_authors()
     tags = db.get_tags(limit=60)
 
-    # If filtering by entity, get entity name for display
     entity_name = ""
     entity_type = ""
     if entity_id:
@@ -167,8 +168,8 @@ async def articles_list(
     })
 
 
-@app.get("/article/{article_id}", response_class=HTMLResponse)
-async def article_detail(request: Request, article_id: int):
+@app.get("/admin/article/{article_id}", response_class=HTMLResponse)
+async def admin_article_detail(request: Request, article_id: int):
     article = db.get_article(article_id)
     if not article:
         return HTMLResponse("Статья не найдена", status_code=404)
@@ -180,12 +181,8 @@ async def article_detail(request: Request, article_id: int):
     })
 
 
-# ══════════════════════════════════════════════
-# 3.  КОНТЕНТ  /content
-# ══════════════════════════════════════════════
-
-@app.get("/content", response_class=HTMLResponse)
-async def content_page(request: Request):
+@app.get("/admin/content", response_class=HTMLResponse)
+async def admin_content_page(request: Request):
     persons = db.get_entities(entity_type="person", limit=50)
     orgs = db.get_entities(entity_type="org", limit=50)
     locations = db.get_entities(entity_type="location", limit=50)
@@ -193,10 +190,7 @@ async def content_page(request: Request):
     authors = db.get_authors()
     stats = db.get_stats()
 
-    # Content quality from SEO module
     cq = seo.get_content_quality(500)
-
-    # Duplicates
     dupes = seo.get_duplicate_titles(20)
 
     return templates.TemplateResponse("content.html", {
@@ -213,17 +207,11 @@ async def content_page(request: Request):
     })
 
 
-# ══════════════════════════════════════════════
-# 4.  АНАЛИТИКА  /analytics
-# ══════════════════════════════════════════════
-
-@app.get("/analytics", response_class=HTMLResponse)
-async def analytics_page(request: Request):
-    # GSC data
+@app.get("/admin/analytics", response_class=HTMLResponse)
+async def admin_analytics_page(request: Request):
     gsc = search.get_search_data()
     gsc_json = json.dumps(gsc, ensure_ascii=False)
 
-    # SEO report parts
     geo = seo.get_geo_readiness()
     schema = seo.get_schema_readiness(500)
     freshness = seo.get_freshness_analysis()
@@ -244,37 +232,45 @@ async def analytics_page(request: Request):
 
 
 # ══════════════════════════════════════════════
-# Redirects: старые URL → новые
+#  REDIRECTS: old admin routes → /admin/*
 # ══════════════════════════════════════════════
+
+@app.get("/articles", response_class=RedirectResponse)
+async def redirect_articles():
+    return RedirectResponse(url="/admin/articles", status_code=301)
+
+@app.get("/article/{article_id}", response_class=RedirectResponse)
+async def redirect_article(article_id: int):
+    return RedirectResponse(url=f"/admin/article/{article_id}", status_code=301)
+
+@app.get("/content", response_class=RedirectResponse)
+async def redirect_content():
+    return RedirectResponse(url="/admin/content", status_code=301)
+
+@app.get("/analytics", response_class=RedirectResponse)
+async def redirect_analytics():
+    return RedirectResponse(url="/admin/analytics", status_code=301)
 
 @app.get("/entities", response_class=RedirectResponse)
 async def redirect_entities():
-    return RedirectResponse(url="/content", status_code=301)
-
+    return RedirectResponse(url="/admin/content", status_code=301)
 
 @app.get("/seo", response_class=RedirectResponse)
 async def redirect_seo():
-    return RedirectResponse(url="/analytics", status_code=301)
-
-
-@app.get("/search", response_class=RedirectResponse)
-async def redirect_search():
-    return RedirectResponse(url="/analytics", status_code=301)
-
+    return RedirectResponse(url="/admin/analytics", status_code=301)
 
 @app.get("/runs", response_class=RedirectResponse)
 async def redirect_runs():
-    return RedirectResponse(url="/", status_code=301)
+    return RedirectResponse(url="/admin", status_code=301)
 
 
 # ══════════════════════════════════════════════
-# API endpoints (сохраняем все)
+# API endpoints (keep as-is for compatibility)
 # ══════════════════════════════════════════════
 
 @app.get("/api/stats")
 async def api_stats():
     return db.get_stats()
-
 
 @app.get("/api/articles")
 async def api_articles(
@@ -288,66 +284,53 @@ async def api_articles(
         tag=tag, entity_id=entity_id, page=page,
     )
 
-
 @app.get("/api/article/{article_id}")
 async def api_article(article_id: int):
     return db.get_article(article_id) or {"error": "not found"}
-
 
 @app.get("/api/tags")
 async def api_tags(limit: int = 100):
     return db.get_tags(limit=limit)
 
-
 @app.get("/api/entities")
 async def api_entities(entity_type: str = "", limit: int = 50):
     return db.get_entities(entity_type=entity_type, limit=limit)
-
 
 @app.get("/api/search")
 async def api_search_data():
     return search.get_search_data()
 
-
 @app.get("/api/seo")
 async def api_seo_report():
     return seo.get_full_seo_report()
-
 
 @app.get("/api/seo/meta")
 async def api_seo_meta(limit: int = 500):
     return seo.get_meta_audit(limit)
 
-
 @app.get("/api/seo/content")
 async def api_seo_content(limit: int = 500):
     return seo.get_content_quality(limit)
-
 
 @app.get("/api/seo/schema")
 async def api_seo_schema(limit: int = 500):
     return seo.get_schema_readiness(limit)
 
-
 @app.get("/api/seo/geo")
 async def api_seo_geo():
     return seo.get_geo_readiness()
-
 
 @app.get("/api/seo/freshness")
 async def api_seo_freshness():
     return seo.get_freshness_analysis()
 
-
 @app.get("/api/seo/entities")
 async def api_seo_entities(limit: int = 30):
     return seo.get_entity_authority(limit)
 
-
 @app.get("/api/seo/topics")
 async def api_seo_topics():
     return seo.get_topical_coverage()
-
 
 @app.get("/api/seo/duplicates")
 async def api_seo_duplicates(limit: int = 30):
@@ -372,7 +355,6 @@ async def api_audit():
             ).fetchone()[0]
             fields_check[field] = {"empty": empty, "pct": round(empty / total * 100, 1) if total else 0}
 
-        # Tags/images from JSON
         no_tags = conn.execute(
             "SELECT COUNT(*) FROM articles WHERE tags IS NULL OR tags = '' OR tags = '[]'"
         ).fetchone()[0]
@@ -429,7 +411,6 @@ async def api_audit():
         """).fetchall()
         tag_list = [{"tag": r[0], "count": r[1]} for r in top_tags]
 
-        # Tag duplicates (case variants)
         all_tags_raw = conn.execute("SELECT tag, COUNT(*) as cnt FROM article_tags GROUP BY tag").fetchall()
         tag_groups = defaultdict(list)
         for t in all_tags_raw:
@@ -440,7 +421,6 @@ async def api_audit():
                 tag_dupes.append({"normalized": lower, "variants": variants})
         tag_dupes.sort(key=lambda x: -sum(v["count"] for v in x["variants"]))
 
-        # Latin-only tags
         latin_tags = conn.execute("""
             SELECT tag, COUNT(*) as cnt FROM article_tags
             WHERE tag NOT GLOB '*[а-яА-ЯёЁ]*' AND tag != ''
@@ -456,7 +436,6 @@ async def api_audit():
         """).fetchall()
         entity_type_counts = {r[0]: r[1] for r in entity_types}
 
-        # Top entities per type
         top_entities = {}
         for etype in ['person', 'org', 'location', 'event']:
             top = conn.execute("""
@@ -468,7 +447,6 @@ async def api_audit():
             """, (etype,)).fetchall()
             top_entities[etype] = [{"name": r[0], "normalized": r[1], "articles": r[2]} for r in top]
 
-        # Entity duplicates
         entity_dupes = conn.execute("""
             SELECT normalized, entity_type, GROUP_CONCAT(name, ' | ') as names, COUNT(*) as cnt
             FROM entities

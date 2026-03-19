@@ -427,3 +427,117 @@ def get_article(article_id: int) -> dict | None:
             d["entities"] = [dict(e) for e in entities]
             return d
         return None
+
+
+# ══════════════════════════════════════════════
+# PUBLIC FRONTEND QUERIES
+# ══════════════════════════════════════════════
+
+def get_article_by_slug(category: str, slug: str) -> dict | None:
+    """Find article by category + slug (extracted from old URL)."""
+    with get_db() as conn:
+        url_pattern = f"%/ru/news/{category}/{slug}"
+        row = conn.execute(
+            "SELECT * FROM articles WHERE url LIKE ? LIMIT 1", (url_pattern,)
+        ).fetchone()
+        if row:
+            d = dict(row)
+            d["tags"] = json.loads(d.get("tags") or "[]")
+            d["inline_images"] = json.loads(d.get("inline_images") or "[]")
+            entities = conn.execute("""
+                SELECT e.id, e.name, e.entity_type, ae.mention_count
+                FROM entities e
+                JOIN article_entities ae ON ae.entity_id = e.id
+                WHERE ae.article_id = ?
+                ORDER BY ae.mention_count DESC
+            """, (d["id"],)).fetchall()
+            d["entities"] = [dict(e) for e in entities]
+            return d
+        return None
+
+
+def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
+    """Get latest articles for homepage."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles
+            ORDER BY pub_date DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> dict:
+    """Get latest articles for a category with pagination."""
+    with get_db() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM articles WHERE sub_category = ?", (category,)
+        ).fetchone()[0]
+        rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles WHERE sub_category = ?
+            ORDER BY pub_date DESC
+            LIMIT ? OFFSET ?
+        """, (category, limit, offset)).fetchall()
+        return {
+            "articles": [dict(r) for r in rows],
+            "total": total,
+            "pages": max(1, (total + limit - 1) // limit),
+        }
+
+
+def get_related_articles(article_id: int, category: str, limit: int = 4) -> list:
+    """Get related articles from same category, excluding current."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles
+            WHERE sub_category = ? AND id != ?
+            ORDER BY pub_date DESC
+            LIMIT ?
+        """, (category, article_id, limit)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_trending_tags(limit: int = 20) -> list:
+    """Get trending tags (most used recently)."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT at.tag, COUNT(*) as cnt
+            FROM article_tags at
+            JOIN articles a ON a.id = at.article_id
+            WHERE a.pub_date >= date('now', '-30 days')
+            GROUP BY at.tag
+            ORDER BY cnt DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_category_counts() -> list:
+    """Get article counts per category."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT sub_category, COUNT(*) as cnt
+            FROM articles
+            GROUP BY sub_category
+            ORDER BY cnt DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def generate_sitemap_urls(limit: int = 50000) -> list:
+    """Get URLs for sitemap generation."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT url, pub_date, sub_category
+            FROM articles
+            WHERE pub_date IS NOT NULL
+            ORDER BY pub_date DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        return [dict(r) for r in rows]

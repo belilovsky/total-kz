@@ -137,11 +137,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Топ персоны
             </h3>
-            <a href="/content" class="chart-link">Все →</a>
+            <a href="/admin/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
             {% for p in persons[:6] %}
-            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ p.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ p.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
@@ -158,11 +158,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 Топ организации
             </h3>
-            <a href="/content" class="chart-link">Все →</a>
+            <a href="/admin/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
             {% for o in orgs[:6] %}
-            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ o.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ o.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
@@ -179,11 +179,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 Топ локации
             </h3>
-            <a href="/content" class="chart-link">Все →</a>
+            <a href="/admin/content" class="chart-link">Все →</a>
         </div>
         <div class="entity-bars">
             {% for l in locations[:6] %}
-            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ l.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ l.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>

@@ -1,0 +1,102 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ article.title }} — Total.kz{% endblock %}
+{% block description %}{{ article.excerpt or article.title }}{% endblock %}
+{% block canonical %}/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ article.title }}{% endblock %}
+{% block og_description %}{{ article.excerpt or article.title }}{% endblock %}
+{% block og_image %}{% if article.main_image %}<meta property="og:image" content="{{ article.main_image }}">{% endif %}{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": {{ article.title | tojson }},
+  "description": {{ (article.excerpt or article.title) | tojson }},
+  "url": "https://total.kz/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}",
+  {% if article.main_image %}"image": {{ article.main_image | tojson }},{% endif %}
+  "datePublished": {{ (article.pub_date or '') | tojson }},
+  {% if article.author %}"author": {"@type": "Person", "name": {{ article.author | tojson }}},{% endif %}
+  "publisher": {
+    "@type": "Organization",
+    "name": "Total.kz",
+    "url": "https://total.kz"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://total.kz/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}"
+  },
+  "creator": {
+    "@type": "SoftwareApplication",
+    "name": "Perplexity Computer",
+    "url": "https://www.perplexity.ai/computer"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="article-page">
+  <header class="article-page-header">
+    <a href="/news/{{ category }}" class="cat-badge">{{ category_name }}</a>
+    <h1>{{ article.title }}</h1>
+    {% if article.excerpt %}
+      <p class="article-excerpt">{{ article.excerpt }}</p>
+    {% endif %}
+    <div class="article-meta-bar">
+      {% if article.author %}<span class="author">{{ article.author }}</span>{% endif %}
+      <span>{{ format_date(article.pub_date) }}</span>
+    </div>
+  </header>
+
+  {% if article.main_image %}
+  <figure class="article-hero-image">
+    <img src="{{ article.main_image }}" alt="{{ article.title }}" loading="eager">
+    {% if article.image_credit %}
+      <figcaption>{{ article.image_credit }}</figcaption>
+    {% endif %}
+  </figure>
+  {% endif %}
+
+  <div class="article-body">
+    {% if article.body_html %}
+      {{ article.body_html | safe }}
+    {% elif article.body_text %}
+      {% for para in article.body_text.split('\n\n') %}
+        {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  {% if article.tags %}
+  <div class="article-tags">
+    {% for tag in article.tags %}
+      <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if related %}
+  <section class="related-section">
+    <h2 class="section-title">Читайте также</h2>
+    <div class="related-grid">
+      {% for art in related %}
+      <div class="compact-card">
+        <div class="compact-card-body">
+          <h4><a href="{{ article_url(art) }}">{{ art.title }}</a></h4>
+          <div class="meta">{{ format_date_short(art.pub_date) }}</div>
+        </div>
+        {% if art.thumbnail or art.main_image %}
+        <div class="compact-card-thumb">
+          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}

@@ -22,7 +22,7 @@
         {% if article.author %}
         <div class="article-author-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <a href="/articles?author={{ article.author|urlencode }}" style="color: var(--accent); text-decoration: none; font-weight: 500">{{ article.author }}</a>
+            <a href="/admin/articles?author={{ article.author|urlencode }}" style="color: var(--accent); text-decoration: none; font-weight: 500">{{ article.author }}</a>
         </div>
         {% endif %}
     </div>
@@ -45,7 +45,7 @@
     {% if article.tags %}
     <div class="article-tags">
         {% for tag in article.tags %}
-        <a href="/articles?tag={{ tag|urlencode }}" class="tag">{{ tag }}</a>
+        <a href="/admin/articles?tag={{ tag|urlencode }}" class="tag">{{ tag }}</a>
         {% endfor %}
     </div>
     {% endif %}
@@ -67,7 +67,7 @@
                 </span>
                 <div class="entity-section-items">
                     {% for e in persons %}
-                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-person">{{ e.name }}</a>
+                    <a href="/admin/articles?entity_id={{ e.id }}" class="entity-chip entity-person">{{ e.name }}</a>
                     {% endfor %}
                 </div>
             </div>
@@ -80,7 +80,7 @@
                 </span>
                 <div class="entity-section-items">
                     {% for e in orgs %}
-                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-org">{{ e.name }}</a>
+                    <a href="/admin/articles?entity_id={{ e.id }}" class="entity-chip entity-org">{{ e.name }}</a>
                     {% endfor %}
                 </div>
             </div>
@@ -93,7 +93,7 @@
                 </span>
                 <div class="entity-section-items">
                     {% for e in locs %}
-                    <a href="/articles?entity_id={{ e.id }}" class="entity-chip entity-location">{{ e.name }}</a>
+                    <a href="/admin/articles?entity_id={{ e.id }}" class="entity-chip entity-location">{{ e.name }}</a>
                     {% endfor %}
                 </div>
             </div>
@@ -107,7 +107,7 @@
             <strong>ID:</strong> {{ article.id }} &middot;
             <strong>Импорт:</strong> {{ article.imported_at[:16] if article.imported_at else '—' }}
         </div>
-        <a href="/articles" class="btn btn-ghost btn-sm">← К статьям</a>
+        <a href="/admin/articles" class="btn btn-ghost btn-sm">← К статьям</a>
     </div>
 </article>
 {% endblock %}

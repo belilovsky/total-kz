@@ -16,7 +16,7 @@
         </div>
         <div class="entity-bars">
             {% for p in persons %}
-            <a href="/articles?entity_id={{ p.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ p.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ p.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
@@ -36,7 +36,7 @@
         </div>
         <div class="entity-bars">
             {% for o in orgs %}
-            <a href="/articles?entity_id={{ o.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ o.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ o.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
@@ -56,7 +56,7 @@
         </div>
         <div class="entity-bars">
             {% for l in locations %}
-            <a href="/articles?entity_id={{ l.id }}" class="entity-bar-row">
+            <a href="/admin/articles?entity_id={{ l.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ l.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
                 <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>
@@ -83,7 +83,7 @@
     </div>
     <div class="tag-cloud">
         {% for t in tags %}
-        <a href="/articles?tag={{ t.tag|urlencode }}" class="tag-cloud-item" style="font-size: {{ [12, 11 + (t.cnt / tags[0].cnt * 14)|int]|max }}px; opacity: {{ [0.55, 0.45 + t.cnt / tags[0].cnt * 0.55]|max }}">
+        <a href="/admin/articles?tag={{ t.tag|urlencode }}" class="tag-cloud-item" style="font-size: {{ [12, 11 + (t.cnt / tags[0].cnt * 14)|int]|max }}px; opacity: {{ [0.55, 0.45 + t.cnt / tags[0].cnt * 0.55]|max }}">
             {{ t.tag }} <span class="tag-count">{{ t.cnt }}</span>
         </a>
         {% endfor %}
@@ -111,7 +111,7 @@
                 {% for a in authors %}
                 <tr>
                     <td class="num rank">{{ loop.index }}</td>
-                    <td class="author-name"><a href="/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
+                    <td class="author-name"><a href="/admin/articles?author={{ a.author|urlencode }}">{{ a.author }}</a></td>
                     <td class="bar-cell">
                         <div class="bar-track" style="width:100%;height:6px;background:var(--bg-body);border-radius:3px;overflow:hidden">
                             <div class="bar-fill" style="width:{{ (a.cnt / authors[0].cnt * 100)|int }}%;height:100%;background:var(--accent);border-radius:3px"></div>
