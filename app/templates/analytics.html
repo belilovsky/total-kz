@@ -148,6 +148,7 @@
             </tbody>
         </table>
     </div>
+    {% endif %}
 </section>
 
 <!-- ═══════════════ GEO READINESS ═══════════════ -->
@@ -318,10 +319,10 @@ const chartDefaults = {
     const ctx = document.getElementById('freshnessChart');
     if (!ctx) return;
     const fresh = {{ fresh_json|safe }};
-    if (!fresh.months || !fresh.months.length) return;
+    if (!fresh.monthly || !fresh.monthly.length) return;
     new Chart(ctx, {
         type: 'bar',
-        data: { labels: fresh.months.map(m => m.month), datasets: [{ data: fresh.months.map(m => m.count), backgroundColor: accent + '60', borderRadius: 3, borderSkipped: false }] },
+        data: { labels: fresh.monthly.map(m => m.month), datasets: [{ data: fresh.monthly.map(m => m.cnt), backgroundColor: accent + '60', borderRadius: 3, borderSkipped: false }] },
         options: { ...chartDefaults, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, font: { size: 10 } } } } }
     });
 })();
@@ -331,8 +332,8 @@ const chartDefaults = {
     const ctx = document.getElementById('ageChart');
     if (!ctx) return;
     const fresh = {{ fresh_json|safe }};
-    if (!fresh.age_buckets) return;
-    const buckets = fresh.age_buckets;
+    if (!fresh.age_distribution) return;
+    const buckets = fresh.age_distribution;
     const labels = Object.keys(buckets);
     const values = Object.values(buckets);
     const colors = [green, accent, orange, red, isDark ? '#6b7280' : '#9ca3af'];
