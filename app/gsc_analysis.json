@@ -1,24 +1,24 @@
 {
   "totals": {
-    "clicks": 10727,
-    "impressions": 289799,
-    "avg_ctr": 3.7,
-    "avg_position": 8.5
+    "clicks": 34436,
+    "impressions": 1791645,
+    "avg_ctr": 1.9,
+    "avg_position": 9.6
   },
   "brand_split": {
-    "brand_clicks": 2901,
-    "nonbrand_clicks": 7826,
-    "brand_impressions": 5784,
-    "nonbrand_impressions": 284015
+    "brand_clicks": 2971,
+    "nonbrand_clicks": 31465,
+    "brand_impressions": 5934,
+    "nonbrand_impressions": 1785711
   },
   "growth_opportunities": [
     {
       "query": "новости",
-      "clicks": 552,
-      "impressions": 53658,
-      "ctr": 0.010287375601028737,
-      "position": 11.171176711767117,
-      "potential_extra_clicks": 7496
+      "clicks": 564,
+      "impressions": 54130,
+      "ctr": 0.0104193607980787,
+      "position": 11.19948272676889,
+      "potential_extra_clicks": 7555
     },
     {
       "query": "погода",
@@ -30,11 +30,11 @@
     },
     {
       "query": "новости казахстана",
-      "clicks": 933,
-      "impressions": 19452,
-      "ctr": 0.04796421961752005,
-      "position": 13.611813695249845,
-      "potential_extra_clicks": 1984
+      "clicks": 951,
+      "impressions": 19851,
+      "ctr": 0.04790690645307541,
+      "position": 13.65477809682132,
+      "potential_extra_clicks": 2026
     },
     {
       "query": "зимние олимпийские игры где посмотреть",
@@ -46,35 +46,35 @@
     },
     {
       "query": "новости казахстана сегодня",
-      "clicks": 30,
-      "impressions": 3795,
-      "ctr": 0.007905138339920948,
-      "position": 10.971277997364954,
-      "potential_extra_clicks": 539
+      "clicks": 31,
+      "impressions": 3867,
+      "ctr": 0.008016550297388157,
+      "position": 11.090250840444789,
+      "potential_extra_clicks": 549
     },
     {
       "query": "новости кз",
-      "clicks": 43,
-      "impressions": 3801,
-      "ctr": 0.011312812417784793,
-      "position": 10.418837148118916,
-      "potential_extra_clicks": 527
+      "clicks": 44,
+      "impressions": 3892,
+      "ctr": 0.011305241521068859,
+      "position": 10.441161356628983,
+      "potential_extra_clicks": 539
     },
     {
       "query": "сабыржан махметов",
       "clicks": 73,
-      "impressions": 3654,
-      "ctr": 0.019978106185002738,
-      "position": 7.013683634373289,
-      "potential_extra_clicks": 475
+      "impressions": 3672,
+      "ctr": 0.019880174291938998,
+      "position": 6.989106753812636,
+      "potential_extra_clicks": 477
     },
     {
       "query": "свежии новости казахстана",
-      "clicks": 57,
-      "impressions": 3506,
-      "ctr": 0.016257843696520252,
-      "position": 10.674272675413576,
-      "potential_extra_clicks": 468
+      "clicks": 60,
+      "impressions": 3584,
+      "ctr": 0.016741071428571428,
+      "position": 10.723772321428571,
+      "potential_extra_clicks": 477
     },
     {
       "query": "аджай таварес",
@@ -86,171 +86,91 @@
     },
     {
       "query": "новости казахстана на сегодня",
-      "clicks": 99,
-      "impressions": 3511,
-      "ctr": 0.02819709484477357,
-      "position": 10.755340358872116,
-      "potential_extra_clicks": 427
-    },
-    {
-      "query": "токтар сериков биография",
-      "clicks": 9,
-      "impressions": 2864,
-      "ctr": 0.0031424581005586594,
-      "position": 5.652583798882682,
-      "potential_extra_clicks": 420
+      "clicks": 100,
+      "impressions": 3573,
+      "ctr": 0.027987685418415897,
+      "position": 10.840750069969214,
+      "potential_extra_clicks": 435
     },
     {
       "query": "свежие новости казахстана",
       "clicks": 4,
-      "impressions": 2832,
-      "ctr": 0.0014124293785310734,
-      "position": 10.445621468926554,
-      "potential_extra_clicks": 420
+      "impressions": 2925,
+      "ctr": 0.0013675213675213675,
+      "position": 10.422222222222222,
+      "potential_extra_clicks": 434
     },
     {
       "query": "громкие новости казахстана",
-      "clicks": 42,
+      "clicks": 44,
+      "impressions": 3143,
+      "ctr": 0.013999363665287942,
+      "position": 10.93445752465797,
+      "potential_extra_clicks": 427
+    },
+    {
+      "query": "токтар сериков биография",
+      "clicks": 10,
+      "impressions": 2910,
+      "ctr": 0.003436426116838488,
+      "position": 5.630927835051547,
+      "potential_extra_clicks": 426
+    },
+    {
+      "query": "нурлан имам",
+      "clicks": 34,
       "impressions": 3058,
-      "ctr": 0.013734466971877043,
-      "position": 10.999672988881622,
-      "potential_extra_clicks": 416
+      "ctr": 0.011118378024852845,
+      "position": 6.534336167429693,
+      "potential_extra_clicks": 424
     },
     {
       "query": "есомп",
       "clicks": 5,
-      "impressions": 2712,
-      "ctr": 0.0018436578171091445,
-      "position": 7.518805309734513,
-      "potential_extra_clicks": 401
-    },
-    {
-      "query": "нурлан имам",
-      "clicks": 31,
-      "impressions": 2871,
-      "ctr": 0.01079763148728666,
-      "position": 6.590038314176245,
-      "potential_extra_clicks": 399
+      "impressions": 2740,
+      "ctr": 0.0018248175182481751,
+      "position": 7.452919708029197,
+      "potential_extra_clicks": 406
     },
     {
       "query": "новости казахстан",
       "clicks": 32,
-      "impressions": 2505,
-      "ctr": 0.01277445109780439,
-      "position": 13.664271457085828,
-      "potential_extra_clicks": 343
+      "impressions": 2553,
+      "ctr": 0.01253427340383862,
+      "position": 13.676850763807286,
+      "potential_extra_clicks": 350
     },
     {
       "query": "нурлан имам биография",
       "clicks": 12,
-      "impressions": 2291,
-      "ctr": 0.005237887385421213,
-      "position": 8.234395460497598,
-      "potential_extra_clicks": 331
+      "impressions": 2363,
+      "ctr": 0.0050782903089293275,
+      "position": 8.264494286923401,
+      "potential_extra_clicks": 342
     },
     {
       "query": "новости рк",
       "clicks": 54,
-      "impressions": 2447,
-      "ctr": 0.022067838169186758,
-      "position": 11.36657131181038,
-      "potential_extra_clicks": 313
+      "impressions": 2511,
+      "ctr": 0.021505376344086023,
+      "position": 11.377140581441656,
+      "potential_extra_clicks": 322
     },
     {
       "query": "последние новости казахстана",
       "clicks": 46,
-      "impressions": 2356,
-      "ctr": 0.019524617996604415,
-      "position": 10.897707979626485,
-      "potential_extra_clicks": 307
+      "impressions": 2435,
+      "ctr": 0.0188911704312115,
+      "position": 11.014784394250514,
+      "potential_extra_clicks": 319
     },
     {
       "query": "население казахстана",
       "clicks": 5,
-      "impressions": 1726,
-      "ctr": 0.0028968713789107765,
-      "position": 5.682502896871379,
-      "potential_extra_clicks": 253
-    },
-    {
-      "query": "новости казахстана свежие",
-      "clicks": 16,
-      "impressions": 1724,
-      "ctr": 0.009280742459396751,
-      "position": 10.646171693735498,
-      "potential_extra_clicks": 242
-    },
-    {
-      "query": "нурлан имам биография семья",
-      "clicks": 14,
-      "impressions": 1624,
-      "ctr": 0.008620689655172414,
-      "position": 6.341748768472907,
-      "potential_extra_clicks": 229
-    },
-    {
-      "query": "сабыржан махметов год рождения",
-      "clicks": 45,
-      "impressions": 1591,
-      "ctr": 0.028284098051539912,
-      "position": 4.05656819610308,
-      "potential_extra_clicks": 193
-    },
-    {
-      "query": "курс доллара",
-      "clicks": 4,
-      "impressions": 1260,
-      "ctr": 0.0031746031746031746,
-      "position": 8.538888888888888,
-      "potential_extra_clicks": 185
-    },
-    {
-      "query": "новости казахстана и мира",
-      "clicks": 43,
-      "impressions": 1512,
-      "ctr": 0.028439153439153438,
-      "position": 11.77116402116402,
-      "potential_extra_clicks": 183
-    },
-    {
-      "query": "токтар сериков биография дата рождения",
-      "clicks": 8,
-      "impressions": 1208,
-      "ctr": 0.006622516556291391,
-      "position": 4.461092715231788,
-      "potential_extra_clicks": 173
-    },
-    {
-      "query": "новости в казахстане",
-      "clicks": 4,
-      "impressions": 1039,
-      "ctr": 0.0038498556304138597,
-      "position": 13.510105871029836,
-      "potential_extra_clicks": 151
-    },
-    {
-      "query": "новости казахстана сегодня свежие события",
-      "clicks": 22,
-      "impressions": 1136,
-      "ctr": 0.01936619718309859,
-      "position": 10.889084507042254,
-      "potential_extra_clicks": 148
-    },
-    {
-      "query": "сабыржан махметов википедия",
-      "clicks": 39,
-      "impressions": 1227,
-      "ctr": 0.03178484107579462,
-      "position": 5.7310513447432765,
-      "potential_extra_clicks": 145
-    },
-    {
-      "query": "бизоны в казахстане",
-      "clicks": 4,
-      "impressions": 992,
-      "ctr": 0.004032258064516129,
-      "position": 7.682459677419355,
-      "potential_extra_clicks": 144
+      "impressions": 1819,
+      "ctr": 0.002748763056624519,
+      "position": 5.88785046728972,
+      "potential_extra_clicks": 267
     }
   ],
   "quick_wins": [
@@ -258,41 +178,41 @@
       "query": "погода",
       "clicks": 13,
       "impressions": 21980,
-      "ctr": 0.06,
+      "ctr": 0.1,
       "position": 9.4
     },
     {
       "query": "зимние олимпийские игры где посмотреть",
       "clicks": 79,
       "impressions": 5507,
-      "ctr": 1.43,
+      "ctr": 1.4,
       "position": 5.8
     },
     {
       "query": "токтар сериков",
       "clicks": 5,
-      "impressions": 4908,
+      "impressions": 4923,
       "ctr": 0.1,
       "position": 1.8
     },
     {
       "query": "мухтар шаханов",
       "clicks": 10,
-      "impressions": 4142,
-      "ctr": 0.24,
+      "impressions": 4254,
+      "ctr": 0.2,
       "position": 1.4
     },
     {
       "query": "население казахстана 2025",
       "clicks": 7,
-      "impressions": 3711,
-      "ctr": 0.19,
+      "impressions": 3716,
+      "ctr": 0.2,
       "position": 1.6
     },
     {
       "query": "сабыржан махметов",
       "clicks": 73,
-      "impressions": 3654,
+      "impressions": 3672,
       "ctr": 2.0,
       "position": 7.0
     },
@@ -300,861 +220,1019 @@
       "query": "аджай таварес",
       "clicks": 8,
       "impressions": 3143,
-      "ctr": 0.25,
+      "ctr": 0.3,
       "position": 6.8
+    },
+    {
+      "query": "нурлан имам",
+      "clicks": 34,
+      "impressions": 3058,
+      "ctr": 1.1,
+      "position": 6.5
+    },
+    {
+      "query": "токтар сериков биография",
+      "clicks": 10,
+      "impressions": 2910,
+      "ctr": 0.3,
+      "position": 5.6
     },
     {
       "query": "долг",
       "clicks": 41,
       "impressions": 2905,
-      "ctr": 1.41,
+      "ctr": 1.4,
       "position": 2.2
     },
     {
       "query": "whatsapp",
       "clicks": 7,
       "impressions": 2902,
-      "ctr": 0.24,
+      "ctr": 0.2,
       "position": 2.6
-    },
-    {
-      "query": "нурлан имам",
-      "clicks": 31,
-      "impressions": 2871,
-      "ctr": 1.08,
-      "position": 6.6
-    },
-    {
-      "query": "токтар сериков биография",
-      "clicks": 9,
-      "impressions": 2864,
-      "ctr": 0.31,
-      "position": 5.7
     },
     {
       "query": "есомп",
       "clicks": 5,
-      "impressions": 2712,
-      "ctr": 0.18,
+      "impressions": 2740,
+      "ctr": 0.2,
       "position": 7.5
     },
     {
       "query": "нурлан имам биография",
       "clicks": 12,
-      "impressions": 2291,
-      "ctr": 0.52,
-      "position": 8.2
+      "impressions": 2363,
+      "ctr": 0.5,
+      "position": 8.3
     },
     {
       "query": "доллар",
       "clicks": 11,
-      "impressions": 1988,
-      "ctr": 0.55,
+      "impressions": 1990,
+      "ctr": 0.6,
       "position": 3.6
     },
     {
-      "query": "население казахстана",
-      "clicks": 5,
-      "impressions": 1726,
-      "ctr": 0.29,
-      "position": 5.7
-    },
-    {
       "query": "дина елгезек биография",
-      "clicks": 12,
-      "impressions": 1685,
-      "ctr": 0.71,
-      "position": 2.6
-    },
-    {
-      "query": "нурлан имам биография семья",
-      "clicks": 14,
-      "impressions": 1624,
-      "ctr": 0.86,
-      "position": 6.3
-    },
-    {
-      "query": "сабыржан махметов год рождения",
-      "clicks": 45,
-      "impressions": 1591,
-      "ctr": 2.83,
-      "position": 4.1
-    },
-    {
-      "query": "бажа актеры",
-      "clicks": 6,
-      "impressions": 1490,
-      "ctr": 0.4,
-      "position": 2.1
-    },
-    {
-      "query": "состояние илона маска",
-      "clicks": 27,
-      "impressions": 1386,
-      "ctr": 1.95,
-      "position": 2.9
+      "clicks": 13,
+      "impressions": 1952,
+      "ctr": 0.7,
+      "position": 2.4
     }
   ],
   "position_distribution": {
-    "Топ 3 (позиция 1-3)": 150,
-    "Позиция 4-10": 284,
-    "Позиция 11-20": 44,
-    "Позиция 21+": 22
-  },
-  "category_stats": {
-    "Новости/события": {
-      "clicks": 2384,
-      "impressions": 115036,
-      "queries": 38
-    },
-    "Персоны": {
-      "clicks": 1357,
-      "impressions": 30923,
-      "queries": 57
-    },
-    "Госуслуги/документы": {
-      "clicks": 651,
-      "impressions": 7494,
-      "queries": 51
-    },
-    "Религия": {
-      "clicks": 9,
-      "impressions": 141,
-      "queries": 2
-    },
-    "Общество": {
-      "clicks": 2025,
-      "impressions": 64150,
-      "queries": 70
-    }
+    "Топ 3 (позиции 1-3)": 152,
+    "Топ 10 (позиции 4-10)": 282,
+    "Топ 20 (позиции 11-20)": 44,
+    "За топ 20 (20+)": 22
   },
   "top_queries": [
     {
       "query": "тотал кз",
-      "clicks": 2516,
-      "impressions": 2833,
-      "ctr": 88.81,
+      "clicks": 2575,
+      "impressions": 2903,
+      "ctr": 88.7,
       "position": 1.2
     },
     {
       "query": "новости казахстана",
-      "clicks": 933,
-      "impressions": 19452,
+      "clicks": 951,
+      "impressions": 19851,
       "ctr": 4.8,
-      "position": 13.6
+      "position": 13.7
     },
     {
       "query": "сабыржан махметов биография",
-      "clicks": 569,
-      "impressions": 7978,
-      "ctr": 7.13,
+      "clicks": 571,
+      "impressions": 7987,
+      "ctr": 7.1,
       "position": 3.3
     },
     {
       "query": "новости",
-      "clicks": 552,
-      "impressions": 53658,
-      "ctr": 1.03,
+      "clicks": 564,
+      "impressions": 54130,
+      "ctr": 1.0,
       "position": 11.2
     },
     {
       "query": "свежие новости казахстана на сегодня",
-      "clicks": 194,
-      "impressions": 1083,
-      "ctr": 17.91,
-      "position": 9.3
+      "clicks": 198,
+      "impressions": 1107,
+      "ctr": 17.9,
+      "position": 9.4
     },
     {
       "query": "бейбит сейдуалиева первый муж",
-      "clicks": 120,
-      "impressions": 1419,
-      "ctr": 8.46,
+      "clicks": 122,
+      "impressions": 1428,
+      "ctr": 8.5,
       "position": 1.9
     },
     {
       "query": "total kz",
-      "clicks": 115,
-      "impressions": 150,
-      "ctr": 76.67,
+      "clicks": 121,
+      "impressions": 158,
+      "ctr": 76.6,
       "position": 1
     },
     {
+      "query": "пенсия повышение",
+      "clicks": 116,
+      "impressions": 1573,
+      "ctr": 7.4,
+      "position": 3.9
+    },
+    {
       "query": "тотал",
-      "clicks": 113,
-      "impressions": 1275,
-      "ctr": 8.86,
+      "clicks": 114,
+      "impressions": 1301,
+      "ctr": 8.8,
       "position": 8.4
     },
     {
       "query": "номер телефона по иин",
-      "clicks": 106,
-      "impressions": 251,
-      "ctr": 42.23,
+      "clicks": 108,
+      "impressions": 258,
+      "ctr": 41.9,
       "position": 1.9
     },
     {
       "query": "новости казахстана на сегодня",
-      "clicks": 99,
-      "impressions": 3511,
-      "ctr": 2.82,
+      "clicks": 100,
+      "impressions": 3573,
+      "ctr": 2.8,
       "position": 10.8
     },
     {
       "query": "на 8 марта многодетной маме 2026 год",
       "clicks": 86,
       "impressions": 382,
-      "ctr": 22.51,
+      "ctr": 22.5,
       "position": 4.7
     },
     {
       "query": "зимние олимпийские игры где посмотреть",
       "clicks": 79,
       "impressions": 5507,
-      "ctr": 1.43,
+      "ctr": 1.4,
       "position": 5.8
     },
     {
       "query": "мадина абылкасымова муж",
       "clicks": 77,
-      "impressions": 333,
-      "ctr": 23.12,
+      "impressions": 338,
+      "ctr": 22.8,
       "position": 1
+    },
+    {
+      "query": "назира бакаева",
+      "clicks": 73,
+      "impressions": 1343,
+      "ctr": 5.4,
+      "position": 7.3
     },
     {
       "query": "сабыржан махметов",
       "clicks": 73,
-      "impressions": 3654,
+      "impressions": 3672,
       "ctr": 2.0,
       "position": 7.0
     },
     {
-      "query": "назира бакаева",
-      "clicks": 72,
-      "impressions": 1307,
-      "ctr": 5.51,
-      "position": 7.4
-    },
-    {
       "query": "назира бакаева и дорис",
       "clicks": 72,
-      "impressions": 365,
-      "ctr": 19.73,
+      "impressions": 366,
+      "ctr": 19.7,
       "position": 3.4
     },
     {
       "query": "total",
-      "clicks": 69,
-      "impressions": 1263,
-      "ctr": 5.46,
+      "clicks": 71,
+      "impressions": 1302,
+      "ctr": 5.5,
       "position": 4.0
     },
     {
       "query": "сабыржан махметов биография год рождения",
       "clicks": 68,
       "impressions": 1310,
-      "ctr": 5.19,
+      "ctr": 5.2,
       "position": 4.0
     },
     {
       "query": "талгат байгужинов биография",
       "clicks": 67,
       "impressions": 205,
-      "ctr": 32.68,
+      "ctr": 32.7,
       "position": 2.2
     },
     {
       "query": "total.kz",
-      "clicks": 65,
-      "impressions": 99,
-      "ctr": 65.66,
+      "clicks": 66,
+      "impressions": 100,
+      "ctr": 66.0,
       "position": 1.2
+    },
+    {
+      "query": "айдын рахимбаев чей родственник",
+      "clicks": 63,
+      "impressions": 335,
+      "ctr": 18.8,
+      "position": 2.5
     },
     {
       "query": "раздеть одежду приложение",
       "clicks": 63,
-      "impressions": 552,
-      "ctr": 11.41,
+      "impressions": 555,
+      "ctr": 11.4,
       "position": 8.6
     },
     {
-      "query": "айдын рахимбаев чей родственник",
-      "clicks": 62,
-      "impressions": 323,
-      "ctr": 19.2,
-      "position": 2.5
-    },
-    {
       "query": "свежии новости казахстана",
-      "clicks": 57,
-      "impressions": 3506,
-      "ctr": 1.63,
+      "clicks": 60,
+      "impressions": 3584,
+      "ctr": 1.7,
       "position": 10.7
     },
     {
       "query": "назира бакаева личная жизнь",
       "clicks": 56,
-      "impressions": 496,
-      "ctr": 11.29,
+      "impressions": 498,
+      "ctr": 11.2,
       "position": 4.9
     },
     {
       "query": "казахстан новости",
       "clicks": 54,
-      "impressions": 798,
-      "ctr": 6.77,
-      "position": 21.3
+      "impressions": 820,
+      "ctr": 6.6,
+      "position": 21.4
     },
     {
       "query": "надежда артыкбаева",
       "clicks": 54,
-      "impressions": 342,
-      "ctr": 15.79,
-      "position": 2.1
+      "impressions": 349,
+      "ctr": 15.5,
+      "position": 2.3
     },
     {
       "query": "новости рк",
       "clicks": 54,
-      "impressions": 2447,
-      "ctr": 2.21,
+      "impressions": 2511,
+      "ctr": 2.2,
       "position": 11.4
     },
     {
       "query": "назира бакаева девушка",
       "clicks": 48,
       "impressions": 186,
-      "ctr": 25.81,
+      "ctr": 25.8,
       "position": 1.6
+    },
+    {
+      "query": "ануар аркенов",
+      "clicks": 47,
+      "impressions": 149,
+      "ctr": 31.5,
+      "position": 2.9
     },
     {
       "query": "ольга владимировна целитель усть-каменогорск",
       "clicks": 47,
       "impressions": 138,
-      "ctr": 34.06,
+      "ctr": 34.1,
       "position": 1.1
-    },
-    {
-      "query": "ануар аркенов",
-      "clicks": 46,
-      "impressions": 147,
-      "ctr": 31.29,
-      "position": 2.9
     },
     {
       "query": "последние новости казахстана",
       "clicks": 46,
-      "impressions": 2356,
-      "ctr": 1.95,
-      "position": 10.9
+      "impressions": 2435,
+      "ctr": 1.9,
+      "position": 11.0
     },
     {
       "query": "эротические фильмы",
       "clicks": 46,
-      "impressions": 2642,
-      "ctr": 1.74,
-      "position": 72.9
+      "impressions": 2652,
+      "ctr": 1.7,
+      "position": 72.8
     },
     {
       "query": "назира бакаева национальность",
       "clicks": 45,
-      "impressions": 1035,
-      "ctr": 4.35,
+      "impressions": 1037,
+      "ctr": 4.3,
       "position": 7.0
     },
     {
       "query": "сабыржан махметов год рождения",
       "clicks": 45,
       "impressions": 1591,
-      "ctr": 2.83,
+      "ctr": 2.8,
       "position": 4.1
+    },
+    {
+      "query": "громкие новости казахстана",
+      "clicks": 44,
+      "impressions": 3143,
+      "ctr": 1.4,
+      "position": 10.9
+    },
+    {
+      "query": "новости кз",
+      "clicks": 44,
+      "impressions": 3892,
+      "ctr": 1.1,
+      "position": 10.4
     },
     {
       "query": "сабыржан махметов опг",
       "clicks": 44,
-      "impressions": 886,
-      "ctr": 4.97,
+      "impressions": 887,
+      "ctr": 5.0,
       "position": 3.2
     },
     {
       "query": "новости казахстана и мира",
       "clicks": 43,
-      "impressions": 1512,
-      "ctr": 2.84,
+      "impressions": 1572,
+      "ctr": 2.7,
       "position": 11.8
     },
     {
-      "query": "новости кз",
-      "clicks": 43,
-      "impressions": 3801,
-      "ctr": 1.13,
-      "position": 10.4
-    },
-    {
-      "query": "громкие новости казахстана",
+      "query": "сколько номеров на иин",
       "clicks": 42,
-      "impressions": 3058,
-      "ctr": 1.37,
-      "position": 11.0
+      "impressions": 324,
+      "ctr": 13.0,
+      "position": 5.4
     },
     {
       "query": "долг",
       "clicks": 41,
       "impressions": 2905,
-      "ctr": 1.41,
+      "ctr": 1.4,
       "position": 2.2
-    },
-    {
-      "query": "сколько номеров на иин",
-      "clicks": 40,
-      "impressions": 319,
-      "ctr": 12.54,
-      "position": 5.4
     },
     {
       "query": "сабыржан махметов википедия",
       "clicks": 39,
       "impressions": 1227,
-      "ctr": 3.18,
+      "ctr": 3.2,
       "position": 5.7
     },
     {
       "query": "дарын мубаров жены",
       "clicks": 38,
-      "impressions": 111,
-      "ctr": 34.23,
+      "impressions": 112,
+      "ctr": 33.9,
       "position": 1.1
     },
     {
       "query": "номер по иин",
       "clicks": 38,
       "impressions": 86,
-      "ctr": 44.19,
+      "ctr": 44.2,
       "position": 2.1
     },
     {
       "query": "алексей лодочников биография",
       "clicks": 34,
-      "impressions": 351,
-      "ctr": 9.69,
+      "impressions": 353,
+      "ctr": 9.6,
       "position": 4.8
     },
     {
       "query": "артыкбаева надежда абдуллаевна",
       "clicks": 34,
-      "impressions": 142,
-      "ctr": 23.94,
+      "impressions": 143,
+      "ctr": 23.8,
       "position": 2.7
     },
     {
       "query": "бауржан бердыбекович сапарбаев",
-      "clicks": 33,
-      "impressions": 835,
-      "ctr": 3.95,
+      "clicks": 34,
+      "impressions": 846,
+      "ctr": 4.0,
       "position": 7.7
     },
     {
+      "query": "нурлан имам",
+      "clicks": 34,
+      "impressions": 3058,
+      "ctr": 1.1,
+      "position": 6.5
+    },
+    {
       "query": "найти по иин номер телефона",
-      "clicks": 32,
-      "impressions": 64,
-      "ctr": 50.0,
+      "clicks": 33,
+      "impressions": 65,
+      "ctr": 50.8,
       "position": 2.1
     },
     {
       "query": "новости казахстан",
       "clicks": 32,
-      "impressions": 2505,
-      "ctr": 1.28,
+      "impressions": 2553,
+      "ctr": 1.3,
       "position": 13.7
-    },
-    {
-      "query": "нурлан имам",
-      "clicks": 31,
-      "impressions": 2871,
-      "ctr": 1.08,
-      "position": 6.6
-    },
-    {
-      "query": "новости казахстана сегодня",
-      "clicks": 30,
-      "impressions": 3795,
-      "ctr": 0.79,
-      "position": 11.0
     }
   ],
   "top_pages": [
     {
       "url": "https://total.kz/",
-      "clicks": 5550,
-      "impressions": 140336,
-      "ctr": 3.95,
-      "position": 11.5
+      "slug": "",
+      "clicks": 5681,
+      "impressions": 143109,
+      "ctr": 4.0,
+      "position": 11.6
     },
     {
       "url": "https://total.kz/ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
-      "clicks": 1326,
-      "impressions": 30437,
-      "ctr": 4.36,
+      "slug": "ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
+      "clicks": 1358,
+      "impressions": 31255,
+      "ctr": 4.3,
       "position": 6.5
     },
     {
       "url": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 966,
-      "impressions": 21314,
-      "ctr": 4.53,
+      "slug": "ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
+      "clicks": 968,
+      "impressions": 21353,
+      "ctr": 4.5,
       "position": 4.3
     },
     {
       "url": "https://total.kz/ru/news/ekonomika_sobitiya/po_20_tisyach_tenge_viplatyat_mnogodetnim_materyam_k_8_marta_v_oblasti_ulitau_date_2026_02_24_19_43_47",
+      "slug": "ru/news/ekonomika_sobitiya/po_20_tisyach_tenge_viplatyat_mnogodetnim_materyam_k_8_marta_v_oblasti_ulitau_date_2026_02_24_19_43_47",
       "clicks": 550,
-      "impressions": 5561,
-      "ctr": 9.89,
+      "impressions": 5571,
+      "ctr": 9.9,
       "position": 5.9
     },
     {
       "url": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 517,
-      "impressions": 6521,
-      "ctr": 7.93,
+      "slug": "ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
+      "clicks": 518,
+      "impressions": 6574,
+      "ctr": 7.9,
       "position": 6.7
     },
     {
       "url": "https://total.kz/ru/news",
-      "clicks": 325,
-      "impressions": 41920,
-      "ctr": 0.78,
+      "slug": "ru/news",
+      "clicks": 332,
+      "impressions": 43528,
+      "ctr": 0.8,
       "position": 17.0
     },
     {
       "url": "https://total.kz/ru/news/zhizn/pochemu_genprokuror_lubit_rodstvennikov_zheni_menshe__zhurnalist_date_2022_11_02_14_49_06",
-      "clicks": 208,
-      "impressions": 2381,
-      "ctr": 8.74,
+      "slug": "ru/news/zhizn/pochemu_genprokuror_lubit_rodstvennikov_zheni_menshe__zhurnalist_date_2022_11_02_14_49_06",
+      "clicks": 211,
+      "impressions": 2419,
+      "ctr": 8.7,
       "position": 5.1
     },
     {
       "url": "https://total.kz/ru/news/nauka/toksichnoe_oblako_iz_irana_dvizhetsya_v_storonu_kazahstana_date_2026_03_09_13_31_54",
-      "clicks": 203,
-      "impressions": 3215,
-      "ctr": 6.31,
+      "slug": "ru/news/nauka/toksichnoe_oblako_iz_irana_dvizhetsya_v_storonu_kazahstana_date_2026_03_09_13_31_54",
+      "clicks": 205,
+      "impressions": 3249,
+      "ctr": 6.3,
       "position": 6.0
     },
     {
+      "url": "https://total.kz/ru/news/finansi/naskolko_virastut_pensii_kazahstantsev_v_2026_godu_date_2025_12_17_17_23_40",
+      "slug": "ru/news/finansi/naskolko_virastut_pensii_kazahstantsev_v_2026_godu_date_2025_12_17_17_23_40",
+      "clicks": 194,
+      "impressions": 6233,
+      "ctr": 3.1,
+      "position": 5.5
+    },
+    {
       "url": "https://total.kz/ru/news/religiya/na_kogo_namekaet_nurlanimam_kto_vinovat_v_rasprostranenii_salafizma_v_kazahstane_date_2025_04_18",
-      "clicks": 180,
-      "impressions": 12816,
+      "slug": "ru/news/religiya/na_kogo_namekaet_nurlanimam_kto_vinovat_v_rasprostranenii_salafizma_v_kazahstane_date_2025_04_18",
+      "clicks": 186,
+      "impressions": 13340,
       "ctr": 1.4,
       "position": 6.8
     },
     {
       "url": "https://total.kz/ru/news/nauka/komu_vreden_i_polezen_post_v_ramadan__gastroenterolog_date_2021_04_16_16_17_44",
+      "slug": "ru/news/nauka/komu_vreden_i_polezen_post_v_ramadan__gastroenterolog_date_2021_04_16_16_17_44",
       "clicks": 173,
-      "impressions": 6082,
-      "ctr": 2.84,
+      "impressions": 6108,
+      "ctr": 2.8,
       "position": 6.2
     },
     {
       "url": "https://total.kz/ru/news/vnutrennyaya_politika/suprug_glavi_arrfr_stal_pervim_zamestitelem_akima_almatinskoi_oblasti_date_2023_04_17_15_06_12",
-      "clicks": 170,
-      "impressions": 753,
-      "ctr": 22.58,
+      "slug": "ru/news/vnutrennyaya_politika/suprug_glavi_arrfr_stal_pervim_zamestitelem_akima_almatinskoi_oblasti_date_2023_04_17_15_06_12",
+      "clicks": 172,
+      "impressions": 766,
+      "ctr": 22.5,
       "position": 2.0
     },
     {
       "url": "https://total.kz/ru/news/biznes/anomaliya_za_75_milliardov_tenge_ili_pochemu_prokuratura_krishuet_qazaq_stroy_date_2025_11_07",
-      "clicks": 153,
-      "impressions": 1542,
-      "ctr": 9.92,
+      "slug": "ru/news/biznes/anomaliya_za_75_milliardov_tenge_ili_pochemu_prokuratura_krishuet_qazaq_stroy_date_2025_11_07",
+      "clicks": 154,
+      "impressions": 1569,
+      "ctr": 9.8,
       "position": 7.4
     },
     {
       "url": "https://total.kz/ru/news/obshchestvo_sobitiya/molodoy_televeduschiy_talgat_baygujinov_stavshiy_zvezdoy_omskogo_tv_mechtaet_ob_astane",
+      "slug": "ru/news/obshchestvo_sobitiya/molodoy_televeduschiy_talgat_baygujinov_stavshiy_zvezdoy_omskogo_tv_mechtaet_ob_astane",
       "clicks": 151,
-      "impressions": 1282,
-      "ctr": 11.78,
+      "impressions": 1292,
+      "ctr": 11.7,
       "position": 2.7
     },
     {
       "url": "https://total.kz/ru/",
-      "clicks": 147,
-      "impressions": 3526,
-      "ctr": 4.17,
+      "slug": "ru",
+      "clicks": 149,
+      "impressions": 3584,
+      "ctr": 4.2,
       "position": 8.2
     },
     {
       "url": "https://total.kz/ru/news/zhizn/mnogie_agashki_hoteli_poznakomitsya_s_moei_suprugoi__artist_date_2020_04_07_13_11_27",
-      "clicks": 143,
-      "impressions": 3516,
-      "ctr": 4.07,
+      "slug": "ru/news/zhizn/mnogie_agashki_hoteli_poznakomitsya_s_moei_suprugoi__artist_date_2020_04_07_13_11_27",
+      "clicks": 147,
+      "impressions": 3553,
+      "ctr": 4.1,
       "position": 5.1
     },
     {
       "url": "https://total.kz/ru/news/religiya/ne_bil_zhenat_po_lubvi_chetire_zheni_i_31_rebenok_date_2023_12_14_16_56_34",
-      "clicks": 139,
-      "impressions": 2419,
-      "ctr": 5.75,
+      "slug": "ru/news/religiya/ne_bil_zhenat_po_lubvi_chetire_zheni_i_31_rebenok_date_2023_12_14_16_56_34",
+      "clicks": 143,
+      "impressions": 2475,
+      "ctr": 5.8,
       "position": 7.0
     },
     {
       "url": "https://total.kz/ru/news/obshchestvo/kazahstanskaya_devushka_stala_po",
-      "clicks": 130,
-      "impressions": 1363,
-      "ctr": 9.54,
+      "slug": "ru/news/obshchestvo/kazahstanskaya_devushka_stala_po",
+      "clicks": 131,
+      "impressions": 1367,
+      "ctr": 9.6,
       "position": 8.0
     },
     {
       "url": "https://total.kz/ru/news/stil_zhizni/vesomyy_argument_seks_pozicii_dlya",
-      "clicks": 124,
-      "impressions": 1159,
+      "slug": "ru/news/stil_zhizni/vesomyy_argument_seks_pozicii_dlya",
+      "clicks": 126,
+      "impressions": 1173,
       "ctr": 10.7,
-      "position": 9.6
+      "position": 9.5
+    },
+    {
+      "url": "https://total.kz/ru/news/gossektor/tarif_na_elektroenergiu_podnimetsya_s_5_avgusta_v_uralske_date_2025_08_01_17_01_49",
+      "slug": "ru/news/gossektor/tarif_na_elektroenergiu_podnimetsya_s_5_avgusta_v_uralske_date_2025_08_01_17_01_49",
+      "clicks": 122,
+      "impressions": 7187,
+      "ctr": 1.7,
+      "position": 4.8
     },
     {
       "url": "https://total.kz/ru/news/mneniya/sergazieva_i_abdrasilov_nedostoini_bit_gossluzhashchimi__smi_date_2022_05_13_23_12_12",
-      "clicks": 121,
-      "impressions": 1218,
-      "ctr": 9.93,
+      "slug": "ru/news/mneniya/sergazieva_i_abdrasilov_nedostoini_bit_gossluzhashchimi__smi_date_2022_05_13_23_12_12",
+      "clicks": 122,
+      "impressions": 1226,
+      "ctr": 10.0,
       "position": 3.9
     },
     {
       "url": "https://total.kz/ru/news/stil_zhizni/nazvany_samye_populyarnye_mesta_almaty",
-      "clicks": 119,
-      "impressions": 541,
-      "ctr": 22.0,
+      "slug": "ru/news/stil_zhizni/nazvany_samye_populyarnye_mesta_almaty",
+      "clicks": 120,
+      "impressions": 556,
+      "ctr": 21.6,
       "position": 6.2
     },
     {
-      "url": "https://total.kz/ru/news/gossektor/tarif_na_elektroenergiu_podnimetsya_s_5_avgusta_v_uralske_date_2025_08_01_17_01_49",
-      "clicks": 117,
-      "impressions": 7035,
-      "ctr": 1.66,
-      "position": 4.8
-    },
-    {
       "url": "https://total.kz/ru/news/zhizn/kakie_znaki_zodiaka_sklonni_k_ubiistvam_date_2019_06_07_14_43_46",
-      "clicks": 116,
-      "impressions": 1055,
-      "ctr": 11.0,
-      "position": 11.3
+      "slug": "ru/news/zhizn/kakie_znaki_zodiaka_sklonni_k_ubiistvam_date_2019_06_07_14_43_46",
+      "clicks": 120,
+      "impressions": 1083,
+      "ctr": 11.1,
+      "position": 11.5
     },
     {
       "url": "https://total.kz/ru/news/zhizn/v_seti_poyavilos_prilozhenie_deepnude_kotoroe_umeet_razdevat_zhenshchin_date_2019_06_28_12_56_53#!",
+      "slug": "ru/news/zhizn/v_seti_poyavilos_prilozhenie_deepnude_kotoroe_umeet_razdevat_zhenshchin_date_2019_06_28_12_56_53#!",
       "clicks": 112,
-      "impressions": 1227,
-      "ctr": 9.13,
-      "position": 12.4
+      "impressions": 1234,
+      "ctr": 9.1,
+      "position": 12.5
     },
     {
       "url": "https://total.kz/ru/news/biznes/ipotechnoe_zhile_v_rk_mozhno",
+      "slug": "ru/news/biznes/ipotechnoe_zhile_v_rk_mozhno",
       "clicks": 96,
-      "impressions": 4283,
-      "ctr": 2.24,
+      "impressions": 4331,
+      "ctr": 2.2,
       "position": 6.9
     },
     {
       "url": "https://total.kz/ru/news/vladelets_qz/chem_vladeet_semya_berdyibeka_saparbaeva",
-      "clicks": 94,
-      "impressions": 2668,
-      "ctr": 3.52,
+      "slug": "ru/news/vladelets_qz/chem_vladeet_semya_berdyibeka_saparbaeva",
+      "clicks": 96,
+      "impressions": 2715,
+      "ctr": 3.5,
       "position": 7.4
     },
     {
       "url": "https://total.kz/ru/news/obshchestvo/pavlodarskiy_sirota_prosnulsya_znamenityim_posle_vstrechi_c_nazarbaevyim",
-      "clicks": 92,
-      "impressions": 1416,
+      "slug": "ru/news/obshchestvo/pavlodarskiy_sirota_prosnulsya_znamenityim_posle_vstrechi_c_nazarbaevyim",
+      "clicks": 93,
+      "impressions": 1431,
       "ctr": 6.5,
       "position": 6.7
     },
     {
       "url": "https://total.kz/ru/news/sport/kubok_chempionata_mira_po_futbolu_fifa_privezut_v_almati_date_2025_12_21",
+      "slug": "ru/news/sport/kubok_chempionata_mira_po_futbolu_fifa_privezut_v_almati_date_2025_12_21",
       "clicks": 89,
-      "impressions": 1124,
-      "ctr": 7.92,
+      "impressions": 1128,
+      "ctr": 7.9,
       "position": 5.7
     },
     {
-      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/o_novoy_traditsii_kazahov",
+      "url": "https://total.kz/ru/news/kultura/fidel_kastro_nazyival_baurjana_momyish_ulyi_svoim_kumirom",
+      "slug": "ru/news/kultura/fidel_kastro_nazyival_baurjana_momyish_ulyi_svoim_kumirom",
+      "clicks": 86,
+      "impressions": 1156,
+      "ctr": 7.4,
+      "position": 4.1
+    },
+    {
+      "url": "https://total.kz/ru/news/biznes/chto_svyazivaet_aidina_rahimbaeva_s_semei_nazarbaevih_date_2022_05_06_11_29_48",
+      "slug": "ru/news/biznes/chto_svyazivaet_aidina_rahimbaeva_s_semei_nazarbaevih_date_2022_05_06_11_29_48",
       "clicks": 85,
-      "impressions": 5305,
+      "impressions": 2287,
+      "ctr": 3.7,
+      "position": 4.3
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/o_novoy_traditsii_kazahov",
+      "slug": "ru/news/obshchestvo_sobitiya/o_novoy_traditsii_kazahov",
+      "clicks": 85,
+      "impressions": 5413,
       "ctr": 1.6,
       "position": 7.6
     },
     {
-      "url": "https://total.kz/ru/news/biznes/chto_svyazivaet_aidina_rahimbaeva_s_semei_nazarbaevih_date_2022_05_06_11_29_48",
-      "clicks": 83,
-      "impressions": 2235,
-      "ctr": 3.71,
-      "position": 4.3
+      "url": "https://total.kz/ru/news/zhizn/toktar_serikov_kogda_ya_skazal_chto_vozmu_tokal_moya_zhena_ridala_date_2018_06_22_14_42_11",
+      "slug": "ru/news/zhizn/toktar_serikov_kogda_ya_skazal_chto_vozmu_tokal_moya_zhena_ridala_date_2018_06_22_14_42_11",
+      "clicks": 81,
+      "impressions": 14482,
+      "ctr": 0.6,
+      "position": 4.5
     },
     {
-      "url": "https://total.kz/ru/news/kultura/fidel_kastro_nazyival_baurjana_momyish_ulyi_svoim_kumirom",
-      "clicks": 82,
-      "impressions": 1134,
-      "ctr": 7.23,
+      "url": "https://total.kz/ru/news/obshchestvo/zhitelnica_ust_kamenogorska_post",
+      "slug": "ru/news/obshchestvo/zhitelnica_ust_kamenogorska_post",
+      "clicks": 80,
+      "impressions": 469,
+      "ctr": 17.1,
+      "position": 5.1
+    },
+    {
+      "url": "https://total.kz/news/stil_zhizni/desyat_poceluev_kotorye_svedut_ego/",
+      "slug": "news/stil_zhizni/desyat_poceluev_kotorye_svedut_ego",
+      "clicks": 76,
+      "impressions": 3216,
+      "ctr": 2.4,
+      "position": 9.7
+    },
+    {
+      "url": "https://total.kz/ru/news/nauka/chem_polezna_voda_s_limonom_rasskazal_endokrinolog_date_2020_12_17_14_26_55",
+      "slug": "ru/news/nauka/chem_polezna_voda_s_limonom_rasskazal_endokrinolog_date_2020_12_17_14_26_55",
+      "clicks": 76,
+      "impressions": 5145,
+      "ctr": 1.5,
+      "position": 4.7
+    },
+    {
+      "url": "https://total.kz/ru/news/zhizn/vidavat_lgoti_opekunam_grazhdan_s_psihicheskimi_rasstroistvami_predlagaut_kazahstane_date_2025_02_12_13_22_09",
+      "slug": "ru/news/zhizn/vidavat_lgoti_opekunam_grazhdan_s_psihicheskimi_rasstroistvami_predlagaut_kazahstane_date_2025_02_12_13_22_09",
+      "clicks": 76,
+      "impressions": 2497,
+      "ctr": 3.0,
+      "position": 7.9
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/vyirajenie_azapyiz_oy_portit_sovremennyih_kazahov",
+      "slug": "ru/news/obshchestvo_sobitiya/vyirajenie_azapyiz_oy_portit_sovremennyih_kazahov",
+      "clicks": 70,
+      "impressions": 1718,
+      "ctr": 4.1,
+      "position": 7.1
+    },
+    {
+      "url": "https://total.kz/ru/news/politika/molodyih_lyudey_s_tatuirovkami_mogut_ne_prizvat_v_armiyu",
+      "slug": "ru/news/politika/molodyih_lyudey_s_tatuirovkami_mogut_ne_prizvat_v_armiyu",
+      "clicks": 69,
+      "impressions": 3124,
+      "ctr": 2.2,
+      "position": 6.6
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo/teper_vozmozhno_nayti_svoyu_polikliniku",
+      "slug": "ru/news/obshchestvo/teper_vozmozhno_nayti_svoyu_polikliniku",
+      "clicks": 68,
+      "impressions": 3082,
+      "ctr": 2.2,
+      "position": 6.3
+    },
+    {
+      "url": "https://total.kz/ru/news/gossektor/afera_v_ktzh__gruzovie_perevozki_ili_kak_ekszamakima_ayagozskogo_raiona_ustraivalsya_na_rabotu_date_2025_06_13",
+      "slug": "ru/news/gossektor/afera_v_ktzh__gruzovie_perevozki_ili_kak_ekszamakima_ayagozskogo_raiona_ustraivalsya_na_rabotu_date_2025_06_13",
+      "clicks": 67,
+      "impressions": 26761,
+      "ctr": 0.3,
+      "position": 10.4
+    },
+    {
+      "url": "https://total.kz/ru/news/vladelets_qz/iz_zhizni_zamechatelnih_detei__chem_vladeet_doch_akima_vko_date_2020_12_14_08_00_10",
+      "slug": "ru/news/vladelets_qz/iz_zhizni_zamechatelnih_detei__chem_vladeet_doch_akima_vko_date_2020_12_14_08_00_10",
+      "clicks": 65,
+      "impressions": 1217,
+      "ctr": 5.3,
+      "position": 5.0
+    },
+    {
+      "url": "https://total.kz/ru/news/finansi/bolee_7_trillionov_tenge_peregnali_za_rubezh_cherez_bank_v_kazahstane__tokaev_date_2026_01_28_17_46_36",
+      "slug": "ru/news/finansi/bolee_7_trillionov_tenge_peregnali_za_rubezh_cherez_bank_v_kazahstane__tokaev_date_2026_01_28_17_46_36",
+      "clicks": 63,
+      "impressions": 429,
+      "ctr": 14.7,
+      "position": 13.8
+    },
+    {
+      "url": "https://total.kz/ru/news/kultura/kakim_ugoscheniem_vstrechayut_nauryiz_narodyi_mira",
+      "slug": "ru/news/kultura/kakim_ugoscheniem_vstrechayut_nauryiz_narodyi_mira",
+      "clicks": 61,
+      "impressions": 13785,
+      "ctr": 0.4,
+      "position": 4.8
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/v_almati_ozhidautsya_otklucheniya_elektroenergii_date_2025_12_23_11_08_39",
+      "slug": "ru/news/obshchestvo_sobitiya/v_almati_ozhidautsya_otklucheniya_elektroenergii_date_2025_12_23_11_08_39",
+      "clicks": 58,
+      "impressions": 906,
+      "ctr": 6.4,
+      "position": 8.6
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo/v_butakovskom_uschele_nayden_zol",
+      "slug": "ru/news/obshchestvo/v_butakovskom_uschele_nayden_zol",
+      "clicks": 57,
+      "impressions": 794,
+      "ctr": 7.2,
+      "position": 5.3
+    },
+    {
+      "url": "https://total.kz/ru/news/sport/zimnyaya_olimpiada2026_gde_i_kogda_smotret_vistupleniya_kazahstanskih_sportsmenov_date_2026_02_07_14_45_42",
+      "slug": "ru/news/sport/zimnyaya_olimpiada2026_gde_i_kogda_smotret_vistupleniya_kazahstanskih_sportsmenov_date_2026_02_07_14_45_42",
+      "clicks": 57,
+      "impressions": 3803,
+      "ctr": 1.5,
+      "position": 5.5
+    },
+    {
+      "url": "https://total.kz/ru/news/vladelets_qz/komu_prodali_vuzi_kazahstana_date_2021_06_15_10_26_54",
+      "slug": "ru/news/vladelets_qz/komu_prodali_vuzi_kazahstana_date_2021_06_15_10_26_54",
+      "clicks": 56,
+      "impressions": 1083,
+      "ctr": 5.2,
+      "position": 9.0
+    },
+    {
+      "url": "https://total.kz/ru/news/vladelets_qz/komu_prodali_gosudarstvennie_meduchrezhdeniya__chast_2_date_2021_05_06_22_10_31",
+      "slug": "ru/news/vladelets_qz/komu_prodali_gosudarstvennie_meduchrezhdeniya__chast_2_date_2021_05_06_22_10_31",
+      "clicks": 55,
+      "impressions": 806,
+      "ctr": 6.8,
+      "position": 5.6
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/zhenskii_den_iznachalno_bil_antifeministskim_date_2018_03_07_12_29_40",
+      "slug": "ru/news/obshchestvo_sobitiya/zhenskii_den_iznachalno_bil_antifeministskim_date_2018_03_07_12_29_40",
+      "clicks": 54,
+      "impressions": 3747,
+      "ctr": 1.4,
       "position": 4.1
+    },
+    {
+      "url": "https://total.kz/ru/news/obshchestvo_sobitiya/kak_budut_otdihat_kazahstantsi_v_2026_godu__kalendar_prazdnikov_date_2025_12_31",
+      "slug": "ru/news/obshchestvo_sobitiya/kak_budut_otdihat_kazahstantsi_v_2026_godu__kalendar_prazdnikov_date_2025_12_31",
+      "clicks": 53,
+      "impressions": 8539,
+      "ctr": 0.6,
+      "position": 6.5
     }
   ],
   "devices": [
     {
       "device": "MOBILE",
-      "clicks": 26944,
-      "impressions": 1360054,
-      "ctr": 1.98
+      "clicks": 27620,
+      "impressions": 1395706,
+      "ctr": 2.0,
+      "position": 8.0
     },
     {
       "device": "DESKTOP",
-      "clicks": 6371,
-      "impressions": 365013,
-      "ctr": 1.75
+      "clicks": 6583,
+      "impressions": 376079,
+      "ctr": 1.8,
+      "position": 15.2
     },
     {
       "device": "TABLET",
-      "clicks": 226,
-      "impressions": 19192,
-      "ctr": 1.18
+      "clicks": 233,
+      "impressions": 19860,
+      "ctr": 1.2,
+      "position": 9.3
     }
   ],
   "countries": [
     {
       "country": "kaz",
-      "clicks": 28025,
-      "impressions": 1181187,
-      "ctr": 2.37,
-      "country_name": "Казахстан"
+      "country_name": "Казахстан",
+      "clicks": 28781,
+      "impressions": 1215626,
+      "ctr": 2.4,
+      "position": 9.3
     },
     {
       "country": "rus",
-      "clicks": 2391,
-      "impressions": 222532,
-      "ctr": 1.07,
-      "country_name": "Россия"
+      "country_name": "Россия",
+      "clicks": 2450,
+      "impressions": 227529,
+      "ctr": 1.1,
+      "position": 10.6
     },
     {
       "country": "deu",
-      "clicks": 367,
-      "impressions": 22436,
-      "ctr": 1.64,
-      "country_name": "Германия"
+      "country_name": "Германия",
+      "clicks": 374,
+      "impressions": 22944,
+      "ctr": 1.6,
+      "position": 8.8
     },
     {
       "country": "uzb",
-      "clicks": 356,
-      "impressions": 20545,
-      "ctr": 1.73,
-      "country_name": "Узбекистан"
+      "country_name": "Узбекистан",
+      "clicks": 363,
+      "impressions": 21075,
+      "ctr": 1.7,
+      "position": 8.1
     },
     {
       "country": "kgz",
-      "clicks": 270,
-      "impressions": 23412,
-      "ctr": 1.15,
-      "country_name": "Кыргызстан"
+      "country_name": "Кыргызстан",
+      "clicks": 275,
+      "impressions": 23935,
+      "ctr": 1.1,
+      "position": 7.2
     },
     {
       "country": "blr",
-      "clicks": 246,
-      "impressions": 22326,
+      "country_name": "Беларусь",
+      "clicks": 249,
+      "impressions": 22738,
       "ctr": 1.1,
-      "country_name": "Беларусь"
+      "position": 9.2
     },
     {
       "country": "ukr",
-      "clicks": 229,
-      "impressions": 29898,
-      "ctr": 0.77,
-      "country_name": "Украина"
+      "country_name": "Украина",
+      "clicks": 238,
+      "impressions": 30538,
+      "ctr": 0.8,
+      "position": 16.5
     },
     {
       "country": "usa",
-      "clicks": 177,
-      "impressions": 67029,
-      "ctr": 0.26,
-      "country_name": "США"
+      "country_name": "США",
+      "clicks": 179,
+      "impressions": 68621,
+      "ctr": 0.3,
+      "position": 7.9
     },
     {
       "country": "nld",
-      "clicks": 102,
-      "impressions": 8182,
-      "ctr": 1.25,
-      "country_name": "Нидерланды"
+      "country_name": "Нидерланды",
+      "clicks": 105,
+      "impressions": 8389,
+      "ctr": 1.3,
+      "position": 8.8
     },
     {
       "country": "tur",
-      "clicks": 92,
-      "impressions": 4815,
-      "ctr": 1.91,
-      "country_name": "Турция"
+      "country_name": "Турция",
+      "clicks": 95,
+      "impressions": 4941,
+      "ctr": 1.9,
+      "position": 9.9
     },
     {
       "country": "are",
-      "clicks": 84,
-      "impressions": 2416,
-      "ctr": 3.48,
-      "country_name": "ОАЭ"
-    },
-    {
-      "country": "gbr",
-      "clicks": 74,
-      "impressions": 14895,
-      "ctr": 0.5,
-      "country_name": "Великобритания"
+      "country_name": "ОАЭ",
+      "clicks": 87,
+      "impressions": 2459,
+      "ctr": 3.5,
+      "position": 9.0
     },
     {
       "country": "tjk",
-      "clicks": 73,
-      "impressions": 3608,
-      "ctr": 2.02,
-      "country_name": "Таджикистан"
+      "country_name": "Таджикистан",
+      "clicks": 77,
+      "impressions": 3673,
+      "ctr": 2.1,
+      "position": 7.0
+    },
+    {
+      "country": "gbr",
+      "country_name": "Великобритания",
+      "clicks": 74,
+      "impressions": 15257,
+      "ctr": 0.5,
+      "position": 8.5
     },
     {
       "country": "pol",
-      "clicks": 63,
-      "impressions": 6320,
+      "country_name": "Польша",
+      "clicks": 65,
+      "impressions": 6517,
       "ctr": 1.0,
-      "country_name": "Польша"
-    },
-    {
-      "country": "esp",
-      "clicks": 57,
-      "impressions": 4667,
-      "ctr": 1.22,
-      "country_name": "Испания"
-    },
-    {
-      "country": "fra",
-      "clicks": 56,
-      "impressions": 5135,
-      "ctr": 1.09,
-      "country_name": "Франция"
+      "position": 9.3
     },
     {
       "country": "tkm",
-      "clicks": 55,
-      "impressions": 4686,
-      "ctr": 1.17,
-      "country_name": "Туркменистан"
+      "country_name": "TKM",
+      "clicks": 60,
+      "impressions": 4826,
+      "ctr": 1.2,
+      "position": 6.7
     },
     {
-      "country": "geo",
-      "clicks": 53,
-      "impressions": 3429,
-      "ctr": 1.55,
-      "country_name": "Грузия"
+      "country": "esp",
+      "country_name": "Испания",
+      "clicks": 59,
+      "impressions": 4794,
+      "ctr": 1.2,
+      "position": 10.5
+    },
+    {
+      "country": "fra",
+      "country_name": "Франция",
+      "clicks": 57,
+      "impressions": 5284,
+      "ctr": 1.1,
+      "position": 8.9
     },
     {
       "country": "aze",
-      "clicks": 48,
-      "impressions": 4116,
-      "ctr": 1.17,
-      "country_name": "Азербайджан"
+      "country_name": "Азербайджан",
+      "clicks": 53,
+      "impressions": 4230,
+      "ctr": 1.3,
+      "position": 7.2
     },
     {
-      "country": "zzz",
-      "clicks": 41,
-      "impressions": 1788,
-      "ctr": 2.29,
-      "country_name": "Другие"
+      "country": "geo",
+      "country_name": "Грузия",
+      "clicks": 53,
+      "impressions": 3497,
+      "ctr": 1.5,
+      "position": 10.3
+    },
+    {
+      "country": "lva",
+      "country_name": "Латвия",
+      "clicks": 42,
+      "impressions": 3398,
+      "ctr": 1.2,
+      "position": 9.2
     }
   ],
   "daily_trends": [
+    {
+      "date": "2025-12-18",
+      "clicks": 525,
+      "impressions": 24542,
+      "ctr": 2.14,
+      "position": 10.1
+    },
     {
       "date": "2025-12-19",
       "clicks": 376,
@@ -1224,408 +1302,851 @@
       "impressions": 21391,
       "ctr": 1.48,
       "position": 10.9
-    }
-  ],
-  "query_page_combos": [
-    {
-      "query": "тотал кз",
-      "page": "https://total.kz/",
-      "clicks": 2393,
-      "impressions": 2821,
-      "ctr": 84.83,
-      "position": 1.1
     },
     {
-      "query": "новости казахстана",
-      "page": "https://total.kz/",
-      "clicks": 800,
-      "impressions": 18513,
-      "ctr": 4.32,
-      "position": 13.0
+      "date": "2025-12-29",
+      "clicks": 363,
+      "impressions": 26331,
+      "ctr": 1.38,
+      "position": 11.6
     },
     {
-      "query": "сабыржан махметов биография",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 558,
-      "impressions": 7972,
-      "ctr": 7.0,
-      "position": 3.5
-    },
-    {
-      "query": "новости",
-      "page": "https://total.kz/",
-      "clicks": 501,
-      "impressions": 53034,
-      "ctr": 0.94,
+      "date": "2025-12-30",
+      "clicks": 350,
+      "impressions": 21077,
+      "ctr": 1.66,
       "position": 11.2
     },
     {
-      "query": "свежие новости казахстана на сегодня",
-      "page": "https://total.kz/",
-      "clicks": 191,
-      "impressions": 1047,
-      "ctr": 18.24,
-      "position": 7.9
+      "date": "2025-12-31",
+      "clicks": 268,
+      "impressions": 22063,
+      "ctr": 1.21,
+      "position": 9.2
     },
     {
-      "query": "новости казахстана",
-      "page": "https://total.kz/ru/news",
-      "clicks": 169,
-      "impressions": 2944,
-      "ctr": 5.74,
-      "position": 26.2
+      "date": "2026-01-01",
+      "clicks": 288,
+      "impressions": 20103,
+      "ctr": 1.43,
+      "position": 10.7
     },
     {
-      "query": "тотал кз",
-      "page": "https://total.kz/ru/",
-      "clicks": 118,
-      "impressions": 2424,
-      "ctr": 4.87,
-      "position": 1.1
+      "date": "2026-01-02",
+      "clicks": 468,
+      "impressions": 20334,
+      "ctr": 2.3,
+      "position": 8.9
     },
     {
-      "query": "total kz",
-      "page": "https://total.kz/",
-      "clicks": 114,
-      "impressions": 150,
-      "ctr": 76.0,
-      "position": 1
+      "date": "2026-01-03",
+      "clicks": 486,
+      "impressions": 23525,
+      "ctr": 2.07,
+      "position": 7.8
     },
     {
-      "query": "бейбит сейдуалиева первый муж",
-      "page": "https://total.kz/ru/news/zhizn/mnogie_agashki_hoteli_poznakomitsya_s_moei_suprugoi__artist_date_2020_04_07_13_11_27",
-      "clicks": 113,
-      "impressions": 1399,
-      "ctr": 8.08,
-      "position": 1.8
+      "date": "2026-01-04",
+      "clicks": 465,
+      "impressions": 24962,
+      "ctr": 1.86,
+      "position": 9.3
     },
     {
-      "query": "тотал",
-      "page": "https://total.kz/",
-      "clicks": 113,
-      "impressions": 1265,
-      "ctr": 8.93,
-      "position": 8.4
+      "date": "2026-01-05",
+      "clicks": 413,
+      "impressions": 21128,
+      "ctr": 1.95,
+      "position": 9.5
     },
     {
-      "query": "номер телефона по иин",
-      "page": "https://total.kz/ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
-      "clicks": 106,
-      "impressions": 251,
-      "ctr": 42.23,
-      "position": 1.9
+      "date": "2026-01-06",
+      "clicks": 356,
+      "impressions": 20075,
+      "ctr": 1.77,
+      "position": 9.8
     },
     {
-      "query": "новости казахстана на сегодня",
-      "page": "https://total.kz/",
-      "clicks": 98,
-      "impressions": 3466,
-      "ctr": 2.83,
-      "position": 10.1
+      "date": "2026-01-07",
+      "clicks": 343,
+      "impressions": 18167,
+      "ctr": 1.89,
+      "position": 9.1
     },
     {
-      "query": "на 8 марта многодетной маме 2026 год",
-      "page": "https://total.kz/ru/news/ekonomika_sobitiya/po_20_tisyach_tenge_viplatyat_mnogodetnim_materyam_k_8_marta_v_oblasti_ulitau_date_2026_02_24_19_43_47",
-      "clicks": 86,
-      "impressions": 382,
-      "ctr": 22.51,
-      "position": 4.7
+      "date": "2026-01-08",
+      "clicks": 349,
+      "impressions": 21195,
+      "ctr": 1.65,
+      "position": 10.5
     },
     {
-      "query": "мадина абылкасымова муж",
-      "page": "https://total.kz/ru/news/vnutrennyaya_politika/suprug_glavi_arrfr_stal_pervim_zamestitelem_akima_almatinskoi_oblasti_date_2023_04_17_15_06_12",
-      "clicks": 77,
-      "impressions": 333,
-      "ctr": 23.12,
-      "position": 1
+      "date": "2026-01-09",
+      "clicks": 369,
+      "impressions": 19491,
+      "ctr": 1.89,
+      "position": 8.9
     },
     {
-      "query": "назира бакаева",
-      "page": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 72,
-      "impressions": 1307,
-      "ctr": 5.51,
-      "position": 7.4
+      "date": "2026-01-10",
+      "clicks": 357,
+      "impressions": 19860,
+      "ctr": 1.8,
+      "position": 9.2
     },
     {
-      "query": "назира бакаева и дорис",
-      "page": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 72,
-      "impressions": 365,
-      "ctr": 19.73,
-      "position": 3.4
+      "date": "2026-01-11",
+      "clicks": 360,
+      "impressions": 29785,
+      "ctr": 1.21,
+      "position": 9.4
     },
     {
-      "query": "total",
-      "page": "https://total.kz/",
-      "clicks": 69,
-      "impressions": 1254,
-      "ctr": 5.5,
-      "position": 3.9
+      "date": "2026-01-12",
+      "clicks": 443,
+      "impressions": 19520,
+      "ctr": 2.27,
+      "position": 9.3
     },
     {
-      "query": "сабыржан махметов биография год рождения",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 67,
-      "impressions": 1310,
-      "ctr": 5.11,
-      "position": 4.1
-    },
-    {
-      "query": "талгат байгужинов биография",
-      "page": "https://total.kz/ru/news/obshchestvo_sobitiya/molodoy_televeduschiy_talgat_baygujinov_stavshiy_zvezdoy_omskogo_tv_mechtaet_ob_astane",
-      "clicks": 67,
-      "impressions": 205,
-      "ctr": 32.68,
-      "position": 2.2
-    },
-    {
-      "query": "раздеть одежду приложение",
-      "page": "https://total.kz/ru/news/zhizn/v_seti_poyavilos_prilozhenie_deepnude_kotoroe_umeet_razdevat_zhenshchin_date_2019_06_28_12_56_53#!",
-      "clicks": 63,
-      "impressions": 552,
-      "ctr": 11.41,
-      "position": 8.6
-    },
-    {
-      "query": "айдын рахимбаев чей родственник",
-      "page": "https://total.kz/ru/news/biznes/chto_svyazivaet_aidina_rahimbaeva_s_semei_nazarbaevih_date_2022_05_06_11_29_48",
-      "clicks": 62,
-      "impressions": 323,
-      "ctr": 19.2,
-      "position": 2.5
-    },
-    {
-      "query": "total.kz",
-      "page": "https://total.kz/",
-      "clicks": 61,
-      "impressions": 99,
-      "ctr": 61.62,
-      "position": 1.2
-    },
-    {
-      "query": "назира бакаева личная жизнь",
-      "page": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 56,
-      "impressions": 496,
-      "ctr": 11.29,
-      "position": 4.9
-    },
-    {
-      "query": "зимние олимпийские игры где посмотреть",
-      "page": "https://total.kz/ru/news/sport/zimnyaya_olimpiada2026_gde_i_kogda_smotret_vistupleniya_kazahstanskih_sportsmenov_date_2026_02_07_14_45_42",
-      "clicks": 53,
-      "impressions": 3552,
-      "ctr": 1.49,
-      "position": 5.3
-    },
-    {
-      "query": "надежда артыкбаева",
-      "page": "https://total.kz/ru/news/biznes/anomaliya_za_75_milliardov_tenge_ili_pochemu_prokuratura_krishuet_qazaq_stroy_date_2025_11_07",
-      "clicks": 53,
-      "impressions": 334,
-      "ctr": 15.87,
-      "position": 1.9
-    },
-    {
-      "query": "свежии новости казахстана",
-      "page": "https://total.kz/",
-      "clicks": 53,
-      "impressions": 3461,
-      "ctr": 1.53,
-      "position": 10.0
-    },
-    {
-      "query": "тотал кз",
-      "page": "https://total.kz/ru/news",
-      "clicks": 53,
-      "impressions": 1348,
-      "ctr": 3.93,
-      "position": 1.3
-    },
-    {
-      "query": "новости рк",
-      "page": "https://total.kz/",
-      "clicks": 52,
-      "impressions": 2383,
-      "ctr": 2.18,
+      "date": "2026-01-13",
+      "clicks": 452,
+      "impressions": 19657,
+      "ctr": 2.3,
       "position": 10.3
     },
     {
-      "query": "казахстан новости",
-      "page": "https://total.kz/",
-      "clicks": 50,
-      "impressions": 729,
-      "ctr": 6.86,
-      "position": 16.9
+      "date": "2026-01-14",
+      "clicks": 357,
+      "impressions": 18721,
+      "ctr": 1.91,
+      "position": 11.4
     },
     {
-      "query": "назира бакаева девушка",
-      "page": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 48,
-      "impressions": 186,
-      "ctr": 25.81,
-      "position": 1.6
+      "date": "2026-01-15",
+      "clicks": 369,
+      "impressions": 17608,
+      "ctr": 2.1,
+      "position": 11.5
     },
     {
-      "query": "ольга владимировна целитель усть-каменогорск",
-      "page": "https://total.kz/ru/news/obshchestvo/zhitelnica_ust_kamenogorska_post",
-      "clicks": 47,
-      "impressions": 138,
-      "ctr": 34.06,
-      "position": 1.1
-    },
-    {
-      "query": "последние новости казахстана",
-      "page": "https://total.kz/",
-      "clicks": 46,
-      "impressions": 2258,
-      "ctr": 2.04,
-      "position": 9.9
-    },
-    {
-      "query": "назира бакаева национальность",
-      "page": "https://total.kz/ru/news/religiya/lozh_vsplivet_naruzhu_bloger_prizivaet_kazahstantsev_ne_podrazhat_arabam_date_2025_02_14",
-      "clicks": 45,
-      "impressions": 1035,
-      "ctr": 4.35,
-      "position": 7.0
-    },
-    {
-      "query": "сабыржан махметов год рождения",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 45,
-      "impressions": 1591,
-      "ctr": 2.83,
-      "position": 4.1
-    },
-    {
-      "query": "громкие новости казахстана",
-      "page": "https://total.kz/",
-      "clicks": 42,
-      "impressions": 3006,
-      "ctr": 1.4,
-      "position": 10.3
-    },
-    {
-      "query": "новости казахстана и мира",
-      "page": "https://total.kz/",
-      "clicks": 42,
-      "impressions": 1457,
-      "ctr": 2.88,
-      "position": 10.4
-    },
-    {
-      "query": "сабыржан махметов опг",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 42,
-      "impressions": 873,
-      "ctr": 4.81,
-      "position": 3.3
-    },
-    {
-      "query": "долг",
-      "page": "https://total.kz/ru/news/finansi/bolee_171_milliarda_dollarov_sostavil_vneshnii_dolg_kazahstana_date_2026_01_03_11_31_13",
-      "clicks": 41,
-      "impressions": 2892,
-      "ctr": 1.42,
-      "position": 2.2
-    },
-    {
-      "query": "новости кз",
-      "page": "https://total.kz/",
-      "clicks": 41,
-      "impressions": 3728,
-      "ctr": 1.1,
+      "date": "2026-01-16",
+      "clicks": 302,
+      "impressions": 15722,
+      "ctr": 1.92,
       "position": 9.6
     },
     {
-      "query": "сабыржан махметов",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 40,
-      "impressions": 2253,
-      "ctr": 1.78,
-      "position": 5.4
+      "date": "2026-01-17",
+      "clicks": 303,
+      "impressions": 15204,
+      "ctr": 1.99,
+      "position": 9.3
     },
     {
-      "query": "сколько номеров на иин",
-      "page": "https://total.kz/ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
-      "clicks": 40,
-      "impressions": 319,
-      "ctr": 12.54,
-      "position": 5.4
+      "date": "2026-01-18",
+      "clicks": 321,
+      "impressions": 18159,
+      "ctr": 1.77,
+      "position": 11.3
     },
     {
-      "query": "дарын мубаров жены",
-      "page": "https://total.kz/ru/news/religiya/ne_bil_zhenat_po_lubvi_chetire_zheni_i_31_rebenok_date_2023_12_14_16_56_34",
-      "clicks": 38,
-      "impressions": 111,
-      "ctr": 34.23,
-      "position": 1.1
+      "date": "2026-01-19",
+      "clicks": 354,
+      "impressions": 18585,
+      "ctr": 1.9,
+      "position": 11.2
     },
     {
-      "query": "номер по иин",
-      "page": "https://total.kz/ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
-      "clicks": 38,
-      "impressions": 86,
-      "ctr": 44.19,
-      "position": 2.1
+      "date": "2026-01-20",
+      "clicks": 331,
+      "impressions": 17812,
+      "ctr": 1.86,
+      "position": 10.5
     },
     {
-      "query": "сабыржан махметов википедия",
-      "page": "https://total.kz/ru/news/zhizn/sabirzhan_mahmetov_kazahstan__ne_mnogonatsionalnoe_gosudarstvo_date_2020_02_28_12_48_20",
-      "clicks": 38,
-      "impressions": 1227,
-      "ctr": 3.1,
-      "position": 5.7
+      "date": "2026-01-21",
+      "clicks": 368,
+      "impressions": 16870,
+      "ctr": 2.18,
+      "position": 8.9
     },
     {
-      "query": "сабыржан махметов",
-      "page": "https://total.kz/ru/tag/%D0%A1%D0%B0%D0%B1%D1%8B%D1%80%D0%B6%D0%B0%D0%BD%20%D0%9C%D0%B0%D1%85%D0%BC%D0%B5%D1%82%D0%BE%D0%B2",
-      "clicks": 34,
-      "impressions": 1570,
-      "ctr": 2.17,
-      "position": 10.2
+      "date": "2026-01-22",
+      "clicks": 360,
+      "impressions": 18809,
+      "ctr": 1.91,
+      "position": 12.8
     },
     {
-      "query": "алексей лодочников биография",
-      "page": "https://total.kz/ru/news/obshchestvo/pavlodarskiy_sirota_prosnulsya_znamenityim_posle_vstrechi_c_nazarbaevyim",
-      "clicks": 33,
-      "impressions": 345,
-      "ctr": 9.57,
-      "position": 4.8
+      "date": "2026-01-23",
+      "clicks": 332,
+      "impressions": 15357,
+      "ctr": 2.16,
+      "position": 9.3
     },
     {
-      "query": "бауржан бердыбекович сапарбаев",
-      "page": "https://total.kz/ru/news/vladelets_qz/chem_vladeet_semya_berdyibeka_saparbaeva",
-      "clicks": 33,
-      "impressions": 830,
-      "ctr": 3.98,
+      "date": "2026-01-24",
+      "clicks": 283,
+      "impressions": 14219,
+      "ctr": 1.99,
+      "position": 8.8
+    },
+    {
+      "date": "2026-01-25",
+      "clicks": 372,
+      "impressions": 17578,
+      "ctr": 2.12,
+      "position": 9.8
+    },
+    {
+      "date": "2026-01-26",
+      "clicks": 413,
+      "impressions": 18222,
+      "ctr": 2.27,
+      "position": 10.6
+    },
+    {
+      "date": "2026-01-27",
+      "clicks": 370,
+      "impressions": 18131,
+      "ctr": 2.04,
+      "position": 9.3
+    },
+    {
+      "date": "2026-01-28",
+      "clicks": 426,
+      "impressions": 18253,
+      "ctr": 2.33,
+      "position": 9.4
+    },
+    {
+      "date": "2026-01-29",
+      "clicks": 383,
+      "impressions": 18481,
+      "ctr": 2.07,
+      "position": 9.8
+    },
+    {
+      "date": "2026-01-30",
+      "clicks": 373,
+      "impressions": 16469,
+      "ctr": 2.26,
+      "position": 9.7
+    },
+    {
+      "date": "2026-01-31",
+      "clicks": 287,
+      "impressions": 15771,
+      "ctr": 1.82,
+      "position": 9.2
+    },
+    {
+      "date": "2026-02-01",
+      "clicks": 341,
+      "impressions": 18403,
+      "ctr": 1.85,
+      "position": 10.3
+    },
+    {
+      "date": "2026-02-02",
+      "clicks": 393,
+      "impressions": 19401,
+      "ctr": 2.03,
+      "position": 9.3
+    },
+    {
+      "date": "2026-02-03",
+      "clicks": 417,
+      "impressions": 19698,
+      "ctr": 2.12,
+      "position": 8.4
+    },
+    {
+      "date": "2026-02-04",
+      "clicks": 403,
+      "impressions": 19936,
+      "ctr": 2.02,
+      "position": 9.0
+    },
+    {
+      "date": "2026-02-05",
+      "clicks": 445,
+      "impressions": 24176,
+      "ctr": 1.84,
+      "position": 10.1
+    },
+    {
+      "date": "2026-02-06",
+      "clicks": 375,
+      "impressions": 20708,
+      "ctr": 1.81,
+      "position": 8.9
+    },
+    {
+      "date": "2026-02-07",
+      "clicks": 311,
+      "impressions": 16556,
+      "ctr": 1.88,
+      "position": 8.4
+    },
+    {
+      "date": "2026-02-08",
+      "clicks": 378,
+      "impressions": 19653,
+      "ctr": 1.92,
+      "position": 9.8
+    },
+    {
+      "date": "2026-02-09",
+      "clicks": 451,
+      "impressions": 21944,
+      "ctr": 2.06,
+      "position": 8.6
+    },
+    {
+      "date": "2026-02-10",
+      "clicks": 425,
+      "impressions": 20546,
+      "ctr": 2.07,
+      "position": 9.2
+    },
+    {
+      "date": "2026-02-11",
+      "clicks": 420,
+      "impressions": 21250,
+      "ctr": 1.98,
+      "position": 8.7
+    },
+    {
+      "date": "2026-02-12",
+      "clicks": 446,
+      "impressions": 20686,
+      "ctr": 2.16,
+      "position": 9.1
+    },
+    {
+      "date": "2026-02-13",
+      "clicks": 363,
+      "impressions": 17704,
+      "ctr": 2.05,
+      "position": 8.6
+    },
+    {
+      "date": "2026-02-14",
+      "clicks": 324,
+      "impressions": 15769,
+      "ctr": 2.05,
+      "position": 8.7
+    },
+    {
+      "date": "2026-02-15",
+      "clicks": 700,
+      "impressions": 24846,
+      "ctr": 2.82,
+      "position": 8.2
+    },
+    {
+      "date": "2026-02-16",
+      "clicks": 824,
+      "impressions": 28677,
+      "ctr": 2.87,
       "position": 7.7
     },
     {
-      "query": "найти по иин номер телефона",
-      "page": "https://total.kz/ru/news/obshchestvo_sobitiya/uznat_po_iin_kolichestvo_zaregistrirovannih_telefonnih_nomerov_smogut_kazahstantsi_date_2019_10_18_16_41_38",
-      "clicks": 32,
-      "impressions": 64,
-      "ctr": 50.0,
-      "position": 2.1
+      "date": "2026-02-17",
+      "clicks": 521,
+      "impressions": 23604,
+      "ctr": 2.21,
+      "position": 8.5
     },
     {
-      "query": "нурлан имам",
-      "page": "https://total.kz/ru/news/religiya/na_kogo_namekaet_nurlanimam_kto_vinovat_v_rasprostranenii_salafizma_v_kazahstane_date_2025_04_18",
-      "clicks": 31,
-      "impressions": 2869,
-      "ctr": 1.08,
-      "position": 6.6
+      "date": "2026-02-18",
+      "clicks": 456,
+      "impressions": 22985,
+      "ctr": 1.98,
+      "position": 8.4
     },
     {
-      "query": "артыкбаева надежда абдуллаевна",
-      "page": "https://total.kz/ru/news/biznes/anomaliya_za_75_milliardov_tenge_ili_pochemu_prokuratura_krishuet_qazaq_stroy_date_2025_11_07",
-      "clicks": 30,
-      "impressions": 132,
-      "ctr": 22.73,
-      "position": 3.6
+      "date": "2026-02-19",
+      "clicks": 417,
+      "impressions": 22222,
+      "ctr": 1.88,
+      "position": 8.9
+    },
+    {
+      "date": "2026-02-20",
+      "clicks": 426,
+      "impressions": 23496,
+      "ctr": 1.81,
+      "position": 10.6
+    },
+    {
+      "date": "2026-02-21",
+      "clicks": 340,
+      "impressions": 19252,
+      "ctr": 1.77,
+      "position": 8.1
+    },
+    {
+      "date": "2026-02-22",
+      "clicks": 384,
+      "impressions": 20952,
+      "ctr": 1.83,
+      "position": 9.1
+    },
+    {
+      "date": "2026-02-23",
+      "clicks": 415,
+      "impressions": 20878,
+      "ctr": 1.99,
+      "position": 8.6
+    },
+    {
+      "date": "2026-02-24",
+      "clicks": 429,
+      "impressions": 20598,
+      "ctr": 2.08,
+      "position": 8.5
+    },
+    {
+      "date": "2026-02-25",
+      "clicks": 569,
+      "impressions": 21360,
+      "ctr": 2.66,
+      "position": 8.3
+    },
+    {
+      "date": "2026-02-26",
+      "clicks": 545,
+      "impressions": 20598,
+      "ctr": 2.65,
+      "position": 8.6
+    },
+    {
+      "date": "2026-02-27",
+      "clicks": 413,
+      "impressions": 19388,
+      "ctr": 2.13,
+      "position": 8.3
+    },
+    {
+      "date": "2026-02-28",
+      "clicks": 390,
+      "impressions": 20011,
+      "ctr": 1.95,
+      "position": 8.0
+    },
+    {
+      "date": "2026-03-01",
+      "clicks": 365,
+      "impressions": 19988,
+      "ctr": 1.83,
+      "position": 9.3
+    },
+    {
+      "date": "2026-03-02",
+      "clicks": 431,
+      "impressions": 21164,
+      "ctr": 2.04,
+      "position": 8.8
+    },
+    {
+      "date": "2026-03-03",
+      "clicks": 364,
+      "impressions": 20647,
+      "ctr": 1.76,
+      "position": 9.0
+    },
+    {
+      "date": "2026-03-04",
+      "clicks": 429,
+      "impressions": 20001,
+      "ctr": 2.14,
+      "position": 8.7
+    },
+    {
+      "date": "2026-03-05",
+      "clicks": 349,
+      "impressions": 18623,
+      "ctr": 1.87,
+      "position": 9.6
+    },
+    {
+      "date": "2026-03-06",
+      "clicks": 275,
+      "impressions": 15397,
+      "ctr": 1.79,
+      "position": 8.9
+    },
+    {
+      "date": "2026-03-07",
+      "clicks": 234,
+      "impressions": 15344,
+      "ctr": 1.53,
+      "position": 8.5
+    },
+    {
+      "date": "2026-03-08",
+      "clicks": 248,
+      "impressions": 15371,
+      "ctr": 1.61,
+      "position": 9.5
+    },
+    {
+      "date": "2026-03-09",
+      "clicks": 455,
+      "impressions": 19801,
+      "ctr": 2.3,
+      "position": 8.2
+    },
+    {
+      "date": "2026-03-10",
+      "clicks": 372,
+      "impressions": 20359,
+      "ctr": 1.83,
+      "position": 8.8
+    },
+    {
+      "date": "2026-03-11",
+      "clicks": 362,
+      "impressions": 20749,
+      "ctr": 1.74,
+      "position": 8.1
+    },
+    {
+      "date": "2026-03-12",
+      "clicks": 362,
+      "impressions": 22478,
+      "ctr": 1.61,
+      "position": 8.5
+    },
+    {
+      "date": "2026-03-13",
+      "clicks": 307,
+      "impressions": 18960,
+      "ctr": 1.62,
+      "position": 8.5
+    },
+    {
+      "date": "2026-03-14",
+      "clicks": 258,
+      "impressions": 18073,
+      "ctr": 1.43,
+      "position": 10.3
+    },
+    {
+      "date": "2026-03-15",
+      "clicks": 294,
+      "impressions": 20614,
+      "ctr": 1.43,
+      "position": 8.7
+    },
+    {
+      "date": "2026-03-16",
+      "clicks": 370,
+      "impressions": 22844,
+      "ctr": 1.62,
+      "position": 7.8
     }
-  ]
+  ],
+  "query_page_combos": [],
+  "period_comparison": {
+    "current_period": "2025-12-18 — 2026-03-17",
+    "previous_period": "2025-09-19 — 2025-12-17",
+    "current": {
+      "clicks": 34436,
+      "impressions": 1791645,
+      "avg_ctr": 1.9,
+      "avg_position": 9.6
+    },
+    "previous": {
+      "clicks": 15436,
+      "impressions": 352573,
+      "avg_ctr": 4.4,
+      "avg_position": 8.0
+    },
+    "delta": {
+      "clicks": 19000,
+      "clicks_pct": 123.1,
+      "impressions": 1439072,
+      "impressions_pct": 408.2,
+      "avg_ctr": -2.5,
+      "avg_position": 1.6
+    },
+    "top_gainers": [
+      {
+        "query": "сабыржан махметов биография",
+        "current_clicks": 571,
+        "previous_clicks": 29,
+        "delta_clicks": 542,
+        "current_position": 3.3,
+        "previous_position": 2.1,
+        "delta_position": 1.2
+      },
+      {
+        "query": "новости казахстана",
+        "current_clicks": 951,
+        "previous_clicks": 823,
+        "delta_clicks": 128,
+        "current_position": 13.7,
+        "previous_position": 14.9,
+        "delta_position": -1.2
+      },
+      {
+        "query": "пенсия повышение",
+        "current_clicks": 116,
+        "previous_clicks": 5,
+        "delta_clicks": 111,
+        "current_position": 3.9,
+        "previous_position": 2.6,
+        "delta_position": 1.3
+      },
+      {
+        "query": "новости казахстана на сегодня",
+        "current_clicks": 100,
+        "previous_clicks": 13,
+        "delta_clicks": 87,
+        "current_position": 10.8,
+        "previous_position": 11.4,
+        "delta_position": -0.5
+      },
+      {
+        "query": "бейбит сейдуалиева первый муж",
+        "current_clicks": 122,
+        "previous_clicks": 40,
+        "delta_clicks": 82,
+        "current_position": 1.9,
+        "previous_position": 6.4,
+        "delta_position": -4.5
+      },
+      {
+        "query": "сабыржан махметов",
+        "current_clicks": 73,
+        "previous_clicks": 18,
+        "delta_clicks": 55,
+        "current_position": 7.0,
+        "previous_position": 1.2,
+        "delta_position": 5.8
+      },
+      {
+        "query": "надежда артыкбаева",
+        "current_clicks": 54,
+        "previous_clicks": 15,
+        "delta_clicks": 39,
+        "current_position": 2.3,
+        "previous_position": 10.8,
+        "delta_position": -8.5
+      },
+      {
+        "query": "назира бакаева национальность",
+        "current_clicks": 45,
+        "previous_clicks": 7,
+        "delta_clicks": 38,
+        "current_position": 7.0,
+        "previous_position": 5.5,
+        "delta_position": 1.4
+      },
+      {
+        "query": "total kz",
+        "current_clicks": 121,
+        "previous_clicks": 84,
+        "delta_clicks": 37,
+        "current_position": 1,
+        "previous_position": 1,
+        "delta_position": 0
+      },
+      {
+        "query": "сабыржан махметов опг",
+        "current_clicks": 44,
+        "previous_clicks": 8,
+        "delta_clicks": 36,
+        "current_position": 3.2,
+        "previous_position": 4.5,
+        "delta_position": -1.3
+      },
+      {
+        "query": "громкие новости казахстана",
+        "current_clicks": 44,
+        "previous_clicks": 10,
+        "delta_clicks": 34,
+        "current_position": 10.9,
+        "previous_position": 11.5,
+        "delta_position": -0.6
+      },
+      {
+        "query": "свежии новости казахстана",
+        "current_clicks": 60,
+        "previous_clicks": 29,
+        "delta_clicks": 31,
+        "current_position": 10.7,
+        "previous_position": 10.4,
+        "delta_position": 0.3
+      },
+      {
+        "query": "эротические фильмы",
+        "current_clicks": 46,
+        "previous_clicks": 15,
+        "delta_clicks": 31,
+        "current_position": 72.8,
+        "previous_position": 65.0,
+        "delta_position": 7.9
+      },
+      {
+        "query": "назира бакаева личная жизнь",
+        "current_clicks": 56,
+        "previous_clicks": 27,
+        "delta_clicks": 29,
+        "current_position": 4.9,
+        "previous_position": 4.3,
+        "delta_position": 0.6
+      },
+      {
+        "query": "последние новости казахстана",
+        "current_clicks": 46,
+        "previous_clicks": 18,
+        "delta_clicks": 28,
+        "current_position": 11.0,
+        "previous_position": 12.6,
+        "delta_position": -1.6
+      }
+    ],
+    "top_losers": [
+      {
+        "query": "алматы",
+        "current_clicks": 11,
+        "previous_clicks": 1366,
+        "delta_clicks": -1355,
+        "current_position": 4.6,
+        "previous_position": 1.3,
+        "delta_position": 3.3
+      },
+      {
+        "query": "тотал кз",
+        "current_clicks": 2575,
+        "previous_clicks": 3277,
+        "delta_clicks": -702,
+        "current_position": 1.2,
+        "previous_position": 1.0,
+        "delta_position": 0.1
+      },
+      {
+        "query": "калелхан иманмади биография",
+        "current_clicks": 3,
+        "previous_clicks": 546,
+        "delta_clicks": -543,
+        "current_position": 6.6,
+        "previous_position": 3.1,
+        "delta_position": 3.5
+      },
+      {
+        "query": "новости",
+        "current_clicks": 564,
+        "previous_clicks": 800,
+        "delta_clicks": -236,
+        "current_position": 11.2,
+        "previous_position": 11.2,
+        "delta_position": 0.0
+      },
+      {
+        "query": "калелхан иманмади биография личная жизнь",
+        "current_clicks": 9,
+        "previous_clicks": 183,
+        "delta_clicks": -174,
+        "current_position": 4.9,
+        "previous_position": 3.2,
+        "delta_position": 1.7
+      },
+      {
+        "query": "самые громкие фейковые новости",
+        "current_clicks": 14,
+        "previous_clicks": 149,
+        "delta_clicks": -135,
+        "current_position": 7.7,
+        "previous_position": 5.4,
+        "delta_position": 2.3
+      },
+      {
+        "query": "мадина абылкасымова муж",
+        "current_clicks": 77,
+        "previous_clicks": 197,
+        "delta_clicks": -120,
+        "current_position": 1,
+        "previous_position": 1.0,
+        "delta_position": -0.0
+      },
+      {
+        "query": "талгат байгужинов биография",
+        "current_clicks": 67,
+        "previous_clicks": 185,
+        "delta_clicks": -118,
+        "current_position": 2.2,
+        "previous_position": 1.4,
+        "delta_position": 0.8
+      },
+      {
+        "query": "новости казахстана и мира",
+        "current_clicks": 43,
+        "previous_clicks": 148,
+        "delta_clicks": -105,
+        "current_position": 11.8,
+        "previous_position": 9.4,
+        "delta_position": 2.4
+      },
+      {
+        "query": "болат атабаев и мадина ералиева",
+        "current_clicks": 8,
+        "previous_clicks": 60,
+        "delta_clicks": -52,
+        "current_position": 1.2,
+        "previous_position": 1.0,
+        "delta_position": 0.2
+      },
+      {
+        "query": "номер телефона по иин",
+        "current_clicks": 108,
+        "previous_clicks": 157,
+        "delta_clicks": -49,
+        "current_position": 1.9,
+        "previous_position": 1.1,
+        "delta_position": 0.7
+      },
+      {
+        "query": "айдын рахимбаев чей родственник",
+        "current_clicks": 63,
+        "previous_clicks": 112,
+        "delta_clicks": -49,
+        "current_position": 2.5,
+        "previous_position": 2.1,
+        "delta_position": 0.4
+      },
+      {
+        "query": "тотал",
+        "current_clicks": 114,
+        "previous_clicks": 155,
+        "delta_clicks": -41,
+        "current_position": 8.4,
+        "previous_position": 10.4,
+        "delta_position": -2.0
+      },
+      {
+        "query": "новости алматы",
+        "current_clicks": 10,
+        "previous_clicks": 45,
+        "delta_clicks": -35,
+        "current_position": 2.1,
+        "previous_position": 1.2,
+        "delta_position": 0.9
+      },
+      {
+        "query": "свежие новости казахстана на сегодня",
+        "current_clicks": 198,
+        "previous_clicks": 228,
+        "delta_clicks": -30,
+        "current_position": 9.4,
+        "previous_position": 9.3,
+        "delta_position": 0.1
+      }
+    ]
+  }
 }

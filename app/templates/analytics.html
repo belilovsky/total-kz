@@ -6,30 +6,55 @@
 {% block content %}
 {% set d = gsc %}
 {% set t = d.totals %}
+{% set pc = d.get('period_comparison', {}) %}
+{% set delta = pc.get('delta', {}) %}
 
 <!-- ═══════════════ GSC KPIs ═══════════════ -->
 <section class="seo-section">
     <h2 class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Google Search Console
-        <span class="section-badge">3 месяца</span>
+        <span class="section-badge">{{ pc.get('current_period', '3 месяца') }}</span>
     </h2>
+    {% if pc %}
+    <div class="period-comparison-note">vs {{ pc.get('previous_period', '') }}</div>
+    {% endif %}
     <div class="seo-stats-row seo-stats-row-4">
         <div class="seo-stat-card">
             <div class="seo-stat-value text-accent">{{ "{:,}".format(t.clicks) }}</div>
             <div class="seo-stat-label">Кликов</div>
+            {% if delta.get('clicks_pct') is not none %}
+            <div class="seo-stat-delta {% if delta.clicks > 0 %}delta-up{% else %}delta-down{% endif %}">
+                {% if delta.clicks > 0 %}▲{% else %}▼{% endif %} {{ "{:,}".format(delta.clicks|abs) }} ({{ delta.clicks_pct }}%)
+            </div>
+            {% endif %}
         </div>
         <div class="seo-stat-card">
             <div class="seo-stat-value">{{ "{:,}".format(t.impressions) }}</div>
             <div class="seo-stat-label">Показов</div>
+            {% if delta.get('impressions_pct') is not none %}
+            <div class="seo-stat-delta {% if delta.impressions > 0 %}delta-up{% else %}delta-down{% endif %}">
+                {% if delta.impressions > 0 %}▲{% else %}▼{% endif %} {{ "{:,}".format(delta.impressions|abs) }} ({{ delta.impressions_pct }}%)
+            </div>
+            {% endif %}
         </div>
         <div class="seo-stat-card">
             <div class="seo-stat-value {% if t.avg_ctr >= 5 %}text-green{% elif t.avg_ctr >= 2 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_ctr }}%</div>
             <div class="seo-stat-label">Средний CTR</div>
+            {% if delta.get('avg_ctr') is not none %}
+            <div class="seo-stat-delta {% if delta.avg_ctr > 0 %}delta-up{% else %}delta-down{% endif %}">
+                {% if delta.avg_ctr > 0 %}▲{% else %}▼{% endif %} {{ delta.avg_ctr|abs }}pp
+            </div>
+            {% endif %}
         </div>
         <div class="seo-stat-card">
             <div class="seo-stat-value {% if t.avg_position <= 10 %}text-green{% elif t.avg_position <= 20 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_position }}</div>
             <div class="seo-stat-label">Ср. позиция</div>
+            {% if delta.get('avg_position') is not none %}
+            <div class="seo-stat-delta {% if delta.avg_position < 0 %}delta-up{% else %}delta-down{% endif %}">
+                {% if delta.avg_position < 0 %}▲{% else %}▼{% endif %} {{ delta.avg_position|abs }}
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -79,6 +104,48 @@
             {% endfor %}
         </div>
     </div>
+
+    <!-- Top Movers -->
+    {% if pc.get('top_gainers') or pc.get('top_losers') %}
+    <div class="movers-grid" style="margin-bottom:16px">
+        {% if pc.get('top_gainers') %}
+        <div class="seo-card">
+            <div class="card-subtitle">Рост кликов ▲</div>
+            <div class="movers-list">
+                {% for g in pc.top_gainers[:8] %}
+                <div class="mover-row mover-up">
+                    <span class="mover-query">{{ g.query }}</span>
+                    <span class="mover-delta">+{{ "{:,}".format(g.delta_clicks) }}</span>
+                    <span class="mover-pos">{{ g.previous_position }} → {{ g.current_position }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if pc.get('top_losers') %}
+        <div class="seo-card">
+            <div class="card-subtitle">Снижение кликов ▼</div>
+            <div class="movers-list">
+                {% for l in pc.top_losers[:8] %}
+                <div class="mover-row mover-down">
+                    <span class="mover-query">{{ l.query }}</span>
+                    <span class="mover-delta">{{ "{:,}".format(l.delta_clicks) }}</span>
+                    <span class="mover-pos">{{ l.previous_position }} → {{ l.current_position }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Daily Trend Chart -->
+    {% if d.daily_trends %}
+    <div class="seo-card" style="margin-bottom:16px">
+        <div class="card-subtitle">Клики и показы за 90 дней</div>
+        <div style="position:relative;height:260px"><canvas id="dailyTrendChart"></canvas></div>
+    </div>
+    {% endif %}
 
     <!-- Top Queries -->
     <div class="entity-table-wrap" style="margin-bottom:16px">
@@ -296,6 +363,71 @@ const chartDefaults = {
         type: 'bar',
         data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.map(c=>c+'30'), borderColor: colors, borderWidth: 1.5, borderRadius: 6, maxBarThickness: 48 }] },
         options: { ...chartDefaults, indexAxis: 'y', scales: { x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } }, y: { grid: { display: false }, ticks: { color: textColor, font: { size: 11, weight: '500' } } } } }
+    });
+})();
+
+// Daily Trend Chart
+(function() {
+    const ctx = document.getElementById('dailyTrendChart');
+    if (!ctx) return;
+    const trends = DATA.daily_trends || [];
+    if (!trends.length) return;
+    const labels = trends.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('ru-RU', {day:'numeric', month:'short'});
+    });
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Клики',
+                    data: trends.map(d => d.clicks),
+                    borderColor: accent,
+                    backgroundColor: accent + '15',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHitRadius: 8,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Показы',
+                    data: trends.map(d => d.impressions),
+                    borderColor: secondary,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [4, 3],
+                    tension: 0.35,
+                    pointRadius: 0,
+                    pointHitRadius: 8,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            ...chartDefaults,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: { display: true, position: 'top', align: 'end', labels: { color: textColor, font: { size: 11 }, usePointStyle: true, pointStyleWidth: 16, padding: 16 } },
+                tooltip: {
+                    ...chartDefaults.plugins.tooltip,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('ru-RU');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { type: 'linear', position: 'left', grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } }, title: { display: false } },
+                y1: { type: 'linear', position: 'right', grid: { display: false }, ticks: { color: secondary, font: { size: 10 } }, title: { display: false } },
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } }
+            }
+        }
     });
 })();
 
