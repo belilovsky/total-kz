@@ -21,15 +21,18 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 CATEGORY_LABELS = {
     "vnutrennyaya_politika": "Внутренняя политика",
     "vneshnyaya_politika": "Внешняя политика",
+    "politika": "Политика",
     "mir": "Мир",
     "bezopasnost": "Безопасность",
     "mneniya": "Мнения",
-    "ekonomika_sobitiya": "Экономика",
+    "ekonomika_sobitiya": "Экономика (События)",
+    "ekonomika": "Экономика",
     "biznes": "Бизнес",
     "finansi": "Финансы",
     "gossektor": "Госсектор",
     "tehno": "Технологии",
-    "obshchestvo_sobitiya": "Общество",
+    "obshchestvo": "Общество",
+    "obshchestvo_sobitiya": "Общество (События)",
     "proisshestviya": "Происшествия",
     "zhizn": "Жизнь",
     "kultura": "Культура",
@@ -39,6 +42,9 @@ CATEGORY_LABELS = {
     "nauka": "Наука",
     "stil_zhizni": "Стиль жизни",
     "redaktsiya_tandau": "Выбор редакции",
+    "drugoe": "Другое",
+    "vladelets_qz": "Владелец QZ",
+    "pisma_dedu_morozu": "Письма Деду Морозу",
 }
 
 ENTITY_TYPE_LABELS = {
