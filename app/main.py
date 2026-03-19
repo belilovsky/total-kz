@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from . import database as db
 from . import seo_analytics as seo
+from . import search_analytics as search
 
 app = FastAPI(title="Total.kz Dashboard")
 
@@ -224,6 +225,23 @@ async def api_tags(limit: int = 100):
 @app.get("/api/entities")
 async def api_entities(entity_type: str = "", limit: int = 50):
     return db.get_entities(entity_type=entity_type, limit=limit)
+
+
+# ── Search Analytics (GSC) ─────────────────────
+
+@app.get("/search", response_class=HTMLResponse)
+async def search_dashboard(request: Request):
+    data = search.get_search_data()
+    return templates.TemplateResponse("search.html", {
+        "request": request,
+        "data": data,
+        "data_json": json.dumps(data, ensure_ascii=False),
+    })
+
+
+@app.get("/api/search")
+async def api_search_data():
+    return search.get_search_data()
 
 
 # ── SEO / GEO / SGEO analytics ─────────────────────

@@ -1974,6 +1974,239 @@ body.sidebar-open .sidebar-overlay { display: block; }
     font-size: inherit;
 }
 
+/* =============================================
+   Search Analytics Page
+   ============================================= */
+
+.search-hero {
+    margin-bottom: 32px;
+    animation: fadeInUp 0.45s ease both;
+}
+
+.seo-stats-row-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.text-accent { color: var(--accent) !important; }
+
+/* Three column layout for charts */
+.search-three-col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.chart-body-sm {
+    height: 180px;
+    margin-bottom: 12px;
+}
+
+/* Brand legend */
+.brand-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+}
+.brand-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.dot-accent { background: var(--accent); }
+.dot-green { background: var(--green); }
+.dot-orange { background: var(--orange); }
+.dot-red { background: var(--red); }
+.dot-secondary { background: var(--text-muted); }
+
+/* Geo bars */
+.geo-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.geo-bar-row {
+    display: grid;
+    grid-template-columns: 40px 60px 1fr 80px 60px;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 4px;
+    border-bottom: 1px solid var(--border-light);
+    transition: background var(--transition);
+    border-radius: 4px;
+}
+.geo-bar-row:last-child { border-bottom: none; }
+.geo-bar-row:hover { background: var(--bg-hover); }
+.geo-flag {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+}
+.geo-bar-name {
+    font-size: 12px;
+    font-weight: 550;
+    color: var(--text-primary);
+}
+.geo-bar-track {
+    height: 6px;
+    background: var(--bg-body);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.geo-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+.geo-bar-clicks {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.geo-bar-ctr {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Query / page cell styling */
+.query-cell {
+    font-weight: 550;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.page-cell {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.page-cell a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 12px;
+}
+.page-cell a:hover { text-decoration: underline; }
+
+.rank-cell {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    width: 36px;
+}
+
+.num-col {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Potential value highlight */
+.potential-val {
+    color: var(--green) !important;
+    font-weight: 700;
+}
+.potential-col {
+    color: var(--green);
+}
+
+/* Section badge */
+.section-badge {
+    display: inline-flex;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+.badge-pending {
+    background: var(--orange-soft);
+    color: var(--orange);
+}
+
+/* Section description */
+.section-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: -10px 0 16px;
+    line-height: 1.5;
+}
+
+/* Yandex Metrika placeholder */
+.metrika-empty {
+    text-align: center;
+    padding: 48px 20px;
+    background: var(--bg-card);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+}
+.metrika-empty svg {
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+.metrika-empty h3 {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.metrika-empty p {
+    font-size: 13px;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Sortable column header */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.sortable:hover {
+    color: var(--accent);
+}
+
+/* ── Responsive Search ── */
+@media (max-width: 1200px) {
+    .seo-stats-row-4 { grid-template-columns: repeat(2, 1fr); }
+    .search-three-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .seo-stats-row-4 { grid-template-columns: 1fr 1fr; }
+    .search-three-col { grid-template-columns: 1fr; }
+    .geo-bar-row { grid-template-columns: 30px 50px 1fr 60px 50px; gap: 6px; }
+    .query-cell { max-width: 200px; }
+    .page-cell { max-width: 200px; }
+}
+
+@media (max-width: 480px) {
+    .seo-stats-row-4 { grid-template-columns: 1fr 1fr; }
+    .geo-bar-row { grid-template-columns: 30px 1fr 50px; }
+    .geo-bar-track, .geo-bar-ctr { display: none; }
+}
+
 /* ── Responsive SEO ── */
 @media (max-width: 1200px) {
     .seo-stats-row-5 { grid-template-columns: repeat(3, 1fr); }

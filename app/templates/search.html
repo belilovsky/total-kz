@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+{% set active = "search" %}
+{% block title %}Поисковая аналитика — Total.kz{% endblock %}
+{% block page_title %}Поисковая аналитика{% endblock %}
+
+{% block content %}
+{% set d = data %}
+{% set t = d.totals %}
+
+<!-- ═══════════════ HERO KPIs ═══════════════ -->
+<section class="search-hero">
+    <div class="seo-stats-row seo-stats-row-4">
+        <div class="seo-stat-card">
+            <div class="seo-stat-value text-accent">{{ "{:,}".format(t.clicks) }}</div>
+            <div class="seo-stat-label">Кликов за 3 мес.</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value">{{ "{:,}".format(t.impressions) }}</div>
+            <div class="seo-stat-label">Показов</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if t.avg_ctr >= 5 %}text-green{% elif t.avg_ctr >= 2 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_ctr }}%</div>
+            <div class="seo-stat-label">Средний CTR</div>
+        </div>
+        <div class="seo-stat-card">
+            <div class="seo-stat-value {% if t.avg_position <= 10 %}text-green{% elif t.avg_position <= 20 %}text-orange{% else %}text-red{% endif %}">{{ t.avg_position }}</div>
+            <div class="seo-stat-label">Ср. позиция</div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ DAILY TRENDS CHART ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Динамика кликов и показов
+    </h2>
+    <div class="seo-card">
+        <div class="chart-body-tall">
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ BRAND SPLIT + DEVICES + POSITION DIST ═══════════════ -->
+<section class="seo-section">
+    <div class="search-three-col">
+        <!-- Brand vs Non-brand -->
+        <div class="seo-card">
+            <div class="card-subtitle">Брендовый vs Небрендовый</div>
+            <div class="chart-body-sm">
+                <canvas id="brandChart"></canvas>
+            </div>
+            <div class="brand-legend">
+                <div class="brand-legend-item">
+                    <span class="dot dot-accent"></span>
+                    <span>Бренд: {{ "{:,}".format(d.brand_split.brand_clicks) }} кликов</span>
+                </div>
+                <div class="brand-legend-item">
+                    <span class="dot dot-secondary"></span>
+                    <span>Не-бренд: {{ "{:,}".format(d.brand_split.nonbrand_clicks) }} кликов</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Devices -->
+        <div class="seo-card">
+            <div class="card-subtitle">Устройства</div>
+            <div class="chart-body-sm">
+                <canvas id="devicesChart"></canvas>
+            </div>
+            <div class="brand-legend">
+                {% for dev in d.devices %}
+                <div class="brand-legend-item">
+                    <span class="dot dot-{% if dev.device == 'MOBILE' %}accent{% elif dev.device == 'DESKTOP' %}green{% else %}orange{% endif %}"></span>
+                    <span>{{ dev.device|capitalize }}: {{ "{:,}".format(dev.clicks) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Position distribution -->
+        <div class="seo-card">
+            <div class="card-subtitle">Распределение по позициям</div>
+            <div class="chart-body-sm">
+                <canvas id="positionChart"></canvas>
+            </div>
+            <div class="brand-legend">
+                {% for bucket, count in d.position_distribution.items() %}
+                <div class="brand-legend-item">
+                    <span class="dot dot-{% if loop.index == 1 %}green{% elif loop.index == 2 %}accent{% elif loop.index == 3 %}orange{% else %}red{% endif %}"></span>
+                    <span>{{ bucket }}: {{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ COUNTRIES ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        География трафика
+    </h2>
+    <div class="seo-card">
+        <div class="geo-bars">
+            {% set max_clicks = d.countries[0].clicks if d.countries else 1 %}
+            {% for c in d.countries[:12] %}
+            <div class="geo-bar-row">
+                <span class="geo-flag">{{ c.country|upper }}</span>
+                <span class="geo-bar-name">{{ c.country_name or c.country|upper }}</span>
+                <div class="geo-bar-track">
+                    <div class="geo-bar-fill" style="width: {{ (c.clicks / max_clicks * 100)|round }}%"></div>
+                </div>
+                <span class="geo-bar-clicks">{{ "{:,}".format(c.clicks) }}</span>
+                <span class="geo-bar-ctr {% if c.ctr >= 2 %}text-green{% elif c.ctr >= 1 %}text-orange{% else %}text-red{% endif %}">{{ c.ctr }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ TOP QUERIES TABLE ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Топ запросов
+    </h2>
+    <div class="entity-table-wrap">
+        <table class="seo-table" id="queriesTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Запрос</th>
+                    <th class="num-col sortable" data-sort="clicks">Клики ▾</th>
+                    <th class="num-col sortable" data-sort="impressions">Показы</th>
+                    <th class="num-col sortable" data-sort="ctr">CTR</th>
+                    <th class="num-col sortable" data-sort="position">Позиция</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in d.top_queries[:50] %}
+                <tr>
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td class="query-cell">{{ q.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col {% if q.ctr >= 10 %}text-green{% elif q.ctr >= 3 %}text-orange{% else %}text-red{% endif %}">{{ q.ctr }}%</td>
+                    <td class="num-col {% if q.position <= 3 %}text-green{% elif q.position <= 10 %}text-orange{% else %}text-red{% endif %}">{{ q.position }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ GROWTH OPPORTUNITIES ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Потенциал роста
+        <span class="section-badge">{{ d.growth_opportunities|length }} запросов</span>
+    </h2>
+    <p class="section-desc">Запросы с позицией 5-20 и высокими показами. Если продвинуть в топ-3, можно получить дополнительные клики.</p>
+    <div class="entity-table-wrap">
+        <table class="seo-table">
+            <thead>
+                <tr>
+                    <th>Запрос</th>
+                    <th class="num-col">Сейчас кликов</th>
+                    <th class="num-col">Показы</th>
+                    <th class="num-col">Позиция</th>
+                    <th class="num-col">CTR</th>
+                    <th class="num-col potential-col">Потенциал +кликов</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in d.growth_opportunities[:20] %}
+                <tr>
+                    <td class="query-cell">{{ g.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(g.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(g.impressions) }}</td>
+                    <td class="num-col text-orange">{{ "%.1f"|format(g.position) }}</td>
+                    <td class="num-col text-red">{{ "%.1f"|format(g.ctr * 100) }}%</td>
+                    <td class="num-col potential-val">+{{ "{:,}".format(g.potential_extra_clicks) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ QUICK WINS ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Быстрые победы
+        <span class="section-badge">{{ d.quick_wins|length }} запросов</span>
+    </h2>
+    <p class="section-desc">Уже на первой странице (позиция 1-10), но CTR ниже 5%. Оптимизация заголовков и сниппетов даст быстрый результат.</p>
+    <div class="entity-table-wrap">
+        <table class="seo-table">
+            <thead>
+                <tr>
+                    <th>Запрос</th>
+                    <th class="num-col">Клики</th>
+                    <th class="num-col">Показы</th>
+                    <th class="num-col">Позиция</th>
+                    <th class="num-col">CTR</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in d.quick_wins[:15] %}
+                <tr>
+                    <td class="query-cell">{{ q.query }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col text-green">{{ q.position }}</td>
+                    <td class="num-col text-red">{{ q.ctr }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ TOP PAGES ═══════════════ -->
+<section class="seo-section">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Топ страниц
+    </h2>
+    <div class="entity-table-wrap">
+        <table class="seo-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Страница</th>
+                    <th class="num-col">Клики</th>
+                    <th class="num-col">Показы</th>
+                    <th class="num-col">CTR</th>
+                    <th class="num-col">Позиция</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in d.top_pages[:20] %}
+                <tr>
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td class="page-cell"><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url|replace("https://total.kz/", "/")|truncate(80) }}</a></td>
+                    <td class="num-col">{{ "{:,}".format(p.clicks) }}</td>
+                    <td class="num-col">{{ "{:,}".format(p.impressions) }}</td>
+                    <td class="num-col {% if p.ctr >= 5 %}text-green{% elif p.ctr >= 2 %}text-orange{% else %}text-red{% endif %}">{{ p.ctr }}%</td>
+                    <td class="num-col {% if p.position <= 5 %}text-green{% elif p.position <= 10 %}text-orange{% else %}text-red{% endif %}">{{ p.position }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══════════════ YANDEX METRIKA PLACEHOLDER ═══════════════ -->
+<section class="seo-section search-metrika-placeholder">
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Яндекс.Метрика
+        <span class="section-badge badge-pending">Скоро</span>
+    </h2>
+    <div class="metrika-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <h3>Данные Яндекс.Метрики</h3>
+        <p>Подключите Яндекс.Метрику для просмотра данных о посещаемости, поведении пользователей и источниках трафика из Яндекса.</p>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DATA = {{ data_json|safe }};
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+const textColor = isDark ? '#9ca3af' : '#6b7280';
+const accent = isDark ? '#3b82f6' : '#2563eb';
+const green = isDark ? '#10b981' : '#059669';
+const orange = isDark ? '#f59e0b' : '#d97706';
+const red = isDark ? '#ef4444' : '#dc2626';
+const secondary = isDark ? '#6b7280' : '#9ca3af';
+
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: false },
+        tooltip: {
+            backgroundColor: isDark ? '#2a2d36' : '#1a1d26',
+            titleColor: '#fff',
+            bodyColor: isDark ? '#e8eaed' : '#e8eaed',
+            padding: 12,
+            cornerRadius: 8,
+            titleFont: { weight: '600', size: 13 },
+            bodyFont: { size: 12 },
+        }
+    }
+};
+
+// ── Daily Trends Chart ──
+if (DATA.daily_trends && DATA.daily_trends.length > 0) {
+    const ctx1 = document.getElementById('dailyChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: DATA.daily_trends.map(d => {
+                const dt = new Date(d.date);
+                return dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            }),
+            datasets: [{
+                label: 'Клики',
+                data: DATA.daily_trends.map(d => d.clicks),
+                borderColor: accent,
+                backgroundColor: accent + '18',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                yAxisID: 'y',
+            }, {
+                label: 'Показы',
+                data: DATA.daily_trends.map(d => d.impressions),
+                borderColor: secondary,
+                backgroundColor: 'transparent',
+                borderDash: [4, 4],
+                tension: 0.35,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                yAxisID: 'y1',
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: { color: textColor, font: { size: 12, weight: '500' }, boxWidth: 14, padding: 16, usePointStyle: true }
+                }
+            },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 }, maxTicksLimit: 15 } },
+                y: { position: 'left', grid: { color: gridColor }, ticks: { color: accent, font: { size: 11, weight: '600' } }, title: { display: true, text: 'Клики', color: accent, font: { size: 12, weight: '600' } } },
+                y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: secondary, font: { size: 11 } }, title: { display: true, text: 'Показы', color: secondary, font: { size: 12, weight: '600' } } }
+            }
+        }
+    });
+}
+
+// ── Brand Split Doughnut ──
+(function() {
+    const ctx = document.getElementById('brandChart').getContext('2d');
+    const bs = DATA.brand_split;
+    const total = bs.brand_clicks + bs.nonbrand_clicks;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Бренд', 'Не-бренд'],
+            datasets: [{
+                data: [bs.brand_clicks, bs.nonbrand_clicks],
+                backgroundColor: [accent, secondary],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '70%',
+            plugins: {
+                ...chartDefaults.plugins,
+                tooltip: {
+                    ...chartDefaults.plugins.tooltip,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.label + ': ' + ctx.parsed.toLocaleString('ru-RU') + ' (' + Math.round(ctx.parsed / total * 100) + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+
+// ── Devices Doughnut ──
+(function() {
+    const ctx = document.getElementById('devicesChart').getContext('2d');
+    const devData = DATA.devices;
+    const total = devData.reduce((s, d) => s + d.clicks, 0);
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: devData.map(d => d.device),
+            datasets: [{
+                data: devData.map(d => d.clicks),
+                backgroundColor: [accent, green, orange],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            cutout: '70%',
+            plugins: {
+                ...chartDefaults.plugins,
+                tooltip: {
+                    ...chartDefaults.plugins.tooltip,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.label + ': ' + ctx.parsed.toLocaleString('ru-RU') + ' (' + Math.round(ctx.parsed / total * 100) + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+
+// ── Position Distribution Bar ──
+(function() {
+    const ctx = document.getElementById('positionChart').getContext('2d');
+    const pd = DATA.position_distribution;
+    const labels = Object.keys(pd);
+    const values = Object.values(pd);
+    const colors = [green, accent, orange, red];
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(l => l.replace(/\(.*?\)/, '').trim()),
+            datasets: [{
+                data: values,
+                backgroundColor: colors.map(c => c + '30'),
+                borderColor: colors,
+                borderWidth: 1.5,
+                borderRadius: 6,
+                maxBarThickness: 48,
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            indexAxis: 'y',
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } },
+                y: { grid: { display: false }, ticks: { color: textColor, font: { size: 11, weight: '500' } } }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}
