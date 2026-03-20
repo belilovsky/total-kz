@@ -1,18 +1,29 @@
 """FastAPI application — Total.kz v5 (public frontend + admin dashboard)."""
 
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.gzip import GZipMiddleware
 
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
 from .public_routes import router as public_router
 
-app = FastAPI(title="Total.kz")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup/shutdown."""
+    db.init_db()
+    yield
+
+
+app = FastAPI(title="Total.kz", version="5.0.0", lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -64,9 +75,17 @@ def entity_type_label(t: str) -> str:
     return ENTITY_TYPE_LABELS.get(t, t)
 
 
-@app.on_event("startup")
-def startup():
-    db.init_db()
+
+
+
+# ══════════════════════════════════════════════
+#  HEALTH CHECK
+# ══════════════════════════════════════════════
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "app": "total-kz", "version": "5.0.0"}
 
 
 # ══════════════════════════════════════════════

@@ -1,16 +1,27 @@
+# total-kz — Docker Compose
+# Platform standard: belilovsky-platform v1.0
+
 services:
-  web:
+  app:
     build: .
-    container_name: total-kz-web
+    container_name: total_kz_app
     restart: unless-stopped
     ports:
-      - "3847:8000"
+      - "${APP_PORT:-3847}:8000"
     volumes:
       - ./data:/app/data
     environment:
       - TZ=Asia/Almaty
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/stats"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
+      start_period: 15s
       retries: 3
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    name: total_kz_net
+    driver: bridge
