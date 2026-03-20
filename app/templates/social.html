@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% set active = "social" %}
+
+{% block title %}Соцсети — Total.kz Admin{% endblock %}
+{% block page_title %}Соцсети{% endblock %}
+
+{% block content %}
+<style>
+  .social-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-bottom:24px; }
+  .social-card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
+  .social-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .social-card[data-platform="telegram"]::before { background:#26A5E4; }
+  .social-card[data-platform="instagram"]::before { background:linear-gradient(90deg,#833AB4,#E4405F,#FCAF45); }
+  .social-card[data-platform="youtube"]::before { background:#FF0000; }
+  .social-card[data-platform="facebook"]::before { background:#1877F2; }
+  .social-card[data-platform="tiktok"]::before { background:#000; }
+  .social-card[data-platform="x"]::before { background:#000; }
+  .social-card[data-platform="vk"]::before { background:#0077FF; }
+  .social-card-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .social-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
+  .social-card-name { font-weight:700; font-size:15px; }
+  .social-card-handle { font-size:12px; color:var(--text-secondary); }
+  .social-card-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .social-stat { text-align:center; padding:8px; background:var(--surface-2); border-radius:8px; }
+  .social-stat-value { font-size:18px; font-weight:700; }
+  .social-stat-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; }
+  .social-card-actions { display:flex; gap:8px; margin-top:12px; }
+  .social-card-actions a, .social-card-actions button {
+    flex:1; padding:6px 12px; font-size:12px; font-weight:600; border-radius:6px; text-align:center;
+    border:1px solid var(--border); color:var(--text-secondary); background:transparent; cursor:pointer;
+    transition:all .15s; text-decoration:none; display:inline-block;
+  }
+  .social-card-actions a:hover, .social-card-actions button:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Tabs */
+  .social-tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:2px solid var(--border); padding-bottom:0; }
+  .social-tab { padding:10px 20px; font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer;
+    border:none; background:none; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; }
+  .social-tab:hover { color:var(--text); }
+  .social-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  /* KPI row */
+  .social-kpi { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+  @media (max-width:900px) { .social-kpi { grid-template-columns:repeat(3,1fr); } }
+  .social-kpi-item { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+  .social-kpi-value { font-size:24px; font-weight:800; margin-bottom:2px; }
+  .social-kpi-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; }
+
+  /* Content plan table */
+  .plan-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .plan-table th { text-align:left; padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--text-secondary); border-bottom:2px solid var(--border); font-weight:600; }
+  .plan-table td { padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .plan-table tr:hover td { background:var(--surface-2); }
+  .plan-status { display:inline-block; padding:2px 8px; border-radius:100px; font-size:11px; font-weight:600; }
+  .plan-status.planned { background:rgba(59,130,246,.12); color:#3b82f6; }
+  .plan-status.in_progress { background:rgba(245,158,11,.12); color:#f59e0b; }
+  .plan-status.done { background:rgba(34,197,94,.12); color:#22c55e; }
+  .plan-status.cancelled { background:rgba(156,163,175,.12); color:#9ca3af; }
+  .plan-status.published { background:rgba(34,197,94,.12); color:#22c55e; }
+  .plan-status.failed { background:rgba(239,68,68,.12); color:#ef4444; }
+  .plan-status.scheduled { background:rgba(139,92,246,.12); color:#8b5cf6; }
+  .plan-status.draft { background:rgba(156,163,175,.12); color:#9ca3af; }
+
+  .platform-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:100px; font-size:11px; font-weight:600; }
+
+  /* Posts list */
+  .post-item { display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+  .post-item:last-child { border-bottom:none; }
+  .post-platform-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; font-size:14px; }
+  .post-body { flex:1; min-width:0; }
+  .post-title { font-weight:600; font-size:14px; margin-bottom:2px; }
+  .post-text { font-size:12px; color:var(--text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .post-meta { font-size:11px; color:var(--text-secondary); margin-top:4px; display:flex; gap:12px; }
+
+  /* Forms */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:640px) { .form-grid { grid-template-columns:1fr; } }
+  .form-group { margin-bottom:12px; }
+  .form-group label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em; }
+  .form-group input, .form-group select, .form-group textarea {
+    width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;
+    background:var(--surface); color:var(--text); transition:border-color .15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--accent); outline:none; }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .btn-accent { padding:8px 20px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s; }
+  .btn-accent:hover { background:var(--accent-hover,#b82a2e); }
+  .btn-ghost { padding:8px 20px; background:transparent; color:var(--text-secondary); border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn-ghost:hover { border-color:var(--text-secondary); color:var(--text); }
+  .btn-danger { padding:4px 10px; background:rgba(239,68,68,.1); color:#ef4444; border:1px solid transparent; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; }
+  .btn-danger:hover { border-color:#ef4444; }
+
+  .section-title { font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .section-title svg { width:20px; height:20px; color:var(--text-secondary); }
+  .card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; }
+
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-secondary); }
+  .empty-state svg { width:48px; height:48px; margin-bottom:12px; opacity:.4; }
+  .empty-state p { font-size:14px; margin-bottom:12px; }
+
+  /* Dialog / Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:var(--card-bg); border-radius:16px; padding:24px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal-title { font-size:18px; font-weight:700; margin-bottom:16px; }
+</style>
+
+<!-- ═══ KPI ROW ═══ -->
+<div class="social-kpi">
+  <div class="social-kpi-item">
+    <div class="social-kpi-value">{{ accounts|length }}</div>
+    <div class="social-kpi-label">Аккаунтов</div>
+  </div>
+  <div class="social-kpi-item">
+    <div class="social-kpi-value">{{ post_stats.published }}</div>
+    <div class="social-kpi-label">Публикаций</div>
+  </div>
+  <div class="social-kpi-item">
+    <div class="social-kpi-value">{{ post_stats.scheduled }}</div>
+    <div class="social-kpi-label">В очереди</div>
+  </div>
+  <div class="social-kpi-item">
+    <div class="social-kpi-value">{{ plan_stats.this_week }}</div>
+    <div class="social-kpi-label">План на неделю</div>
+  </div>
+  <div class="social-kpi-item">
+    <div class="social-kpi-value" {% if plan_stats.overdue > 0 %}style="color:#ef4444"{% endif %}>{{ plan_stats.overdue }}</div>
+    <div class="social-kpi-label">Просрочено</div>
+  </div>
+</div>
+
+<!-- ═══ TABS ═══ -->
+<div class="social-tabs">
+  <button class="social-tab active" data-tab="accounts">Аккаунты</button>
+  <button class="social-tab" data-tab="plan">Контент-план</button>
+  <button class="social-tab" data-tab="posts">Публикации</button>
+  <button class="social-tab" data-tab="autopost">Авто-постинг</button>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: ACCOUNTS -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-accounts">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 class="section-title" style="margin:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Подключённые аккаунты
+    </h2>
+    <button class="btn-accent" onclick="document.getElementById('modal-account').classList.add('open')">+ Добавить аккаунт</button>
+  </div>
+
+  {% if accounts %}
+  <div class="social-grid">
+    {% for acc in accounts %}
+    <div class="social-card" data-platform="{{ acc.platform }}">
+      <div class="social-card-header">
+        <div class="social-icon" style="background:{{ acc.platform_info.color or '#666' }}">
+          {{ acc.platform[:2]|upper }}
+        </div>
+        <div>
+          <div class="social-card-name">{{ acc.platform_info.name or acc.platform }}</div>
+          <div class="social-card-handle">{{ acc.account_name }}</div>
+        </div>
+      </div>
+      <div class="social-card-stats">
+        <div class="social-stat">
+          <div class="social-stat-value">{{ "{:,}".format(acc.latest_followers or acc.followers_count or 0) }}</div>
+          <div class="social-stat-label">Подписчики</div>
+        </div>
+        <div class="social-stat">
+          <div class="social-stat-value">{{ "{:.1f}".format(acc.latest_engagement or 0) }}%</div>
+          <div class="social-stat-label">Engagement</div>
+        </div>
+      </div>
+      <div class="social-card-actions">
+        {% if acc.account_url %}
+          <a href="{{ acc.account_url }}" target="_blank">Открыть</a>
+        {% endif %}
+        <form method="post" action="/admin/social/account/delete/{{ acc.id }}" style="flex:1" onsubmit="return confirm('Удалить аккаунт?')">
+          <button type="submit" class="btn-danger" style="width:100%">Удалить</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <p>Нет подключённых аккаунтов</p>
+      <button class="btn-accent" onclick="document.getElementById('modal-account').classList.add('open')">Добавить первый аккаунт</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: CONTENT PLAN -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-plan">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 class="section-title" style="margin:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Контент-план
+    </h2>
+    <button class="btn-accent" onclick="document.getElementById('modal-plan').classList.add('open')">+ Новая запись</button>
+  </div>
+
+  {% if content_plan %}
+  <div class="card" style="overflow-x:auto;padding:0">
+    <table class="plan-table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Платформа</th>
+          <th>Тип</th>
+          <th>Контент</th>
+          <th>Статус</th>
+          <th>Ответственный</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in content_plan %}
+        <tr>
+          <td style="white-space:nowrap">
+            <strong>{{ item.planned_date }}</strong>
+            {% if item.planned_time %}<br><span style="font-size:11px;color:var(--text-secondary)">{{ item.planned_time }}</span>{% endif %}
+          </td>
+          <td><span class="platform-badge" style="background:{{ platforms[item.platform].color if item.platform in platforms else '#666' }}22;color:{{ platforms[item.platform].color if item.platform in platforms else '#666' }}">{{ platforms[item.platform].name if item.platform in platforms else item.platform }}</span></td>
+          <td style="font-size:12px">{{ item.content_type }}</td>
+          <td>
+            <strong>{{ item.title }}</strong>
+            {% if item.description %}<br><span style="font-size:12px;color:var(--text-secondary)">{{ item.description[:80] }}{% if item.description|length > 80 %}…{% endif %}</span>{% endif %}
+            {% if item.article_title %}<br><span style="font-size:11px;color:var(--accent)">📎 {{ item.article_title[:50] }}</span>{% endif %}
+          </td>
+          <td><span class="plan-status {{ item.status }}">{{ item.status }}</span></td>
+          <td style="font-size:12px">{{ item.assigned_to or '—' }}</td>
+          <td>
+            <form method="post" action="/admin/social/plan/delete/{{ item.id }}" style="display:inline" onsubmit="return confirm('Удалить?')">
+              <button type="submit" class="btn-danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <p>Контент-план пуст. Добавьте первую запись.</p>
+      <button class="btn-accent" onclick="document.getElementById('modal-plan').classList.add('open')">Создать запись</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: POSTS -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-posts">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 class="section-title" style="margin:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Публикации
+    </h2>
+    {% if accounts %}
+    <button class="btn-accent" onclick="document.getElementById('modal-post').classList.add('open')">+ Создать пост</button>
+    {% endif %}
+  </div>
+
+  {% if recent_posts.posts %}
+  <div class="card" style="padding:12px 20px">
+    {% for post in recent_posts.posts %}
+    <div class="post-item">
+      <div class="post-platform-icon" style="background:{{ platforms[post.platform].color if post.platform in platforms else '#666' }}">
+        {{ post.platform[:2]|upper }}
+      </div>
+      <div class="post-body">
+        <div class="post-title">
+          {% if post.title %}{{ post.title }}{% elif post.article_title %}📎 {{ post.article_title }}{% else %}Пост{% endif %}
+        </div>
+        {% if post.body %}
+        <div class="post-text">{{ post.body[:200] }}</div>
+        {% endif %}
+        <div class="post-meta">
+          <span class="plan-status {{ post.status }}">{{ post.status }}</span>
+          <span>{{ post.account_name or '' }}</span>
+          {% if post.published_at %}<span>{{ post.published_at[:16] }}</span>{% endif %}
+          {% if post.views %}<span>👁 {{ post.views }}</span>{% endif %}
+          {% if post.likes %}<span>❤ {{ post.likes }}</span>{% endif %}
+          {% if post.post_url %}<a href="{{ post.post_url }}" target="_blank" style="color:var(--accent)">Открыть</a>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p>Нет публикаций. Создайте пост или настройте авто-постинг.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TAB: AUTO-POSTING -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-autopost">
+  <h2 class="section-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+    Авто-постинг
+  </h2>
+
+  <div class="card">
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">
+      Новые статьи автоматически публикуются в аккаунты с включённым авто-постингом.
+      Чтобы включить — добавьте аккаунт с галочкой «Авто-постинг» и укажите API-токен (бот для Telegram, API для других платформ).
+    </p>
+
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">Аккаунты с авто-постингом:</h3>
+    {% set auto_accounts = [] %}
+    {% for acc in accounts %}
+      {% if acc.config and acc.config.get('auto_post', false) %}
+        {% if auto_accounts.append(acc) %}{% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if auto_accounts %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+      {% for acc in auto_accounts %}
+      <span class="platform-badge" style="background:{{ acc.platform_info.color or '#666' }}22;color:{{ acc.platform_info.color or '#666' }};padding:6px 12px;border-radius:8px;font-size:13px">
+        ✓ {{ acc.platform_info.name or acc.platform }} — {{ acc.account_name }}
+      </span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Нет аккаунтов с авто-постингом. Добавьте аккаунт с этой опцией.</p>
+    {% endif %}
+
+    <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">Ожидают публикации (последние 24ч):</h3>
+    {% if pending_articles %}
+    <div style="font-size:13px">
+      {% for art in pending_articles %}
+      <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <strong>{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}</strong>
+        <br><span style="color:var(--text-secondary)">{{ art.sub_category }} · {{ art.pub_date[:16] if art.pub_date else '—' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--text-muted)">Все свежие статьи уже опубликованы (или нет новых за 24 часа).</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: Add Account -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-account" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-title">Добавить аккаунт</div>
+    <form method="post" action="/admin/social/account/save">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Платформа</label>
+          <select name="platform" required>
+            {% for key, info in platforms.items() %}
+            <option value="{{ key }}">{{ info.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Название аккаунта</label>
+          <input name="account_name" placeholder="@totalkz" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>URL профиля</label>
+        <input name="account_url" placeholder="https://t.me/totalkz">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ID аккаунта (для API)</label>
+          <input name="account_id" placeholder="chat_id, channel_id, etc.">
+        </div>
+        <div class="form-group">
+          <label>API Token / Bot Token</label>
+          <input name="api_token" type="password" placeholder="bot123:ABC...">
+        </div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" name="auto_post" value="1" id="auto-post-check" style="width:auto">
+        <label for="auto-post-check" style="margin:0;font-size:13px;text-transform:none;letter-spacing:normal">Включить авто-постинг новых статей</label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('open')">Отмена</button>
+        <button type="submit" class="btn-accent">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: Add Content Plan Entry -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-plan" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-title">Новая запись в контент-план</div>
+    <form method="post" action="/admin/social/plan/save">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Дата</label>
+          <input type="date" name="planned_date" value="{{ today }}" required>
+        </div>
+        <div class="form-group">
+          <label>Время</label>
+          <input type="time" name="planned_time" value="12:00">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Платформа</label>
+          <select name="platform">
+            <option value="all">Все</option>
+            {% for key, info in platforms.items() %}
+            <option value="{{ key }}">{{ info.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Тип контента</label>
+          <select name="content_type">
+            <option value="post">Пост</option>
+            <option value="story">Сторис</option>
+            <option value="reel">Рилс/Видео</option>
+            <option value="poll">Опрос</option>
+            <option value="article">Статья</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Заголовок</label>
+        <input name="title" placeholder="О чём пост?" required>
+      </div>
+      <div class="form-group">
+        <label>Описание / текст</label>
+        <textarea name="description" placeholder="Детали, заметки..."></textarea>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Статус</label>
+          <select name="status">
+            <option value="planned">Запланировано</option>
+            <option value="in_progress">В работе</option>
+            <option value="done">Готово</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ответственный</label>
+          <input name="assigned_to" placeholder="Имя">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('open')">Отмена</button>
+        <button type="submit" class="btn-accent">Создать</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: Create Post -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-post" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-title">Создать пост</div>
+    <form method="post" action="/admin/social/post/create">
+      <div class="form-group">
+        <label>Аккаунт</label>
+        <select name="account_id" required>
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}">{{ acc.platform_info.name or acc.platform }} — {{ acc.account_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Заголовок</label>
+        <input name="title" placeholder="Заголовок поста">
+      </div>
+      <div class="form-group">
+        <label>Текст поста</label>
+        <textarea name="body" rows="4" placeholder="Текст публикации..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Запланировать на (оставьте пустым для черновика)</label>
+        <input type="datetime-local" name="scheduled_at">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('open')">Отмена</button>
+        <button type="submit" class="btn-accent">Создать</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Tab switching
+document.querySelectorAll('.social-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Close modals on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+</script>
+{% endblock %}

@@ -13,6 +13,7 @@ from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
 from .public_routes import router as public_router
+from .social_routes import router as social_router
 
 
 @asynccontextmanager
@@ -92,6 +93,7 @@ async def health():
 #  PUBLIC FRONTEND (mounted at /)
 # ══════════════════════════════════════════════
 app.include_router(public_router)
+app.include_router(social_router)
 
 
 # ══════════════════════════════════════════════
