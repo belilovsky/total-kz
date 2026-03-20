@@ -530,6 +530,30 @@ def get_category_counts() -> list:
         return [dict(r) for r in rows]
 
 
+def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0) -> dict:
+    """Get latest articles from multiple sub_categories (for grouped nav sections)."""
+    if not categories:
+        return {"articles": [], "total": 0, "pages": 1}
+    with get_db() as conn:
+        placeholders = ",".join("?" for _ in categories)
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM articles WHERE sub_category IN ({placeholders})",
+            categories
+        ).fetchone()[0]
+        rows = conn.execute(f"""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles WHERE sub_category IN ({placeholders})
+            ORDER BY pub_date DESC
+            LIMIT ? OFFSET ?
+        """, (*categories, limit, offset)).fetchall()
+        return {
+            "articles": [dict(r) for r in rows],
+            "total": total,
+            "pages": max(1, (total + limit - 1) // limit),
+        }
+
+
 def generate_sitemap_urls(limit: int = 50000) -> list:
     """Get URLs for sitemap generation."""
     with get_db() as conn:

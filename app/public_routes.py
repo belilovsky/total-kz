@@ -41,15 +41,65 @@ CATEGORY_LABELS = {
     "drugoe": "Другое",
 }
 
-# Main nav categories (ordered)
-NAV_CATEGORIES = [
-    "vnutrennyaya_politika", "ekonomika_sobitiya", "obshchestvo_sobitiya",
-    "bezopasnost", "finansi", "biznes", "tehno", "mir", "sport",
+# ── Smart grouped navigation (covers 100% of content) ──
+# Each nav section maps to multiple journalist-assigned sub_categories
+NAV_SECTIONS = [
+    {
+        "slug": "politika",
+        "label": "Политика",
+        "subcats": ["vnutrennyaya_politika", "vneshnyaya_politika", "gossektor"],
+    },
+    {
+        "slug": "ekonomika",
+        "label": "Экономика",
+        "subcats": ["ekonomika_sobitiya", "finansi", "biznes"],
+    },
+    {
+        "slug": "obshchestvo",
+        "label": "Общество",
+        "subcats": ["obshchestvo_sobitiya", "zhizn", "proisshestviya", "bezopasnost", "stil_zhizni", "religiya"],
+    },
+    {
+        "slug": "nauka",
+        "label": "Наука и Техно",
+        "subcats": ["tehno", "nauka"],
+    },
+    {
+        "slug": "mir",
+        "label": "Мир",
+        "subcats": ["mir"],
+    },
+    {
+        "slug": "sport",
+        "label": "Спорт",
+        "subcats": ["sport"],
+    },
 ]
+
+# Lookup: nav slug → subcats list
+NAV_SLUG_MAP = {s["slug"]: s["subcats"] for s in NAV_SECTIONS}
+# Lookup: subcat → nav slug (for breadcrumbs, badges)
+SUBCAT_TO_NAV = {}
+for section in NAV_SECTIONS:
+    for sc in section["subcats"]:
+        SUBCAT_TO_NAV[sc] = section["slug"]
+
+# Legacy: flat list for templates that still need it
+NAV_CATEGORIES = [s["slug"] for s in NAV_SECTIONS]
 
 
 def cat_label(slug: str) -> str:
+    """Get human label for any slug (nav section or sub_category)."""
+    # Check nav sections first
+    for s in NAV_SECTIONS:
+        if s["slug"] == slug:
+            return s["label"]
     return CATEGORY_LABELS.get(slug, slug.replace("_", " ").title())
+
+
+def nav_slug_for(subcat: str) -> str:
+    """Get the nav section slug for a sub_category."""
+    return SUBCAT_TO_NAV.get(subcat, subcat)
 
 
 def pluralize_articles(n: int) -> str:
@@ -143,28 +193,18 @@ async def redirect_old_root():
 
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
-    """Homepage: hero articles + category blocks."""
-    hero_articles = db.get_latest_articles(limit=4)
-    latest = db.get_latest_articles(limit=20, offset=4)
-    trending_tags = db.get_trending_tags(limit=15)
-    cat_counts = db.get_category_counts()
-
-    # Get latest 5 articles for each main nav category
-    category_blocks = {}
-    for cat_slug in NAV_CATEGORIES[:6]:
-        result = db.get_latest_by_category(cat_slug, limit=5)
-        if result["articles"]:
-            category_blocks[cat_slug] = result["articles"]
+    """Homepage: hero + chronological feed."""
+    hero_articles = db.get_latest_articles(limit=1)
+    latest = db.get_latest_articles(limit=30, offset=1)
 
     return templates.TemplateResponse("public/home.html", {
         "request": request,
         "hero_articles": hero_articles,
         "latest": latest,
-        "trending_tags": trending_tags,
-        "cat_counts": cat_counts,
-        "category_blocks": category_blocks,
+        "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
@@ -177,16 +217,25 @@ async def category_page(
     category: str,
     page: int = Query(1, ge=1),
 ):
-    """Category listing with pagination."""
+    """Category listing — handles both nav section slugs and legacy sub_category slugs."""
     per_page = 20
     offset = (page - 1) * per_page
-    result = db.get_latest_by_category(category, limit=per_page, offset=offset)
+
+    # Check if this is a grouped nav section
+    if category in NAV_SLUG_MAP:
+        subcats = NAV_SLUG_MAP[category]
+        result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
+    else:
+        # Legacy: direct sub_category slug
+        result = db.get_latest_by_category(category, limit=per_page, offset=offset)
 
     if not result["articles"] and page == 1:
         return templates.TemplateResponse("public/404.html", {
             "request": request,
+            "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
             "cat_label": cat_label,
+            "nav_slug_for": nav_slug_for,
             "article_url": article_url,
             "format_date": format_date,
             "format_date_short": format_date_short,
@@ -200,8 +249,10 @@ async def category_page(
         "page": page,
         "category": category,
         "category_name": cat_label(category),
+        "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
@@ -216,8 +267,10 @@ async def article_page(request: Request, category: str, slug: str):
     if not article:
         return templates.TemplateResponse("public/404.html", {
             "request": request,
+            "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
             "cat_label": cat_label,
+            "nav_slug_for": nav_slug_for,
             "article_url": article_url,
             "format_date": format_date,
             "format_date_short": format_date_short,
@@ -230,14 +283,21 @@ async def article_page(request: Request, category: str, slug: str):
         f"https://total.kz/ru/news/{category}/", ""
     ).strip("/")
 
+    # Resolve nav section for this sub_category
+    nav_section = nav_slug_for(category)
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
         "related": related,
         "category": category,
         "category_name": cat_label(category),
+        "nav_section": nav_section,
+        "nav_section_name": cat_label(nav_section),
+        "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
@@ -265,8 +325,10 @@ async def search_page(
         "q": q,
         "result": result,
         "popular_tags": popular_tags,
+        "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
@@ -286,8 +348,10 @@ async def tag_page(
         "request": request,
         "q": f"#{tag_name}",
         "result": result,
+        "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,

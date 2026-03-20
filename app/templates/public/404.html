@@ -1,11 +1,11 @@
 {% extends "public/base.html" %}
 {% block title %}Страница не найдена — Total.kz{% endblock %}
 {% block content %}
-<div class="not-found">
-  <div class="not-found-code">404</div>
-  <h1>Страница не найдена</h1>
-  <p>Возможно, эта страница была перемещена или удалена. Попробуйте поиск или вернитесь на главную.</p>
-  <div class="not-found-actions">
+<div class="error-page">
+  <div class="error-code">404</div>
+  <h1 class="error-title">Страница не найдена</h1>
+  <p class="error-desc">Возможно, эта страница была перемещена или удалена.</p>
+  <div style="display:flex;gap:var(--space-3)">
     <a href="/" class="btn-primary">На главную</a>
     <a href="/search" class="btn-secondary">Поиск</a>
   </div>

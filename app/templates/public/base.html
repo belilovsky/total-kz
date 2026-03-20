@@ -52,121 +52,93 @@
   <!-- ═══ READING PROGRESS BAR ═══ -->
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
 
-  <!-- ═══ TICKER BAR ═══ -->
-  <div class="ticker-bar" aria-label="Последние новости">
-    <div class="ticker-track">
-      <div class="ticker-inner" id="ticker-inner">
-        {% if ticker_articles is defined and ticker_articles %}
-          <!-- Label + items, duplicated for seamless loop -->
-          <span class="ticker-label">● Сейчас</span>
-          {% for art in ticker_articles[:6] %}
-            <span class="ticker-item"><a href="{{ article_url(art) }}">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
-            <span class="ticker-dot">·</span>
-          {% endfor %}
-          <!-- Duplicate for seamless loop -->
-          <span class="ticker-label" aria-hidden="true">● Сейчас</span>
-          {% for art in ticker_articles[:6] %}
-            <span class="ticker-item" aria-hidden="true"><a href="{{ article_url(art) }}" tabindex="-1">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
-            <span class="ticker-dot" aria-hidden="true">·</span>
-          {% endfor %}
-        {% elif hero_articles is defined and hero_articles %}
-          <span class="ticker-label">● Сейчас</span>
-          {% for art in hero_articles[:4] %}
-            <span class="ticker-item"><a href="{{ article_url(art) }}">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
-            <span class="ticker-dot">·</span>
-          {% endfor %}
-          <!-- Duplicate for seamless loop -->
-          <span class="ticker-label" aria-hidden="true">● Сейчас</span>
-          {% for art in hero_articles[:4] %}
-            <span class="ticker-item" aria-hidden="true"><a href="{{ article_url(art) }}" tabindex="-1">{{ art.title[:60] }}{% if art.title|length > 60 %}…{% endif %}</a></span>
-            <span class="ticker-dot" aria-hidden="true">·</span>
-          {% endfor %}
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
   <!-- ═══ HEADER ═══ -->
   <header class="site-header">
-    <div class="header-top">
+    <div class="header-inner">
       <a href="/" class="site-logo">
-        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Total.kz">
-          <rect width="32" height="32" rx="6" fill="currentColor"/>
-          <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-                font-family="Inter, sans-serif" font-weight="800" font-size="16"
-                fill="var(--bg)">T</text>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28" aria-hidden="true">
+          <rect width="32" height="32" rx="7" fill="var(--accent)"/>
+          <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
+                font-family="'Onest', sans-serif" font-weight="800" font-size="18"
+                fill="#fff">T</text>
         </svg>
         <span class="site-logo-text">Total<span>.kz</span></span>
       </a>
 
-      <form action="/search" method="get" class="header-search">
-        <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="text" name="q" placeholder="Поиск новостей…" value="{{ q if q is defined else '' }}" autocomplete="off">
-      </form>
+      <nav class="header-nav" aria-label="Разделы">
+        {% if nav_sections is defined %}
+          {% for section in nav_sections %}
+            <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
+          {% endfor %}
+        {% endif %}
+      </nav>
 
       <div class="header-actions">
-        <button class="theme-toggle" data-theme-toggle aria-label="Переключить тему">
+        <button class="header-btn" id="search-toggle" aria-label="Поиск">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+        <button class="header-btn" data-theme-toggle aria-label="Переключить тему">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
         </button>
-        <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu">
+        <button class="header-btn hamburger" id="mobile-menu-btn" aria-label="Меню" aria-expanded="false">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
         </button>
       </div>
     </div>
-
-    <nav class="header-nav" aria-label="Категории">
-      <ul>
-        {% for cat_slug in nav_categories %}
-          <li><a href="/news/{{ cat_slug }}"{% if category is defined and category == cat_slug %} class="active"{% endif %}>{{ cat_label(cat_slug) }}</a></li>
-        {% endfor %}
-      </ul>
-    </nav>
   </header>
 
-  <!-- ═══ MOBILE MENU (slide-in drawer) ═══ -->
-  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Навигационное меню">
-    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+  <!-- ═══ SEARCH OVERLAY ═══ -->
+  <div class="search-overlay" id="search-overlay">
+    <div class="search-overlay-backdrop" id="search-backdrop"></div>
+    <div class="search-overlay-inner">
+      <form action="/search" method="get" class="search-overlay-form">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" name="q" placeholder="Поиск новостей…" value="{{ q if q is defined else '' }}" autocomplete="off" id="search-input">
+        <button type="button" class="search-overlay-close" id="search-close" aria-label="Закрыть">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ MOBILE MENU ═══ -->
+  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Меню">
+    <div class="mobile-menu-backdrop" id="mobile-menu-overlay"></div>
     <div class="mobile-menu-drawer">
       <div class="mobile-menu-header">
-        <span class="mobile-menu-title">Total<span style="color:var(--accent)">.kz</span></span>
-        <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Закрыть меню">
+        <span class="site-logo-text">Total<span style="color:var(--accent)">.kz</span></span>
+        <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Закрыть">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
           </svg>
         </button>
       </div>
 
-      <!-- Search inside drawer -->
-      <form action="/search" method="get" class="mobile-menu-search">
-        <svg class="mobile-menu-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="text" name="q" placeholder="Поиск новостей…" autocomplete="off">
-      </form>
-
-      <div class="mobile-menu-divider">Рубрики</div>
-
-      <nav class="mobile-menu-nav" aria-label="Разделы сайта">
+      <nav class="mobile-menu-nav">
         <a href="/"{% if request.url.path == '/' %} class="active"{% endif %}>Главная</a>
-        {% for cat_slug in nav_categories %}
-          <a href="/news/{{ cat_slug }}"{% if category is defined and category == cat_slug %} class="active"{% endif %}>{{ cat_label(cat_slug) }}</a>
-        {% endfor %}
+        {% if nav_sections is defined %}
+          {% for section in nav_sections %}
+            <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
+          {% endfor %}
+        {% endif %}
       </nav>
 
-      <!-- Theme toggle in drawer -->
-      <div class="mobile-menu-theme">
-        <span>Оформление</span>
+      <div class="mobile-menu-footer">
         <button data-theme-toggle-mobile aria-label="Переключить тему">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
-          <span id="mobile-theme-label">Светлая</span>
+          <span id="mobile-theme-label">Тёмная тема</span>
         </button>
       </div>
     </div>
@@ -177,38 +149,28 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- ═══ BACK-TO-TOP BUTTON ═══ -->
-  <button class="back-to-top" id="back-to-top" aria-label="Наверх" title="Наверх">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- ═══ BACK-TO-TOP ═══ -->
+  <button class="back-to-top" id="back-to-top" aria-label="Наверх">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
       <path d="M18 15l-6-6-6 6"/>
     </svg>
   </button>
 
   <!-- ═══ FOOTER ═══ -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <div class="site-logo-text">Total<span style="color:var(--accent)">.kz</span></div>
-          <p>Ведущий новостной портал Казахстана. Независимая журналистика с 2016 года.</p>
-        </div>
-        <div class="footer-links">
-          <div class="footer-col">
-            <h4>Рубрики</h4>
-            {% for cat_slug in nav_categories[:5] %}
-              <a href="/news/{{ cat_slug }}">{{ cat_label(cat_slug) }}</a>
-            {% endfor %}
-          </div>
-          <div class="footer-col">
-            <h4>Ещё</h4>
-            {% for cat_slug in nav_categories[5:] %}
-              <a href="/news/{{ cat_slug }}">{{ cat_label(cat_slug) }}</a>
-            {% endfor %}
-          </div>
-        </div>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="site-logo-text">Total<span>.kz</span></span>
       </div>
-      <div class="footer-bottom">
-        <span>&copy; 2016–2026 Total.kz. Все права защищены.</span>
+      <nav class="footer-nav">
+        {% if nav_sections is defined %}
+          {% for section in nav_sections %}
+            <a href="/news/{{ section.slug }}">{{ section.label }}</a>
+          {% endfor %}
+        {% endif %}
+      </nav>
+      <div class="footer-meta">
+        <span>&copy; 2016–2026 Total.kz</span>
         <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
       </div>
     </div>
@@ -218,160 +180,113 @@
   <script>
   (function () {
 
-    // ── Theme toggle (shared logic for header + mobile drawer) ──────────
+    // ── Theme ────────────────────────────────────────────────────────────
     const root = document.documentElement;
     let theme = localStorage.getItem('theme') ||
       (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     root.setAttribute('data-theme', theme);
 
+    const sunSvg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    const moonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
     function applyTheme(t) {
       theme = t;
       root.setAttribute('data-theme', t);
       localStorage.setItem('theme', t);
-      updateThemeIcons();
+      updateIcons();
     }
 
-    function updateThemeIcons() {
+    function updateIcons() {
       const isDark = theme === 'dark';
-      const sunSvg  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
-      const moonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-
-      // Header toggle
-      const headerToggle = document.querySelector('[data-theme-toggle]');
-      if (headerToggle) {
-        headerToggle.innerHTML = isDark ? sunSvg : moonSvg;
-        headerToggle.setAttribute('aria-label', isDark ? 'Светлая тема' : 'Тёмная тема');
-      }
-      // Mobile toggle icon
-      const mobileToggle = document.querySelector('[data-theme-toggle-mobile]');
-      if (mobileToggle) {
-        const icon = mobileToggle.querySelector('svg');
-        if (icon) mobileToggle.replaceChild(
-          isDark ? parseSvg(sunSvg) : parseSvg(moonSvg), icon
-        );
-      }
-      const mobileLabel = document.getElementById('mobile-theme-label');
-      if (mobileLabel) mobileLabel.textContent = isDark ? 'Светлая' : 'Тёмная';
+      document.querySelectorAll('[data-theme-toggle]').forEach(function (el) {
+        el.innerHTML = isDark ? sunSvg : moonSvg;
+      });
+      const label = document.getElementById('mobile-theme-label');
+      if (label) label.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
     }
 
-    function parseSvg(str) {
-      return new DOMParser().parseFromString(str, 'image/svg+xml').documentElement;
+    document.querySelectorAll('[data-theme-toggle], [data-theme-toggle-mobile]').forEach(function (el) {
+      el.addEventListener('click', function () { applyTheme(theme === 'dark' ? 'light' : 'dark'); });
+    });
+    updateIcons();
+
+    // ── Search overlay ───────────────────────────────────────────────────
+    const searchToggle   = document.getElementById('search-toggle');
+    const searchOverlay  = document.getElementById('search-overlay');
+    const searchBackdrop = document.getElementById('search-backdrop');
+    const searchClose    = document.getElementById('search-close');
+    const searchInput    = document.getElementById('search-input');
+
+    function openSearch() {
+      searchOverlay && searchOverlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(function () { searchInput && searchInput.focus(); }, 100);
+    }
+    function closeSearch() {
+      searchOverlay && searchOverlay.classList.remove('is-open');
+      document.body.style.overflow = '';
     }
 
-    // Bind header toggle
-    const headerToggle = document.querySelector('[data-theme-toggle]');
-    if (headerToggle) {
-      headerToggle.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
-    }
-    // Bind mobile drawer toggle
-    const mobileToggle = document.querySelector('[data-theme-toggle-mobile]');
-    if (mobileToggle) {
-      mobileToggle.addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
-    }
+    searchToggle  && searchToggle.addEventListener('click', openSearch);
+    searchBackdrop && searchBackdrop.addEventListener('click', closeSearch);
+    searchClose   && searchClose.addEventListener('click', closeSearch);
 
-    updateThemeIcons();
-
-    // ── Mobile menu ─────────────────────────────────────────────────────
-    const mobileMenu    = document.getElementById('mobile-menu');
-    const menuBtn       = document.getElementById('mobile-menu-btn');
-    const menuClose     = document.getElementById('mobile-menu-close');
-    const menuOverlay   = document.getElementById('mobile-menu-overlay');
+    // ── Mobile menu ──────────────────────────────────────────────────────
+    const mobileMenu  = document.getElementById('mobile-menu');
+    const menuBtn     = document.getElementById('mobile-menu-btn');
+    const menuClose   = document.getElementById('mobile-menu-close');
+    const menuOverlay = document.getElementById('mobile-menu-overlay');
 
     function openMenu() {
-      if (!mobileMenu) return;
-      mobileMenu.classList.add('open');
+      mobileMenu && mobileMenu.classList.add('is-open');
       menuBtn && menuBtn.setAttribute('aria-expanded', 'true');
       document.body.style.overflow = 'hidden';
-      // Focus first focusable element in drawer
-      const firstFocusable = mobileMenu.querySelector('button, a, input');
-      if (firstFocusable) firstFocusable.focus();
     }
-
     function closeMenu() {
-      if (!mobileMenu) return;
-      mobileMenu.classList.remove('open');
+      mobileMenu && mobileMenu.classList.remove('is-open');
       menuBtn && menuBtn.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
-      menuBtn && menuBtn.focus();
     }
 
     menuBtn     && menuBtn.addEventListener('click', openMenu);
     menuClose   && menuClose.addEventListener('click', closeMenu);
     menuOverlay && menuOverlay.addEventListener('click', closeMenu);
 
-    // Close on Escape key
+    // Escape key closes any overlay
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('open')) {
-        closeMenu();
-      }
+      if (e.key === 'Escape') { closeMenu(); closeSearch(); }
     });
 
-    // ── Back-to-top button ──────────────────────────────────────────────
-    const backToTop = document.getElementById('back-to-top');
-    if (backToTop) {
-      backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-
+    // ── Back-to-top ──────────────────────────────────────────────────────
+    const btt = document.getElementById('back-to-top');
+    if (btt) {
+      btt.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
       window.addEventListener('scroll', function () {
-        if (window.scrollY > 400) {
-          backToTop.classList.add('visible');
-        } else {
-          backToTop.classList.remove('visible');
-        }
+        btt.classList.toggle('is-visible', window.scrollY > 400);
       }, { passive: true });
     }
 
-    // ── Reading progress bar (article pages only) ───────────────────────
-    const progressBar = document.getElementById('reading-progress');
-    const articleBody = document.querySelector('.article-body');
-
-    if (progressBar && articleBody) {
+    // ── Reading progress ─────────────────────────────────────────────────
+    const progress = document.getElementById('reading-progress');
+    const body     = document.querySelector('.article-body');
+    if (progress && body) {
       window.addEventListener('scroll', function () {
-        const articleTop    = articleBody.offsetTop;
-        const articleHeight = articleBody.offsetHeight;
-        const scrolled      = window.scrollY - articleTop;
-        const viewportH     = window.innerHeight;
-        const total         = articleHeight - viewportH;
-        const progress      = total > 0 ? Math.min(100, Math.max(0, (scrolled / total) * 100)) : 0;
-        progressBar.style.width = progress + '%';
+        const top = body.offsetTop, h = body.offsetHeight, s = window.scrollY - top;
+        const pct = h - window.innerHeight > 0 ? Math.min(100, Math.max(0, s / (h - window.innerHeight) * 100)) : 0;
+        progress.style.width = pct + '%';
       }, { passive: true });
     }
 
-    // ── Card entrance animations (IntersectionObserver) ─────────────────
+    // ── Feed items entrance ──────────────────────────────────────────────
     if ('IntersectionObserver' in window) {
-      const cardObserver = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-              cardObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
-      );
-
-      // Observe article cards, compact cards, hero cards
-      document.querySelectorAll('.article-card').forEach(function (card) {
-        cardObserver.observe(card);
-      });
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
+      document.querySelectorAll('.feed-item, .article-card').forEach(function (el) { io.observe(el); });
     } else {
-      // Fallback: make all cards visible immediately
-      document.querySelectorAll('.article-card').forEach(function (card) {
-        card.classList.add('visible');
-      });
-    }
-
-    // ── Ticker: disable animation if not enough items ───────────────────
-    const ticker = document.getElementById('ticker-inner');
-    if (ticker) {
-      // If the ticker has very few items, use static scroll instead
-      const items = ticker.querySelectorAll('.ticker-item');
-      if (items.length <= 2) {
-        ticker.style.animation = 'none';
-        ticker.style.justifyContent = 'center';
-      }
+      document.querySelectorAll('.feed-item, .article-card').forEach(function (el) { el.classList.add('visible'); });
     }
 
   })();

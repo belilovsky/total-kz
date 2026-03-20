@@ -3,118 +3,60 @@
 {% block title %}Total.kz — Новости Казахстана{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="main-grid">
-    <div class="main-content">
+<div class="feed-layout">
 
-      <!-- ═══ HERO ═══ -->
-      {% if hero_articles %}
-      <section class="hero-grid" aria-label="Главные новости">
-        {% for art in hero_articles[:3] %}
-        <div class="hero-card article-card" data-animate data-delay="{{ loop.index0 * 100 }}">
-          {% if art.main_image or art.thumbnail %}
-            <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="{% if loop.first %}eager{% else %}lazy{% endif %}">
-          {% endif %}
-          <a href="{{ article_url(art) }}">
-            <span class="hero-cat">{{ cat_label(art.sub_category) }}</span>
-            <h2>{{ art.title }}</h2>
-            <span class="hero-meta">{{ format_date_short(art.pub_date) }}</span>
-          </a>
-        </div>
-        {% endfor %}
-      </section>
+  <!-- ═══ HERO: one big story ═══ -->
+  {% if hero_articles %}
+  {% set hero = hero_articles[0] %}
+  <div class="hero-single">
+    {% if hero.main_image or hero.thumbnail %}
+      <img src="{{ hero.main_image or hero.thumbnail }}" alt="" loading="eager">
+    {% endif %}
+    <div class="hero-single-body">
+      <span class="cat-badge" data-cat="{{ nav_slug_for(hero.sub_category) }}">
+        <span class="cat-dot"></span>
+        <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
+      </span>
+      <h1 class="hero-single-title">{{ hero.title }}</h1>
+      {% if hero.excerpt %}
+        <p class="hero-single-meta">{{ hero.excerpt[:120] }}{% if hero.excerpt|length > 120 %}…{% endif %}</p>
       {% endif %}
-
-      <!-- ═══ LATEST NEWS ═══ -->
-      <section aria-label="Последние новости">
-        <div class="section-header">
-          <h2 class="section-title">Последние новости</h2>
-        </div>
-        <div class="article-list">
-          {% for art in latest[:12] %}
-          <article class="article-card">
-            <div class="article-card-body">
-              <span class="cat-badge">{{ cat_label(art.sub_category) }}</span>
-              <h3><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-              {% if art.excerpt %}
-                <p class="excerpt">{{ art.excerpt }}</p>
-              {% endif %}
-              <div class="meta">{{ format_date_short(art.pub_date) }}{% if art.author %} · {{ art.author }}{% endif %}</div>
-            </div>
-            {% if art.thumbnail or art.main_image %}
-            <div class="article-card-thumb">
-              <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
-            </div>
-            {% endif %}
-          </article>
-          {% endfor %}
-        </div>
-      </section>
-
-      <!-- ═══ CATEGORY BLOCKS ═══ -->
-      {% if category_blocks %}
-      <section class="mt-8" aria-label="По рубрикам">
-        <div class="section-header">
-          <h2 class="section-title">По рубрикам</h2>
-        </div>
-        <div class="category-blocks">
-          {% for cat_slug, articles in category_blocks.items() %}
-          <div class="category-block">
-            <div class="section-header">
-              <h3 class="section-title" style="font-size:var(--text-base)">{{ cat_label(cat_slug) }}</h3>
-              <a href="/news/{{ cat_slug }}" class="section-link">Все →</a>
-            </div>
-            <div class="compact-list">
-              {% for art in articles[:4] %}
-              <div class="compact-card">
-                <div class="compact-card-body">
-                  <h4><a href="{{ article_url(art) }}">{{ art.title }}</a></h4>
-                  <div class="meta">{{ format_date_short(art.pub_date) }}</div>
-                </div>
-                {% if art.thumbnail or art.main_image %}
-                <div class="compact-card-thumb">
-                  <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
-                </div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
+      <span class="hero-single-meta">{{ format_date_short(hero.pub_date) }}{% if hero.author %} · {{ hero.author }}{% endif %}</span>
     </div>
-
-    <!-- ═══ SIDEBAR ═══ -->
-    <aside class="sidebar">
-      {% if trending_tags %}
-      <div class="sidebar-section">
-        <h3 class="sidebar-title">Тренды</h3>
-        <div class="tags-cloud">
-          {% for t in trending_tags %}
-            <a href="/tag/{{ t.tag }}" class="tag-pill">{{ t.tag }}</a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% if cat_counts %}
-      <div class="sidebar-section">
-        <h3 class="sidebar-title">Рубрики</h3>
-        <div style="display:flex;flex-direction:column;gap:var(--space-1)">
-          {% for c in cat_counts[:12] %}
-            <a href="/news/{{ c.sub_category }}" style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--text-sm);color:var(--text-secondary);text-decoration:none;border-bottom:1px solid var(--border-light)">
-              <span>{{ cat_label(c.sub_category) }}</span>
-              <span class="font-mono text-xs text-muted">{{ c.cnt }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </aside>
-
+    <a href="{{ article_url(hero) }}" class="hero-single-link" aria-label="{{ hero.title }}"></a>
   </div>
+  {% endif %}
+
+  <!-- ═══ FEED ═══ -->
+  <div class="feed-list">
+    {% for art in latest %}
+    <article class="feed-item">
+      <div class="feed-item-body">
+        <div class="feed-item-meta">
+          <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+            <span class="cat-dot"></span>
+            <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+          </span>
+          <span class="sep">·</span>
+          <span>{{ format_date_short(art.pub_date) }}</span>
+        </div>
+        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+        {% if art.excerpt %}
+          <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
+        {% endif %}
+      </div>
+      {% if art.thumbnail or art.main_image %}
+      <div class="feed-item-thumb">
+        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+      </div>
+      {% endif %}
+    </article>
+
+    {% if loop.index == 8 or loop.index == 18 %}
+    <div class="feed-divider" aria-hidden="true"></div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
 </div>
 {% endblock %}

@@ -3,31 +3,44 @@
 {% block title %}{% if q %}{{ q }} — Поиск{% else %}Поиск{% endif %} — Total.kz{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="search-header">
-    <h1>{% if q.startswith('#') %}Тег: {{ q[1:] }}{% elif q %}Результаты: {{ q }}{% else %}Поиск{% endif %}</h1>
-    <form action="/search" method="get" class="search-form">
-      <input type="text" name="q" placeholder="Введите запрос…" value="{{ q if not q.startswith('#') else '' }}" autofocus>
-      <button type="submit">Найти</button>
+<div class="search-page">
+
+  <div class="search-page-form">
+    <h1 style="font-size:var(--text-xl);font-weight:800;margin-bottom:var(--space-6)">
+      {% if q.startswith('#') %}Тег: {{ q[1:] }}{% elif q %}Результаты: {{ q }}{% else %}Поиск{% endif %}
+    </h1>
+    <form action="/search" method="get">
+      <div class="search-input-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" name="q" placeholder="Введите запрос…" value="{{ q if not q.startswith('#') else '' }}" autofocus>
+      </div>
     </form>
   </div>
 
   {% if result.articles %}
-  <div class="search-count">Найдено {{ result.total }} результатов</div>
+  <h2 class="search-heading">Найдено {{ result.total }} результатов</h2>
 
-  <div class="article-list" style="max-width:var(--content-default)">
+  <div class="feed-list">
     {% for art in result.articles %}
-    <article class="article-card">
-      <div class="article-card-body">
-        <span class="cat-badge">{{ cat_label(art.sub_category) }}</span>
-        <h3><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+    <article class="feed-item">
+      <div class="feed-item-body">
+        <div class="feed-item-meta">
+          <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+            <span class="cat-dot"></span>
+            <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+          </span>
+          <span class="sep">·</span>
+          <span>{{ format_date_short(art.pub_date) }}</span>
+        </div>
+        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
         {% if art.excerpt %}
-          <p class="excerpt">{{ art.excerpt }}</p>
+          <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
         {% endif %}
-        <div class="meta">{{ format_date_short(art.pub_date) }}{% if art.author %} · {{ art.author }}{% endif %}</div>
       </div>
       {% if art.thumbnail or art.main_image %}
-      <div class="article-card-thumb">
+      <div class="feed-item-thumb">
         <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
       </div>
       {% endif %}
@@ -36,36 +49,54 @@
   </div>
 
   {% if result.pages > 1 %}
-  <nav class="pagination" aria-label="Навигация по страницам">
+  <nav class="pagination" aria-label="Страницы">
     {% if result.page > 1 %}
-      <a href="?q={{ q }}&page={{ result.page - 1 }}">&larr;</a>
+      <a href="?q={{ q }}&page={{ result.page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
+    {% else %}
+      <span class="pg-arrow disabled">&larr;</span>
     {% endif %}
-    {% for p in range(1, result.pages + 1) %}
+
+    {% set start = [1, result.page - 2] | max %}
+    {% set end = [result.pages, result.page + 2] | min %}
+
+    {% if start > 1 %}
+      <a href="?q={{ q }}&page=1">1</a>
+      {% if start > 2 %}<span class="ellipsis">…</span>{% endif %}
+    {% endif %}
+
+    {% for p in range(start, end + 1) %}
       {% if p == result.page %}
-        <span class="active">{{ p }}</span>
-      {% elif p <= 5 or p > result.pages - 2 or (p >= result.page - 1 and p <= result.page + 1) %}
+        <span class="current">{{ p }}</span>
+      {% else %}
         <a href="?q={{ q }}&page={{ p }}">{{ p }}</a>
-      {% elif p == 6 or p == result.pages - 2 %}
-        <span class="disabled">…</span>
       {% endif %}
     {% endfor %}
+
+    {% if end < result.pages %}
+      {% if end < result.pages - 1 %}<span class="ellipsis">…</span>{% endif %}
+      <a href="?q={{ q }}&page={{ result.pages }}">{{ result.pages }}</a>
+    {% endif %}
+
     {% if result.page < result.pages %}
-      <a href="?q={{ q }}&page={{ result.page + 1 }}">&rarr;</a>
+      <a href="?q={{ q }}&page={{ result.page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
+    {% else %}
+      <span class="pg-arrow disabled">&rarr;</span>
     {% endif %}
   </nav>
   {% endif %}
 
   {% elif q %}
-  <div class="not-found" style="padding:var(--space-12) 0">
-    <h1 style="font-size:var(--text-xl)">Ничего не найдено</h1>
-    <p>По запросу «{{ q }}» статей не нашлось. Попробуйте другой запрос.</p>
-    <a href="/">На главную</a>
+  <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
+    <h2 class="error-title">Ничего не найдено</h2>
+    <p class="error-desc">По запросу «{{ q }}» статей не нашлось.</p>
+    <a href="/" class="btn-primary">На главную</a>
   </div>
+
   {% else %}
   {% if popular_tags %}
-  <div class="popular-tags" style="margin-top:var(--space-8)">
-    <h2 class="section-title" style="margin-bottom:var(--space-4)">Популярные теги</h2>
-    <div class="tags-cloud">
+  <div style="margin-top:var(--space-4)">
+    <h2 class="search-heading">Популярные теги</h2>
+    <div class="article-tags">
       {% for t in popular_tags %}
         <a href="/tag/{{ t.tag }}" class="tag-pill">{{ t.tag }}</a>
       {% endfor %}
@@ -73,5 +104,6 @@
   </div>
   {% endif %}
   {% endif %}
+
 </div>
 {% endblock %}
