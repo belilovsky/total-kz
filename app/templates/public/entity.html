@@ -1,0 +1,93 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ entity.name }} — {{ type_label }} — Total.kz{% endblock %}
+{% block description %}Все статьи, связанные с {{ entity.name }}. {{ pluralize_articles(result.total) }} на Total.kz{% endblock %}
+
+{% block content %}
+<div class="entity-page">
+
+  <nav class="breadcrumbs" aria-label="Навигация">
+    <a href="/">Главная</a>
+    <span class="sep">›</span>
+    <span>{{ entity.name }}</span>
+  </nav>
+
+  <div class="entity-page-header">
+    <span class="entity-type-badge entity-type-{{ entity.entity_type }}">{{ type_label }}</span>
+    <h1>{{ entity.name }}</h1>
+    <p class="entity-count">{{ pluralize_articles(result.total) }}</p>
+  </div>
+
+  {% if result.articles %}
+  <div class="feed-list">
+    {% for art in result.articles %}
+    <article class="feed-item">
+      <div class="feed-item-body">
+        <div class="feed-item-meta">
+          <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+            <span class="cat-dot"></span>
+            <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+          </span>
+          <span class="sep">·</span>
+          <span>{{ format_date_short(art.pub_date) }}</span>
+        </div>
+        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+        {% if art.excerpt %}
+          <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
+        {% endif %}
+      </div>
+      {% if art.thumbnail or art.main_image %}
+      <div class="feed-item-thumb">
+        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if result.pages > 1 %}
+  <nav class="pagination" aria-label="Страницы">
+    {% if page > 1 %}
+      <a href="?page={{ page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
+    {% else %}
+      <span class="pg-arrow disabled">&larr;</span>
+    {% endif %}
+
+    {% set start = [1, page - 2] | max %}
+    {% set end = [result.pages, page + 2] | min %}
+
+    {% if start > 1 %}
+      <a href="?page=1">1</a>
+      {% if start > 2 %}<span class="ellipsis">…</span>{% endif %}
+    {% endif %}
+
+    {% for p in range(start, end + 1) %}
+      {% if p == page %}
+        <span class="current">{{ p }}</span>
+      {% else %}
+        <a href="?page={{ p }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if end < result.pages %}
+      {% if end < result.pages - 1 %}<span class="ellipsis">…</span>{% endif %}
+      <a href="?page={{ result.pages }}">{{ result.pages }}</a>
+    {% endif %}
+
+    {% if page < result.pages %}
+      <a href="?page={{ page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
+    {% else %}
+      <span class="pg-arrow disabled">&rarr;</span>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
+    <h2 class="error-title">Статей не найдено</h2>
+    <a href="/" class="btn-primary">На главную</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

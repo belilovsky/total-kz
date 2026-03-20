@@ -554,6 +554,42 @@ def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0)
         }
 
 
+def get_entity(entity_id: int) -> dict | None:
+    """Get entity by ID."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, name, entity_type, normalized FROM entities WHERE id = ?",
+            (entity_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def get_articles_by_entity(entity_id: int, page: int = 1, per_page: int = 20) -> dict:
+    """Get articles linked to an entity, paginated."""
+    with get_db() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+            (entity_id,)
+        ).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute("""
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
+                   a.excerpt, a.thumbnail, a.main_image
+            FROM articles a
+            JOIN article_entities ae ON ae.article_id = a.id
+            WHERE ae.entity_id = ?
+            ORDER BY a.pub_date DESC
+            LIMIT ? OFFSET ?
+        """, (entity_id, per_page, offset)).fetchall()
+        return {
+            "articles": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
 def generate_sitemap_urls(limit: int = 50000) -> list:
     """Get URLs for sitemap generation."""
     with get_db() as conn:

@@ -548,6 +548,48 @@ main { padding-top:var(--space-6); padding-bottom:var(--space-16); }
 .share-btn[aria-label="Копировать"]:hover { color:var(--accent); border-color:var(--accent); background:var(--accent-bg); }
 .share-btn.copied { color:var(--green); border-color:var(--green); background:rgba(22,163,74,.08); }
 
+/* Article entities */
+.article-entities {
+  padding:var(--space-6) 0 var(--space-4);
+  border-top:1px solid var(--border);
+}
+.entities-label {
+  display:block; font-size:var(--text-xs); font-weight:600;
+  text-transform:uppercase; letter-spacing:0.05em;
+  color:var(--text-secondary); margin-bottom:var(--space-3);
+}
+.entity-chips { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.entity-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:var(--space-1) var(--space-3); border-radius:100px;
+  font-size:var(--text-xs); font-weight:500; text-decoration:none;
+  border:1px solid var(--border); color:var(--text-secondary);
+  background:var(--surface-1);
+  transition:all var(--transition);
+}
+.entity-chip:hover { background:var(--surface-2); color:var(--text); border-color:var(--text-secondary); }
+.entity-icon { font-size:8px; line-height:1; }
+.entity-person .entity-icon { color:#2563eb; }
+.entity-org .entity-icon { color:#d83236; }
+.entity-location .entity-icon { color:#16a34a; }
+.entity-chip.entity-person:hover { border-color:#2563eb; color:#2563eb; }
+.entity-chip.entity-org:hover { border-color:#d83236; color:#d83236; }
+.entity-chip.entity-location:hover { border-color:#16a34a; color:#16a34a; }
+
+/* Entity page */
+.entity-page { max-width:var(--content-default); margin:0 auto; padding:0 var(--space-4); }
+.entity-page-header { padding:var(--space-8) 0 var(--space-6); border-bottom:2px solid var(--text); margin-bottom:var(--space-6); }
+.entity-page-header h1 { font-size:var(--text-xl); font-weight:800; margin:var(--space-2) 0; }
+.entity-count { font-size:var(--text-sm); color:var(--text-secondary); }
+.entity-type-badge {
+  display:inline-block; padding:var(--space-1) var(--space-3);
+  border-radius:100px; font-size:var(--text-xs); font-weight:600;
+  text-transform:uppercase; letter-spacing:0.04em;
+}
+.entity-type-person { background:rgba(37,99,235,.1); color:#2563eb; }
+.entity-type-org { background:rgba(216,50,54,.1); color:#d83236; }
+.entity-type-location { background:rgba(22,163,74,.1); color:#16a34a; }
+
 /* Article tags */
 .article-tags { display:flex; flex-wrap:wrap; gap:var(--space-2); padding:var(--space-5) 0; }
 

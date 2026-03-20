@@ -117,6 +117,20 @@
     </button>
   </div>
 
+  {% if article.entities %}
+  <div class="article-entities">
+    <span class="entities-label">Упоминаются</span>
+    <div class="entity-chips">
+      {% for ent in article.entities %}
+        <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.entity_type == 'person' and 'Персона' or ent.entity_type == 'org' and 'Организация' or 'Локация' }}">
+          <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
+          {{ ent.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {% if article.tags %}
   <div class="article-tags">
     {% for tag in article.tags %}

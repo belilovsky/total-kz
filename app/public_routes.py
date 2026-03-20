@@ -358,6 +358,53 @@ async def tag_page(
     })
 
 
+ENTITY_TYPE_LABELS = {
+    "person": "Персона",
+    "org": "Организация",
+    "location": "Локация",
+}
+
+
+@router.get("/entity/{entity_id}", response_class=HTMLResponse)
+async def entity_page(
+    request: Request,
+    entity_id: int,
+    page: int = Query(1, ge=1),
+):
+    """Articles linked to an entity."""
+    entity = db.get_entity(entity_id)
+    if not entity:
+        return templates.TemplateResponse("public/404.html", {
+            "request": request,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            "cat_label": cat_label,
+            "nav_slug_for": nav_slug_for,
+            "article_url": article_url,
+            "format_date": format_date,
+            "format_date_short": format_date_short,
+        }, status_code=404)
+
+    result = db.get_articles_by_entity(entity_id, page=page, per_page=20)
+    type_label = ENTITY_TYPE_LABELS.get(entity["entity_type"], entity["entity_type"])
+
+    return templates.TemplateResponse("public/entity.html", {
+        "request": request,
+        "entity": entity,
+        "type_label": type_label,
+        "result": result,
+        "page": page,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
+        "article_url": article_url,
+        "format_date": format_date,
+        "format_date_short": format_date_short,
+        "pluralize_articles": pluralize_articles,
+    })
+
+
 # ══════════════════════════════════════════════
 #  SEO: robots.txt, sitemap.xml
 # ══════════════════════════════════════════════
