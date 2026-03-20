@@ -3,7 +3,7 @@
 {% block title %}Total.kz — Новости Казахстана{% endblock %}
 
 {% block content %}
-<div class="feed-layout">
+<div class="wide-layout">
 
   <!-- ═══ HERO: one big story ═══ -->
   {% if hero_articles %}
@@ -19,7 +19,7 @@
       </span>
       <h1 class="hero-single-title">{{ hero.title }}</h1>
       {% if hero.excerpt %}
-        <p class="hero-single-meta">{{ hero.excerpt[:120] }}{% if hero.excerpt|length > 120 %}…{% endif %}</p>
+        <p class="hero-single-excerpt">{{ hero.excerpt[:160] }}{% if hero.excerpt|length > 160 %}…{% endif %}</p>
       {% endif %}
       <span class="hero-single-meta">{{ format_date_short(hero.pub_date) }}{% if hero.author %} · {{ hero.author }}{% endif %}</span>
     </div>
@@ -27,36 +27,80 @@
   </div>
   {% endif %}
 
-  <!-- ═══ FEED ═══ -->
-  <div class="feed-list">
-    {% for art in latest %}
-    <article class="feed-item">
-      <div class="feed-item-body">
-        <div class="feed-item-meta">
+  <!-- ═══ TOP STORIES: card grid ═══ -->
+  {% if latest|length > 0 %}
+  <section style="margin-bottom:var(--space-12);">
+    <div class="section-header">
+      <h2 class="section-title">Главные новости</h2>
+    </div>
+    <div class="cards-grid">
+      {% for art in latest[:6] %}
+      <article class="article-card">
+        {% if art.thumbnail or art.main_image %}
+        <div class="card-image">
+          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+        </div>
+        {% endif %}
+        <div class="card-body">
           <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
             <span class="cat-dot"></span>
             <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
           </span>
-          <span class="sep">·</span>
-          <span>{{ format_date_short(art.pub_date) }}</span>
+          <h3 class="card-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+          {% if art.excerpt %}
+            <p class="card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
+          {% endif %}
+          <div class="card-meta">
+            <span>{{ format_date_short(art.pub_date) }}</span>
+            {% if art.author %}
+              <span class="sep">·</span>
+              <span>{{ art.author }}</span>
+            {% endif %}
+          </div>
         </div>
-        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-        {% if art.excerpt %}
-          <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
-        {% endif %}
-      </div>
-      {% if art.thumbnail or art.main_image %}
-      <div class="feed-item-thumb">
-        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
-      </div>
-      {% endif %}
-    </article>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-    {% if loop.index == 8 or loop.index == 18 %}
-    <div class="feed-divider" aria-hidden="true"></div>
-    {% endif %}
-    {% endfor %}
+  <!-- ═══ REMAINING FEED ═══ -->
+  {% if latest|length > 6 %}
+  <div style="max-width:var(--content-default); margin:0 auto;">
+    <div class="section-header">
+      <h2 class="section-title">Все новости</h2>
+    </div>
+    <div class="feed-list">
+      {% for art in latest[6:] %}
+      <article class="feed-item">
+        <div class="feed-item-body">
+          <div class="feed-item-meta">
+            <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+              <span class="cat-dot"></span>
+              <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+            </span>
+            <span class="sep">·</span>
+            <span>{{ format_date_short(art.pub_date) }}</span>
+          </div>
+          <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+          {% if art.excerpt %}
+            <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
+          {% endif %}
+        </div>
+        {% if art.thumbnail or art.main_image %}
+        <div class="feed-item-thumb">
+          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+        </div>
+        {% endif %}
+      </article>
+
+      {% if loop.index == 10 %}
+      <div class="feed-divider" aria-hidden="true"></div>
+      {% endif %}
+      {% endfor %}
+    </div>
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}
