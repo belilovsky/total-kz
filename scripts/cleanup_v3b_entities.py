@@ -124,6 +124,49 @@ def run(dry_run=True):
             delete_by_id(conn, row[0], dry_run)
             stats['deleted'] += 1
 
+    # 1b. Auto-delete ALL domain-like org entities (*.ru, *.kz, *.com, etc.)
+    # These are always citation sources from article text, not real entities
+    DOMAIN_EXTENSIONS = ('.ru', '.kz', '.uz', '.com', '.net', '.org', '.io', '.me',
+                         '.tv', '.kg', '.by', '.ua', '.info', '.pro',
+                         '.ру', '.уз')
+    # Whitelist: real orgs that happen to have domain-like names
+    DOMAIN_WHITELIST = {'kaspi.kz'}
+
+    domain_orgs = conn.execute("""
+        SELECT e.id, e.name
+        FROM entities e
+        WHERE e.entity_type = 'org'
+    """).fetchall()
+    domain_del = 0
+    for eid, ename in domain_orgs:
+        name_lower = ename.lower().strip()
+        if any(name_lower.endswith(ext) for ext in DOMAIN_EXTENSIONS):
+            if name_lower in DOMAIN_WHITELIST:
+                continue
+            cnt = get_link_count(conn, eid)
+            if cnt > 0:
+                print(f"    delete domain org «{ename}» ({cnt} links)")
+            delete_by_id(conn, eid, dry_run)
+            domain_del += 1
+            stats['deleted'] += 1
+
+    # Also delete orgs whose name contains 'news'/'News' and have <= 50 links
+    news_orgs = conn.execute("""
+        SELECT e.id, e.name, COUNT(ae.article_id) as cnt
+        FROM entities e
+        LEFT JOIN article_entities ae ON ae.entity_id = e.id
+        WHERE e.entity_type = 'org'
+          AND (e.name LIKE '%news%' OR e.name LIKE '%News%')
+        GROUP BY e.id
+        HAVING cnt <= 50
+    """).fetchall()
+    for eid, ename, cnt in news_orgs:
+        print(f"    delete news-source org «{ename}» ({cnt} links)")
+        delete_by_id(conn, eid, dry_run)
+        domain_del += 1
+        stats['deleted'] += 1
+    print(f"  Auto-deleted {domain_del} domain/news-source orgs")
+
     # ═══════════════════════════════════════════════════════════════
     # STEP 2: MERGE BROKEN МИНИСТЕРСТВО/КОМИТЕТ VARIANTS
     # ═══════════════════════════════════════════════════════════════
