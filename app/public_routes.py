@@ -52,6 +52,26 @@ def cat_label(slug: str) -> str:
     return CATEGORY_LABELS.get(slug, slug.replace("_", " ").title())
 
 
+def pluralize_articles(n: int) -> str:
+    """Russian pluralization for articles count."""
+    if 11 <= n % 100 <= 19:
+        return f"{n} статей"
+    last = n % 10
+    if last == 1:
+        return f"{n} статья"
+    elif 2 <= last <= 4:
+        return f"{n} статьи"
+    return f"{n} статей"
+
+
+def estimate_reading_time(text: str | None) -> int:
+    """Estimate reading time in minutes."""
+    if not text:
+        return 1
+    words = len(text.split())
+    return max(1, round(words / 200))
+
+
 def article_url(article: dict) -> str:
     """Build new clean URL from article data."""
     url = article.get("url", "")
@@ -163,7 +183,14 @@ async def category_page(
     result = db.get_latest_by_category(category, limit=per_page, offset=offset)
 
     if not result["articles"] and page == 1:
-        return HTMLResponse("Категория не найдена", status_code=404)
+        return templates.TemplateResponse("public/404.html", {
+            "request": request,
+            "nav_categories": NAV_CATEGORIES,
+            "cat_label": cat_label,
+            "article_url": article_url,
+            "format_date": format_date,
+            "format_date_short": format_date_short,
+        }, status_code=404)
 
     return templates.TemplateResponse("public/category.html", {
         "request": request,
@@ -178,6 +205,7 @@ async def category_page(
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
+        "pluralize_articles": pluralize_articles,
     })
 
 
@@ -186,9 +214,21 @@ async def article_page(request: Request, category: str, slug: str):
     """Single article page."""
     article = db.get_article_by_slug(category, slug)
     if not article:
-        return HTMLResponse("Статья не найдена", status_code=404)
+        return templates.TemplateResponse("public/404.html", {
+            "request": request,
+            "nav_categories": NAV_CATEGORIES,
+            "cat_label": cat_label,
+            "article_url": article_url,
+            "format_date": format_date,
+            "format_date_short": format_date_short,
+        }, status_code=404)
 
     related = db.get_related_articles(article["id"], category, limit=4)
+
+    # Extract slug from article URL for share buttons
+    article_slug = article.get("url", "").replace(
+        f"https://total.kz/ru/news/{category}/", ""
+    ).strip("/")
 
     return templates.TemplateResponse("public/article.html", {
         "request": request,
@@ -201,6 +241,8 @@ async def article_page(request: Request, category: str, slug: str):
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
+        "reading_time": estimate_reading_time(article.get("body_text", "")),
+        "slug": article_slug,
     })
 
 
@@ -215,10 +257,14 @@ async def search_page(
         "articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20,
     }
 
+    # Pass popular tags for empty search page
+    popular_tags = db.get_trending_tags(limit=20) if not q else None
+
     return templates.TemplateResponse("public/search.html", {
         "request": request,
         "q": q,
         "result": result,
+        "popular_tags": popular_tags,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,
         "article_url": article_url,

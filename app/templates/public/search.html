@@ -61,6 +61,17 @@
     <p>По запросу «{{ q }}» статей не нашлось. Попробуйте другой запрос.</p>
     <a href="/">На главную</a>
   </div>
+  {% else %}
+  {% if popular_tags %}
+  <div class="popular-tags" style="margin-top:var(--space-8)">
+    <h2 class="section-title" style="margin-bottom:var(--space-4)">Популярные теги</h2>
+    <div class="tags-cloud">
+      {% for t in popular_tags %}
+        <a href="/tag/{{ t.tag }}" class="tag-pill">{{ t.tag }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
   {% endif %}
 </div>
 {% endblock %}

@@ -9,13 +9,33 @@
 <div class="container">
   <div class="category-header">
     <h1>{{ category_name }}</h1>
-    <div class="count">{{ total }} {{ "статья" if total % 10 == 1 and total % 100 != 11 else "статей" }}</div>
+    <div class="count">{{ pluralize_articles(total) }}</div>
   </div>
 
   <div class="main-grid">
     <div class="main-content">
+
+      {% if articles %}
+      <div class="category-featured">
+        <article class="featured-card">
+          {% if articles[0].main_image or articles[0].thumbnail %}
+          <div class="featured-card-image">
+            <img src="{{ articles[0].main_image or articles[0].thumbnail }}" alt="" loading="eager">
+          </div>
+          {% endif %}
+          <div class="featured-card-body">
+            <h2><a href="{{ article_url(articles[0]) }}">{{ articles[0].title }}</a></h2>
+            {% if articles[0].excerpt %}
+              <p class="excerpt">{{ articles[0].excerpt }}</p>
+            {% endif %}
+            <div class="meta">{{ format_date_short(articles[0].pub_date) }}{% if articles[0].author %} · {{ articles[0].author }}{% endif %}</div>
+          </div>
+        </article>
+      </div>
+      {% endif %}
+
       <div class="article-list">
-        {% for art in articles %}
+        {% for art in articles[1:] %}
         <article class="article-card">
           <div class="article-card-body">
             <span class="cat-badge">{{ cat_label(art.sub_category) }}</span>
