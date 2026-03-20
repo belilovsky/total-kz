@@ -70,7 +70,7 @@ def run(dry_run=True):
     print("── Step 1: Delete garbage ──")
 
     # 1a. Known garbage names
-    GARBAGE = ['Эксклюзив', 'Елбасы', 'ЗРАБатр']
+    GARBAGE = ['Эксклюзив', 'Елбасы', 'ЗРАБатр', 'Александр', 'COVID-19']
     AUTHORS = ['Азамат Галеев', 'Ирина Ярунина', 'Алексей Байтеев']
     all_garbage = GARBAGE + AUTHORS
     placeholders = ','.join('?' * len(all_garbage))
@@ -79,7 +79,7 @@ def run(dry_run=True):
         SELECT COUNT(*) FROM entities
         WHERE entity_type='person' AND name IN ({placeholders})
     """, all_garbage).fetchone()[0]
-    print(f"  Named garbage: {cnt}")
+    print(f"  Named garbage (person): {cnt}")
 
     if not dry_run:
         conn.execute(f"""
@@ -90,6 +90,29 @@ def run(dry_run=True):
             DELETE FROM entities WHERE entity_type='person' AND name IN ({placeholders})
         """, all_garbage)
     stats['deleted'] += cnt
+
+    # 1a-2. Garbage in orgs
+    ORG_GARBAGE = ['ТОО', 'COVID-19', 'Мой город']
+    ph_org = ','.join('?' * len(ORG_GARBAGE))
+    cnt_og = conn.execute(f"""
+        SELECT COUNT(*) FROM entities
+        WHERE entity_type='org' AND name IN ({ph_org})
+    """, ORG_GARBAGE).fetchone()[0]
+    print(f"  Named garbage (org): {cnt_og}")
+    if not dry_run:
+        conn.execute(f"DELETE FROM article_entities WHERE entity_id IN (SELECT id FROM entities WHERE entity_type='org' AND name IN ({ph_org}))", ORG_GARBAGE)
+        conn.execute(f"DELETE FROM entities WHERE entity_type='org' AND name IN ({ph_org})", ORG_GARBAGE)
+    stats['deleted'] += cnt_og
+
+    # 1a-3. Delete any-type garbage (COVID-19 may be in any type)
+    ANY_GARBAGE = ['COVID-19']
+    ph_any = ','.join('?' * len(ANY_GARBAGE))
+    cnt_any = conn.execute(f"SELECT COUNT(*) FROM entities WHERE name IN ({ph_any})", ANY_GARBAGE).fetchone()[0]
+    print(f"  Named garbage (any type): {cnt_any}")
+    if not dry_run:
+        conn.execute(f"DELETE FROM article_entities WHERE entity_id IN (SELECT id FROM entities WHERE name IN ({ph_any}))", ANY_GARBAGE)
+        conn.execute(f"DELETE FROM entities WHERE name IN ({ph_any})", ANY_GARBAGE)
+    stats['deleted'] += cnt_any
 
     # 1b. Broken NER patterns (batch)
     BROKEN_WHERE = """
@@ -158,12 +181,34 @@ def run(dry_run=True):
     TO_ORG = ['Акорда','Акорды','Антикора','Нацфонд','Казгидромет','Казком',
               'Миннацэкономики','Минторговли','Европульс','Минцифры','Госаудит',
               'Миннауки','Минпром','Зампремьера','Акиматы','Минобороны']
+
+    # Reclassify location → org
+    LOC_TO_ORG = ['Евросоюз']
     TO_LOC = ['Нур-Султан','Улытау','Мангистау','Жетісу','Аксу','Семей',
               'Туркестанской','Улытауской','Жетысуской','Абайской',
               'Сырдарьинской','Джизакской','Тобол-Торгайской',
               'Акмолинская','Актюбинская','Алматинская','Жамбылская',
               'Костанайская','Кызылорды','Талдыкорган','Кульсары']
 
+    # Reclassify location→org
+    for names, old_type, new_type in [(LOC_TO_ORG, 'location', 'org')]:
+        ph = ','.join('?' * len(names))
+        rows = conn.execute(f"SELECT id, name, normalized FROM entities WHERE entity_type=? AND name IN ({ph})", [old_type] + names).fetchall()
+        for eid, ename, enorm in rows:
+            existing = conn.execute(
+                "SELECT id FROM entities WHERE normalized=? AND entity_type=? AND id!=?",
+                (enorm, new_type, eid)
+            ).fetchone()
+            if existing:
+                if not dry_run:
+                    merge(conn, eid, existing[0])
+            else:
+                if not dry_run:
+                    conn.execute("UPDATE entities SET entity_type=? WHERE id=?", (new_type, eid))
+            stats['reclassified'] += 1
+        print(f"  {old_type}→{new_type}: {len(rows)} ({', '.join(names)})")
+
+    # Reclassify person→org and person→location
     for names, new_type in [(TO_ORG, 'org'), (TO_LOC, 'location')]:
         ph = ','.join('?' * len(names))
         rows = conn.execute(f"SELECT id, name, normalized FROM entities WHERE entity_type='person' AND name IN ({ph})", names).fetchall()
@@ -223,6 +268,8 @@ def run(dry_run=True):
         ('Ерсаин Нагаспаев','Ерсайын Нагаспаев'),
         ('Марат Карабаевна','Марат Карабаев'),
         ('Айдарбек Сапарова','Айдарбек Сапаров'),
+        # v2.1 additions
+        ('Сы Цзиньпин','Си Цзиньпин'),
     ]
 
     m_cnt = 0
@@ -364,6 +411,8 @@ def run(dry_run=True):
         ('Мбаппе','Килиан Мбаппе'),
         ('Лукин','Андрей Лукин'),
         ('Байбазаров','Нурлан Байбазаров'),
+        # v2.1 additions
+        ('Янукович','Виктор Янукович'),
     ]
 
     a_cnt = 0
