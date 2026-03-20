@@ -38,7 +38,7 @@
       </div>
       {% if art.thumbnail or art.main_image %}
       <div class="feed-item-thumb">
-        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
       </div>
       {% endif %}
     </article>

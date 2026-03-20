@@ -193,14 +193,26 @@ async def redirect_old_root():
 
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
-    """Homepage: hero + chronological feed."""
+    """Homepage: hero + category highlights + chronological feed."""
     hero_articles = db.get_latest_articles(limit=1)
     latest = db.get_latest_articles(limit=30, offset=1)
+
+    # Fetch 3 latest articles per nav section for category highlights
+    category_highlights = []
+    for section in NAV_SECTIONS:
+        result = db.get_latest_by_categories(section["subcats"], limit=3, offset=0)
+        if result["articles"]:
+            category_highlights.append({
+                "slug": section["slug"],
+                "label": section["label"],
+                "articles": result["articles"],
+            })
 
     return templates.TemplateResponse("public/home.html", {
         "request": request,
         "hero_articles": hero_articles,
         "latest": latest,
+        "category_highlights": category_highlights,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "cat_label": cat_label,

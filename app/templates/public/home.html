@@ -27,51 +27,43 @@
   </div>
   {% endif %}
 
-  <!-- ═══ TOP STORIES: card grid ═══ -->
-  {% if latest|length > 0 %}
-  <section style="margin-bottom:var(--space-12);">
-    <div class="section-header">
-      <h2 class="section-title">Главные новости</h2>
-    </div>
-    <div class="cards-grid">
-      {% for art in latest[:6] %}
-      <article class="article-card">
-        {% if art.thumbnail or art.main_image %}
-        <div class="card-image">
-          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>
-        {% endif %}
-        <div class="card-body">
-          <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-            <span class="cat-dot"></span>
-            <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-          </span>
-          <h3 class="card-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-          {% if art.excerpt %}
-            <p class="card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
-          {% endif %}
-          <div class="card-meta">
-            <span>{{ format_date_short(art.pub_date) }}</span>
-            {% if art.author %}
-              <span class="sep">·</span>
-              <span>{{ art.author }}</span>
-            {% endif %}
+  <!-- ═══ CATEGORY HIGHLIGHTS ═══ -->
+  {% if category_highlights %}
+  <div class="category-highlights">
+    {% for cat in category_highlights %}
+    <section class="cat-highlight-section">
+      <div class="section-header">
+        <h2 class="section-title">{{ cat.label }}</h2>
+        <a href="/news/{{ cat.slug }}" class="section-more">Все →</a>
+      </div>
+      <div class="cat-highlight-grid">
+        {% for art in cat.articles %}
+        <article class="cat-highlight-item">
+          {% if art.thumbnail or art.main_image %}
+          <div class="cat-highlight-thumb">
+            <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
           </div>
-        </div>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
+          {% endif %}
+          <div class="cat-highlight-body">
+            <h3 class="cat-highlight-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+            <span class="cat-highlight-meta">{{ format_date_short(art.pub_date) }}</span>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
   {% endif %}
 
-  <!-- ═══ REMAINING FEED ═══ -->
-  {% if latest|length > 6 %}
+  <!-- ═══ ALL NEWS FEED ═══ -->
+  {% if latest|length > 0 %}
   <div style="max-width:var(--content-default); margin:0 auto;">
     <div class="section-header">
       <h2 class="section-title">Все новости</h2>
     </div>
     <div class="feed-list">
-      {% for art in latest[6:] %}
+      {% for art in latest %}
       <article class="feed-item">
         <div class="feed-item-body">
           <div class="feed-item-meta">
