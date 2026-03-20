@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
-   Total.kz v6 — Public Frontend CSS
-   Editorial newspaper design with Source Serif 4
+   Total.kz v7 — Public Frontend CSS
+   Onest font · Brand red #d83236 · Light default
    ═══════════════════════════════════════════════ */
 
 /* ── Reset & Base ──────────────────────────── */
@@ -42,9 +42,9 @@ html {
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Fonts — editorial newspaper pairing */
-  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  /* Fonts — Onest for everything */
+  --font-display: 'Onest', system-ui, sans-serif;
+  --font-body:    'Onest', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Consolas', monospace;
 
   /* Radius */
@@ -77,23 +77,23 @@ html {
   --text-muted: #868e96;
   --text-faint: #adb5bd;
 
-  --accent: #1a5f7a;
-  --accent-hover: #154e65;
-  --accent-bg: #e8f4f8;
+  --accent: #d83236;
+  --accent-hover: #b82a2e;
+  --accent-bg: #fdf2f2;
 
-  --red: #dc2626;
+  --red: #d83236;
   --green: #16a34a;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
 
-  --header-bg: rgba(255,255,255,0.95);
+  --header-bg: rgba(255,255,255,0.97);
   --header-border: #e9ecef;
   --card-bg: #ffffff;
 
-  --cat-badge-bg: #e8f4f8;
-  --cat-badge-text: #1a5f7a;
+  --cat-badge-bg: #fdf2f2;
+  --cat-badge-text: #d83236;
 
   --hero-overlay: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.82) 100%);
 }
@@ -114,11 +114,11 @@ html {
   --text-muted: #6c6f77;
   --text-faint: #4a4d55;
 
-  --accent: #5ba3c0;
-  --accent-hover: #7bbdd4;
-  --accent-bg: rgba(91,163,192,0.12);
+  --accent: #ef5f63;
+  --accent-hover: #f78084;
+  --accent-bg: rgba(216,50,54,0.12);
 
-  --red: #ef4444;
+  --red: #ef5f63;
   --green: #22c55e;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
@@ -129,8 +129,8 @@ html {
   --header-border: #2a2d37;
   --card-bg: #14171c;
 
-  --cat-badge-bg: rgba(91,163,192,0.12);
-  --cat-badge-text: #5ba3c0;
+  --cat-badge-bg: rgba(216,50,54,0.12);
+  --cat-badge-text: #ef5f63;
 
   --hero-overlay: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.65) 65%, rgba(0,0,0,0.92) 100%);
 }
@@ -147,10 +147,10 @@ html {
     --text-secondary: #a1a3a8;
     --text-muted: #6c6f77;
     --text-faint: #4a4d55;
-    --accent: #5ba3c0;
-    --accent-hover: #7bbdd4;
-    --accent-bg: rgba(91,163,192,0.12);
-    --red: #ef4444;
+    --accent: #ef5f63;
+    --accent-hover: #f78084;
+    --accent-bg: rgba(216,50,54,0.12);
+    --red: #ef5f63;
     --green: #22c55e;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
     --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
@@ -158,8 +158,8 @@ html {
     --header-bg: rgba(20,23,28,0.95);
     --header-border: #2a2d37;
     --card-bg: #14171c;
-    --cat-badge-bg: rgba(91,163,192,0.12);
-    --cat-badge-text: #5ba3c0;
+    --cat-badge-bg: rgba(216,50,54,0.12);
+    --cat-badge-text: #ef5f63;
     --hero-overlay: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.65) 65%, rgba(0,0,0,0.92) 100%);
   }
 }
@@ -193,7 +193,7 @@ h1, h2, h3, h4 {
 }
 p { text-wrap: pretty; max-width: 72ch; }
 
-::selection { background: rgba(26,95,122,0.2); color: var(--text); }
+::selection { background: rgba(216,50,54,0.2); color: var(--text); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
 
 .sr-only {
