@@ -195,13 +195,29 @@
       </div>
 
       <!-- Column 2: Navigation -->
-      <nav class="footer-nav-grid">
-        <a href="/">Главная</a>
-        {% if nav_sections is defined %}
-          {% for section in nav_sections %}
-            <a href="/news/{{ section.slug }}">{{ section.label }}</a>
-          {% endfor %}
-        {% endif %}
+      <nav class="footer-nav-columns">
+        <div class="footer-nav-col">
+          <span class="footer-nav-heading">Разделы</span>
+          <a href="/">Главная</a>
+          {% if nav_sections is defined %}
+            {% for section in nav_sections[:3] %}
+              <a href="/news/{{ section.slug }}">{{ section.label }}</a>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <div class="footer-nav-col">
+          <span class="footer-nav-heading">Ещё</span>
+          {% if nav_sections is defined %}
+            {% for section in nav_sections[3:] %}
+              <a href="/news/{{ section.slug }}">{{ section.label }}</a>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <div class="footer-nav-col">
+          <span class="footer-nav-heading">Компания</span>
+          <a href="/search">Поиск</a>
+          <a href="mailto:info@total.kz">Контакты</a>
+        </div>
       </nav>
 
       <!-- Column 3: Copyright + Contact -->
