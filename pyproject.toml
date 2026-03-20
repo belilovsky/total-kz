@@ -1,0 +1,47 @@
+[project]
+name = "total-kz"
+version = "2.0.0"
+description = "Новостной портал Казахстана — total.kz (rebuild 2026)."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Belilovsky" },
+]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.18",
+    "httpx>=0.28",
+    "selectolax>=0.3",
+    "requests>=2.32",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.3",
+    "natasha>=1.6",
+    "pymorphy3>=2.0",
+    "pymorphy3-dicts-ru>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
