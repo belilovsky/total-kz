@@ -1,14 +1,66 @@
 """Public frontend routes for Total.kz news portal."""
 
+import hashlib
+import httpx
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from . import database as db
 
 router = APIRouter()
+
+# ══════════════════════════════════════════════
+#  IMAGE PROXY — serve images locally with disk cache
+# ══════════════════════════════════════════════
+IMAGE_CACHE_DIR = Path(__file__).parent.parent / "data" / "img_cache"
+IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+ORIGIN = "https://total.kz/storage"
+
+# Content type mapping
+EXT_CONTENT_TYPE = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
+
+
+def rewrite_image_url(url: str | None) -> str | None:
+    """Rewrite total.kz/storage/... URLs to local /img/... proxy."""
+    if not url:
+        return url
+    if url.startswith("https://total.kz/storage/"):
+        return url.replace("https://total.kz/storage/", "/img/")
+    if url.startswith("http://total.kz/storage/"):
+        return url.replace("http://total.kz/storage/", "/img/")
+    return url
+
+
+def rewrite_article_images(article: dict) -> dict:
+    """Rewrite image URLs in an article dict."""
+    if article.get("main_image"):
+        article["main_image"] = rewrite_image_url(article["main_image"])
+    if article.get("thumbnail"):
+        article["thumbnail"] = rewrite_image_url(article["thumbnail"])
+    # Rewrite inline images in body_html
+    if article.get("body_html"):
+        article["body_html"] = (
+            article["body_html"]
+            .replace("https://total.kz/storage/", "/img/")
+            .replace("http://total.kz/storage/", "/img/")
+        )
+    return article
+
+
+def rewrite_articles_images(articles: list) -> list:
+    """Rewrite image URLs in a list of articles."""
+    return [rewrite_article_images(a) for a in articles]
 
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
@@ -162,6 +214,53 @@ def format_date_short(date_str: str | None) -> str:
 
 
 # ══════════════════════════════════════════════
+#  IMAGE PROXY ENDPOINT
+# ══════════════════════════════════════════════
+
+@router.get("/img/{path:path}")
+async def image_proxy(path: str):
+    """Proxy and cache images from total.kz/storage/."""
+    # Sanitize path
+    if ".." in path or path.startswith("/"):
+        return Response(status_code=400)
+
+    # Determine cache path
+    cache_path = IMAGE_CACHE_DIR / path
+
+    # Serve from cache if exists
+    if cache_path.exists():
+        ext = cache_path.suffix.lower()
+        ct = EXT_CONTENT_TYPE.get(ext, "image/jpeg")
+        return FileResponse(
+            cache_path,
+            media_type=ct,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    # Fetch from origin
+    origin_url = f"{ORIGIN}/{path}"
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            resp = await client.get(origin_url)
+        if resp.status_code != 200:
+            return Response(status_code=resp.status_code)
+
+        # Save to cache
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(resp.content)
+
+        ext = cache_path.suffix.lower()
+        ct = EXT_CONTENT_TYPE.get(ext, resp.headers.get("content-type", "image/jpeg"))
+        return Response(
+            content=resp.content,
+            media_type=ct,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+    except Exception:
+        return Response(status_code=502)
+
+
+# ══════════════════════════════════════════════
 #  301 REDIRECTS — old /ru/news/... → new /news/...
 # ══════════════════════════════════════════════
 
@@ -194,8 +293,8 @@ async def redirect_old_root():
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     """Homepage: hero + category highlights + chronological feed."""
-    hero_articles = db.get_latest_articles(limit=1)
-    latest = db.get_latest_articles(limit=30, offset=1)
+    hero_articles = rewrite_articles_images(db.get_latest_articles(limit=1))
+    latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=1))
 
     # Fetch 3 latest articles per nav section for category highlights
     category_highlights = []
@@ -205,7 +304,7 @@ async def homepage(request: Request):
             category_highlights.append({
                 "slug": section["slug"],
                 "label": section["label"],
-                "articles": result["articles"],
+                "articles": rewrite_articles_images(result["articles"]),
             })
 
     return templates.TemplateResponse("public/home.html", {
@@ -255,7 +354,7 @@ async def category_page(
 
     return templates.TemplateResponse("public/category.html", {
         "request": request,
-        "articles": result["articles"],
+        "articles": rewrite_articles_images(result["articles"]),
         "total": result["total"],
         "pages": result["pages"],
         "page": page,
@@ -288,7 +387,8 @@ async def article_page(request: Request, category: str, slug: str):
             "format_date_short": format_date_short,
         }, status_code=404)
 
-    related = db.get_related_articles(article["id"], category, limit=4)
+    rewrite_article_images(article)
+    related = rewrite_articles_images(db.get_related_articles(article["id"], category, limit=4))
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
@@ -328,6 +428,8 @@ async def search_page(
     result = db.search_articles(query=q, page=page, per_page=20) if q else {
         "articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20,
     }
+    if result.get("articles"):
+        result["articles"] = rewrite_articles_images(result["articles"])
 
     # Pass popular tags for empty search page
     popular_tags = db.get_trending_tags(limit=20) if not q else None
@@ -355,6 +457,8 @@ async def tag_page(
 ):
     """Articles by tag."""
     result = db.search_articles(tag=tag_name, page=page, per_page=20)
+    if result.get("articles"):
+        result["articles"] = rewrite_articles_images(result["articles"])
 
     return templates.TemplateResponse("public/search.html", {
         "request": request,
@@ -398,6 +502,8 @@ async def entity_page(
         }, status_code=404)
 
     result = db.get_articles_by_entity(entity_id, page=page, per_page=20)
+    if result.get("articles"):
+        result["articles"] = rewrite_articles_images(result["articles"])
     type_label = ENTITY_TYPE_LABELS.get(entity["entity_type"], entity["entity_type"])
 
     return templates.TemplateResponse("public/entity.html", {

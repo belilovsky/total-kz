@@ -2,6 +2,8 @@
 data/*.db
 data/*.jsonl
 data/*.json
+data/img_cache/
+data/backups/
 !data/articles.jsonl.gz.part_*
 
 # Python
