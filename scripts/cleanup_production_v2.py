@@ -25,8 +25,13 @@ def backup_db():
 
 
 def merge(conn, source_id, target_id):
-    """Merge source→target: move links, delete source. Returns articles moved."""
+    """Merge source→target: move links, delete source. Returns 1 if merged, 0 if skipped."""
     if source_id == target_id:
+        return 0
+    # Verify both exist
+    if not conn.execute("SELECT id FROM entities WHERE id=?", (source_id,)).fetchone():
+        return 0
+    if not conn.execute("SELECT id FROM entities WHERE id=?", (target_id,)).fetchone():
         return 0
     # Move non-overlapping links
     conn.execute("""
@@ -161,10 +166,21 @@ def run(dry_run=True):
 
     for names, new_type in [(TO_ORG, 'org'), (TO_LOC, 'location')]:
         ph = ','.join('?' * len(names))
-        cnt = conn.execute(f"SELECT COUNT(*) FROM entities WHERE entity_type='person' AND name IN ({ph})", names).fetchone()[0]
-        if not dry_run and cnt:
-            conn.execute(f"UPDATE entities SET entity_type=? WHERE entity_type='person' AND name IN ({ph})", [new_type] + names)
-        stats['reclassified'] += cnt
+        rows = conn.execute(f"SELECT id, name, normalized FROM entities WHERE entity_type='person' AND name IN ({ph})", names).fetchall()
+        for eid, ename, enorm in rows:
+            # Check if target type already has this normalized name
+            existing = conn.execute(
+                "SELECT id FROM entities WHERE normalized=? AND entity_type=? AND id!=?",
+                (enorm, new_type, eid)
+            ).fetchone()
+            if existing:
+                # Merge into existing entity of correct type
+                if not dry_run:
+                    merge(conn, eid, existing[0])
+            else:
+                if not dry_run:
+                    conn.execute("UPDATE entities SET entity_type=? WHERE id=?", (new_type, eid))
+            stats['reclassified'] += 1
 
     if not dry_run:
         conn.commit()
