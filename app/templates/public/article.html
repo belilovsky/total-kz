@@ -144,17 +144,17 @@
     <h2 class="related-heading">Читайте также</h2>
     <div class="related-grid">
       {% for art in related %}
-      <div class="related-item">
+      <a href="{{ article_url(art) }}" class="related-item">
         {% if art.thumbnail or art.main_image %}
         <div class="related-thumb">
-          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy">
+          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
         </div>
         {% endif %}
         <div class="related-body">
-          <a href="{{ article_url(art) }}" class="related-title">{{ art.title }}</a>
+          <span class="related-title">{{ art.title }}</span>
           <div class="related-meta">{{ format_date_short(art.pub_date) }}</div>
         </div>
-      </div>
+      </a>
       {% endfor %}
     </div>
   </section>
