@@ -145,9 +145,9 @@
     <div class="related-grid">
       {% for art in related %}
       <a href="{{ article_url(art) }}" class="related-item">
-        {% if art.thumbnail or art.main_image %}
+        {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
-          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="lazy">
         </div>
         {% endif %}
         <div class="related-body">

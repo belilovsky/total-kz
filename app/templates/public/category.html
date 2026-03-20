@@ -16,9 +16,9 @@
   <div class="featured-grid">
     {% for art in articles[:3] %}
     <article class="featured-card">
-      {% if art.thumbnail or art.main_image %}
+      {% if art.main_image or art.thumbnail %}
       <div class="card-image">
-        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="{% if loop.first %}eager{% else %}lazy{% endif %}" onerror="this.parentElement.style.display='none'">
+        <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="{% if loop.first %}eager{% else %}lazy{% endif %}">
       </div>
       {% endif %}
       <div class="card-body">
@@ -59,9 +59,9 @@
             <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
           {% endif %}
         </div>
-        {% if art.thumbnail or art.main_image %}
+        {% if art.main_image or art.thumbnail %}
         <div class="feed-item-thumb">
-          <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="lazy">
         </div>
         {% endif %}
       </article>

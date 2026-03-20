@@ -36,9 +36,9 @@
           <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
         {% endif %}
       </div>
-      {% if art.thumbnail or art.main_image %}
+      {% if art.main_image or art.thumbnail %}
       <div class="feed-item-thumb">
-        <img src="{{ art.thumbnail or art.main_image }}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+        <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="lazy">
       </div>
       {% endif %}
     </article>

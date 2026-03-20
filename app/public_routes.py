@@ -293,8 +293,8 @@ async def redirect_old_root():
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     """Homepage: hero + category highlights + chronological feed."""
-    hero_articles = rewrite_articles_images(db.get_latest_articles(limit=1))
-    latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=1))
+    hero_articles = rewrite_articles_images(db.get_latest_articles(limit=5))
+    latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=5))
 
     # Fetch 3 latest articles per nav section for category highlights
     category_highlights = []
