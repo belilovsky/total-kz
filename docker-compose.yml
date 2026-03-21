@@ -23,6 +23,27 @@ services:
     networks:
       - app_net
 
+  cron:
+    build:
+      context: .
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: total_kz_cron
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Cron started: fetch every 2 hours"
+        while true; do
+          /app/scraper/cron_fetch.sh >> /app/data/cron_fetch.log 2>&1
+          sleep 7200
+        done
+    networks:
+      - app_net
+
 networks:
   app_net:
     name: total_kz_net
