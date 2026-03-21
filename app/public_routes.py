@@ -264,6 +264,12 @@ async def image_proxy(path: str):
 #  301 REDIRECTS — old /ru/news/... → new /news/...
 # ══════════════════════════════════════════════
 
+@router.get("/ru/page/{page_slug}", response_class=RedirectResponse)
+async def redirect_old_page(page_slug: str):
+    """301 redirect from old /ru/page/... to new /page/..."""
+    return RedirectResponse(url=f"/page/{page_slug}", status_code=301)
+
+
 @router.get("/ru/news/{category}/{slug}", response_class=RedirectResponse)
 async def redirect_old_article(category: str, slug: str):
     """301 redirect from old article URLs to new clean URLs."""
@@ -520,6 +526,46 @@ async def entity_page(
         "format_date": format_date,
         "format_date_short": format_date_short,
         "pluralize_articles": pluralize_articles,
+    })
+
+
+# ══════════════════════════════════════════════
+#  STATIC PAGES
+# ══════════════════════════════════════════════
+
+STATIC_PAGES = {
+    "reklama": {"title": "Реклама", "template": "public/page_reklama.html"},
+    "pravila": {"title": "Правила использования материалов", "template": "public/page_pravila.html"},
+    "contacts": {"title": "Контакты", "template": "public/page_contacts.html"},
+}
+
+
+@router.get("/page/{page_slug}", response_class=HTMLResponse)
+async def static_page(request: Request, page_slug: str):
+    """Static content pages: reklama, pravila, contacts."""
+    page = STATIC_PAGES.get(page_slug)
+    if not page:
+        return templates.TemplateResponse("public/404.html", {
+            "request": request,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            "cat_label": cat_label,
+            "nav_slug_for": nav_slug_for,
+            "article_url": article_url,
+            "format_date": format_date,
+            "format_date_short": format_date_short,
+        }, status_code=404)
+
+    return templates.TemplateResponse(page["template"], {
+        "request": request,
+        "page_title": page["title"],
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
+        "article_url": article_url,
+        "format_date": format_date,
+        "format_date_short": format_date_short,
     })
 
 
