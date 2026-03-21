@@ -321,17 +321,47 @@ templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
 
 
+def _names_match(a: str, b: str) -> bool:
+    """Check if two names refer to the same person/org (fuzzy).
+    Handles Russian case/gender forms: Шведов/Шведова, Токаев/Токаеву.
+    Strategy: compare word-by-word; words match if one starts with the other
+    (after trimming last 1-2 chars as flex endings)."""
+    wa = a.lower().split()
+    wb = b.lower().split()
+    if len(wa) != len(wb):
+        return False
+    for pa, pb in zip(wa, wb):
+        # Exact match
+        if pa == pb:
+            continue
+        # Prefix match: shorter must be prefix of longer (minus flex)
+        short, long = (pa, pb) if len(pa) <= len(pb) else (pb, pa)
+        # The longer word should start with at least len(short)-1 chars of short
+        min_prefix = max(3, len(short) - 1)
+        if long[:min_prefix] != short[:min_prefix]:
+            return False
+    return True
+
+
 def dedup_entities(entities: list, max_count: int = 5) -> list:
-    """Deduplicate entities by short_name, keep max_count, only person/org."""
-    seen = set()
+    """Deduplicate entities by fuzzy name match, keep max_count, only person/org.
+    Merges gender/case forms: Токаев/Токаеву, Шведова/Шведов."""
     result = []
     for ent in entities:
         if ent.get("entity_type") not in ("person", "org"):
             continue
-        sn = short_entity_name(ent).lower().strip()
-        if not sn or sn in seen:
+        sn = short_entity_name(ent).strip()
+        if not sn:
             continue
-        seen.add(sn)
+        # Check against already accepted names
+        duplicate = False
+        for existing in result:
+            existing_sn = short_entity_name(existing).strip()
+            if _names_match(sn, existing_sn):
+                duplicate = True
+                break
+        if duplicate:
+            continue
         result.append(ent)
         if len(result) >= max_count:
             break
