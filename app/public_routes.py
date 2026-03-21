@@ -222,27 +222,47 @@ def article_url(article: dict) -> str:
 
 
 def format_date(date_str: str | None) -> str:
-    """Format ISO date to Russian readable."""
+    """Format ISO date to Russian readable (full month names).
+    Today:           12 марта, 14:14
+    Yesterday+/year: 12 марта
+    Past years:      12 марта 2024
+    """
     if not date_str:
         return ""
     try:
         months = ["января", "февраля", "марта", "апреля", "мая", "июня",
                   "июля", "августа", "сентября", "октября", "ноября", "декабря"]
         dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        return f"{dt.day} {months[dt.month - 1]} {dt.year}, {dt.strftime('%H:%M')}"
+        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+        if dt.date() == now.date():
+            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+        elif dt.year == now.year:
+            return f"{dt.day} {months[dt.month - 1]}"
+        else:
+            return f"{dt.day} {months[dt.month - 1]} {dt.year}"
     except Exception:
         return date_str[:10] if date_str else ""
 
 
 def format_date_short(date_str: str | None) -> str:
-    """Short date format for cards."""
+    """Short date format for cards (abbreviated months).
+    Today:           12 мар, 14:14
+    Yesterday+/year: 12 мар
+    Past years:      12 мар, 2024
+    """
     if not date_str:
         return ""
     try:
         months = ["янв", "фев", "мар", "апр", "мая", "июн",
                   "июл", "авг", "сен", "окт", "ноя", "дек"]
         dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+        if dt.date() == now.date():
+            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+        elif dt.year == now.year:
+            return f"{dt.day} {months[dt.month - 1]}"
+        else:
+            return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
     except Exception:
         return date_str[:10] if date_str else ""
 
