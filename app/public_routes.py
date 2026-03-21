@@ -3,6 +3,7 @@
 import hashlib
 import httpx
 import logging
+import re
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
@@ -415,6 +416,24 @@ async def article_page(request: Request, category: str, slug: str):
 
     rewrite_article_images(article)
 
+    # ── Strip duplicate lead: if body_html starts with the excerpt text,
+    #    remove that first paragraph so it isn't shown twice.
+    excerpt = (article.get("excerpt") or "").strip()
+    body_html = (article.get("body_html") or "").strip()
+    if excerpt and body_html:
+        # Check if body starts with a <p> containing the excerpt text
+        m = re.match(r'^<p[^>]*>(.*?)</p>', body_html, re.DOTALL | re.IGNORECASE)
+        if m:
+            first_p_text = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+            # Compare normalized (no extra whitespace)
+            norm_exc = ' '.join(excerpt.split())
+            norm_fp = ' '.join(first_p_text.split())
+            if norm_exc and norm_fp and (
+                norm_fp.startswith(norm_exc) or norm_exc.startswith(norm_fp)
+                or norm_fp == norm_exc
+            ):
+                article["body_html"] = body_html[m.end():].lstrip()
+
     # Entity IDs for smart matching (timeline + related)
     entity_ids = [e["id"] for e in article.get("entities", [])]
 
@@ -518,10 +537,11 @@ async def tag_page(
     if result.get("articles"):
         result["articles"] = rewrite_articles_images(result["articles"])
 
-    return templates.TemplateResponse("public/search.html", {
+    return templates.TemplateResponse("public/tag.html", {
         "request": request,
-        "q": f"#{tag_name}",
+        "tag_name": tag_name,
         "result": result,
+        "page": page,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
     })

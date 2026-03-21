@@ -136,21 +136,17 @@
         </button>
       </div>
 
-      {# ── Entities + tags (mobile only, hidden >=1100px) ── #}
+      {# ── Tags + entities (mobile only, hidden >=1100px) ── #}
       {% if article.entities or article.tags %}
       <div class="article-footer-meta article-footer-meta--mobile">
-        {% if article.entities %}
-          {% for ent in article.entities %}
-            <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.name }}">
-              <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
-              <span class="entity-short">{{ ent.short_name or ent.name }}</span>
-              <span class="entity-full">{{ ent.name }}</span>
-            </a>
-          {% endfor %}
-        {% endif %}
         {% if article.tags %}
           {% for tag in article.tags %}
-            <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
+            <a href="/tag/{{ tag }}" class="mobile-meta-link">{{ tag }}</a>
+          {% endfor %}
+        {% endif %}
+        {% if article.entities %}
+          {% for ent in article.entities %}
+            <a href="/entity/{{ ent.id }}" class="mobile-meta-link">{{ ent.short_name or ent.name }}</a>
           {% endfor %}
         {% endif %}
       </div>
@@ -194,26 +190,29 @@
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
 
-        {# ── Entities + Tags as compact flow pills ── #}
+        {# ── Entities + Tags ── #}
         {% if article.entities or article.tags %}
         <div class="sidebar-entities">
-          <span class="sidebar-section-label">Темы</span>
-          <div class="sidebar-chips">
-            {% if article.entities %}
-              {% for ent in article.entities %}
-                <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.name }}">
-                  <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
-                  <span class="entity-short">{{ ent.short_name or ent.name }}</span>
-                  <span class="entity-full">{{ ent.name }}</span>
-                </a>
-              {% endfor %}
-            {% endif %}
-            {% if article.tags %}
+          {% if article.tags %}
+          <div class="sidebar-meta-group">
+            <span class="sidebar-section-label">Темы</span>
+            <div class="sidebar-tag-list">
               {% for tag in article.tags %}
-                <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
+                <a href="/tag/{{ tag }}" class="sidebar-tag-link">{{ tag }}</a>
               {% endfor %}
-            {% endif %}
+            </div>
           </div>
+          {% endif %}
+          {% if article.entities %}
+          <div class="sidebar-meta-group">
+            <span class="sidebar-section-label">Н.д.</span>
+            <div class="sidebar-tag-list">
+              {% for ent in article.entities %}
+                <a href="/entity/{{ ent.id }}" class="sidebar-tag-link">{{ ent.short_name or ent.name }}</a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </div>
         {% endif %}
 

@@ -1,33 +1,29 @@
 {% extends "public/base.html" %}
 
-{% block title %}{{ entity.name }} — {{ type_label }} — Total.kz{% endblock %}
-{% block description %}Новости и статьи о {{ entity.name }} на Total.kz{% endblock %}
-{% block og_title %}{{ entity.name }} — {{ type_label }}{% endblock %}
-{% block og_description %}{{ pluralize_articles(result.total) }} о {{ entity.name }} на Total.kz{% endblock %}
+{% block title %}{{ tag_name }} — Total.kz{% endblock %}
+{% block description %}Новости по тегу «{{ tag_name }}» на Total.kz{% endblock %}
+{% block og_title %}{{ tag_name }} — Total.kz{% endblock %}
+{% block og_description %}{{ pluralize_articles(result.total) }} по тегу «{{ tag_name }}»{% endblock %}
 
 {% block head_extra %}
-{% if page > 1 %}<link rel="prev" href="/entity/{{ entity.id }}?page={{ page - 1 }}">{% endif %}
-{% if page < result.pages %}<link rel="next" href="/entity/{{ entity.id }}?page={{ page + 1 }}">{% endif %}
+{% if page > 1 %}<link rel="prev" href="/tag/{{ tag_name }}?page={{ page - 1 }}">{% endif %}
+{% if page < result.pages %}<link rel="next" href="/tag/{{ tag_name }}?page={{ page + 1 }}">{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="entity-page">
+<div class="tag-page">
 
   <nav class="breadcrumbs" aria-label="Навигация">
     <a href="/">Главная</a>
     <span class="sep">›</span>
-    <span>{{ type_label }}</span>
+    <span>Теги</span>
     <span class="sep">›</span>
-    <span>{{ entity.name }}</span>
+    <span>{{ tag_name }}</span>
   </nav>
 
-  <div class="entity-page-header">
-    <span class="entity-type-badge entity-type-{{ entity.entity_type }}">{{ type_label }}</span>
-    <h1>{{ entity.name }}</h1>
-    {% if entity.short_name and entity.short_name != entity.name %}
-      <p class="entity-aka">{{ entity.short_name }}</p>
-    {% endif %}
-    <p class="entity-count">{{ pluralize_articles(result.total) }}</p>
+  <div class="tag-page-header">
+    <h1>{{ tag_name }}</h1>
+    <p class="tag-count">{{ pluralize_articles(result.total) }}</p>
   </div>
 
   {% if result.articles %}
