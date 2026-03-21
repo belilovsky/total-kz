@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Total.kz", version="10.0.0", lifespan=lifespan)
+app = FastAPI(title="Total.kz", version="10.1.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -441,8 +441,36 @@ async def api_update_article(article_id: int, request: Request):
         return {"ok": False, "error": "Нет полей для обновления"}
     # Auto-set updated_at
     updates["updated_at"] = datetime.now().isoformat(timespec="seconds")
+
+    # Determine revision type
+    revision_type = body.get("_revision_type", "edit")
+
+    # Build diff for revision tracking
+    try:
+        old_article = db.get_article(article_id)
+        changes = {}
+        if old_article and revision_type != "auto_save":
+            for field in ("title", "excerpt", "sub_category", "author", "main_image", "status", "editor_note"):
+                if field in updates:
+                    old_val = old_article.get(field, "")
+                    new_val = updates[field]
+                    if str(old_val or "") != str(new_val or ""):
+                        changes[field] = {"old": old_val, "new": new_val}
+            if "tags" in updates:
+                old_tags = old_article.get("tags", [])
+                new_tags = updates["tags"]
+                if old_tags != new_tags:
+                    changes["tags"] = {"old": old_tags, "new": new_tags}
+    except Exception:
+        changes = {}
+
     try:
         db.update_article(article_id, updates)
+        # Record revision
+        try:
+            db.record_revision(article_id, changes, revision_type=revision_type)
+        except Exception:
+            pass
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -487,6 +515,26 @@ async def api_delete_article(article_id: int):
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+@app.post("/api/article/{article_id}/duplicate")
+async def api_duplicate_article(article_id: int):
+    try:
+        new_id = db.duplicate_article(article_id)
+        if new_id is None:
+            return JSONResponse({"ok": False, "error": "Статья не найдена"}, status_code=404)
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/article/{article_id}/revisions")
+async def api_article_revisions(article_id: int):
+    try:
+        revisions = db.get_revisions(article_id, limit=20)
+        return {"ok": True, "revisions": revisions}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "revisions": []}
 
 
 @app.post("/api/upload")

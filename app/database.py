@@ -142,6 +142,19 @@ def init_db():
             );
         """)
 
+        # Create article_revisions table for revision history
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS article_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                article_id INTEGER NOT NULL REFERENCES articles(id),
+                changed_at TEXT NOT NULL DEFAULT (datetime('now')),
+                changed_by TEXT,
+                changes_json TEXT,
+                revision_type TEXT NOT NULL DEFAULT 'edit'
+            );
+            CREATE INDEX IF NOT EXISTS idx_revisions_article ON article_revisions(article_id, changed_at DESC);
+        """)
+
 
 # Russian date parsing is now in qazstack.content.parse_ru_date
 # Kept as thin wrapper for backward compatibility
@@ -494,6 +507,79 @@ def create_article(data: dict) -> int:
         ))
         conn.commit()
         return row.lastrowid
+
+
+def record_revision(article_id: int, changes: dict, revision_type: str = "edit", changed_by: str = "") -> None:
+    """Record a revision for an article."""
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO article_revisions (article_id, changed_at, changed_by, changes_json, revision_type)
+            VALUES (?, datetime('now'), ?, ?, ?)
+        """, (article_id, changed_by, json.dumps(changes, ensure_ascii=False), revision_type))
+        conn.commit()
+
+
+def get_revisions(article_id: int, limit: int = 20) -> list:
+    """Get revision history for an article."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, article_id, changed_at, changed_by, changes_json, revision_type
+            FROM article_revisions
+            WHERE article_id = ?
+            ORDER BY changed_at DESC
+            LIMIT ?
+        """, (article_id, limit)).fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            d["changes"] = json.loads(d.get("changes_json") or "{}")
+            del d["changes_json"]
+            result.append(d)
+        return result
+
+
+def duplicate_article(article_id: int) -> int | None:
+    """Duplicate an article. Returns new article ID or None."""
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM articles WHERE id = ?", (article_id,)).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        now = datetime.now().isoformat(timespec="seconds")
+        import random
+        import string
+        suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        old_url = d.get("url", "")
+        new_url = old_url.rstrip("/") + "-copy-" + suffix if old_url else f"https://total.kz/copy-{suffix}"
+        new_title = "Копия: " + (d.get("title") or "")
+        tags_val = d.get("tags") or "[]"
+
+        result = conn.execute("""
+            INSERT INTO articles (url, pub_date, sub_category, category_label, title, author,
+                                  excerpt, body_text, body_html, main_image, image_credit,
+                                  thumbnail, tags, inline_images, status, updated_at, editor_note, imported_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+        """, (
+            new_url,
+            d.get("pub_date"),
+            d.get("sub_category", ""),
+            d.get("category_label", ""),
+            new_title,
+            d.get("author", ""),
+            d.get("excerpt", ""),
+            d.get("body_text", ""),
+            d.get("body_html", ""),
+            d.get("main_image", ""),
+            d.get("image_credit", ""),
+            d.get("thumbnail", ""),
+            tags_val,
+            d.get("inline_images") or "[]",
+            now,
+            d.get("editor_note", ""),
+            now,
+        ))
+        conn.commit()
+        return result.lastrowid
 
 
 def _load_enrichment(conn, article_id: int) -> dict | None:

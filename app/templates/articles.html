@@ -316,4 +316,151 @@
 <a href="/admin/create" class="fab-button" title="Создать статью">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </a>
+
+<!-- Mobile Context Menu (bottom sheet) -->
+<div class="sheet-overlay" id="contextOverlay" onclick="closeContextMenu()"></div>
+<div class="context-menu-sheet" id="contextMenuSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="contextMenuTitle">Действия</div>
+    <div class="context-menu-options">
+        <button class="context-menu-option" onclick="contextAction('open')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Открыть
+        </button>
+        <button class="context-menu-option" onclick="contextAction('duplicate')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Дублировать
+        </button>
+        <button class="context-menu-option context-menu-option-danger" onclick="contextAction('archive')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            В архив
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var contextArticleId = null;
+var longPressTimer = null;
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+function openContextMenu(articleId, title) {
+    contextArticleId = articleId;
+    document.getElementById('contextMenuTitle').textContent = title.length > 40 ? title.substring(0, 40) + '...' : title;
+    document.getElementById('contextOverlay').classList.add('open');
+    document.getElementById('contextMenuSheet').classList.add('open');
+}
+
+function closeContextMenu() {
+    document.getElementById('contextOverlay').classList.remove('open');
+    document.getElementById('contextMenuSheet').classList.remove('open');
+    contextArticleId = null;
+}
+
+function contextAction(action) {
+    if (!contextArticleId) return;
+    var id = contextArticleId;
+    closeContextMenu();
+
+    if (action === 'open') {
+        window.location.href = '/admin/article/' + id;
+    } else if (action === 'duplicate') {
+        fetch('/api/article/' + id + '/duplicate', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.ok && res.id) {
+                showToast('Статья дублирована');
+                setTimeout(function() { window.location.href = '/admin/article/' + res.id; }, 600);
+            } else {
+                showToast('Ошибка: ' + (res.error || 'неизвестная'));
+            }
+        })
+        .catch(function() { showToast('Ошибка сети'); });
+    } else if (action === 'archive') {
+        if (confirm('Архивировать статью?')) {
+            fetch('/api/article/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.ok) {
+                    showToast('Статья архивирована');
+                    setTimeout(function() { location.reload(); }, 600);
+                } else {
+                    showToast('Ошибка: ' + (res.error || 'неизвестная'));
+                }
+            })
+            .catch(function() { showToast('Ошибка сети'); });
+        }
+    }
+}
+
+// Long-press detection for mobile only
+if ('ontouchstart' in window) {
+    document.querySelectorAll('.article-card, .article-list-item').forEach(function(card) {
+        var href = card.getAttribute('href');
+        var match = href && href.match(/\/admin\/article\/(\d+)/);
+        if (!match) return;
+        var articleId = match[1];
+        var titleEl = card.querySelector('.article-card-title, .article-list-title');
+        var title = titleEl ? titleEl.textContent.trim() : '';
+
+        card.addEventListener('touchstart', function(e) {
+            longPressTimer = setTimeout(function() {
+                e.preventDefault();
+                openContextMenu(articleId, title);
+            }, 500);
+        }, {passive: true});
+
+        card.addEventListener('touchend', function() {
+            clearTimeout(longPressTimer);
+        });
+
+        card.addEventListener('touchmove', function() {
+            clearTimeout(longPressTimer);
+        });
+
+        card.addEventListener('touchcancel', function() {
+            clearTimeout(longPressTimer);
+        });
+    });
+
+    // Prevent default click when context menu is open
+    document.querySelectorAll('.article-card, .article-list-item').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            if (document.getElementById('contextMenuSheet').classList.contains('open')) {
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+// View toggle (existing functionality)
+document.querySelectorAll('.view-toggle-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var view = this.getAttribute('data-view');
+        document.querySelectorAll('.view-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        document.getElementById('viewGrid').style.display = view === 'grid' ? '' : 'none';
+        document.getElementById('viewList').style.display = view === 'list' ? '' : 'none';
+        localStorage.setItem('articles_view', view);
+    });
+});
+
+// Restore saved view preference
+(function() {
+    var saved = localStorage.getItem('articles_view');
+    if (saved === 'list') {
+        document.querySelectorAll('.view-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelector('[data-view="list"]').classList.add('active');
+        document.getElementById('viewGrid').style.display = 'none';
+        document.getElementById('viewList').style.display = '';
+    }
+})();
+</script>
 {% endblock %}

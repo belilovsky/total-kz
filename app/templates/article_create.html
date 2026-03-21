@@ -41,6 +41,10 @@
         <div class="quill-wrapper">
             <div id="quillEditor"></div>
         </div>
+        <!-- Word count + reading time -->
+        <div class="word-count-container" id="wordCountContainer">
+            <span id="wordCountText">0 слов · ~0 мин чтения</span>
+        </div>
     </div>
 
     <!-- Category -->
@@ -57,8 +61,9 @@
     <!-- Tags -->
     <div class="editor-section">
         <label class="editor-label">Теги</label>
-        <div class="tags-editor" id="tagsEditor">
-            <input class="tag-add-input" id="tagInput" placeholder="+ добавить тег" onkeydown="if(event.key==='Enter'){event.preventDefault();addTag(this.value);this.value=''}">
+        <div class="tags-editor" id="tagsEditor" style="position:relative">
+            <input class="tag-add-input" id="tagInput" placeholder="+ добавить тег" autocomplete="off">
+            <div class="tag-autocomplete" id="tagAutocomplete"></div>
         </div>
     </div>
 
@@ -98,6 +103,10 @@
 <!-- Sticky save bar -->
 <div class="editor-save-bar">
     <a href="/admin/articles" class="btn btn-ghost">← К статьям</a>
+    <div class="save-indicator" id="saveIndicator">
+        <span class="save-dot save-dot-unsaved"></span>
+        <span class="save-indicator-text" id="saveIndicatorText">Не сохранено</span>
+    </div>
     <div class="editor-save-actions">
         <button class="btn btn-primary" onclick="createArticle()" id="saveBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -111,6 +120,16 @@
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
 var quill;
+var isDirty = false;
+var lastSavedAt = null;
+var ARTICLE_ID = null; // Will be set after first save
+var allTags = [];
+
+// Format number with nbsp thousands separator
+function formatNum(n) {
+    if (Math.abs(n) < 1000) return String(n);
+    return String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+}
 
 (function() {
     quill = new Quill('#quillEditor', {
@@ -126,7 +145,76 @@ var quill;
             ]
         }
     });
+
+    quill.on('text-change', function() {
+        markDirty();
+        updateWordCount();
+    });
+
+    updateWordCount();
 })();
+
+// Word count + reading time
+function updateWordCount() {
+    var text = quill.getText().trim();
+    var words = text ? text.split(/\s+/).length : 0;
+    var readingTime = Math.max(1, Math.round(words / 200));
+    var wordLabel = 'слов';
+    var lastTwo = words % 100;
+    var lastOne = words % 10;
+    if (lastTwo >= 11 && lastTwo <= 19) wordLabel = 'слов';
+    else if (lastOne === 1) wordLabel = 'слово';
+    else if (lastOne >= 2 && lastOne <= 4) wordLabel = 'слова';
+    document.getElementById('wordCountText').textContent =
+        formatNum(words) + ' ' + wordLabel + ' \u00b7 ~' + readingTime + ' мин чтения';
+}
+
+function markDirty() {
+    if (!isDirty) {
+        isDirty = true;
+        updateSaveIndicator('unsaved');
+    }
+}
+
+document.querySelectorAll('#editTitle, #editExcerpt, #editImage, #editCategory, #editAuthor, #editNote').forEach(function(el) {
+    el.addEventListener('input', markDirty);
+    el.addEventListener('change', markDirty);
+});
+document.querySelectorAll('input[name="status"]').forEach(function(el) {
+    el.addEventListener('change', markDirty);
+});
+
+function updateSaveIndicator(state, timeAgo) {
+    var dot = document.querySelector('#saveIndicator .save-dot');
+    var text = document.getElementById('saveIndicatorText');
+    dot.className = 'save-dot';
+    if (state === 'saved') {
+        dot.classList.add('save-dot-saved');
+        text.textContent = timeAgo ? 'Сохранено ' + timeAgo : 'Сохранено';
+    } else if (state === 'saving') {
+        dot.classList.add('save-dot-saving');
+        text.textContent = 'Сохранение...';
+    } else {
+        dot.classList.add('save-dot-unsaved');
+        text.textContent = 'Не сохранено';
+    }
+}
+
+function relativeTime(date) {
+    var diff = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diff < 10) return 'только что';
+    if (diff < 60) return diff + ' сек назад';
+    var mins = Math.floor(diff / 60);
+    if (mins < 60) return mins + ' мин назад';
+    var hours = Math.floor(mins / 60);
+    return hours + ' ч назад';
+}
+
+setInterval(function() {
+    if (lastSavedAt && !isDirty) {
+        updateSaveIndicator('saved', relativeTime(lastSavedAt));
+    }
+}, 15000);
 
 // Auto-resize textareas
 document.querySelectorAll('.auto-resize').forEach(function(ta) {
@@ -166,10 +254,12 @@ if (imageInput) {
 }
 
 // Tags
-function removeTag(el) { el.parentElement.remove(); }
+function removeTag(el) { el.parentElement.remove(); markDirty(); }
 function addTag(val) {
     val = val.trim();
     if (!val) return;
+    var existing = collectTags();
+    if (existing.indexOf(val) !== -1) return;
     var editor = document.getElementById('tagsEditor');
     var input = document.getElementById('tagInput');
     var chip = document.createElement('span');
@@ -177,6 +267,7 @@ function addTag(val) {
     chip.setAttribute('data-tag', val);
     chip.innerHTML = val + ' <span class="tag-remove" onclick="removeTag(this)">&times;</span>';
     editor.insertBefore(chip, input);
+    markDirty();
 }
 function collectTags() {
     var chips = document.querySelectorAll('#tagsEditor .tag-chip');
@@ -184,6 +275,71 @@ function collectTags() {
     chips.forEach(function(c) { tags.push(c.getAttribute('data-tag')); });
     return tags;
 }
+
+// Tags autocomplete
+(function() {
+    var tagInput = document.getElementById('tagInput');
+    var dropdown = document.getElementById('tagAutocomplete');
+
+    tagInput.addEventListener('focus', function() {
+        if (allTags.length === 0) {
+            fetch('/api/tags?limit=200')
+                .then(function(r) { return r.json(); })
+                .then(function(tags) { allTags = tags; filterTags(''); });
+        } else {
+            filterTags(tagInput.value);
+        }
+    });
+
+    tagInput.addEventListener('input', function() {
+        filterTags(this.value);
+    });
+
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTag(this.value);
+            this.value = '';
+            dropdown.style.display = 'none';
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#tagsEditor')) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    function filterTags(query) {
+        var q = query.toLowerCase().trim();
+        var existing = collectTags();
+        var matches = allTags.filter(function(t) {
+            return t.tag.toLowerCase().indexOf(q) !== -1 && existing.indexOf(t.tag) === -1;
+        }).slice(0, 6);
+
+        if (matches.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = '';
+        matches.forEach(function(t) {
+            var item = document.createElement('div');
+            item.className = 'tag-suggestion';
+            item.innerHTML = '<span>' + t.tag + '</span><span class="tag-suggestion-count">' + t.cnt + '</span>';
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                addTag(t.tag);
+                tagInput.value = '';
+                dropdown.style.display = 'none';
+            });
+            dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+    }
+})();
 
 function showToast(msg) {
     var t = document.getElementById('toast');
@@ -200,29 +356,81 @@ function getSelectedStatus() {
     return 'draft';
 }
 
-function createArticle() {
-    var title = document.getElementById('editTitle').value.trim();
-    var category = document.getElementById('editCategory').value;
-    if (!title) { showToast('Заголовок обязателен'); return; }
-    if (!category) { showToast('Выберите категорию'); return; }
-
-    var btn = document.getElementById('saveBtn');
-    btn.disabled = true;
-    btn.textContent = 'Создаю...';
-    var bodyHtml = quill.root.innerHTML;
-    var bodyText = quill.getText().trim();
-    var data = {
-        title: title,
-        sub_category: category,
+function collectArticleData() {
+    return {
+        title: document.getElementById('editTitle').value.trim(),
+        sub_category: document.getElementById('editCategory').value,
         author: document.getElementById('editAuthor').value.trim(),
         excerpt: document.getElementById('editExcerpt').value.trim(),
         main_image: document.getElementById('editImage').value.trim(),
-        body_html: bodyHtml,
-        body_text: bodyText,
+        body_html: quill.root.innerHTML,
+        body_text: quill.getText().trim(),
         status: getSelectedStatus(),
         editor_note: document.getElementById('editNote').value.trim(),
         tags: collectTags()
     };
+}
+
+function createArticle(isAutoSave) {
+    var data = collectArticleData();
+
+    // If we already have an ID (from a previous auto-save), use PATCH
+    if (ARTICLE_ID) {
+        if (!isAutoSave) {
+            var btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Сохраняю...';
+        }
+        updateSaveIndicator('saving');
+        if (isAutoSave) data._revision_type = 'auto_save';
+        fetch('/api/article/' + ARTICLE_ID, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (!isAutoSave) {
+                var btn = document.getElementById('saveBtn');
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';
+            }
+            if (res.ok) {
+                isDirty = false;
+                lastSavedAt = new Date();
+                updateSaveIndicator('saved', 'только что');
+                if (!isAutoSave) showToast('Сохранено');
+            } else {
+                updateSaveIndicator('unsaved');
+                if (!isAutoSave) showToast('Ошибка: ' + (res.error || 'неизвестная'));
+            }
+        })
+        .catch(function() {
+            updateSaveIndicator('unsaved');
+            if (!isAutoSave) showToast('Ошибка сети');
+        });
+        return;
+    }
+
+    // First save: create via POST
+    if (!isAutoSave) {
+        var title = data.title;
+        var category = data.sub_category;
+        if (!title) { showToast('Заголовок обязателен'); return; }
+        if (!category) { showToast('Выберите категорию'); return; }
+    } else {
+        // For auto-save, need at least a title
+        if (!data.title) return;
+        if (!data.sub_category) return;
+    }
+
+    if (!isAutoSave) {
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Создаю...';
+    }
+    updateSaveIndicator('saving');
+
     fetch('/api/article', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -231,19 +439,52 @@ function createArticle() {
     .then(function(r) { return r.json(); })
     .then(function(res) {
         if (res.ok && res.id) {
-            showToast('Статья создана');
-            setTimeout(function() { window.location.href = '/admin/article/' + res.id; }, 600);
+            ARTICLE_ID = res.id;
+            isDirty = false;
+            lastSavedAt = new Date();
+            updateSaveIndicator('saved', 'только что');
+            if (!isAutoSave) {
+                showToast('Статья создана');
+                setTimeout(function() { window.location.href = '/admin/article/' + res.id; }, 600);
+            } else {
+                // Update the save button to show "Сохранить" instead of "Создать"
+                var btn = document.getElementById('saveBtn');
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';
+            }
         } else {
-            btn.disabled = false;
-            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
-            showToast('Ошибка: ' + (res.error || 'неизвестная'));
+            if (!isAutoSave) {
+                var btn = document.getElementById('saveBtn');
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
+            }
+            updateSaveIndicator('unsaved');
+            if (!isAutoSave) showToast('Ошибка: ' + (res.error || 'неизвестная'));
         }
     })
     .catch(function() {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
-        showToast('Ошибка сети');
+        if (!isAutoSave) {
+            var btn = document.getElementById('saveBtn');
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
+        }
+        updateSaveIndicator('unsaved');
+        if (!isAutoSave) showToast('Ошибка сети');
     });
 }
+
+// Auto-save every 30 seconds
+setInterval(function() {
+    if (isDirty) {
+        createArticle(true);
+    }
+}, 30000);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        createArticle(false);
+    }
+});
 </script>
 {% endblock %}
