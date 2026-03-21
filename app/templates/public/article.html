@@ -148,13 +148,21 @@
       </div>
       {% endif %}
 
-      {# ── Timeline: contextual by most specific entity ── #}
+      {# ── Story timeline (GPT-extracted) or entity fallback ── #}
       {% if timeline and (timeline.prev or timeline.next) %}
       <section class="article-timeline">
-        <h2 class="timeline-heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Хронология{% if timeline_topic %}: {{ timeline_topic }}{% endif %}
-        </h2>
+        <div class="timeline-header">
+          <h2 class="timeline-heading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}
+          </h2>
+          {% if timeline_topic %}
+          <span class="timeline-topic">{{ timeline_topic }}</span>
+          {% endif %}
+          {% if timeline_total > 1 %}
+          <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
+          {% endif %}
+        </div>
         <div class="timeline-track">
           {% for art in timeline.next|reverse %}
           <a href="{{ article_url(art) }}" class="timeline-item">

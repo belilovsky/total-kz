@@ -559,6 +559,58 @@ def get_timeline_articles(article_id: int, category: str, pub_date: str, entity_
         }
 
 
+def get_story_timeline(article_id: int, pub_date: str) -> dict | None:
+    """Get story-based timeline for an article.
+    Returns {story_title, prev: [...], next: [...]} or None if no story found.
+    Only returns results for stories with 2+ articles (confidence >= 0.3).
+    """
+    with get_db() as conn:
+        # Find the story this article belongs to (highest confidence)
+        story_row = conn.execute("""
+            SELECT s.id, s.title_ru, s.article_count
+            FROM article_stories as2
+            JOIN stories s ON s.id = as2.story_id
+            WHERE as2.article_id = ? AND as2.confidence >= 0.3
+            ORDER BY as2.confidence DESC
+            LIMIT 1
+        """, (article_id,)).fetchone()
+
+        if not story_row or story_row["article_count"] < 2:
+            return None
+
+        story_id = story_row["id"]
+        story_title = story_row["title_ru"]
+
+        # Previous articles in this story (older)
+        prev_rows = conn.execute("""
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.thumbnail, a.main_image
+            FROM articles a
+            JOIN article_stories as2 ON as2.article_id = a.id
+            WHERE as2.story_id = ? AND a.id != ? AND a.pub_date <= ?
+              AND as2.confidence >= 0.3
+            ORDER BY a.pub_date DESC
+            LIMIT 5
+        """, (story_id, article_id, pub_date)).fetchall()
+
+        # Next articles in this story (newer)
+        next_rows = conn.execute("""
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.thumbnail, a.main_image
+            FROM articles a
+            JOIN article_stories as2 ON as2.article_id = a.id
+            WHERE as2.story_id = ? AND a.id != ? AND a.pub_date > ?
+              AND as2.confidence >= 0.3
+            ORDER BY a.pub_date ASC
+            LIMIT 5
+        """, (story_id, article_id, pub_date)).fetchall()
+
+        return {
+            "story_title": story_title,
+            "total_articles": story_row["article_count"],
+            "prev": [dict(r) for r in prev_rows],
+            "next": [dict(r) for r in next_rows],
+        }
+
+
 def get_related_by_entities(article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
     """Get related articles by shared entities, falling back to category."""
     with get_db() as conn:

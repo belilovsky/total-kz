@@ -200,6 +200,19 @@ def pluralize_articles(n: int) -> str:
     return f"{formatted} статей"
 
 
+def pluralize_materials(n: int) -> str:
+    """Russian pluralization for materials count."""
+    formatted = format_num(n)
+    if 11 <= n % 100 <= 19:
+        return f"{formatted} материалов"
+    last = n % 10
+    if last == 1:
+        return f"{formatted} материал"
+    elif 2 <= last <= 4:
+        return f"{formatted} материала"
+    return f"{formatted} материалов"
+
+
 def estimate_reading_time(text: str | None) -> int:
     """Estimate reading time in minutes."""
     if not text:
@@ -303,6 +316,7 @@ templates.env.globals["cat_label"] = cat_label
 templates.env.globals["nav_slug_for"] = nav_slug_for
 templates.env.globals["article_url"] = article_url
 templates.env.globals["pluralize_articles"] = pluralize_articles
+templates.env.globals["pluralize_materials"] = pluralize_materials
 templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
 templates.env.globals["current_year"] = lambda: datetime.now().year
@@ -510,33 +524,43 @@ async def article_page(request: Request, category: str, slug: str):
             db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
         )
 
-        # Timeline: by the most specific entity (person/org > location)
-        # Pick the best entity for timeline context
-        timeline_entity = None
-        if article.get("entities"):
-            # Priority: person > org > location
-            priority = {"person": 0, "org": 1, "location": 2}
-            sorted_ents = sorted(
-                article["entities"],
-                key=lambda e: priority.get(e.get("entity_type", "location"), 3)
-            )
-            timeline_entity = sorted_ents[0] if sorted_ents else None
+        # Timeline: prefer story-based, fallback to entity-based
+        story_tl = db.get_story_timeline(article["id"], article.get("pub_date", ""))
+        if story_tl and (story_tl["prev"] or story_tl["next"]):
+            timeline = {
+                "prev": rewrite_articles_images(story_tl["prev"]),
+                "next": rewrite_articles_images(story_tl["next"]),
+            }
+            timeline_topic = story_tl["story_title"]
+            timeline_total = story_tl["total_articles"]
+        else:
+            # Fallback: entity-based timeline
+            timeline_entity = None
+            if article.get("entities"):
+                priority = {"person": 0, "org": 1, "location": 2}
+                sorted_ents = sorted(
+                    article["entities"],
+                    key=lambda e: priority.get(e.get("entity_type", "location"), 3)
+                )
+                timeline_entity = sorted_ents[0] if sorted_ents else None
 
-        timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
-        timeline_raw = db.get_timeline_articles(
-            article["id"], category, article.get("pub_date", ""),
-            entity_ids=timeline_entity_ids
-        )
-        timeline = {
-            "prev": rewrite_articles_images(timeline_raw["prev"]),
-            "next": rewrite_articles_images(timeline_raw["next"]),
-        }
-        timeline_topic = timeline_entity["name"] if timeline_entity else ""
+            timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
+            timeline_raw = db.get_timeline_articles(
+                article["id"], category, article.get("pub_date", ""),
+                entity_ids=timeline_entity_ids
+            )
+            timeline = {
+                "prev": rewrite_articles_images(timeline_raw["prev"]),
+                "next": rewrite_articles_images(timeline_raw["next"]),
+            }
+            timeline_topic = timeline_entity["name"] if timeline_entity else ""
+            timeline_total = 0
     except Exception:
         logger.exception("Database error loading related/timeline for %s/%s", category, slug)
         related = []
         timeline = {"prev": [], "next": []}
         timeline_topic = ""
+        timeline_total = 0
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
@@ -552,6 +576,7 @@ async def article_page(request: Request, category: str, slug: str):
         "related": related,
         "timeline": timeline,
         "timeline_topic": timeline_topic,
+        "timeline_total": timeline_total,
         "category": category,
         "category_name": cat_label(category),
         "nav_section": nav_section,
