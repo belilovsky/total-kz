@@ -12,6 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from qazstack.core import health_router
+from qazstack.content.api import content_router, SQLiteContentProvider
 
 from . import database as db
 from . import seo_analytics as seo
@@ -144,6 +145,16 @@ app.include_router(health_router)
 # ══════════════════════════════════════════════
 app.include_router(public_router)
 app.include_router(social_router)
+
+# ══════════════════════════════════════════════
+#  HEADLESS CONTENT API (qazstack.content.api)
+# ══════════════════════════════════════════════
+_content_provider = SQLiteContentProvider(db.get_db_path())
+app.include_router(
+    content_router(_content_provider),
+    prefix="/api/content",
+    tags=["content"],
+)
 
 
 # ══════════════════════════════════════════════
