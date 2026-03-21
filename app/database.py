@@ -36,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_articles_author ON articles(author);
 CREATE TABLE IF NOT EXISTS entities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    short_name TEXT,            -- сокращённое название (для компактного отображения)
     entity_type TEXT NOT NULL,  -- 'person', 'org', 'event', 'location'
     normalized TEXT,            -- нормализованное имя (для дедупликации)
     UNIQUE(normalized, entity_type)
@@ -110,6 +111,10 @@ def get_db():
 def init_db():
     with get_db() as conn:
         conn.executescript(SCHEMA)
+        # Auto-migrate: add short_name column if missing
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(entities)").fetchall()]
+        if "short_name" not in cols:
+            conn.execute("ALTER TABLE entities ADD COLUMN short_name TEXT")
 
 
 # Для парсинга русских дат из date_text ("ДД месяц YYYY, HH:MM")
