@@ -10,6 +10,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResp
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
+from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
+
 from . import database as db
 
 logger = logging.getLogger(__name__)
@@ -215,11 +217,8 @@ def pluralize_materials(n: int) -> str:
 
 
 def estimate_reading_time(text: str | None) -> int:
-    """Estimate reading time in minutes."""
-    if not text:
-        return 1
-    words = len(text.split())
-    return max(1, round(words / 200))
+    """Estimate reading time in minutes (delegates to qazstack.content)."""
+    return reading_time_minutes(text or "")
 
 
 def article_url(article: dict) -> str:

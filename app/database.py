@@ -6,6 +6,8 @@ from pathlib import Path
 from datetime import datetime
 from contextlib import contextmanager
 
+from qazstack.content import parse_ru_date, iter_jsonl
+
 DB_PATH = Path(__file__).parent.parent / "data" / "total.db"
 
 SCHEMA = """
@@ -118,91 +120,69 @@ def init_db():
             conn.execute("ALTER TABLE entities ADD COLUMN short_name TEXT")
 
 
-# Для парсинга русских дат из date_text ("ДД месяц YYYY, HH:MM")
-_RU_MONTHS = {
-    "января": "01", "февраля": "02", "марта": "03", "апреля": "04",
-    "мая": "05", "июня": "06", "июля": "07", "августа": "08",
-    "сентября": "09", "октября": "10", "ноября": "11", "декабря": "12",
-}
-
+# Russian date parsing is now in qazstack.content.parse_ru_date
+# Kept as thin wrapper for backward compatibility
 def _parse_ru_date_text(text):
     """Парсить '13 апреля 2016, 11:38' в ISO формат."""
-    if not text:
-        return None
-    import re
-    m = re.search(r'(\d{1,2})\s+(\S+)\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?', text)
-    if m:
-        day = int(m.group(1))
-        month = _RU_MONTHS.get(m.group(2).lower())
-        year = m.group(3)
-        hour = m.group(4) or "0"
-        minute = m.group(5) or "0"
-        if month:
-            return f"{year}-{month}-{day:02d}T{int(hour):02d}:{int(minute):02d}:00"
-    return None
+    dt = parse_ru_date(text)
+    return dt.isoformat() if dt else None
 
 
 def import_jsonl(jsonl_path: str) -> dict:
-    """Import articles from JSONL file into SQLite. Returns stats."""
+    """Import articles from JSONL file into SQLite. Returns stats.
+
+    Uses qazstack.content.iter_jsonl for parsing + date fallback.
+    """
     init_db()
     imported = 0
     skipped = 0
     errors = 0
 
     with get_db() as conn:
-        with open(jsonl_path, "r") as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                try:
-                    art = json.loads(line)
-                    tags_json = json.dumps(art.get("tags", []), ensure_ascii=False)
-                    images_json = json.dumps(art.get("inline_images", []), ensure_ascii=False)
+        for article in iter_jsonl(jsonl_path, fix_dates=True):
+            try:
+                tags_json = json.dumps(article.tags, ensure_ascii=False)
+                images_json = json.dumps(article.inline_images, ensure_ascii=False)
+                pub_date = article.pub_date.isoformat() if article.pub_date else None
 
-                    # Дата: из pub_date (URL/карточка), фолбэк на date_text (со страницы статьи)
-                    pub_date = art.get("pub_date")
-                    if not pub_date:
-                        pub_date = _parse_ru_date_text(art.get("date_text", ""))
-
-                    # Используем INSERT OR REPLACE чтобы обновлять существующие записи
-                    conn.execute("""
-                        INSERT INTO articles
-                        (url, pub_date, sub_category, category_label, title, author,
-                         excerpt, body_text, body_html, main_image, image_credit,
-                         thumbnail, tags, inline_images)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(url) DO UPDATE SET
-                            pub_date = COALESCE(excluded.pub_date, articles.pub_date),
-                            title = excluded.title,
-                            author = excluded.author,
-                            excerpt = excluded.excerpt,
-                            body_text = excluded.body_text,
-                            body_html = excluded.body_html,
-                            main_image = excluded.main_image,
-                            image_credit = excluded.image_credit,
-                            thumbnail = excluded.thumbnail,
-                            tags = excluded.tags,
-                            inline_images = excluded.inline_images,
-                            imported_at = datetime('now')
-                    """, (
-                        art.get("url"),
-                        pub_date,
-                        art.get("sub_category"),
-                        art.get("category_label"),
-                        art.get("title"),
-                        art.get("author"),
-                        art.get("excerpt"),
-                        art.get("body_text"),
-                        art.get("body_html"),
-                        art.get("main_image"),
-                        art.get("image_credit"),
-                        art.get("thumbnail"),
-                        tags_json,
-                        images_json,
-                    ))
-                    imported += 1
-                except Exception as e:
-                    errors += 1
+                conn.execute("""
+                    INSERT INTO articles
+                    (url, pub_date, sub_category, category_label, title, author,
+                     excerpt, body_text, body_html, main_image, image_credit,
+                     thumbnail, tags, inline_images)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(url) DO UPDATE SET
+                        pub_date = COALESCE(excluded.pub_date, articles.pub_date),
+                        title = excluded.title,
+                        author = excluded.author,
+                        excerpt = excluded.excerpt,
+                        body_text = excluded.body_text,
+                        body_html = excluded.body_html,
+                        main_image = excluded.main_image,
+                        image_credit = excluded.image_credit,
+                        thumbnail = excluded.thumbnail,
+                        tags = excluded.tags,
+                        inline_images = excluded.inline_images,
+                        imported_at = datetime('now')
+                """, (
+                    article.url,
+                    pub_date,
+                    article.sub_category,
+                    article.category_label,
+                    article.title,
+                    article.author,
+                    article.excerpt,
+                    article.body_text,
+                    article.body_html,
+                    article.main_image,
+                    article.image_credit,
+                    article.thumbnail,
+                    tags_json,
+                    images_json,
+                ))
+                imported += 1
+            except Exception:
+                errors += 1
 
     return {"imported": imported, "skipped": skipped, "errors": errors}
 
