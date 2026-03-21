@@ -127,9 +127,9 @@
         </button>
       </div>
 
-      {# ── Merged entities + tags in one compact block ── #}
+      {# ── Entities + tags (mobile only, hidden >=1100px) ── #}
       {% if article.entities or article.tags %}
-      <div class="article-footer-meta">
+      <div class="article-footer-meta article-footer-meta--mobile">
         {% if article.entities %}
           {% for ent in article.entities %}
             <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.name }}">
@@ -147,7 +147,7 @@
       </div>
       {% endif %}
 
-      {# ── Timeline: contextual by entities ── #}
+      {# ── Timeline: contextual by most specific entity ── #}
       {% if timeline and (timeline.prev or timeline.next) %}
       <section class="article-timeline">
         <h2 class="timeline-heading">
@@ -176,13 +176,37 @@
       {% endif %}
     </div>
 
-    <!-- Sidebar: TOC + Share (desktop only) -->
+    <!-- Sidebar: Entities + Tags + TOC + Share (desktop only) -->
     <aside class="article-sidebar">
       <div class="article-sidebar-inner">
+        {# ── Entities + Tags in sidebar (desktop) ── #}
+        {% if article.entities or article.tags %}
+        <div class="sidebar-entities">
+          <span class="sidebar-section-label">Темы</span>
+          <div class="sidebar-chips">
+            {% if article.entities %}
+              {% for ent in article.entities %}
+                <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.name }}">
+                  <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
+                  <span class="entity-short">{{ ent.short_name or ent.name }}</span>
+                  <span class="entity-full">{{ ent.name }}</span>
+                </a>
+              {% endfor %}
+            {% endif %}
+            {% if article.tags %}
+              {% for tag in article.tags %}
+                <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
         <nav class="article-toc" id="article-toc" aria-label="Оглавление">
           <div class="article-toc-title">Содержание</div>
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
+
         <div class="sidebar-share">
           <span class="sidebar-share-label">Поделиться</span>
           <a href="https://t.me/share/url?url=https://total.kz/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram">
@@ -196,9 +220,6 @@
           </a>
           <a href="https://x.com/intent/tweet?url=https://total.kz/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="share-btn" aria-label="X">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="https://vk.com/share.php?url=https://total.kz/news/{{ category }}/{{ slug }}&title={{ article.title | urlencode }}" target="_blank" rel="noopener" class="share-btn" aria-label="ВКонтакте">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.391 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.678.864 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.253-1.406 2.15-3.574 2.15-3.574.119-.254.322-.491.762-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>
           </a>
           <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.href).then(()=>{this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),2000)})" aria-label="Копировать">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>

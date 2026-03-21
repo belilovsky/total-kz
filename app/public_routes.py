@@ -403,19 +403,28 @@ async def article_page(request: Request, category: str, slug: str):
         db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
     )
 
-    # Timeline: by shared entities (contextual, not whole category)
+    # Timeline: by the most specific entity (person/org > location)
+    # Pick the best entity for timeline context
+    timeline_entity = None
+    if article.get("entities"):
+        # Priority: person > org > location
+        priority = {"person": 0, "org": 1, "location": 2}
+        sorted_ents = sorted(
+            article["entities"],
+            key=lambda e: priority.get(e.get("entity_type", "location"), 3)
+        )
+        timeline_entity = sorted_ents[0] if sorted_ents else None
+
+    timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
     timeline_raw = db.get_timeline_articles(
         article["id"], category, article.get("pub_date", ""),
-        entity_ids=entity_ids if entity_ids else None
+        entity_ids=timeline_entity_ids
     )
     timeline = {
         "prev": rewrite_articles_images(timeline_raw["prev"]),
         "next": rewrite_articles_images(timeline_raw["next"]),
     }
-    # Build a human-readable timeline topic from top entity name
-    timeline_topic = ""
-    if entity_ids and article.get("entities"):
-        timeline_topic = article["entities"][0]["name"]
+    timeline_topic = timeline_entity["name"] if timeline_entity else ""
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
