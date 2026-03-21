@@ -144,12 +144,17 @@
       </div>
 
       {# ── Темы (mobile only, hidden >=1100px) ── #}
-      {% set display_tags_m = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-      {% if display_tags_m %}
+      {# Приоритет: GPT keywords → ручные теги → entity (person/org) #}
+      {% set _tags_m = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
+      {% set _ent_m = dedup_entities(article.entities or []) if not _tags_m else [] %}
+      {% if _tags_m or _ent_m %}
       <div class="article-footer-meta article-footer-meta--mobile">
         <div class="sidebar-pills">
-          {% for tag in display_tags_m[:8] %}
+          {% for tag in _tags_m[:8] %}
             <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
+          {% endfor %}
+          {% for ent in _ent_m %}
+            <a href="/tag/{{ short_entity_name(ent) }}" class="s-pill s-pill--tag">{{ short_entity_name(ent) }}</a>
           {% endfor %}
         </div>
       </div>
@@ -213,14 +218,18 @@
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
 
-        {# ── Темы (GPT keywords → fallback ручные теги) ── #}
+        {# ── Темы: GPT keywords → ручные теги → entity (person/org) ── #}
         {% set display_tags = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-        {% if display_tags %}
+        {% set display_ent = dedup_entities(article.entities or []) if not display_tags else [] %}
+        {% if display_tags or display_ent %}
         <div class="sidebar-topics">
           <span class="sidebar-topics-label">Темы</span>
           <div class="sidebar-pills" id="sidebar-pills">
             {% for tag in display_tags[:8] %}
               <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
+            {% endfor %}
+            {% for ent in display_ent %}
+              <a href="/tag/{{ short_entity_name(ent) }}" class="s-pill s-pill--tag">{{ short_entity_name(ent) }}</a>
             {% endfor %}
           </div>
         </div>
