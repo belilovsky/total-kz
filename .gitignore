@@ -22,3 +22,5 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+data/total.db.backup-pre-gov-entities
+data/*.backup*

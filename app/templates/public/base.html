@@ -325,9 +325,9 @@
           if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
         });
       }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
-      document.querySelectorAll('.feed-item, .article-card').forEach(function (el) { io.observe(el); });
+      document.querySelectorAll('.feed-item, .article-card, .cat-highlight-item, .related-item').forEach(function (el) { io.observe(el); });
     } else {
-      document.querySelectorAll('.feed-item, .article-card').forEach(function (el) { el.classList.add('visible'); });
+      document.querySelectorAll('.feed-item, .article-card, .cat-highlight-item, .related-item').forEach(function (el) { el.classList.add('visible'); });
     }
 
   })();
