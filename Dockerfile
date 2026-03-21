@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+ARG GITHUB_TOKEN
+RUN pip install --no-cache-dir "qazstack @ git+https://${GITHUB_TOKEN}@github.com/belilovsky/qazstack.git"
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ app/

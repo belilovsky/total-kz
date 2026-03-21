@@ -3,7 +3,10 @@
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
     container_name: total_kz_app
     restart: unless-stopped
     env_file: .env
