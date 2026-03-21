@@ -16,6 +16,22 @@ BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+def _format_num(n) -> str:
+    """Format number with non-breaking space as thousands separator."""
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    if abs(n) < 1000:
+        return str(n)
+    s = f"{abs(n):,}".replace(",", "\u00a0")
+    return f"-{s}" if n < 0 else s
+
+
+templates.env.filters["format_num"] = _format_num
+templates.env.globals["format_num"] = _format_num
+
+
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def social_dashboard(request: Request):
