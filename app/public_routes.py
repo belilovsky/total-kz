@@ -247,6 +247,35 @@ def format_date_short(date_str: str | None) -> str:
         return date_str[:10] if date_str else ""
 
 
+def short_entity_name(entity: dict) -> str:
+    """Short display name for entity pills.
+    Strips АО, НК, ТОО, НАО, ОО prefixes and quotes from org names.
+    E.g. 'АО \u00abНК \u00abКТЖ\u00bb' → 'КТЖ'
+    """
+    name = entity.get("short_name") or entity.get("name") or ""
+    if entity.get("entity_type") == "org":
+        # Strip organizational prefixes and quotes
+        import re as _re
+        cleaned = _re.sub(
+            r'^(?:АО|НК|ТОО|НАО|ОО|ГКП|ГКПП|РГП|РГКП|КГП)\s*',
+            '', name
+        )
+        # Remove guillemets and curly quotes
+        cleaned = cleaned.replace('\u00ab', '').replace('\u00bb', '')
+        cleaned = cleaned.replace('\u201c', '').replace('\u201d', '')
+        cleaned = cleaned.replace('"', '')
+        cleaned = cleaned.strip()
+        # If we stripped too much (empty), fall back
+        if cleaned:
+            # Recursively strip again (for АО «НК «КТЖ»»)
+            cleaned2 = _re.sub(
+                r'^(?:АО|НК|ТОО|НАО|ОО|ГКП)\s*',
+                '', cleaned
+            ).strip()
+            return cleaned2 if cleaned2 else cleaned
+    return name
+
+
 # ── Register template utilities as Jinja2 globals ──
 templates.env.globals["format_date"] = format_date
 templates.env.globals["format_date_short"] = format_date_short
@@ -255,6 +284,7 @@ templates.env.globals["nav_slug_for"] = nav_slug_for
 templates.env.globals["article_url"] = article_url
 templates.env.globals["pluralize_articles"] = pluralize_articles
 templates.env.globals["format_num"] = format_num
+templates.env.globals["short_entity_name"] = short_entity_name
 templates.env.globals["current_year"] = lambda: datetime.now().year
 templates.env.filters["format_num"] = format_num
 

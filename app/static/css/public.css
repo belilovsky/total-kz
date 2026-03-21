@@ -616,6 +616,26 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
   .article-sidebar-inner { position:sticky; top:5rem; }
 }
 
+/* Sidebar meta: author, date, reading time */
+.sidebar-meta {
+  margin-bottom:var(--space-6);
+  display:flex; flex-direction:column; gap:var(--space-1);
+}
+.sidebar-meta-author {
+  font-size:var(--text-sm); font-weight:600; color:var(--text-primary);
+  text-decoration:none;
+}
+.sidebar-meta-author:hover { color:var(--accent); }
+.sidebar-meta-date {
+  font-size:var(--text-xs); color:var(--text-muted);
+}
+.sidebar-meta-reading {
+  font-size:var(--text-xs); color:var(--text-muted); font-style:italic;
+}
+.sidebar-meta .print-btn {
+  margin-top:var(--space-2);
+}
+
 /* Sidebar share buttons (horizontal row) */
 .sidebar-share { margin-bottom:var(--space-6); }
 .sidebar-share-label {
@@ -722,6 +742,7 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
 .article-meta a:hover { color:var(--accent); }
 .article-meta .sep { opacity:.4; }
 .article-meta .reading-time { font-style:italic; }
+@media (min-width:1100px) { .article-meta--mobile { display:none; } }
 
 /* Print button – inline, subtle */
 .print-btn {

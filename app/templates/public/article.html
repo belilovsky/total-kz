@@ -72,22 +72,15 @@
     </div>
   </nav>
 
-  {# ── Compact header ── #}
+  {# ── Compact header: title only, meta moved to sidebar ── #}
   <header class="article-page-header">
     <h1 class="article-title">{{ article.title }}</h1>
-    {% if article.excerpt %}
-      <p class="article-excerpt">{{ article.excerpt }}</p>
-    {% endif %}
-    <div class="article-meta">
+    {# Mobile-only meta (hidden on desktop where sidebar shows it) #}
+    <div class="article-meta article-meta--mobile">
       {% if article.author %}<a href="/search?q={{ article.author | urlencode }}">{{ article.author }}</a><span class="sep">·</span>{% endif %}
       <span>{{ format_date(article.pub_date) }}</span>
       <span class="sep">·</span>
       <span class="reading-time">{{ reading_time }} мин</span>
-      <span class="sep">·</span>
-      <button class="print-btn" onclick="window.print()" aria-label="Печать">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Печать
-      </button>
     </div>
   </header>
 
@@ -145,7 +138,7 @@
             <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
           {% endfor %}
           {% for ent in key_entities_m %}
-            <a href="/entity/{{ ent.id }}" class="s-pill s-pill--{{ ent.entity_type }}">{{ ent.short_name or ent.name }}</a>
+            <a href="/entity/{{ ent.id }}" class="s-pill s-pill--{{ ent.entity_type }}" title="{{ ent.name }}">{{ short_entity_name(ent) }}</a>
           {% endfor %}
         </div>
       </div>
@@ -184,26 +177,18 @@
     <aside class="article-sidebar">
       <div class="article-sidebar-inner">
 
-        <nav class="article-toc" id="article-toc" aria-label="Оглавление">
-          <div class="article-toc-title">Содержание</div>
-          <ul class="article-toc-list" id="toc-list"></ul>
-        </nav>
-
-        {# ── Tags + key entities as compact pills ── #}
-        {% set key_entities = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
-        {% if article.tags or key_entities %}
-        <div class="sidebar-topics">
-          <span class="sidebar-topics-label">Темы</span>
-          <div class="sidebar-pills" id="sidebar-pills">
-            {% for tag in article.tags or [] %}
-              <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
-            {% endfor %}
-            {% for ent in key_entities %}
-              <a href="/entity/{{ ent.id }}" class="s-pill s-pill--{{ ent.entity_type }}" title="{{ ent.name }}">{{ ent.short_name or ent.name }}</a>
-            {% endfor %}
-          </div>
+        {# ── Author + date + reading time ── #}
+        <div class="sidebar-meta">
+          {% if article.author %}
+            <a href="/search?q={{ article.author | urlencode }}" class="sidebar-meta-author">{{ article.author }}</a>
+          {% endif %}
+          <span class="sidebar-meta-date">{{ format_date(article.pub_date) }}</span>
+          <span class="sidebar-meta-reading">{{ reading_time }} мин чтения</span>
+          <button class="print-btn" onclick="window.print()" aria-label="Печать">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Печать
+          </button>
         </div>
-        {% endif %}
 
         {# ── Share: horizontal row ── #}
         <div class="sidebar-share">
@@ -226,6 +211,27 @@
             </button>
           </div>
         </div>
+
+        <nav class="article-toc" id="article-toc" aria-label="Оглавление">
+          <div class="article-toc-title">Содержание</div>
+          <ul class="article-toc-list" id="toc-list"></ul>
+        </nav>
+
+        {# ── Tags + key entities as compact pills ── #}
+        {% set key_entities = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
+        {% if article.tags or key_entities %}
+        <div class="sidebar-topics">
+          <span class="sidebar-topics-label">Темы</span>
+          <div class="sidebar-pills" id="sidebar-pills">
+            {% for tag in article.tags or [] %}
+              <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
+            {% endfor %}
+            {% for ent in key_entities %}
+              <a href="/entity/{{ ent.id }}" class="s-pill s-pill--{{ ent.entity_type }}" title="{{ ent.name }}">{{ short_entity_name(ent) }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
       </div>
     </aside>
   </div>
