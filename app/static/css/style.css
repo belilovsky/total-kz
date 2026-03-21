@@ -2565,3 +2565,493 @@ body.sidebar-open .sidebar-overlay { display: block; }
     .main-content { margin-left: 64px !important; }
     .mobile-tabs { display: none; }
 }
+
+/* ============================================
+   CMS Editor & Status Badges – v10.0
+   ============================================ */
+
+/* --- Status Badges --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+.status-draft {
+    background: var(--orange-soft);
+    color: var(--orange);
+}
+.status-published {
+    background: var(--green-soft);
+    color: var(--green);
+}
+.status-archived {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+}
+
+/* --- Status Filter Tabs --- */
+.status-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+.status-tabs::-webkit-scrollbar { display: none; }
+.status-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    transition: all var(--transition);
+}
+.status-tab:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+.status-tab.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+.status-tab-count {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* --- Desktop Create Button --- */
+.desktop-create-btn {
+    display: none;
+}
+@media (min-width: 768px) {
+    .desktop-create-btn {
+        display: inline-flex;
+    }
+}
+
+/* --- FAB (Floating Action Button) --- */
+.fab-button {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+    z-index: 90;
+    text-decoration: none;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.fab-button svg {
+    width: 24px;
+    height: 24px;
+}
+.fab-button:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+@media (max-width: 767px) {
+    .fab-button { display: flex; }
+}
+
+/* Article card status overlay */
+.article-card-image {
+    position: relative;
+}
+.article-card-status {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+/* --- Editor Page Layout --- */
+.editor-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+}
+.editor-section {
+    margin-bottom: 20px;
+}
+.editor-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Editor inputs — all at least 16px to prevent iOS zoom */
+.editor-title-input {
+    width: 100%;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.25;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    transition: border-color var(--transition);
+}
+.editor-title-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.editor-textarea {
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    transition: border-color var(--transition);
+}
+.editor-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.editor-input {
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: border-color var(--transition);
+}
+.editor-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.editor-select {
+    width: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    appearance: auto;
+    transition: border-color var(--transition);
+}
+.editor-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Image preview */
+.editor-image-preview {
+    margin-bottom: 8px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    max-height: 300px;
+    background: var(--bg-hover);
+}
+.editor-image-preview img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Char counter */
+.char-counter {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+}
+.char-counter.over-limit {
+    color: var(--red);
+    font-weight: 600;
+}
+
+/* Status radio buttons */
+.status-radios {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.status-radio {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.status-radio input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.status-radio .status-badge {
+    padding: 6px 14px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.status-radio input[type="radio"]:checked + .status-badge {
+    border-color: currentColor;
+    box-shadow: 0 0 0 1px currentColor;
+}
+.status-radio:hover .status-badge {
+    opacity: 0.85;
+}
+
+/* Metadata footer */
+.editor-meta-footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+}
+.editor-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+@media (max-width: 480px) {
+    .editor-meta-grid { grid-template-columns: 1fr; }
+}
+
+/* Sticky save bar */
+.editor-save-bar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sidebar-w);
+    right: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 80;
+    gap: 12px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+}
+.editor-save-actions {
+    display: flex;
+    gap: 8px;
+}
+@media (max-width: 767px) {
+    .editor-save-bar {
+        left: 0;
+        bottom: 60px;
+        padding: 10px 16px;
+    }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+    .editor-save-bar {
+        left: 64px;
+    }
+}
+
+/* --- Quill Editor Styling --- */
+.quill-wrapper {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg-input);
+}
+.quill-wrapper .ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    padding: 8px;
+}
+.quill-wrapper .ql-container.ql-snow {
+    border: none;
+    font-size: 16px;
+    font-family: inherit;
+    min-height: 300px;
+}
+.quill-wrapper .ql-editor {
+    min-height: 300px;
+    padding: 16px;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+.quill-wrapper .ql-editor.ql-blank::before {
+    color: var(--text-muted);
+    font-style: normal;
+}
+.quill-wrapper .ql-editor h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 16px 0 8px;
+}
+.quill-wrapper .ql-editor h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+}
+.quill-wrapper .ql-editor p {
+    margin-bottom: 12px;
+}
+.quill-wrapper .ql-editor blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+    color: var(--text-secondary);
+    margin: 12px 0;
+}
+.quill-wrapper .ql-editor img {
+    max-width: 100%;
+    border-radius: var(--radius-xs);
+}
+.quill-wrapper .ql-editor pre.ql-syntax {
+    background: var(--bg-hover);
+    border-radius: var(--radius-xs);
+    padding: 12px;
+    font-size: 14px;
+    overflow-x: auto;
+}
+/* Dark theme adjustments for Quill toolbar */
+[data-theme="dark"] .quill-wrapper .ql-toolbar .ql-stroke {
+    stroke: var(--text-secondary);
+}
+[data-theme="dark"] .quill-wrapper .ql-toolbar .ql-fill {
+    fill: var(--text-secondary);
+}
+[data-theme="dark"] .quill-wrapper .ql-toolbar .ql-picker-label {
+    color: var(--text-secondary);
+}
+[data-theme="dark"] .quill-wrapper .ql-toolbar button:hover .ql-stroke,
+[data-theme="dark"] .quill-wrapper .ql-toolbar button.ql-active .ql-stroke {
+    stroke: var(--accent);
+}
+[data-theme="dark"] .quill-wrapper .ql-toolbar button:hover .ql-fill,
+[data-theme="dark"] .quill-wrapper .ql-toolbar button.ql-active .ql-fill {
+    fill: var(--accent);
+}
+[data-theme="dark"] .quill-wrapper .ql-snow .ql-picker-options {
+    background: var(--bg-card);
+    border-color: var(--border);
+}
+/* Quill tooltip dark mode */
+[data-theme="dark"] .ql-snow .ql-tooltip {
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
+}
+[data-theme="dark"] .ql-snow .ql-tooltip input[type="text"] {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+/* Mobile: Quill toolbar compact */
+@media (max-width: 767px) {
+    .quill-wrapper .ql-toolbar.ql-snow {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        display: flex;
+        gap: 2px;
+        padding: 6px;
+    }
+    .quill-wrapper .ql-toolbar .ql-formats {
+        margin-right: 6px;
+    }
+    .quill-wrapper .ql-container.ql-snow {
+        min-height: 250px;
+    }
+    .quill-wrapper .ql-editor {
+        min-height: 250px;
+        padding: 12px;
+    }
+    .editor-title-input {
+        font-size: 20px;
+    }
+}
+
+/* Auto-resize textarea */
+.auto-resize {
+    overflow: hidden;
+}
+
+/* Tags editor in CMS */
+.tags-editor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    min-height: 44px;
+    align-items: center;
+    transition: border-color var(--transition);
+}
+.tags-editor:focus-within {
+    border-color: var(--accent);
+}
+.tag-add-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    color: var(--text-primary);
+    min-width: 100px;
+    flex: 1;
+    padding: 4px;
+    font-family: inherit;
+}
+
+/* Editor page spacing on mobile */
+@media (max-width: 767px) {
+    .editor-page {
+        padding-bottom: 140px;
+    }
+    .editor-section {
+        margin-bottom: 16px;
+    }
+}

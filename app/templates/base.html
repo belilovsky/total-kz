@@ -6,7 +6,7 @@
     <title>{% block title %}Total.kz Dashboard{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=9.2">
+    <link rel="stylesheet" href="/static/css/style.css?v=10.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         (function() {
@@ -34,6 +34,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 <span>Статьи</span>
             </a>
+            <a href="/admin/create" class="nav-item {% if active == 'create' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Создать</span>
+            </a>
             <a href="/admin/content" class="nav-item {% if active == 'content' %}active{% endif %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Контент</span>
@@ -49,7 +53,7 @@
         </nav>
         <div class="sidebar-footer">
             <a href="/" class="version-badge" style="text-decoration:none;color:inherit">← На сайт</a>
-            <div class="version-badge">v9.2 – Total.kz Admin</div>
+            <div class="version-badge">v10.0 – Total.kz Admin</div>
         </div>
     </aside>
 
@@ -82,6 +86,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span>Статьи</span>
         </a>
+        <a href="/admin/create" class="mobile-tab {% if active == 'create' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Создать</span>
+        </a>
         <a href="/admin/content" class="mobile-tab {% if active == 'content' %}active{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             <span>Контент</span>
@@ -99,7 +107,7 @@
     <!-- Toast notifications -->
     <div id="toast" class="toast"></div>
 
-    <script src="/static/js/app.js?v=9.2"></script>
+    <script src="/static/js/app.js?v=10.0"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

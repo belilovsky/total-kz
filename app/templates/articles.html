@@ -5,6 +5,10 @@
 {% block page_title %}Статьи{% endblock %}
 
 {% block actions %}
+<a href="/admin/create" class="btn btn-primary btn-sm desktop-create-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Создать статью
+</a>
 <div class="view-toggle">
     <button class="view-toggle-btn active" data-view="grid" title="Карточки">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -16,6 +20,22 @@
 {% endblock %}
 
 {% block content %}
+<!-- Status filter tabs -->
+<div class="status-tabs">
+    <a href="/admin/articles?{{ 'q=' + q|urlencode + '&' if q }}{{ 'category=' + category|urlencode + '&' if category }}{{ 'author=' + author|urlencode + '&' if author }}{{ 'tag=' + tag|urlencode + '&' if tag }}" class="status-tab {% if not status %}active{% endif %}">
+        Все <span class="status-tab-count">{{ format_num(status_counts.all) }}</span>
+    </a>
+    <a href="/admin/articles?status=published{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'published' %}active{% endif %}">
+        Опубликованные <span class="status-tab-count">{{ format_num(status_counts.published) }}</span>
+    </a>
+    <a href="/admin/articles?status=draft{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'draft' %}active{% endif %}">
+        Черновики <span class="status-tab-count">{{ format_num(status_counts.draft) }}</span>
+    </a>
+    <a href="/admin/articles?status=archived{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'archived' %}active{% endif %}">
+        Архив <span class="status-tab-count">{{ format_num(status_counts.archived) }}</span>
+    </a>
+</div>
+
 <!-- Mobile filter button -->
 <button class="mobile-filter-btn" onclick="document.getElementById('filterSheet').classList.add('open');document.getElementById('sheetOverlay').classList.add('open')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -28,6 +48,7 @@
     <div class="sheet-handle"></div>
     <div class="sheet-title">Фильтры</div>
     <form method="get" action="/admin/articles" style="display:flex;flex-direction:column;gap:12px">
+        {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
         <div class="filter-group">
             <label class="filter-label">Поиск</label>
             <input type="text" name="q" value="{{ q }}" placeholder="Заголовок, текст..." class="filter-input" style="width:100%;min-height:44px">
@@ -54,7 +75,7 @@
         <div style="display:flex;gap:8px;padding-top:8px">
             <button type="submit" class="btn btn-primary" style="flex:1;min-height:48px;font-size:15px">Применить</button>
             {% if q or category or author or date_from or date_to or tag or entity_id %}
-            <a href="/admin/articles" class="btn btn-ghost" style="min-height:48px;font-size:15px">Сброс</a>
+            <a href="/admin/articles{% if status %}?status={{ status }}{% endif %}" class="btn btn-ghost" style="min-height:48px;font-size:15px">Сброс</a>
             {% endif %}
         </div>
     </form>
@@ -62,6 +83,7 @@
 
 <div class="filters-bar">
     <form method="get" action="/admin/articles" class="filters-form" id="filtersForm">
+        {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
         <div class="filter-group grow">
             <label class="filter-label">Поиск</label>
             <div class="search-box">
@@ -119,7 +141,7 @@
                 Найти
             </button>
             {% if q or category or author or date_from or date_to or tag or entity_id %}
-            <a href="/admin/articles" class="btn btn-ghost">Сбросить</a>
+            <a href="/admin/articles{% if status %}?status={{ status }}{% endif %}" class="btn btn-ghost">Сбросить</a>
             {% endif %}
         </div>
     </form>
@@ -130,43 +152,43 @@
     {% if q %}
     <span class="active-filter-tag">
         Поиск: {{ q }}
-        <a href="/admin/articles?category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if category %}
     <span class="active-filter-tag">
         {{ cat_label(category) }}
-        <a href="/admin/articles?q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if author %}
     <span class="active-filter-tag">
         {{ author }}
-        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if tag %}
     <span class="active-filter-tag">
         Тег: {{ tag }}
-        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if entity_id and entity_name %}
     <span class="active-filter-tag">
         {{ entity_type_label(entity_type) }}: {{ entity_name }}
-        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_from %}
     <span class="active-filter-tag">
         От: {{ date_from }}
-        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
     {% if date_to %}
     <span class="active-filter-tag">
         До: {{ date_to }}
-        <a href="/admin/articles?q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
 </div>
@@ -189,6 +211,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
             {% endif %}
+            {% if a.status and a.status != 'published' %}
+            <span class="article-card-status status-badge status-{{ a.status }}">
+                {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+            </span>
+            {% endif %}
         </div>
         <div class="article-card-body">
             <div class="article-card-meta">
@@ -205,6 +232,11 @@
                 </span>
                 {% else %}
                 <span></span>
+                {% endif %}
+                {% if a.status and a.status != 'published' %}
+                <span class="status-badge status-{{ a.status }}" style="font-size:11px">
+                    {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+                </span>
                 {% endif %}
             </div>
         </div>
@@ -228,6 +260,11 @@
         <div class="article-list-info">
             <div class="article-list-meta">
                 <span class="badge badge-cat">{{ cat_label(a.sub_category) }}</span>
+                {% if a.status and a.status != 'published' %}
+                <span class="status-badge status-{{ a.status }}" style="font-size:11px">
+                    {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+                </span>
+                {% endif %}
             </div>
             <h3 class="article-list-title">{{ a.title }}</h3>
             <p class="article-list-excerpt">{{ a.excerpt[:180] if a.excerpt else '' }}</p>
@@ -252,9 +289,9 @@
 
 {% if result.pages > 1 %}
 <div class="pagination">
-    {% set base_url = "/articles?q=" + q|urlencode + "&category=" + category|urlencode + "&author=" + author|urlencode + "&date_from=" + date_from + "&date_to=" + date_to + "&tag=" + tag|urlencode + "&entity_id=" + entity_id|string %}
+    {% set base_url = "/admin/articles?" + ('status=' + status + '&' if status else '') + "q=" + q|urlencode + "&category=" + category|urlencode + "&author=" + author|urlencode + "&date_from=" + date_from + "&date_to=" + date_to + "&tag=" + tag|urlencode + "&entity_id=" + entity_id|string %}
     {% if result.page > 1 %}
-    <a href="{{ base_url }}&page={{ result.page - 1 }}" class="page-link">← Назад</a>
+    <a href="{{ base_url }}&page={{ result.page - 1 }}" class="page-link">&larr; Назад</a>
     {% endif %}
     {% set start_page = [1, result.page - 3]|max %}
     {% set end_page = [result.pages, result.page + 3]|min %}
@@ -270,8 +307,13 @@
     <a href="{{ base_url }}&page={{ result.pages }}" class="page-link">{{ result.pages }}</a>
     {% endif %}
     {% if result.page < result.pages %}
-    <a href="{{ base_url }}&page={{ result.page + 1 }}" class="page-link">Вперёд →</a>
+    <a href="{{ base_url }}&page={{ result.page + 1 }}" class="page-link">Вперёд &rarr;</a>
     {% endif %}
 </div>
 {% endif %}
+
+<!-- Mobile FAB -->
+<a href="/admin/create" class="fab-button" title="Создать статью">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</a>
 {% endblock %}

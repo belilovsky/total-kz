@@ -1,10 +1,13 @@
-"""FastAPI application – Total.kz v5 (public frontend + admin dashboard)."""
+"""FastAPI application – Total.kz v10 (public frontend + CMS admin)."""
 
 import json
+import re
+import unicodedata
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from fastapi import FastAPI, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
@@ -61,7 +64,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Total.kz", version="5.0.0", lifespan=lifespan)
+app = FastAPI(title="Total.kz", version="10.0.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -130,6 +133,34 @@ def cat_label(slug: str) -> str:
 
 def entity_type_label(t: str) -> str:
     return ENTITY_TYPE_LABELS.get(t, t)
+
+
+# Cyrillic → Latin transliteration for slug generation
+_TRANSLIT = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+    'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+    'қ': 'q', 'ұ': 'u', 'ү': 'u', 'ғ': 'g', 'ң': 'n', 'ө': 'o',
+    'і': 'i', 'ә': 'a', 'һ': 'h',
+}
+
+
+def _slugify(text: str) -> str:
+    """Transliterate Russian/Kazakh text and create URL slug."""
+    text = text.lower().strip()
+    result = []
+    for ch in text:
+        if ch in _TRANSLIT:
+            result.append(_TRANSLIT[ch])
+        elif ch.isascii() and (ch.isalnum() or ch in '-_ '):
+            result.append(ch)
+        else:
+            result.append(' ')
+    slug = re.sub(r'[\s_]+', '-', ''.join(result)).strip('-')
+    slug = re.sub(r'-+', '-', slug)
+    return slug[:120]
 
 
 
@@ -210,12 +241,13 @@ async def admin_articles_list(
     date_to: str = "",
     tag: str = "",
     entity_id: int = 0,
+    status: str = "",
     page: int = Query(1, ge=1),
 ):
     result = db.search_articles(
         query=q, category=category, author=author,
         date_from=date_from, date_to=date_to,
-        tag=tag, entity_id=entity_id, page=page,
+        tag=tag, entity_id=entity_id, status=status, page=page,
     )
     stats = db.get_stats()
     authors = db.get_authors()
@@ -230,6 +262,14 @@ async def admin_articles_list(
                 entity_name = row[0]
                 entity_type = row[1]
 
+    # Get status counts for tabs
+    with db.get_db() as conn:
+        status_counts = {}
+        for s in ("published", "draft", "archived"):
+            cnt = conn.execute("SELECT COUNT(*) FROM articles WHERE status = ?", (s,)).fetchone()[0]
+            status_counts[s] = cnt
+        status_counts["all"] = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+
     return templates.TemplateResponse("articles.html", {
         "request": request,
         "result": result,
@@ -242,11 +282,28 @@ async def admin_articles_list(
         "entity_id": entity_id,
         "entity_name": entity_name,
         "entity_type": entity_type,
+        "status": status,
+        "status_counts": status_counts,
         "categories": stats["categories"],
         "authors": authors,
         "tags": tags,
         "cat_label": cat_label,
         "entity_type_label": entity_type_label,
+        "format_num": _format_num,
+    })
+
+
+@app.get("/admin/create", response_class=HTMLResponse)
+async def admin_create_article(request: Request):
+    stats = db.get_stats()
+    cat_slugs = [c["sub_category"] for c in stats["categories"]]
+    authors = db.get_authors()
+    return templates.TemplateResponse("article_create.html", {
+        "request": request,
+        "categories": cat_slugs,
+        "cat_label": cat_label,
+        "authors": authors,
+        "category_labels": CATEGORY_LABELS,
     })
 
 
@@ -263,6 +320,7 @@ async def admin_article_detail(request: Request, article_id: int):
         "categories": cat_slugs,
         "cat_label": cat_label,
         "entity_type_label": entity_type_label,
+        "category_labels": CATEGORY_LABELS,
     })
 
 
@@ -376,15 +434,67 @@ async def api_article(article_id: int):
 @app.patch("/api/article/{article_id}")
 async def api_update_article(article_id: int, request: Request):
     body = await request.json()
-    allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags"}
+    allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags",
+               "body_html", "body_text", "status", "editor_note"}
     updates = {k: v for k, v in body.items() if k in allowed}
     if not updates:
         return {"ok": False, "error": "Нет полей для обновления"}
+    # Auto-set updated_at
+    updates["updated_at"] = datetime.now().isoformat(timespec="seconds")
     try:
         db.update_article(article_id, updates)
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+@app.post("/api/article")
+async def api_create_article(request: Request):
+    body = await request.json()
+    title = (body.get("title") or "").strip()
+    sub_category = (body.get("sub_category") or "").strip()
+    if not title:
+        return JSONResponse({"ok": False, "error": "Заголовок обязателен"}, status_code=400)
+    if not sub_category:
+        return JSONResponse({"ok": False, "error": "Категория обязательна"}, status_code=400)
+    slug = _slugify(title)
+    url = f"https://total.kz/ru/news/{sub_category}/{slug}"
+    data = {
+        "url": url,
+        "title": title,
+        "sub_category": sub_category,
+        "category_label": CATEGORY_LABELS.get(sub_category, sub_category),
+        "author": body.get("author", ""),
+        "excerpt": body.get("excerpt", ""),
+        "body_html": body.get("body_html", ""),
+        "body_text": body.get("body_text", ""),
+        "main_image": body.get("main_image", ""),
+        "tags": body.get("tags", []),
+        "status": body.get("status", "draft"),
+        "editor_note": body.get("editor_note", ""),
+    }
+    try:
+        new_id = db.create_article(data)
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/article/{article_id}")
+async def api_delete_article(article_id: int):
+    try:
+        db.update_article(article_id, {"status": "archived", "updated_at": datetime.now().isoformat(timespec="seconds")})
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/api/upload")
+async def api_upload():
+    return JSONResponse(
+        {"ok": False, "error": "Загрузка файлов будет доступна позже"},
+        status_code=501,
+    )
 
 @app.get("/api/tags")
 async def api_tags(limit: int = 100):
