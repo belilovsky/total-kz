@@ -45,6 +45,8 @@
       <div class="feed-item-thumb">
         <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
       </div>
+      {% else %}
+      <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
       {% endif %}
     </article>
     {% endfor %}

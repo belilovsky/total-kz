@@ -58,6 +58,8 @@
           <div class="cat-highlight-thumb">
             <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
           </div>
+          {% else %}
+          <div class="cat-highlight-thumb cat-highlight-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
           {% endif %}
           <div class="cat-highlight-body">
             <h3 class="cat-highlight-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
@@ -98,6 +100,8 @@
         <div class="feed-item-thumb">
           <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
         </div>
+        {% else %}
+        <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
         {% endif %}
       </article>
 

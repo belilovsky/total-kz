@@ -84,7 +84,7 @@
     </div>
   </header>
 
-  {# ── Hero image with overlay caption ── #}
+  {# ── Hero image / placeholder ── #}
   {% if article.main_image %}
   <figure class="article-hero-image">
     <img src="{{ article.main_image }}" alt="{{ article.title }}" loading="eager">
@@ -92,6 +92,10 @@
       <figcaption>{{ article.image_credit }}</figcaption>
     {% endif %}
   </figure>
+  {% else %}
+  <div class="article-hero-placeholder" data-cat="{{ nav_section }}">
+    <span class="hero-ph-cat">{{ nav_section_name }}</span>
+  </div>
   {% endif %}
 
   <div class="article-layout">
@@ -240,6 +244,10 @@
         {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
           <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+        </div>
+        {% else %}
+        <div class="related-thumb related-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}">
+          <span class="ph-label">{{ cat_label(art.sub_category) }}</span>
         </div>
         {% endif %}
         <div class="related-body">

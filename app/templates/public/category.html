@@ -34,6 +34,8 @@
       <div class="card-image">
         <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
       </div>
+      {% else %}
+      <div class="card-image card-image--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
       {% endif %}
       <div class="card-body">
         <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
@@ -77,6 +79,8 @@
         <div class="feed-item-thumb">
           <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
         </div>
+        {% else %}
+        <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
         {% endif %}
       </article>
       {% endfor %}
