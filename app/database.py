@@ -115,9 +115,32 @@ def init_db():
     with get_db() as conn:
         conn.executescript(SCHEMA)
         # Auto-migrate: add short_name column if missing
-        cols = [r[1] for r in conn.execute("PRAGMA table_info(entities)").fetchall()]
-        if "short_name" not in cols:
+        entity_cols = [r[1] for r in conn.execute("PRAGMA table_info(entities)").fetchall()]
+        if "short_name" not in entity_cols:
             conn.execute("ALTER TABLE entities ADD COLUMN short_name TEXT")
+
+        # Auto-migrate: add CMS columns to articles
+        article_cols = [r[1] for r in conn.execute("PRAGMA table_info(articles)").fetchall()]
+        if "status" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN status TEXT DEFAULT 'published'")
+        if "updated_at" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN updated_at TEXT")
+        if "editor_note" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN editor_note TEXT")
+
+        # Create media table
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS media (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL,
+                original_name TEXT,
+                mime_type TEXT,
+                file_size INTEGER,
+                url TEXT NOT NULL,
+                uploaded_at TEXT DEFAULT (datetime('now')),
+                uploaded_by TEXT
+            );
+        """)
 
 
 # Russian date parsing is now in qazstack.content.parse_ru_date
@@ -284,6 +307,7 @@ def search_articles(
     date_to: str = "",
     tag: str = "",
     entity_id: int = 0,
+    status: str = "",
     page: int = 1,
     per_page: int = 30,
 ) -> dict:
@@ -300,6 +324,10 @@ def search_articles(
         if category:
             conditions.append("a.sub_category = ?")
             params.append(category)
+
+        if status:
+            conditions.append("a.status = ?")
+            params.append(status)
 
         if author:
             conditions.append("a.author = ?")
@@ -333,7 +361,8 @@ def search_articles(
         offset = (page - 1) * per_page
         rows = conn.execute(f"""
             SELECT DISTINCT a.id, a.url, a.pub_date, a.sub_category, a.category_label,
-                   a.title, a.author, a.excerpt, a.thumbnail, a.main_image
+                   a.title, a.author, a.excerpt, a.thumbnail, a.main_image,
+                   a.status, a.updated_at
             FROM articles a {join_sql} {where}
             ORDER BY a.pub_date DESC
             LIMIT ? OFFSET ?
@@ -416,14 +445,17 @@ def get_article(article_id: int) -> dict | None:
 
 
 def update_article(article_id: int, updates: dict) -> None:
-    """Update article fields. Supports: title, excerpt, sub_category, author, main_image, tags."""
+    """Update article fields. Supports: title, excerpt, sub_category, author, main_image, tags, body_html, body_text, status, editor_note, updated_at."""
+    allowed = {"title", "excerpt", "sub_category", "author", "main_image",
+               "body_html", "body_text", "status", "editor_note", "updated_at"}
     with get_db() as conn:
         # Separate tags (JSON) from scalar fields
         tags = updates.pop("tags", None)
-        if updates:
+        filtered = {k: v for k, v in updates.items() if k in allowed}
+        if filtered:
             cols = []
             vals = []
-            for k, v in updates.items():
+            for k, v in filtered.items():
                 cols.append(f"{k} = ?")
                 vals.append(v)
             vals.append(article_id)
@@ -431,6 +463,37 @@ def update_article(article_id: int, updates: dict) -> None:
         if tags is not None:
             conn.execute("UPDATE articles SET tags = ? WHERE id = ?", (json.dumps(tags, ensure_ascii=False), article_id))
         conn.commit()
+
+
+def create_article(data: dict) -> int:
+    """Create a new article. Returns the new article ID."""
+    with get_db() as conn:
+        tags_json = json.dumps(data.get("tags", []), ensure_ascii=False)
+        now = datetime.now().isoformat(timespec="seconds")
+        row = conn.execute("""
+            INSERT INTO articles (url, pub_date, sub_category, category_label, title, author,
+                                  excerpt, body_text, body_html, main_image, tags, status,
+                                  updated_at, editor_note, imported_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            data.get("url", ""),
+            data.get("pub_date", now),
+            data.get("sub_category", ""),
+            data.get("category_label", ""),
+            data.get("title", ""),
+            data.get("author", ""),
+            data.get("excerpt", ""),
+            data.get("body_text", ""),
+            data.get("body_html", ""),
+            data.get("main_image", ""),
+            tags_json,
+            data.get("status", "draft"),
+            now,
+            data.get("editor_note", ""),
+            now,
+        ))
+        conn.commit()
+        return row.lastrowid
 
 
 def _load_enrichment(conn, article_id: int) -> dict | None:
