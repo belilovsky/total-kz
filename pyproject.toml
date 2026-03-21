@@ -20,6 +20,7 @@ dependencies = [
     "natasha>=1.6",
     "pymorphy3>=2.0",
     "pymorphy3-dicts-ru>=2.0",
+    "qazstack>=0.1.0",
 ]
 
 [project.optional-dependencies]

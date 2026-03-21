@@ -9,9 +9,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
 
+from qazstack.core.health import health_router
+
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
+from .config import settings
 from .public_routes import router as public_router
 from .social_routes import router as social_router
 
@@ -23,7 +26,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Total.kz", version="5.0.0", lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.version,
+    lifespan=lifespan,
+    docs_url=settings.docs_url,
+)
+app.include_router(health_router)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 BASE_DIR = Path(__file__).parent
@@ -84,9 +93,6 @@ def entity_type_label(t: str) -> str:
 # ══════════════════════════════════════════════
 
 
-@app.get("/health")
-async def health():
-    return {"status": "ok", "app": "total-kz", "version": "5.0.0"}
 
 
 # ══════════════════════════════════════════════
