@@ -259,9 +259,8 @@ def format_date(date_str: str | None) -> str:
 
 def format_date_short(date_str: str | None) -> str:
     """Short date format for cards (abbreviated months).
-    Today:           12 мар, 14:14
-    Yesterday+/year: 12 мар
-    Past years:      12 мар, 2024
+    Current year:  12 мар
+    Past years:    12 мар, 2024
     """
     if not date_str:
         return ""
@@ -270,9 +269,7 @@ def format_date_short(date_str: str | None) -> str:
                   "июл", "авг", "сен", "окт", "ноя", "дек"]
         dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
-        if dt.date() == now.date():
-            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
-        elif dt.year == now.year:
+        if dt.year == now.year:
             return f"{dt.day} {months[dt.month - 1]}"
         else:
             return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
