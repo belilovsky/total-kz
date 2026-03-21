@@ -11,6 +11,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from qazstack.core import health_router
+
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
@@ -119,9 +121,7 @@ def entity_type_label(t: str) -> str:
 # ══════════════════════════════════════════════
 #  HEALTH CHECK
 # ══════════════════════════════════════════════
-
-
-
+app.include_router(health_router)
 
 # ══════════════════════════════════════════════
 #  PUBLIC FRONTEND (mounted at /)
