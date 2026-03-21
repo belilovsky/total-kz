@@ -319,6 +319,26 @@ templates.env.globals["pluralize_articles"] = pluralize_articles
 templates.env.globals["pluralize_materials"] = pluralize_materials
 templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
+
+
+def dedup_entities(entities: list, max_count: int = 5) -> list:
+    """Deduplicate entities by short_name, keep max_count, only person/org."""
+    seen = set()
+    result = []
+    for ent in entities:
+        if ent.get("entity_type") not in ("person", "org"):
+            continue
+        sn = short_entity_name(ent).lower().strip()
+        if not sn or sn in seen:
+            continue
+        seen.add(sn)
+        result.append(ent)
+        if len(result) >= max_count:
+            break
+    return result
+
+
+templates.env.globals["dedup_entities"] = dedup_entities
 templates.env.globals["current_year"] = lambda: datetime.now().year
 templates.env.filters["format_num"] = format_num
 

@@ -145,11 +145,11 @@
 
       {# ── Tags + key entities (mobile only, hidden >=1100px) ── #}
       {% set display_tags_m = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-      {% set key_entities_m = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
+      {% set key_entities_m = dedup_entities(article.entities or []) %}
       {% if display_tags_m or key_entities_m %}
       <div class="article-footer-meta article-footer-meta--mobile">
         <div class="sidebar-pills">
-          {% for tag in display_tags_m %}
+          {% for tag in display_tags_m[:8] %}
             <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
           {% endfor %}
           {% for ent in key_entities_m %}
@@ -219,12 +219,12 @@
 
         {# ── Tags (GPT keywords preferred) + key entities as compact pills ── #}
         {% set display_tags = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-        {% set key_entities = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
+        {% set key_entities = dedup_entities(article.entities or []) %}
         {% if display_tags or key_entities %}
         <div class="sidebar-topics">
           <span class="sidebar-topics-label">Темы</span>
           <div class="sidebar-pills" id="sidebar-pills">
-            {% for tag in display_tags %}
+            {% for tag in display_tags[:8] %}
               <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
             {% endfor %}
             {% for ent in key_entities %}
