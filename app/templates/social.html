@@ -167,7 +167,7 @@
       </div>
       <div class="social-card-stats">
         <div class="social-stat">
-          <div class="social-stat-value">{{ "{:,}".format(acc.latest_followers or acc.followers_count or 0) }}</div>
+          <div class="social-stat-value">{{ (acc.latest_followers or acc.followers_count or 0)|format_num }}</div>
           <div class="social-stat-label">Подписчики</div>
         </div>
         <div class="social-stat">

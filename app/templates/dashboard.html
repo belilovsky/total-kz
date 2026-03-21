@@ -14,7 +14,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
         </div>
-        <div class="kpi-value">{{ "{:,}".format(stats.total) }}</div>
+        <div class="kpi-value">{{ stats.total|format_num }}</div>
         <div class="kpi-footer">
             <canvas id="sparkTotal" class="kpi-spark" width="100" height="28"></canvas>
             <span class="kpi-range">{{ stats.date_from[:4] if stats.date_from else '—' }}–{{ stats.date_to[:4] if stats.date_to else '—' }}</span>
@@ -28,7 +28,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
         </div>
-        <div class="kpi-value">{{ "{:,}".format(stats.this_month) }}</div>
+        <div class="kpi-value">{{ stats.this_month|format_num }}</div>
         <div class="kpi-footer">
             <canvas id="sparkMonth" class="kpi-spark" width="100" height="28"></canvas>
             {% set delta = stats.this_month - stats.last_month %}
@@ -50,7 +50,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
             </div>
         </div>
-        <div class="kpi-value">{{ "{:,}".format(stats.avg_recent) }}</div>
+        <div class="kpi-value">{{ stats.avg_recent|format_num }}</div>
         <div class="kpi-footer">
             <canvas id="sparkAvg" class="kpi-spark" width="100" height="28"></canvas>
             {% if stats.avg_prev > 0 %}
@@ -144,7 +144,7 @@
             <a href="/admin/articles?entity_id={{ p.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ p.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
+                <span class="entity-bar-value">{{ p.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -165,7 +165,7 @@
             <a href="/admin/articles?entity_id={{ o.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ o.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
+                <span class="entity-bar-value">{{ o.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -186,7 +186,7 @@
             <a href="/admin/articles?entity_id={{ l.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ l.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>
+                <span class="entity-bar-value">{{ l.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -229,8 +229,8 @@
                         {% else %}{{ r.status }}{% endif %}
                     </span>
                 </td>
-                <td class="num">{{ "{:,}".format(r.articles_found or 0) }}</td>
-                <td class="num">{{ "{:,}".format(r.articles_downloaded or 0) }}</td>
+                <td class="num">{{ (r.articles_found or 0)|format_num }}</td>
+                <td class="num">{{ (r.articles_downloaded or 0)|format_num }}</td>
                 <td class="num {% if r.errors and r.errors > 0 %}text-error{% endif %}">{{ r.errors or 0 }}</td>
             </tr>
             {% endfor %}

@@ -173,16 +173,31 @@ def nav_slug_for(subcat: str) -> str:
     return SUBCAT_TO_NAV.get(subcat, subcat)
 
 
+def format_num(n) -> str:
+    """Format number with non-breaking space as thousands separator.
+    E.g. 33258 → '33\u00a0258', 1500 → '1\u00a0500'.
+    """
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    if abs(n) < 1000:
+        return str(n)
+    s = f"{abs(n):,}".replace(",", "\u00a0")
+    return f"-{s}" if n < 0 else s
+
+
 def pluralize_articles(n: int) -> str:
     """Russian pluralization for articles count."""
+    formatted = format_num(n)
     if 11 <= n % 100 <= 19:
-        return f"{n} статей"
+        return f"{formatted} статей"
     last = n % 10
     if last == 1:
-        return f"{n} статья"
+        return f"{formatted} статья"
     elif 2 <= last <= 4:
-        return f"{n} статьи"
-    return f"{n} статей"
+        return f"{formatted} статьи"
+    return f"{formatted} статей"
 
 
 def estimate_reading_time(text: str | None) -> int:
@@ -239,7 +254,9 @@ templates.env.globals["cat_label"] = cat_label
 templates.env.globals["nav_slug_for"] = nav_slug_for
 templates.env.globals["article_url"] = article_url
 templates.env.globals["pluralize_articles"] = pluralize_articles
+templates.env.globals["format_num"] = format_num
 templates.env.globals["current_year"] = lambda: datetime.now().year
+templates.env.filters["format_num"] = format_num
 
 
 # ══════════════════════════════════════════════

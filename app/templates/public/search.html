@@ -23,7 +23,7 @@
   </div>
 
   {% if result.articles %}
-  <h2 class="search-heading">Найдено {{ result.total }} результатов</h2>
+  <h2 class="search-heading">Найдено {{ result.total|format_num }} результатов</h2>
 
   <div class="feed-list">
     {% for art in result.articles %}

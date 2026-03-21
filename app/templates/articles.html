@@ -129,7 +129,7 @@
 {% endif %}
 
 <div class="results-info">
-    Найдено <strong>{{ "{:,}".format(result.total) }}</strong> статей
+    Найдено <strong>{{ result.total|format_num }}</strong> статей
     &middot; Страница {{ result.page }} из {{ result.pages }}
 </div>
 

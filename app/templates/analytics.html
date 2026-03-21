@@ -21,20 +21,20 @@
     {% endif %}
     <div class="seo-stats-row seo-stats-row-4">
         <div class="seo-stat-card">
-            <div class="seo-stat-value text-accent">{{ "{:,}".format(t.clicks) }}</div>
+            <div class="seo-stat-value text-accent">{{ t.clicks|format_num }}</div>
             <div class="seo-stat-label">Кликов</div>
             {% if delta.get('clicks_pct') is not none %}
             <div class="seo-stat-delta {% if delta.clicks > 0 %}delta-up{% else %}delta-down{% endif %}">
-                {% if delta.clicks > 0 %}▲{% else %}▼{% endif %} {{ "{:,}".format(delta.clicks|abs) }} ({{ delta.clicks_pct }}%)
+                {% if delta.clicks > 0 %}▲{% else %}▼{% endif %} {{ delta.clicks|abs|format_num }} ({{ delta.clicks_pct }}%)
             </div>
             {% endif %}
         </div>
         <div class="seo-stat-card">
-            <div class="seo-stat-value">{{ "{:,}".format(t.impressions) }}</div>
+            <div class="seo-stat-value">{{ t.impressions|format_num }}</div>
             <div class="seo-stat-label">Показов</div>
             {% if delta.get('impressions_pct') is not none %}
             <div class="seo-stat-delta {% if delta.impressions > 0 %}delta-up{% else %}delta-down{% endif %}">
-                {% if delta.impressions > 0 %}▲{% else %}▼{% endif %} {{ "{:,}".format(delta.impressions|abs) }} ({{ delta.impressions_pct }}%)
+                {% if delta.impressions > 0 %}▲{% else %}▼{% endif %} {{ delta.impressions|abs|format_num }} ({{ delta.impressions_pct }}%)
             </div>
             {% endif %}
         </div>
@@ -64,8 +64,8 @@
             <div class="card-subtitle">Брендовый vs Небрендовый</div>
             <div class="chart-body-sm"><canvas id="brandChart"></canvas></div>
             <div class="brand-legend">
-                <div class="brand-legend-item"><span class="dot dot-accent"></span><span>Бренд: {{ "{:,}".format(d.brand_split.brand_clicks) }}</span></div>
-                <div class="brand-legend-item"><span class="dot dot-secondary"></span><span>Не-бренд: {{ "{:,}".format(d.brand_split.nonbrand_clicks) }}</span></div>
+                <div class="brand-legend-item"><span class="dot dot-accent"></span><span>Бренд: {{ d.brand_split.brand_clicks|format_num }}</span></div>
+                <div class="brand-legend-item"><span class="dot dot-secondary"></span><span>Не-бренд: {{ d.brand_split.nonbrand_clicks|format_num }}</span></div>
             </div>
         </div>
         <div class="seo-card">
@@ -73,7 +73,7 @@
             <div class="chart-body-sm"><canvas id="devicesChart"></canvas></div>
             <div class="brand-legend">
                 {% for dev in d.devices %}
-                <div class="brand-legend-item"><span class="dot dot-{% if dev.device == 'MOBILE' %}accent{% elif dev.device == 'DESKTOP' %}green{% else %}orange{% endif %}"></span><span>{{ dev.device|capitalize }}: {{ "{:,}".format(dev.clicks) }}</span></div>
+                <div class="brand-legend-item"><span class="dot dot-{% if dev.device == 'MOBILE' %}accent{% elif dev.device == 'DESKTOP' %}green{% else %}orange{% endif %}"></span><span>{{ dev.device|capitalize }}: {{ dev.clicks|format_num }}</span></div>
                 {% endfor %}
             </div>
         </div>
@@ -98,7 +98,7 @@
                 <span class="geo-flag">{{ c.country|upper }}</span>
                 <span class="geo-bar-name">{{ c.country_name or c.country|upper }}</span>
                 <div class="geo-bar-track"><div class="geo-bar-fill" style="width: {{ (c.clicks / max_clicks * 100)|round }}%"></div></div>
-                <span class="geo-bar-clicks">{{ "{:,}".format(c.clicks) }}</span>
+                <span class="geo-bar-clicks">{{ c.clicks|format_num }}</span>
                 <span class="geo-bar-ctr {% if c.ctr >= 2 %}text-green{% elif c.ctr >= 1 %}text-orange{% else %}text-red{% endif %}">{{ c.ctr }}%</span>
             </div>
             {% endfor %}
@@ -115,7 +115,7 @@
                 {% for g in pc.top_gainers[:8] %}
                 <div class="mover-row mover-up">
                     <span class="mover-query">{{ g.query }}</span>
-                    <span class="mover-delta">+{{ "{:,}".format(g.delta_clicks) }}</span>
+                    <span class="mover-delta">+{{ g.delta_clicks|format_num }}</span>
                     <span class="mover-pos">{{ g.previous_position }} → {{ g.current_position }}</span>
                 </div>
                 {% endfor %}
@@ -129,7 +129,7 @@
                 {% for l in pc.top_losers[:8] %}
                 <div class="mover-row mover-down">
                     <span class="mover-query">{{ l.query }}</span>
-                    <span class="mover-delta">{{ "{:,}".format(l.delta_clicks) }}</span>
+                    <span class="mover-delta">{{ l.delta_clicks|format_num }}</span>
                     <span class="mover-pos">{{ l.previous_position }} → {{ l.current_position }}</span>
                 </div>
                 {% endfor %}
@@ -156,8 +156,8 @@
                 <tr>
                     <td class="rank-cell">{{ loop.index }}</td>
                     <td class="query-cell">{{ q.query }}</td>
-                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
-                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col">{{ q.clicks|format_num }}</td>
+                    <td class="num-col">{{ q.impressions|format_num }}</td>
                     <td class="num-col {% if q.ctr >= 10 %}text-green{% elif q.ctr >= 3 %}text-orange{% else %}text-red{% endif %}">{{ q.ctr }}%</td>
                     <td class="num-col {% if q.position <= 3 %}text-green{% elif q.position <= 10 %}text-orange{% else %}text-red{% endif %}">{{ q.position }}</td>
                 </tr>
@@ -180,11 +180,11 @@
                 {% for g in d.growth_opportunities[:15] %}
                 <tr>
                     <td class="query-cell">{{ g.query }}</td>
-                    <td class="num-col">{{ "{:,}".format(g.clicks) }}</td>
-                    <td class="num-col">{{ "{:,}".format(g.impressions) }}</td>
+                    <td class="num-col">{{ g.clicks|format_num }}</td>
+                    <td class="num-col">{{ g.impressions|format_num }}</td>
                     <td class="num-col text-orange">{{ "%.1f"|format(g.position) }}</td>
                     <td class="num-col text-red">{{ "%.1f"|format(g.ctr * 100) }}%</td>
-                    <td class="num-col potential-val">+{{ "{:,}".format(g.potential_extra_clicks) }}</td>
+                    <td class="num-col potential-val">+{{ g.potential_extra_clicks|format_num }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -206,8 +206,8 @@
                 {% for q in d.quick_wins[:10] %}
                 <tr>
                     <td class="query-cell">{{ q.query }}</td>
-                    <td class="num-col">{{ "{:,}".format(q.clicks) }}</td>
-                    <td class="num-col">{{ "{:,}".format(q.impressions) }}</td>
+                    <td class="num-col">{{ q.clicks|format_num }}</td>
+                    <td class="num-col">{{ q.impressions|format_num }}</td>
                     <td class="num-col text-green">{{ q.position }}</td>
                     <td class="num-col text-red">{{ q.ctr }}%</td>
                 </tr>
@@ -280,7 +280,7 @@
                 <div class="missing-field-row">
                     <span class="mf-name">{{ field }}</span>
                     <div class="mf-bar-track"><div class="mf-bar-fill" style="width: {{ (count / schema.total * 100)|round }}%"></div></div>
-                    <span class="mf-count">{{ count }} <span class="mf-pct">({{ (count / schema.total * 100)|round }}%)</span></span>
+                    <span class="mf-count">{{ count|format_num }} <span class="mf-pct">({{ (count / schema.total * 100)|round }}%)</span></span>
                 </div>
                 {% endfor %}
             </div>

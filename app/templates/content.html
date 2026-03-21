@@ -19,7 +19,7 @@
             <a href="/admin/articles?entity_id={{ p.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ p.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(p.article_count) }}</span>
+                <span class="entity-bar-value">{{ p.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -39,7 +39,7 @@
             <a href="/admin/articles?entity_id={{ o.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ o.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(o.article_count) }}</span>
+                <span class="entity-bar-value">{{ o.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -59,7 +59,7 @@
             <a href="/admin/articles?entity_id={{ l.id }}" class="entity-bar-row">
                 <span class="entity-bar-name">{{ l.name }}</span>
                 <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ "{:,}".format(l.article_count) }}</span>
+                <span class="entity-bar-value">{{ l.article_count|format_num }}</span>
             </a>
             {% endfor %}
         </div>
@@ -117,7 +117,7 @@
                             <div class="bar-fill" style="width:{{ (a.cnt / authors[0].cnt * 100)|int }}%;height:100%;background:var(--accent);border-radius:3px"></div>
                         </div>
                     </td>
-                    <td class="num">{{ "{:,}".format(a.cnt) }}</td>
+                    <td class="num">{{ a.cnt|format_num }}</td>
                     <td class="num pct">{{ "%.1f"|format(a.cnt / total_articles * 100) }}%</td>
                 </tr>
                 {% endfor %}
