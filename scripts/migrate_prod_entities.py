@@ -118,12 +118,21 @@ def run():
                 conn.execute("DELETE FROM entities WHERE id=?", (dup["id"],))
             total_merged += 1
 
-    # Clean garbage entities (window suffix etc.)
+    # Clean garbage entities — ONLY parser concatenation bugs
+    # Be precise: only match patterns like "МВДКуандык" (org+name stuck together)
+    # or "сообщал" suffix stuck to names, or "window" suffix from JS bugs
     garbage = conn.execute("""
         SELECT id, name, (SELECT COUNT(*) FROM article_entities WHERE entity_id=e.id) as cnt
         FROM entities e
-        WHERE name LIKE '%window' OR name LIKE '%поручение'
-          OR name LIKE '%сообщал%' OR name LIKE '%Куандык%'
+        WHERE name LIKE '%window'
+          OR name LIKE '%поручение'
+          OR name GLOB '*[А-Я][а-я]*сообщал*'
+          OR name GLOB 'МВД[А-Я]*'
+          OR name GLOB 'МИД[А-Я]*'
+          OR name GLOB 'МЧС[А-Я]*'
+          OR name GLOB 'СМИ[а-я]*'
+          OR name GLOB 'РК[А-Я][а-я]*'
+          OR name GLOB 'ЦИК[А-Я]*'
         ORDER BY cnt DESC
     """).fetchall()
 
