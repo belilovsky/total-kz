@@ -1204,8 +1204,7 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
   0% { background-position:200% 0; }
   100% { background-position:-200% 0; }
 }
-img[loading="lazy"] { opacity:0; transition:opacity 400ms ease; }
-img[loading="lazy"].loaded { opacity:1; }
+/* Lazy image fade-in handled via JS onload in base.html */
 
 /* ── Mobile Fixes (v8.5) ────────────────────── */
 
