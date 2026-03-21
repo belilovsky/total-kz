@@ -81,6 +81,7 @@ def _error_response(request: Request, status_code: int = 503):
         "article_url": article_url,
         "format_date": format_date,
         "format_date_short": format_date_short,
+        "format_date_day": format_date_day,
     }, status_code=status_code)
 
 
@@ -259,7 +260,30 @@ def format_date(date_str: str | None) -> str:
 
 def format_date_short(date_str: str | None) -> str:
     """Short date format for cards (abbreviated months).
-    Current year:  12 мар
+    Today:           12 мар, 14:14
+    Yesterday+/year: 12 мар
+    Past years:      12 мар, 2024
+    """
+    if not date_str:
+        return ""
+    try:
+        months = ["янв", "фев", "мар", "апр", "мая", "июн",
+                  "июл", "авг", "сен", "окт", "ноя", "дек"]
+        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+        if dt.date() == now.date():
+            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+        elif dt.year == now.year:
+            return f"{dt.day} {months[dt.month - 1]}"
+        else:
+            return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
+    except Exception:
+        return date_str[:10] if date_str else ""
+
+
+def format_date_day(date_str: str | None) -> str:
+    """Date-only format for timelines — no time, no year if current.
+    Current year:  21 мар
     Past years:    12 мар, 2024
     """
     if not date_str:
@@ -309,6 +333,7 @@ def short_entity_name(entity: dict) -> str:
 # ── Register template utilities as Jinja2 globals ──
 templates.env.globals["format_date"] = format_date
 templates.env.globals["format_date_short"] = format_date_short
+templates.env.globals["format_date_day"] = format_date_day
 templates.env.globals["cat_label"] = cat_label
 templates.env.globals["nav_slug_for"] = nav_slug_for
 templates.env.globals["article_url"] = article_url

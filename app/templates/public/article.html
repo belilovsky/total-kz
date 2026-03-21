@@ -178,17 +178,17 @@
         <div class="timeline-track">
           {% for art in timeline.next|reverse %}
           <a href="{{ article_url(art) }}" class="timeline-item">
-            <span class="timeline-date">{{ format_date_short(art.pub_date) }}</span>
+            <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
             <span class="timeline-title">{{ art.title }}</span>
           </a>
           {% endfor %}
           <div class="timeline-item is-current">
-            <span class="timeline-date">{{ format_date_short(article.pub_date) }}</span>
+            <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
             <span class="timeline-title">{{ article.title }}</span>
           </div>
           {% for art in timeline.prev %}
           <a href="{{ article_url(art) }}" class="timeline-item">
-            <span class="timeline-date">{{ format_date_short(art.pub_date) }}</span>
+            <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
             <span class="timeline-title">{{ art.title }}</span>
           </a>
           {% endfor %}
