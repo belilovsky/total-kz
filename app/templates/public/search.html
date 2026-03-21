@@ -1,6 +1,9 @@
 {% extends "public/base.html" %}
 
 {% block title %}{% if q %}{{ q }} — Поиск{% else %}Поиск{% endif %} — Total.kz{% endblock %}
+{% block description %}{% if q %}Результаты поиска по запросу «{{ q }}» на Total.kz{% else %}Поиск новостей на Total.kz{% endif %}{% endblock %}
+{% block og_title %}{% if q %}{{ q }} — Поиск{% else %}Поиск{% endif %} — Total.kz{% endblock %}
+{% block og_description %}{% if q %}Результаты поиска по запросу «{{ q }}»{% else %}Поиск новостей на Total.kz{% endif %}{% endblock %}
 
 {% block content %}
 <div class="search-page">

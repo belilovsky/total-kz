@@ -9,14 +9,35 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
 
-from qazstack.core.health import health_router
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
-from .config import settings
 from .public_routes import router as public_router
 from .social_routes import router as social_router
+
+
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    """Add Cache-Control headers for static assets and HTML pages."""
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        # Static assets: long cache (CSS, JS, fonts, images)
+        if path.startswith("/static/"):
+            if any(path.endswith(ext) for ext in (".css", ".js")):
+                response.headers["Cache-Control"] = "public, max-age=604800, stale-while-revalidate=86400"
+            elif any(path.endswith(ext) for ext in (".woff2", ".woff", ".ttf", ".otf")):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif any(path.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico")):
+                response.headers["Cache-Control"] = "public, max-age=2592000"
+        # Image proxy already has its own headers
+        elif path.startswith("/img/"):
+            pass
+        # HTML pages: short cache with revalidation
+        elif response.headers.get("content-type", "").startswith("text/html"):
+            response.headers["Cache-Control"] = "public, max-age=120, stale-while-revalidate=300"
+        return response
 
 
 @asynccontextmanager
@@ -26,14 +47,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(
-    title=settings.app_name,
-    version=settings.version,
-    lifespan=lifespan,
-    docs_url=settings.docs_url,
-)
-app.include_router(health_router)
+app = FastAPI(title="Total.kz", version="5.0.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(CacheControlMiddleware)
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")

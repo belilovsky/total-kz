@@ -2,12 +2,25 @@
 {% block title %}Страница не найдена — Total.kz{% endblock %}
 {% block content %}
 <div class="error-page">
-  <div class="error-code">404</div>
+  <div class="error-code" aria-hidden="true">404</div>
   <h1 class="error-title">Страница не найдена</h1>
-  <p class="error-desc">Возможно, эта страница была перемещена или удалена.</p>
-  <div style="display:flex;gap:var(--space-3)">
-    <a href="/" class="btn-primary">На главную</a>
-    <a href="/search" class="btn-secondary">Поиск</a>
+  <p class="error-desc">Этот материал мог быть удалён, перемещён или&nbsp;вы перешли по&nbsp;устаревшей ссылке.</p>
+  <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;justify-content:center">
+    <a href="/" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+      На главную
+    </a>
+    <a href="/search" class="btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Поиск
+    </a>
   </div>
+  <nav class="error-nav" style="margin-top:var(--space-10);display:flex;flex-wrap:wrap;gap:var(--space-2);justify-content:center">
+    {% if nav_sections is defined %}
+      {% for section in nav_sections %}
+        <a href="/news/{{ section.slug }}" class="tag-pill">{{ section.label }}</a>
+      {% endfor %}
+    {% endif %}
+  </nav>
 </div>
 {% endblock %}
