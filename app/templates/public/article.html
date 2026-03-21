@@ -1,11 +1,11 @@
 {% extends "public/base.html" %}
 
 {% block title %}{{ article.title }} – Total.kz{% endblock %}
-{% block description %}{{ article.excerpt or article.title }}{% endblock %}
+{% block description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
 {% block canonical %}/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_title %}{{ article.title }}{% endblock %}
-{% block og_description %}{{ article.excerpt or article.title }}{% endblock %}
+{% block og_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
 {% block og_image %}{% if article.main_image %}<meta property="og:image" content="{% if article.main_image.startswith('http') %}{{ article.main_image }}{% else %}https://total.kz{{ article.main_image }}{% endif %}">{% endif %}{% endblock %}
 
 {% block jsonld %}
@@ -14,7 +14,7 @@
   "@context": "https://schema.org",
   "@type": "NewsArticle",
   "headline": {{ article.title | tojson }},
-  "description": {{ (article.excerpt or article.title) | tojson }},
+  "description": {{ (article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title)) | tojson }},
   "url": "https://total.kz/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}",
   {% if article.main_image %}"image": {{ (article.main_image if article.main_image.startswith('http') else 'https://total.kz' + article.main_image) | tojson }},{% endif %}
   "datePublished": {{ (article.pub_date or '') | tojson }},
@@ -110,6 +110,16 @@
         {% endif %}
       </div>
 
+      {# ── Pull quote from enrichment ── #}
+      {% if article.enrichment and article.enrichment.quote %}
+      <blockquote class="article-pullquote">
+        <p>{{ article.enrichment.quote }}</p>
+        {% if article.enrichment.quote_author %}
+        <cite>{{ article.enrichment.quote_author }}</cite>
+        {% endif %}
+      </blockquote>
+      {% endif %}
+
       {# ── Inline share (mobile/tablet only, hidden >=1100px) ── #}
       <div class="share-buttons">
         <span class="share-label">Поделиться</span>
@@ -134,11 +144,12 @@
       </div>
 
       {# ── Tags + key entities (mobile only, hidden >=1100px) ── #}
+      {% set display_tags_m = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
       {% set key_entities_m = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
-      {% if article.tags or key_entities_m %}
+      {% if display_tags_m or key_entities_m %}
       <div class="article-footer-meta article-footer-meta--mobile">
         <div class="sidebar-pills">
-          {% for tag in article.tags or [] %}
+          {% for tag in display_tags_m %}
             <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
           {% endfor %}
           {% for ent in key_entities_m %}
@@ -206,13 +217,14 @@
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
 
-        {# ── Tags + key entities as compact pills ── #}
+        {# ── Tags (GPT keywords preferred) + key entities as compact pills ── #}
+        {% set display_tags = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
         {% set key_entities = article.entities | selectattr('entity_type', 'in', ['person', 'org']) | list if article.entities else [] %}
-        {% if article.tags or key_entities %}
+        {% if display_tags or key_entities %}
         <div class="sidebar-topics">
           <span class="sidebar-topics-label">Темы</span>
           <div class="sidebar-pills" id="sidebar-pills">
-            {% for tag in article.tags or [] %}
+            {% for tag in display_tags %}
               <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
             {% endfor %}
             {% for ent in key_entities %}

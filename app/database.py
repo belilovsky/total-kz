@@ -435,6 +435,19 @@ def get_article(article_id: int) -> dict | None:
         return None
 
 
+def _load_enrichment(conn, article_id: int) -> dict | None:
+    """Load GPT enrichment data for an article."""
+    row = conn.execute("""
+        SELECT summary, meta_description, keywords, quote, quote_author
+        FROM article_enrichments WHERE article_id = ?
+    """, (article_id,)).fetchone()
+    if row:
+        d = dict(row)
+        d["keywords"] = json.loads(d.get("keywords") or "[]")
+        return d
+    return None
+
+
 # ══════════════════════════════════════════════
 # PUBLIC FRONTEND QUERIES
 # ══════════════════════════════════════════════
@@ -458,6 +471,7 @@ def get_article_by_slug(category: str, slug: str) -> dict | None:
                 ORDER BY ae.mention_count DESC
             """, (d["id"],)).fetchall()
             d["entities"] = [dict(e) for e in entities]
+            d["enrichment"] = _load_enrichment(conn, d["id"])
             return d
         return None
 
@@ -466,10 +480,12 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
     """Get latest articles for homepage."""
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                   thumbnail, main_image
-            FROM articles
-            ORDER BY pub_date DESC
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
+                   COALESCE(NULLIF(a.excerpt, ''), ae.summary) as excerpt,
+                   a.thumbnail, a.main_image
+            FROM articles a
+            LEFT JOIN article_enrichments ae ON ae.article_id = a.id
+            ORDER BY a.pub_date DESC
             LIMIT ? OFFSET ?
         """, (limit, offset)).fetchall()
         return [dict(r) for r in rows]
@@ -482,10 +498,13 @@ def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> d
             "SELECT COUNT(*) FROM articles WHERE sub_category = ?", (category,)
         ).fetchone()[0]
         rows = conn.execute("""
-            SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                   thumbnail, main_image
-            FROM articles WHERE sub_category = ?
-            ORDER BY pub_date DESC
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
+                   COALESCE(NULLIF(a.excerpt, ''), ae.summary) as excerpt,
+                   a.thumbnail, a.main_image
+            FROM articles a
+            LEFT JOIN article_enrichments ae ON ae.article_id = a.id
+            WHERE a.sub_category = ?
+            ORDER BY a.pub_date DESC
             LIMIT ? OFFSET ?
         """, (category, limit, offset)).fetchall()
         return {
