@@ -15,6 +15,9 @@
   <div class="entity-page-header">
     <span class="entity-type-badge entity-type-{{ entity.entity_type }}">{{ type_label }}</span>
     <h1>{{ entity.name }}</h1>
+    {% if entity.short_name and entity.short_name != entity.name %}
+      <p class="entity-aka">{{ entity.short_name }}</p>
+    {% endif %}
     <p class="entity-count">{{ pluralize_articles(result.total) }}</p>
   </div>
 

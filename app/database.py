@@ -394,7 +394,7 @@ def get_entities(entity_type: str = "", limit: int = 50) -> list:
         where = "WHERE e.entity_type = ?" if entity_type else ""
         params = [entity_type] if entity_type else []
         rows = conn.execute(f"""
-            SELECT e.id, e.name, e.entity_type, e.normalized,
+            SELECT e.id, e.name, e.short_name, e.entity_type, e.normalized,
                    COUNT(ae.article_id) as article_count
             FROM entities e
             JOIN article_entities ae ON ae.entity_id = e.id
@@ -418,7 +418,7 @@ def get_article(article_id: int) -> dict | None:
             d["inline_images"] = json.loads(d.get("inline_images") or "[]")
             # Fetch entities for this article
             entities = conn.execute("""
-                SELECT e.id, e.name, e.entity_type, ae.mention_count
+                SELECT e.id, e.name, e.short_name, e.entity_type, ae.mention_count
                 FROM entities e
                 JOIN article_entities ae ON ae.entity_id = e.id
                 WHERE ae.article_id = ?
@@ -445,7 +445,7 @@ def get_article_by_slug(category: str, slug: str) -> dict | None:
             d["tags"] = json.loads(d.get("tags") or "[]")
             d["inline_images"] = json.loads(d.get("inline_images") or "[]")
             entities = conn.execute("""
-                SELECT e.id, e.name, e.entity_type, ae.mention_count
+                SELECT e.id, e.name, e.short_name, e.entity_type, ae.mention_count
                 FROM entities e
                 JOIN article_entities ae ON ae.entity_id = e.id
                 WHERE ae.article_id = ?
@@ -642,7 +642,7 @@ def get_entity(entity_id: int) -> dict | None:
     """Get entity by ID."""
     with get_db() as conn:
         row = conn.execute(
-            "SELECT id, name, entity_type, normalized FROM entities WHERE id = ?",
+            "SELECT id, name, short_name, entity_type, normalized FROM entities WHERE id = ?",
             (entity_id,)
         ).fetchone()
         return dict(row) if row else None

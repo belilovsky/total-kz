@@ -132,9 +132,10 @@
       <div class="article-footer-meta">
         {% if article.entities %}
           {% for ent in article.entities %}
-            <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.entity_type == 'person' and 'Персона' or ent.entity_type == 'org' and 'Организация' or 'Локация' }}">
+            <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.name }}">
               <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
-              {{ ent.name }}
+              <span class="entity-short">{{ ent.short_name or ent.name }}</span>
+              <span class="entity-full">{{ ent.name }}</span>
             </a>
           {% endfor %}
         {% endif %}
