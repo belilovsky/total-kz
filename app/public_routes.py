@@ -396,6 +396,15 @@ async def article_page(request: Request, category: str, slug: str):
     rewrite_article_images(article)
     related = rewrite_articles_images(db.get_related_articles(article["id"], category, limit=4))
 
+    # Timeline: prev/next articles in same category
+    timeline_raw = db.get_timeline_articles(
+        article["id"], category, article.get("pub_date", "")
+    )
+    timeline = {
+        "prev": rewrite_articles_images(timeline_raw["prev"]),
+        "next": rewrite_articles_images(timeline_raw["next"]),
+    }
+
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
         f"https://total.kz/ru/news/{category}/", ""
@@ -408,6 +417,7 @@ async def article_page(request: Request, category: str, slug: str):
         "request": request,
         "article": article,
         "related": related,
+        "timeline": timeline,
         "category": category,
         "category_name": cat_label(category),
         "nav_section": nav_section,

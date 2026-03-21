@@ -503,6 +503,29 @@ def get_related_articles(article_id: int, category: str, limit: int = 4) -> list
         return [dict(r) for r in rows]
 
 
+def get_timeline_articles(article_id: int, category: str, pub_date: str) -> dict:
+    """Get previous and next articles in same category for timeline navigation."""
+    with get_db() as conn:
+        prev_rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
+            FROM articles
+            WHERE sub_category = ? AND id != ? AND pub_date < ?
+            ORDER BY pub_date DESC
+            LIMIT 3
+        """, (category, article_id, pub_date)).fetchall()
+        next_rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
+            FROM articles
+            WHERE sub_category = ? AND id != ? AND pub_date > ?
+            ORDER BY pub_date ASC
+            LIMIT 3
+        """, (category, article_id, pub_date)).fetchall()
+        return {
+            "prev": [dict(r) for r in prev_rows],
+            "next": [dict(r) for r in next_rows],
+        }
+
+
 def get_trending_tags(limit: int = 20) -> list:
     """Get trending tags (most used recently)."""
     with get_db() as conn:
