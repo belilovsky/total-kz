@@ -118,7 +118,7 @@ def run():
                 conn.execute("DELETE FROM entities WHERE id=?", (dup["id"],))
             total_merged += 1
 
-    # Clean garbage entities — ONLY parser concatenation bugs
+    # Clean garbage entities – ONLY parser concatenation bugs
     # Be precise: only match patterns like "МВДКуандык" (org+name stuck together)
     # or "сообщал" suffix stuck to names, or "window" suffix from JS bugs
     garbage = conn.execute("""
@@ -158,7 +158,7 @@ def run():
 
     print(f"\n=== DONE: {total_renamed} renamed, {total_merged} merged, {len(garbage)} garbage cleaned ===")
     if dry:
-        print("(dry run — no changes saved)")
+        print("(dry run – no changes saved)")
 
     # Verify
     with_short = conn.execute(

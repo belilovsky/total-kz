@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production entity cleanup v2 — OPTIMIZED for large DBs (312K+ entities).
+Production entity cleanup v2 – OPTIMIZED for large DBs (312K+ entities).
 Key optimization: batch SQL instead of per-entity subqueries.
 
 Run: python scripts/cleanup_production_v2.py --execute

@@ -1,7 +1,7 @@
-"""Normalize author names — fix typos, merge duplicates, clean junk.
+"""Normalize author names – fix typos, merge duplicates, clean junk.
 
 Run: python scraper/normalize_authors.py
-     — or inside Docker:
+     – or inside Docker:
      docker compose exec web python scraper/normalize_authors.py
 """
 
@@ -118,11 +118,11 @@ AUTHOR_MAP = {
     # ── Редакция / Total.kz → ИА Тотал Казахстан ──
     "Total.kz": "ИА Тотал Казахстан",
     "Аналитическая служба Total.kz": "ИА Тотал Казахстан",
-    "Информационный партнер — информационное агентство Total.kz": "ИА Тотал Казахстан",
+    "Информационный партнер – информационное агентство Total.kz": "ИА Тотал Казахстан",
 
     # ── Мусор → пустой автор ──────────────────────
     "-": "",
-    "—": "",
+    "–": "",
     "н": "",
     "проститутки": "",
 

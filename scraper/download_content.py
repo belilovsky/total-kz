@@ -59,7 +59,7 @@ async def download_article(client, url_data, semaphore, max_retries=3):
             try:
                 resp = await client.get(url, timeout=httpx.Timeout(10, read=20))
                 if resp.status_code == 429:
-                    # Rate limited — wait and retry
+                    # Rate limited – wait and retry
                     wait = 5 * (attempt + 1)
                     await asyncio.sleep(wait)
                     continue
@@ -223,7 +223,7 @@ async def main():
                         except json.JSONDecodeError:
                             continue
 
-        # Также проверяем БД — если статья уже в БД с body_text, пропускаем
+        # Также проверяем БД – если статья уже в БД с body_text, пропускаем
         with get_db() as conn:
             db_urls = conn.execute(
                 "SELECT url FROM articles WHERE body_text IS NOT NULL AND body_text != ''"

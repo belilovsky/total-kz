@@ -158,7 +158,7 @@ def get_article_count(conn, entity_id):
 # MERGE RULES
 # ──────────────────────────────────────────────────────────────────────
 
-# 1. Surname → Full name (unambiguous — only ONE full-name match)
+# 1. Surname → Full name (unambiguous – only ONE full-name match)
 #    Auto-detected: finds all single-word person entities that match
 #    exactly one "Имя Фамилия" entity
 
@@ -334,7 +334,7 @@ def run_cleanup(dry_run=True):
         if surname in SKIP_SURNAMES:
             continue
             
-        # Find all full-name matches — only proper "Имя Фамилия" patterns
+        # Find all full-name matches – only proper "Имя Фамилия" patterns
         matches = conn.execute("""
             SELECT id, name, 
                    (SELECT COUNT(*) FROM article_entities WHERE entity_id = id) as arts

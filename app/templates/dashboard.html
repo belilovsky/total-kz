@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set active = "dashboard" %}
 
-{% block title %}Дашборд — Total.kz{% endblock %}
+{% block title %}Дашборд – Total.kz{% endblock %}
 {% block page_title %}Дашборд{% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@
         <div class="kpi-value">{{ stats.total|format_num }}</div>
         <div class="kpi-footer">
             <canvas id="sparkTotal" class="kpi-spark" width="100" height="28"></canvas>
-            <span class="kpi-range">{{ stats.date_from[:4] if stats.date_from else '—' }}–{{ stats.date_to[:4] if stats.date_to else '—' }}</span>
+            <span class="kpi-range">{{ stats.date_from[:4] if stats.date_from else '–' }}–{{ stats.date_to[:4] if stats.date_to else '–' }}</span>
         </div>
     </div>
 
@@ -219,8 +219,8 @@
             <tr>
                 <td class="num mono">{{ r.id }}</td>
                 <td><span class="badge badge-phase">{{ r.phase }}</span></td>
-                <td class="mono">{{ r.started_at[:16] if r.started_at else '—' }}</td>
-                <td class="mono">{{ r.finished_at[:16] if r.finished_at else '—' }}</td>
+                <td class="mono">{{ r.started_at[:16] if r.started_at else '–' }}</td>
+                <td class="mono">{{ r.finished_at[:16] if r.finished_at else '–' }}</td>
                 <td>
                     <span class="badge badge-{{ r.status }}">
                         {% if r.status == 'completed' %}Завершён
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     fg = intensity > 0.4 ? '#fff' : (isDark ? '#e8eaed' : '#374151');
                 }
                 html += '<td class="heatmap-cell" style="background:' + bg + ';color:' + fg + '" title="' + label + ' ' + yr + ': ' + v.toLocaleString('ru-RU') + '">';
-                html += v > 0 ? v.toLocaleString('ru-RU') : '—';
+                html += v > 0 ? v.toLocaleString('ru-RU') : '–';
                 html += '</td>';
             });
             html += '<td class="heatmap-total-cell">' + total.toLocaleString('ru-RU') + '</td>';

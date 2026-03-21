@@ -1,8 +1,8 @@
 {% extends "public/base.html" %}
 
-{% block title %}{{ entity.name }} — {{ type_label }} — Total.kz{% endblock %}
+{% block title %}{{ entity.name }} – {{ type_label }} – Total.kz{% endblock %}
 {% block description %}Новости и статьи о {{ entity.name }} на Total.kz{% endblock %}
-{% block og_title %}{{ entity.name }} — {{ type_label }}{% endblock %}
+{% block og_title %}{{ entity.name }} – {{ type_label }}{% endblock %}
 {% block og_description %}{{ pluralize_articles(result.total) }} о {{ entity.name }} на Total.kz{% endblock %}
 
 {% block head_extra %}

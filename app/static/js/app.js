@@ -1,4 +1,4 @@
-/* Total.kz Dashboard — v3.0 */
+/* Total.kz Dashboard – v3.0 */
 document.addEventListener('DOMContentLoaded', function() {
 
     // ===== THEME TOGGLE =====

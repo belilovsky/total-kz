@@ -62,7 +62,7 @@ def run_step(name, cmd, timeout_minutes=120):
             print(f"\n  ⚠ Шаг '{name}' вернул код {result.returncode}", flush=True)
             return False
 
-        print(f"\n  ✓ {name} — завершено", flush=True)
+        print(f"\n  ✓ {name} – завершено", flush=True)
         return True
 
     except subprocess.TimeoutExpired:

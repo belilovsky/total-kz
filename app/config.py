@@ -1,4 +1,4 @@
-"""Application settings — extends QazStack BaseConfig."""
+"""Application settings – extends QazStack BaseConfig."""
 
 from qazstack.core import BaseConfig
 

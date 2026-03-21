@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set active = "social" %}
 
-{% block title %}Соцсети — Total.kz Admin{% endblock %}
+{% block title %}Соцсети – Total.kz Admin{% endblock %}
 {% block page_title %}Соцсети{% endblock %}
 
 {% block content %}
@@ -238,7 +238,7 @@
             {% if item.article_title %}<br><span style="font-size:11px;color:var(--accent)">📎 {{ item.article_title[:50] }}</span>{% endif %}
           </td>
           <td><span class="plan-status {{ item.status }}">{{ item.status }}</span></td>
-          <td style="font-size:12px">{{ item.assigned_to or '—' }}</td>
+          <td style="font-size:12px">{{ item.assigned_to or '–' }}</td>
           <td>
             <form method="post" action="/admin/social/plan/delete/{{ item.id }}" style="display:inline" onsubmit="return confirm('Удалить?')">
               <button type="submit" class="btn-danger">✕</button>
@@ -322,7 +322,7 @@
   <div class="card">
     <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">
       Новые статьи автоматически публикуются в аккаунты с включённым авто-постингом.
-      Чтобы включить — добавьте аккаунт с галочкой «Авто-постинг» и укажите API-токен (бот для Telegram, API для других платформ).
+      Чтобы включить – добавьте аккаунт с галочкой «Авто-постинг» и укажите API-токен (бот для Telegram, API для других платформ).
     </p>
 
     <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">Аккаунты с авто-постингом:</h3>
@@ -337,7 +337,7 @@
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
       {% for acc in auto_accounts %}
       <span class="platform-badge" style="background:{{ acc.platform_info.color or '#666' }}22;color:{{ acc.platform_info.color or '#666' }};padding:6px 12px;border-radius:8px;font-size:13px">
-        ✓ {{ acc.platform_info.name or acc.platform }} — {{ acc.account_name }}
+        ✓ {{ acc.platform_info.name or acc.platform }} – {{ acc.account_name }}
       </span>
       {% endfor %}
     </div>
@@ -351,7 +351,7 @@
       {% for art in pending_articles %}
       <div style="padding:8px 0;border-bottom:1px solid var(--border)">
         <strong>{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}</strong>
-        <br><span style="color:var(--text-secondary)">{{ art.sub_category }} · {{ art.pub_date[:16] if art.pub_date else '—' }}</span>
+        <br><span style="color:var(--text-secondary)">{{ art.sub_category }} · {{ art.pub_date[:16] if art.pub_date else '–' }}</span>
       </div>
       {% endfor %}
     </div>
@@ -487,7 +487,7 @@
         <label>Аккаунт</label>
         <select name="account_id" required>
           {% for acc in accounts %}
-          <option value="{{ acc.id }}">{{ acc.platform_info.name or acc.platform }} — {{ acc.account_name }}</option>
+          <option value="{{ acc.id }}">{{ acc.platform_info.name or acc.platform }} – {{ acc.account_name }}</option>
           {% endfor %}
         </select>
       </div>

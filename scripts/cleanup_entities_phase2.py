@@ -86,7 +86,7 @@ def run_phase2(dry_run=True):
     
     # These are ambiguous but the dominant person is obvious from context
     AMBIGUOUS_MERGES = [
-        # (surname, target_fullname) — verified by article count dominance
+        # (surname, target_fullname) – verified by article count dominance
         ('Сапаров', 'Айдарбек Сапаров'),
         ('Ашимбаев', 'Маулен Ашимбаев'),
         ('Карабаев', 'Марат Карабаев'),

@@ -3,10 +3,10 @@
 Полный сбор URL всех статей total.kz (включая архив 2011-2017).
 
 Ключевое отличие от scrape_urls.py:
-- Использует ОСНОВНЫЕ категории (obshchestvo, politika, ekonomika, drugoe) —
+- Использует ОСНОВНЫЕ категории (obshchestvo, politika, ekonomika, drugoe) –
   у них полная пагинация до 2011 года
 - Проходит ВСЕ страницы до конца, не останавливаясь на all-known
-- Старые статьи не имеют _date_ в URL — дата будет получена при download_content
+- Старые статьи не имеют _date_ в URL – дата будет получена при download_content
 
 Запуск:
     python scraper/scrape_full_archive.py                    # собрать весь архив
@@ -41,7 +41,7 @@ from app.database import get_db, init_db
 
 BASE_URL = "https://total.kz"
 
-# Основные категории — содержат ВСЮ историю публикаций с 2011
+# Основные категории – содержат ВСЮ историю публикаций с 2011
 MAIN_CATEGORIES = {
     "obshchestvo": 8504,
     "politika": 4463,
@@ -299,7 +299,7 @@ def scrape_category_full(category, max_pages, start_page, seen_urls):
             if not articles:
                 consecutive_empty += 1
                 if consecutive_empty >= 10:
-                    print(f"  → 10 пустых страниц подряд — конец категории на стр {p}", flush=True)
+                    print(f"  → 10 пустых страниц подряд – конец категории на стр {p}", flush=True)
                     page = max_pages + 1  # exit loop
                     break
                 continue
@@ -329,7 +329,7 @@ def scrape_category_full(category, max_pages, start_page, seen_urls):
                 batch_records.append(record)
                 new_count += 1
 
-            # Прогресс — показываем каждые 100 страниц или если есть новые
+            # Прогресс – показываем каждые 100 страниц или если есть новые
             if p % 100 == 0 or new_count > 0:
                 pct = (p / max_pages * 100) if max_pages > 0 else 0
                 print(f"  p{p:>5}/{max_pages} ({pct:.1f}%) | +{new_count} new, {already_known} known | total new: {len(all_new) + len(batch_records)}", flush=True)

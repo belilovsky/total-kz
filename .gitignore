@@ -31,3 +31,4 @@ audit_*.py
 diagnose_*.py
 gsc_analysis.json
 app/*.db
+data/total.db.bak-pre-typography

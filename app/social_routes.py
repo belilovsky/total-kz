@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def social_dashboard(request: Request):
-    """Social media dashboard — overview of all accounts, stats, content plan."""
+    """Social media dashboard – overview of all accounts, stats, content plan."""
     social.init_social_db()
 
     accounts = social.get_all_stats_summary()

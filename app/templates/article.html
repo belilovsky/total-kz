@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set active = "articles" %}
 
-{% block title %}{{ article.title }} — Total.kz{% endblock %}
+{% block title %}{{ article.title }} – Total.kz{% endblock %}
 {% block page_title %}Просмотр статьи{% endblock %}
 
 {% block actions %}
@@ -105,7 +105,7 @@
     <div class="article-meta-footer">
         <div>
             <strong>ID:</strong> {{ article.id }} &middot;
-            <strong>Импорт:</strong> {{ article.imported_at[:16] if article.imported_at else '—' }}
+            <strong>Импорт:</strong> {{ article.imported_at[:16] if article.imported_at else '–' }}
         </div>
         <a href="/admin/articles" class="btn btn-ghost btn-sm">← К статьям</a>
     </div>

@@ -57,13 +57,13 @@ def analyze_entities(conn):
             to_delete.append((eid, name, etype, art_count, "чёрный список"))
             continue
 
-        # 2. Проверяем clean_entity_name — если возвращает None, удаляем
+        # 2. Проверяем clean_entity_name – если возвращает None, удаляем
         cleaned = clean_entity_name(name, etype)
         if cleaned is None:
             to_delete.append((eid, name, etype, art_count, "не прошёл валидацию"))
             continue
 
-        # 3. Если cleaned отличается от name — переименовываем
+        # 3. Если cleaned отличается от name – переименовываем
         if cleaned != name:
             new_norm = normalize_name(cleaned)
             to_rename.append((eid, name, cleaned, new_norm, etype, art_count))
@@ -89,7 +89,7 @@ def run_cleanup(apply=False, fix=False):
             print(f"🗑  К УДАЛЕНИЮ: {len(to_delete)} сущностей")
             print("-" * 70)
             for eid, name, etype, art_count, reason in to_delete[:30]:
-                print(f"  [{etype:8s}] {name:40s} ({art_count:4d} ст.) — {reason}")
+                print(f"  [{etype:8s}] {name:40s} ({art_count:4d} ст.) – {reason}")
             if len(to_delete) > 30:
                 print(f"  ... и ещё {len(to_delete) - 30}")
             print()
@@ -125,7 +125,7 @@ def run_cleanup(apply=False, fix=False):
             renamed = 0
             merged = 0
             for eid, old, new, new_norm, etype, art_count in to_rename:
-                # Проверяем — может entity с таким normalized уже есть
+                # Проверяем – может entity с таким normalized уже есть
                 existing = conn.execute(
                     "SELECT id FROM entities WHERE normalized = ? AND entity_type = ? AND id != ?",
                     (new_norm, etype, eid)
@@ -163,7 +163,7 @@ def run_cleanup(apply=False, fix=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Очистка NER-сущностей")
-    parser.add_argument("--apply", action="store_true", help="Применить изменения (по умолчанию — только просмотр)")
+    parser.add_argument("--apply", action="store_true", help="Применить изменения (по умолчанию – только просмотр)")
     parser.add_argument("--fix", action="store_true", help="Также переименовать кривые сущности (+ --apply)")
     args = parser.parse_args()
 

@@ -452,7 +452,7 @@ def run(dry_run=True):
         ('Койгельдиев', 'Галымжан Койгельдиев'),
         ('Мбаппе', 'Килиан Мбаппе'),
         ('Лукин', 'Андрей Лукин'),
-        ('Коскина', None),  # Check who she merges to — she's a journalist
+        ('Коскина', None),  # Check who she merges to – she's a journalist
     ]
 
     amb_count = 0

@@ -1,6 +1,6 @@
 {% extends "public/base.html" %}
 
-{% block title %}{{ article.title }} — Total.kz{% endblock %}
+{% block title %}{{ article.title }} – Total.kz{% endblock %}
 {% block description %}{{ article.excerpt or article.title }}{% endblock %}
 {% block canonical %}/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}{% endblock %}
 {% block og_type %}article{% endblock %}

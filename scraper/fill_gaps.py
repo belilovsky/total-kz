@@ -392,7 +392,7 @@ def main():
             batch_count = 0
             progress = (i + 1) / len(rows) * 100
             print(
-                f"  Progress: {i + 1:,}/{len(rows):,} ({progress:.1f}%) — "
+                f"  Progress: {i + 1:,}/{len(rows):,} ({progress:.1f}%) – "
                 f"tags: +{tags_updated:,}, images: +{main_image_updated:,}, "
                 f"inline: +{inline_images_updated:,}"
             )

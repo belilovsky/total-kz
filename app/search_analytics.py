@@ -1,9 +1,9 @@
-"""Search Analytics module — GSC data processor for the dashboard."""
+"""Search Analytics module – GSC data processor for the dashboard."""
 
 import json
 from pathlib import Path
 
-# Pre-computed GSC analysis file — check both possible locations
+# Pre-computed GSC analysis file – check both possible locations
 _parent = Path(__file__).parent
 DATA_FILE = _parent / "gsc_analysis.json"
 if not DATA_FILE.exists():

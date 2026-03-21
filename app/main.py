@@ -1,4 +1,4 @@
-"""FastAPI application — Total.kz v5 (public frontend + admin dashboard)."""
+"""FastAPI application – Total.kz v5 (public frontend + admin dashboard)."""
 
 import json
 from contextlib import asynccontextmanager

@@ -13,7 +13,7 @@ from . import database as db
 
 
 # ══════════════════════════════════════════════
-#  SCHEMA — social media tables
+#  SCHEMA – social media tables
 # ══════════════════════════════════════════════
 
 SOCIAL_SCHEMA = """

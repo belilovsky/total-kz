@@ -78,8 +78,8 @@ async def fetch_gsc_data():
     prev_start = start_previous.isoformat()
     prev_end = end_previous.isoformat()
 
-    print(f"Current period: {current_start} — {current_end}")
-    print(f"Previous period: {prev_start} — {prev_end}")
+    print(f"Current period: {current_start} – {current_end}")
+    print(f"Previous period: {prev_start} – {prev_end}")
 
     base_args = {"siteUrl": SITE_URL, "searchType": "web"}
 
@@ -228,8 +228,8 @@ def process_data(data, current_start, current_end, prev_start, prev_end):
     top_losers.sort(key=lambda x: x["delta_clicks"])
 
     period_comparison = {
-        "current_period": f"{current_start} — {current_end}",
-        "previous_period": f"{prev_start} — {prev_end}",
+        "current_period": f"{current_start} – {current_end}",
+        "previous_period": f"{prev_start} – {prev_end}",
         "current": {"clicks": total_clicks, "impressions": total_impressions,
                     "avg_ctr": avg_ctr, "avg_position": avg_position},
         "previous": {"clicks": prev_clicks, "impressions": prev_impressions,
@@ -289,7 +289,7 @@ async def main():
                        help="Output path for gsc_analysis.json")
     args = parser.parse_args()
 
-    print(f"=== GSC Data Refresh — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC ===\n")
+    print(f"=== GSC Data Refresh – {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC ===\n")
 
     data, cs, ce, ps, pe = await fetch_gsc_data()
 

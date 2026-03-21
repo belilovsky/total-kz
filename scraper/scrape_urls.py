@@ -318,16 +318,16 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 earliest_sparse = datetime.strptime(min(sparse_months), '%Y-%m')
                 start_page = find_start_page(session, category, earliest_sparse, seen_urls)
             else:
-                print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')} — пропускаем")
+                print(f"  → Уже собрано до {oldest_known.strftime('%Y-%m-%d')} – пропускаем")
                 return 0
         elif force:
-            print(f"  → Принудительный пересбор — начинаем с page 1")
+            print(f"  → Принудительный пересбор – начинаем с page 1")
             start_page = 1
         else:
             start_page = find_start_page(session, category, oldest_known, seen_urls)
     else:
         start_page = 1
-        print(f"  Нет известных URL — начинаем с начала")
+        print(f"  Нет известных URL – начинаем с начала")
 
     all_new = []
     page = start_page
@@ -366,7 +366,7 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
             consecutive_errors += 1
             print(f"  ⚠ Таймаут пачки p{page}-{page+batch_size-1} (ошибок подряд: {consecutive_errors})", flush=True)
             if consecutive_errors >= 5:
-                print(f"  ❌ 5 таймаутов подряд — пауза 30 сек", flush=True)
+                print(f"  ❌ 5 таймаутов подряд – пауза 30 сек", flush=True)
                 time.sleep(30)
                 # Пересоздаём сессию
                 session.close()
@@ -374,10 +374,10 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 consecutive_errors = 0
             else:
                 time.sleep(3)
-            # Не переходим к следующей пачке — повторяем
+            # Не переходим к следующей пачке – повторяем
             continue
 
-        # Если пачка вернула хотя бы что-то — сбрасываем ошибки
+        # Если пачка вернула хотя бы что-то – сбрасываем ошибки
         if batch_results:
             consecutive_errors = 0
 
@@ -464,11 +464,11 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
                 _, jump_arts = fetch_listing_page(session, category, jump_page)
                 jump_new = sum(1 for a in jump_arts if a["url"] not in seen_urls)
                 if jump_new == 0:
-                    print(f"  → После прыжка тоже 0 new — заканчиваем", flush=True)
+                    print(f"  → После прыжка тоже 0 new – заканчиваем", flush=True)
                     done = True
                     break
                 else:
-                    print(f"  → После прыжка +{jump_new} new — продолжаем с {jump_page}", flush=True)
+                    print(f"  → После прыжка +{jump_new} new – продолжаем с {jump_page}", flush=True)
                     page = jump_page
                     consecutive_all_known = 0
                     continue
@@ -477,7 +477,7 @@ def scrape_category(category, cutoff_date, seen_urls, force=False):
 
             # Стоп: зацикливание
             if stale_date_count >= 50:
-                print(f"  → Зацикливание: {oldest_date} не меняется 50 стр — стоп", flush=True)
+                print(f"  → Зацикливание: {oldest_date} не меняется 50 стр – стоп", flush=True)
                 done = True
                 break
 

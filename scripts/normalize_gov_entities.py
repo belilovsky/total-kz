@@ -159,7 +159,7 @@ def run_migration(dry_run=False):
     print(f"\n=== SUMMARY ===")
     print(f"  Renamed: {total_renamed}")
     print(f"  Merged: {total_deleted} duplicate entities ({total_merged} article links reassigned)")
-    print(f"  {'DRY RUN — no changes saved' if dry_run else 'Changes committed.'}")
+    print(f"  {'DRY RUN – no changes saved' if dry_run else 'Changes committed.'}")
 
 
 if __name__ == "__main__":

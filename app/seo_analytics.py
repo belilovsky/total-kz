@@ -288,7 +288,7 @@ def get_entity_authority(limit: int = 30) -> dict:
             LIMIT ?
         """, (limit,)).fetchall()
 
-        # Category coverage — how many categories does each top entity span
+        # Category coverage – how many categories does each top entity span
         entity_ids = [dict(e)["id"] for e in top_entities]
         coverage = {}
         for eid in entity_ids:
@@ -518,7 +518,7 @@ def get_geo_readiness() -> dict:
     recommendations.append({
         "area": "llms.txt",
         "priority": "medium",
-        "text": "Создайте /llms.txt — описание сайта, ключевые рубрики и структура для LLM-ботов.",
+        "text": "Создайте /llms.txt – описание сайта, ключевые рубрики и структура для LLM-ботов.",
         "icon": "llms",
     })
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entity cleanup v3b — Extended fixes:
+Entity cleanup v3b – Extended fixes:
 - Media sources as orgs → delete
 - Grammar-broken Министерство/Комитет variants → merge into canonical
 - Org specificity (Верховная рада → Верховная Рада Украины, etc.)
@@ -286,7 +286,7 @@ def run(dry_run=True):
         'государственная безопасность': 'КНБ РК',
 
         # Propaganda
-        'пропаганд': None,  # delete — Afghan/Taliban ministry, not KZ
+        'пропаганд': None,  # delete – Afghan/Taliban ministry, not KZ
 
         # Mining
         'горная промышленность': 'Минпром РК',
@@ -327,9 +327,9 @@ def run(dry_run=True):
                 break
 
         if target_name is None:
-            # Check for garbage (слипшиеся строки — letters run together)
+            # Check for garbage (слипшиеся строки – letters run together)
             if re.search(r'[а-яА-Я][А-Я]', ename) and len(ename) > 30:
-                # Garbage — fused text
+                # Garbage – fused text
                 print(f"    delete garbage «{ename}» ({cnt} links)")
                 delete_by_id(conn, eid, dry_run)
                 deleted_ministry += 1
@@ -377,7 +377,7 @@ def run(dry_run=True):
 
     print(f"  Ministry variants: {merged_ministry} merged, {deleted_ministry} deleted")
 
-    # Now process Комитет variants — bulk delete all with <= 5 links
+    # Now process Комитет variants – bulk delete all with <= 5 links
     print("\n  Processing Комитет variants...")
     all_komitet = conn.execute("""
         SELECT e.id, e.name, COUNT(ae.article_id) as cnt
@@ -517,7 +517,7 @@ def run(dry_run=True):
         ('Таможенный союз ЕАЭС', 'org', 'merge', 'ЕАЭС'),
         # ЕАЭС location duplicate
         ('ЕАЭС', 'location', 'delete', None),
-        # МОН РК — merge Министерство наука into it
+        # МОН РК – merge Министерство наука into it
         ('Министерство наука', 'org', 'merge', 'МОН РК'),
         ('Министерство образование', 'org', 'merge', 'Минпросвещения РК'),
     ]
@@ -668,7 +668,7 @@ def run(dry_run=True):
         GROUP BY e.id
         HAVING COUNT(ae.article_id) = 1
     """).fetchall()
-    print(f"    Found {len(singles)} entities with exactly 1 link — deleting all")
+    print(f"    Found {len(singles)} entities with exactly 1 link – deleting all")
     if not dry_run:
         for eid, etype in singles:
             conn.execute("DELETE FROM article_entities WHERE entity_id=?", (eid,))
@@ -681,7 +681,7 @@ def run(dry_run=True):
         LEFT JOIN article_entities ae ON ae.entity_id = e.id
         WHERE ae.article_id IS NULL
     """).fetchall()
-    print(f"    Found {len(orphans)} orphan entities (no links) — deleting all")
+    print(f"    Found {len(orphans)} orphan entities (no links) – deleting all")
     if not dry_run:
         for (eid,) in orphans:
             conn.execute("DELETE FROM entities WHERE id=?", (eid,))

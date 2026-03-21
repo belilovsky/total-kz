@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Total.kz — Новости Казахстана{% endblock %}</title>
+  <title>{% block title %}Total.kz – Новости Казахстана{% endblock %}</title>
 
   {% block meta %}
-  <meta name="description" content="{% block description %}Total.kz — ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.{% endblock %}">
+  <meta name="description" content="{% block description %}Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.{% endblock %}">
   <link rel="canonical" href="https://total.kz{% block canonical %}{{ request.url.path }}{% endblock %}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:title" content="{% block og_title %}Total.kz — Новости Казахстана{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}Total.kz – Новости Казахстана{% endblock %}">
   <meta property="og:description" content="{% block og_description %}Ведущий новостной портал Казахстана{% endblock %}">
   <meta property="og:url" content="https://total.kz{{ request.url.path }}">
   <meta property="og:site_name" content="Total.kz">
@@ -161,7 +161,7 @@
     </svg>
   </button>
 
-  <!-- ═══ FOOTER — BBC-minimal ═══ -->
+  <!-- ═══ FOOTER – BBC-minimal ═══ -->
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- Row 1: Logo + inline navigation -->
@@ -271,7 +271,7 @@
     searchBackdrop && searchBackdrop.addEventListener('click', closeSearch);
     searchClose   && searchClose.addEventListener('click', closeSearch);
 
-    // Explicit form submit — ensures navigation even if overlay interferes
+    // Explicit form submit – ensures navigation even if overlay interferes
     var searchForm = document.getElementById('search-form');
     if (searchForm) {
       searchForm.addEventListener('submit', function (e) {

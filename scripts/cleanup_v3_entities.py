@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entity cleanup v3 — Org dedup + Person names fix.
+Entity cleanup v3 – Org dedup + Person names fix.
 Fixes: duplicate orgs (short/full name), broken grammar, garbage, single-word persons.
 
 Run: python scripts/cleanup_v3_entities.py              # dry run
@@ -78,7 +78,7 @@ def rename_entity(conn, name, new_name, entity_type=None, dry_run=True, stats=No
         # Check if target normalized already exists
         existing = find_entity(conn, new_name, row[2])
         if existing and existing[0] != row[0]:
-            # Target name exists — merge instead
+            # Target name exists – merge instead
             print(f"      → target exists (#{existing[0]}), merging instead")
             merge_into(conn, name, existing[0], dry_run, stats, entity_type)
             return existing[0]
@@ -297,22 +297,22 @@ def run(dry_run=True):
         ("Вооружённые силы РК", [
             "Вооруженные силы",
         ]),
-        # AFM — rename
+        # AFM – rename
         ("АФМ РК", [
             "АФМ",
         ]),
-        # AFRR — rename
+        # AFRR – rename
         ("АРРФР РК", [
             "АРРФР",
         ]),
-        # SCC — rename
+        # SCC – rename
         ("СЦК", [
             "СЦК",
         ]),
     ]
 
     for canonical, aliases in ORG_MERGES:
-        # Find or create the canonical entity — first alias that exists becomes the target
+        # Find or create the canonical entity – first alias that exists becomes the target
         target_id = None
         target_row = find_entity(conn, canonical, 'org')
         if target_row:
@@ -372,12 +372,12 @@ def run(dry_run=True):
         'АПК',   # too generic
         'ТЭЦ',   # too generic
         'АЭС',   # too generic
-        'ДП',    # too generic (Департамент полиции — abbreviation is ambiguous)
+        'ДП',    # too generic (Департамент полиции – abbreviation is ambiguous)
         'УВД',   # too generic
         'ДВД',   # too generic
-        'ДЧС',   # too generic — merged into МЧС above
-        'ИВС',   # Изолятор временного содержания — not an org
-        'КВИ',   # Коронавирусная инфекция — not an org
+        'ДЧС',   # too generic – merged into МЧС above
+        'ИВС',   # Изолятор временного содержания – not an org
+        'КВИ',   # Коронавирусная инфекция – not an org
     ]
     for name in GARBAGE_ORGS:
         delete_entity(conn, name, 'org', dry_run, stats)
@@ -453,8 +453,8 @@ def run(dry_run=True):
     PERSON_MERGES = [
         # Surname-only → Full name
         ("Сулейменов", "Тимур Сулейменов"),
-        ("Байжанов", None),  # delete — ambiguous
-        ("Султанов", None),  # delete — ambiguous
+        ("Байжанов", None),  # delete – ambiguous
+        ("Султанов", None),  # delete – ambiguous
         ("Алиев", "Ильхам Алиев"),
         ("Шерзат", "Шерзат Полат"),  # contextually this is likely Шерзат Полат
     ]
@@ -482,7 +482,7 @@ def run(dry_run=True):
         ORDER BY cnt DESC
     """).fetchall()
     if single_big:
-        print(f"\n  5c. Single-word persons with >= 20 links (deleting — too ambiguous):")
+        print(f"\n  5c. Single-word persons with >= 20 links (deleting – too ambiguous):")
         for eid, ename, cnt in single_big:
             print(f"      «{ename}» ({cnt} links)")
             if not dry_run:
@@ -503,7 +503,7 @@ def run(dry_run=True):
     for old_name, new_name in MEDIA_RENAMES:
         rename_entity(conn, old_name, new_name, 'org', dry_run, stats)
 
-    # Delete pure media source duplicates/aggregators — these are citation sources, not entities
+    # Delete pure media source duplicates/aggregators – these are citation sources, not entities
     MEDIA_DELETE = [
         'Livesport', 'Otyrar', 'Upl', 'Hi-tech', 'Economist',
         'Championat', 'Energyprom', 'Finprom', 'YK-news', 'Bild',

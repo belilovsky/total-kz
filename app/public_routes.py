@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ══════════════════════════════════════════════
-#  IMAGE PROXY — serve images locally with disk cache
+#  IMAGE PROXY – serve images locally with disk cache
 # ══════════════════════════════════════════════
 IMAGE_CACHE_DIR = Path(__file__).parent.parent / "data" / "img_cache"
 IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -307,7 +307,7 @@ async def image_proxy(path: str):
 
 
 # ══════════════════════════════════════════════
-#  301 REDIRECTS — old /ru/news/... → new /news/...
+#  301 REDIRECTS – old /ru/news/... → new /news/...
 # ══════════════════════════════════════════════
 
 @router.get("/ru/page/{page_slug}", response_class=RedirectResponse)
@@ -379,7 +379,7 @@ async def category_page(
     category: str,
     page: int = Query(1, ge=1),
 ):
-    """Category listing — handles both nav section slugs and legacy sub_category slugs."""
+    """Category listing – handles both nav section slugs and legacy sub_category slugs."""
     try:
         per_page = 20
         offset = (page - 1) * per_page
