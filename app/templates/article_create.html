@@ -5,7 +5,15 @@
 {% block page_title %}Новая статья{% endblock %}
 
 {% block head %}
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+.codex-editor { border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; min-height: 300px; background: var(--bg-card); }
+.codex-editor .ce-block__content { max-width: 100%; }
+.focal-point-container { position: relative; display: inline-block; cursor: crosshair; }
+.focal-point-container img { display: block; max-width: 100%; }
+.focal-crosshair { position: absolute; width: 20px; height: 20px; border: 2px solid #d83236; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 0 0 2px rgba(255,255,255,0.8); }
+.schedule-picker { display: none; margin-top: 8px; }
+.schedule-picker.visible { display: flex; align-items: center; gap: 8px; }
+</style>
 {% endblock %}
 
 {% block actions %}
@@ -14,51 +22,40 @@
 
 {% block content %}
 <div class="editor-page">
-    <!-- Title -->
     <div class="editor-section">
         <label class="editor-label">Заголовок</label>
         <textarea class="editor-title-input auto-resize" id="editTitle" rows="1" placeholder="Заголовок статьи"></textarea>
     </div>
-
-    <!-- Excerpt -->
     <div class="editor-section">
         <label class="editor-label">Лид <span class="char-counter" id="excerptCounter">0/300</span></label>
         <textarea class="editor-textarea auto-resize" id="editExcerpt" rows="2" maxlength="300" placeholder="Краткое описание статьи (до 300 символов)"></textarea>
     </div>
-
-    <!-- Main Image -->
     <div class="editor-section">
-        <label class="editor-label">Главное изображение</label>
+        <label class="editor-label">Главное изображение <span style="font-weight:400;color:var(--text-muted)">(кликните для фокуса)</span></label>
         <div class="editor-image-preview" id="imagePreview" style="display:none">
-            <img src="" alt="" id="heroImg">
+            <div class="focal-point-container" id="focalContainer" onclick="setFocalPoint(event)">
+                <img src="" alt="" id="heroImg">
+                <div class="focal-crosshair" id="focalCrosshair" style="left:50%;top:50%"></div>
+            </div>
         </div>
         <input type="url" class="editor-input" id="editImage" value="" placeholder="URL изображения">
+        <input type="hidden" id="focalX" value="0.5">
+        <input type="hidden" id="focalY" value="0.5">
     </div>
-
-    <!-- Quill WYSIWYG Editor -->
     <div class="editor-section">
         <label class="editor-label">Текст статьи</label>
-        <div class="quill-wrapper">
-            <div id="quillEditor"></div>
-        </div>
-        <!-- Word count + reading time -->
+        <div id="editorjs"></div>
         <div class="word-count-container" id="wordCountContainer">
             <span id="wordCountText">0 слов · ~0 мин чтения</span>
         </div>
     </div>
-
-    <!-- Category -->
     <div class="editor-section">
         <label class="editor-label">Категория <span style="color:var(--red)">*</span></label>
         <select class="editor-select" id="editCategory">
             <option value="">Выберите категорию</option>
-            {% for c in categories %}
-            <option value="{{ c }}">{{ cat_label(c) }}</option>
-            {% endfor %}
+            {% for c in categories %}<option value="{{ c }}">{{ cat_label(c) }}</option>{% endfor %}
         </select>
     </div>
-
-    <!-- Tags -->
     <div class="editor-section">
         <label class="editor-label">Теги</label>
         <div class="tags-editor" id="tagsEditor" style="position:relative">
@@ -66,47 +63,33 @@
             <div class="tag-autocomplete" id="tagAutocomplete"></div>
         </div>
     </div>
-
-    <!-- Author -->
     <div class="editor-section">
         <label class="editor-label">Автор</label>
         <input type="text" class="editor-input" id="editAuthor" value="" placeholder="Имя автора" list="authorsList">
-        <datalist id="authorsList">
-            {% for a in authors[:50] %}
-            <option value="{{ a.author }}">
-            {% endfor %}
-        </datalist>
+        <datalist id="authorsList">{% for a in authors[:50] %}<option value="{{ a.author }}">{% endfor %}</datalist>
     </div>
-
-    <!-- Editor Notes -->
     <div class="editor-section">
         <label class="editor-label">Заметки редактора <span style="font-weight:400;color:var(--text-muted)">(не публикуются)</span></label>
         <textarea class="editor-textarea auto-resize" id="editNote" rows="2" placeholder="Внутренние заметки для редакции..."></textarea>
     </div>
-
-    <!-- Status -->
     <div class="editor-section">
         <label class="editor-label">Статус</label>
         <div class="status-radios">
-            <label class="status-radio">
-                <input type="radio" name="status" value="draft" checked>
-                <span class="status-badge status-draft">Черновик</span>
-            </label>
-            <label class="status-radio">
-                <input type="radio" name="status" value="published">
-                <span class="status-badge status-published">Опубликовано</span>
-            </label>
+            <label class="status-radio"><input type="radio" name="status" value="draft" checked><span class="status-badge status-draft">Черновик</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="review"><span class="status-badge" style="background:rgba(234,179,8,0.15);color:#a16207">На проверке</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="published"><span class="status-badge status-published">Опубликовано</span></label>
+            <label class="status-radio"><input type="radio" name="status" value="scheduled"><span class="status-badge" style="background:rgba(59,130,246,0.15);color:#1d4ed8">Запланировано</span></label>
+        </div>
+        <div class="schedule-picker" id="schedulePicker">
+            <label style="font-size:13px;color:var(--text-muted)">Дата публикации:</label>
+            <input type="datetime-local" id="scheduledAt" class="editor-input" style="width:auto" value="">
         </div>
     </div>
 </div>
 
-<!-- Sticky save bar -->
 <div class="editor-save-bar">
     <a href="/admin/articles" class="btn btn-ghost">← К статьям</a>
-    <div class="save-indicator" id="saveIndicator">
-        <span class="save-dot save-dot-unsaved"></span>
-        <span class="save-indicator-text" id="saveIndicatorText">Не сохранено</span>
-    </div>
+    <div class="save-indicator" id="saveIndicator"><span class="save-dot save-dot-unsaved"></span><span class="save-indicator-text" id="saveIndicatorText">Не сохранено</span></div>
     <div class="editor-save-actions">
         <button class="btn btn-primary" onclick="createArticle()" id="saveBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -117,374 +100,139 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.8/dist/editorjs.umd.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@2.0.2/dist/list.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.7.4/dist/quote.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.10.0/dist/image.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.7.6/dist/embed.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.3/dist/code.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@1.5.1/dist/inline-code.umd.js"></script>
 <script>
-var quill;
-var isDirty = false;
-var lastSavedAt = null;
-var ARTICLE_ID = null; // Will be set after first save
-var allTags = [];
+var editor, isDirty = false, lastSavedAt = null, ARTICLE_ID = null, allTags = [];
 
-// Format number with nbsp thousands separator
-function formatNum(n) {
-    if (Math.abs(n) < 1000) return String(n);
-    return String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
-}
+function formatNum(n) { if (Math.abs(n) < 1000) return String(n); return String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'); }
 
 (function() {
-    quill = new Quill('#quillEditor', {
-        theme: 'snow',
-        placeholder: 'Начните писать...',
-        modules: {
-            toolbar: [
-                ['bold', 'italic'],
-                ['link', 'image', 'blockquote'],
-                [{ 'header': 2 }, { 'header': 3 }],
-                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                ['code-block', 'clean']
-            ]
-        }
+    editor = new EditorJS({
+        holder: 'editorjs',
+        placeholder: 'Начните писать или нажмите Tab для блоков...',
+        tools: {
+            header: { class: Header, config: { levels: [2, 3, 4], defaultLevel: 2 } },
+            list: { class: window.NestedList || window.List || EditorJS.tools?.list, inlineToolbar: true },
+            quote: { class: Quote, config: { quotePlaceholder: 'Цитата', captionPlaceholder: 'Автор цитаты' } },
+            image: { class: ImageTool, config: { uploader: { uploadByUrl: function(url) { return Promise.resolve({ success: 1, file: { url: url } }); } } } },
+            embed: Embed, delimiter: Delimiter, code: CodeTool, inlineCode: InlineCode,
+        },
+        data: {},
+        onChange: function() { markDirty(); updateWordCount(); }
     });
-
-    quill.on('text-change', function() {
-        markDirty();
-        updateWordCount();
-    });
-
-    updateWordCount();
+    editor.isReady.then(function() { updateWordCount(); });
 })();
 
-// Word count + reading time
 function updateWordCount() {
-    var text = quill.getText().trim();
-    var words = text ? text.split(/\s+/).length : 0;
-    var readingTime = Math.max(1, Math.round(words / 200));
-    var wordLabel = 'слов';
-    var lastTwo = words % 100;
-    var lastOne = words % 10;
-    if (lastTwo >= 11 && lastTwo <= 19) wordLabel = 'слов';
-    else if (lastOne === 1) wordLabel = 'слово';
-    else if (lastOne >= 2 && lastOne <= 4) wordLabel = 'слова';
-    document.getElementById('wordCountText').textContent =
-        formatNum(words) + ' ' + wordLabel + ' \u00b7 ~' + readingTime + ' мин чтения';
+    if (!editor || !editor.save) return;
+    editor.save().then(function(data) {
+        var text = '';
+        data.blocks.forEach(function(b) {
+            if (b.data.text) text += ' ' + b.data.text.replace(/<[^>]+>/g, '');
+            if (b.data.items) b.data.items.forEach(function(i) { text += ' ' + (typeof i === 'string' ? i : (i.content||'')).replace(/<[^>]+>/g, ''); });
+            if (b.data.code) text += ' ' + b.data.code;
+        });
+        text = text.trim(); var words = text ? text.split(/\s+/).length : 0;
+        var rt = Math.max(1, Math.round(words / 200)), wl = 'слов', lt = words % 100, lo = words % 10;
+        if (lt >= 11 && lt <= 19) wl = 'слов'; else if (lo === 1) wl = 'слово'; else if (lo >= 2 && lo <= 4) wl = 'слова';
+        document.getElementById('wordCountText').textContent = formatNum(words) + ' ' + wl + ' \u00b7 ~' + rt + ' мин чтения';
+    }).catch(function() {});
 }
 
-function markDirty() {
-    if (!isDirty) {
-        isDirty = true;
-        updateSaveIndicator('unsaved');
-    }
+function setFocalPoint(e) {
+    var c = document.getElementById('focalContainer'), img = c.querySelector('img'), r = img.getBoundingClientRect();
+    var x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    document.getElementById('focalX').value = x.toFixed(3); document.getElementById('focalY').value = y.toFixed(3);
+    var ch = document.getElementById('focalCrosshair'); ch.style.left = (x*100)+'%'; ch.style.top = (y*100)+'%'; markDirty();
 }
 
-document.querySelectorAll('#editTitle, #editExcerpt, #editImage, #editCategory, #editAuthor, #editNote').forEach(function(el) {
-    el.addEventListener('input', markDirty);
-    el.addEventListener('change', markDirty);
-});
-document.querySelectorAll('input[name="status"]').forEach(function(el) {
-    el.addEventListener('change', markDirty);
-});
+function updateScheduleVisibility() {
+    var s = document.querySelector('input[name="status"][value="scheduled"]');
+    document.getElementById('schedulePicker').classList.toggle('visible', s && s.checked);
+}
+document.querySelectorAll('input[name="status"]').forEach(function(el) { el.addEventListener('change', function() { updateScheduleVisibility(); markDirty(); }); });
+updateScheduleVisibility();
+
+function markDirty() { if (!isDirty) { isDirty = true; updateSaveIndicator('unsaved'); } }
+document.querySelectorAll('#editTitle, #editExcerpt, #editImage, #editCategory, #editAuthor, #editNote, #scheduledAt').forEach(function(el) { el.addEventListener('input', markDirty); el.addEventListener('change', markDirty); });
 
 function updateSaveIndicator(state, timeAgo) {
-    var dot = document.querySelector('#saveIndicator .save-dot');
-    var text = document.getElementById('saveIndicatorText');
+    var dot = document.querySelector('#saveIndicator .save-dot'), text = document.getElementById('saveIndicatorText');
     dot.className = 'save-dot';
-    if (state === 'saved') {
-        dot.classList.add('save-dot-saved');
-        text.textContent = timeAgo ? 'Сохранено ' + timeAgo : 'Сохранено';
-    } else if (state === 'saving') {
-        dot.classList.add('save-dot-saving');
-        text.textContent = 'Сохранение...';
-    } else {
-        dot.classList.add('save-dot-unsaved');
-        text.textContent = 'Не сохранено';
-    }
+    if (state === 'saved') { dot.classList.add('save-dot-saved'); text.textContent = timeAgo ? 'Сохранено ' + timeAgo : 'Сохранено'; }
+    else if (state === 'saving') { dot.classList.add('save-dot-saving'); text.textContent = 'Сохранение...'; }
+    else { dot.classList.add('save-dot-unsaved'); text.textContent = 'Не сохранено'; }
 }
+function relativeTime(d) { var s = Math.floor((Date.now()-d.getTime())/1000); if(s<10)return'только что'; if(s<60)return s+' сек назад'; var m=Math.floor(s/60); if(m<60)return m+' мин назад'; return Math.floor(m/60)+' ч назад'; }
+setInterval(function() { if (lastSavedAt && !isDirty) updateSaveIndicator('saved', relativeTime(lastSavedAt)); }, 15000);
 
-function relativeTime(date) {
-    var diff = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (diff < 10) return 'только что';
-    if (diff < 60) return diff + ' сек назад';
-    var mins = Math.floor(diff / 60);
-    if (mins < 60) return mins + ' мин назад';
-    var hours = Math.floor(mins / 60);
-    return hours + ' ч назад';
-}
+document.querySelectorAll('.auto-resize').forEach(function(ta) { function r() { ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; } ta.addEventListener('input', r); r(); });
+var excerptEl = document.getElementById('editExcerpt'), excerptCounter = document.getElementById('excerptCounter');
+if (excerptEl && excerptCounter) excerptEl.addEventListener('input', function() { var l=this.value.length; excerptCounter.textContent=l+'/300'; excerptCounter.classList.toggle('over-limit',l>300); });
 
-setInterval(function() {
-    if (lastSavedAt && !isDirty) {
-        updateSaveIndicator('saved', relativeTime(lastSavedAt));
-    }
-}, 15000);
+var imageInput = document.getElementById('editImage'), heroImg = document.getElementById('heroImg'), imagePreview = document.getElementById('imagePreview');
+if (imageInput) imageInput.addEventListener('change', function() { var u=this.value.trim(); if(u){heroImg.src=u;imagePreview.style.display='block';}else{imagePreview.style.display='none';} });
 
-// Auto-resize textareas
-document.querySelectorAll('.auto-resize').forEach(function(ta) {
-    function resize() {
-        ta.style.height = 'auto';
-        ta.style.height = ta.scrollHeight + 'px';
-    }
-    ta.addEventListener('input', resize);
-    resize();
-});
-
-// Excerpt char counter
-var excerptEl = document.getElementById('editExcerpt');
-var excerptCounter = document.getElementById('excerptCounter');
-if (excerptEl && excerptCounter) {
-    excerptEl.addEventListener('input', function() {
-        var len = this.value.length;
-        excerptCounter.textContent = len + '/300';
-        excerptCounter.classList.toggle('over-limit', len > 300);
-    });
-}
-
-// Image URL preview
-var imageInput = document.getElementById('editImage');
-var heroImg = document.getElementById('heroImg');
-var imagePreview = document.getElementById('imagePreview');
-if (imageInput) {
-    imageInput.addEventListener('change', function() {
-        var url = this.value.trim();
-        if (url) {
-            heroImg.src = url;
-            imagePreview.style.display = 'block';
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    });
-}
-
-// Tags
 function removeTag(el) { el.parentElement.remove(); markDirty(); }
-function addTag(val) {
-    val = val.trim();
-    if (!val) return;
-    var existing = collectTags();
-    if (existing.indexOf(val) !== -1) return;
-    var editor = document.getElementById('tagsEditor');
-    var input = document.getElementById('tagInput');
-    var chip = document.createElement('span');
-    chip.className = 'tag-chip';
-    chip.setAttribute('data-tag', val);
-    chip.innerHTML = val + ' <span class="tag-remove" onclick="removeTag(this)">&times;</span>';
-    editor.insertBefore(chip, input);
-    markDirty();
-}
-function collectTags() {
-    var chips = document.querySelectorAll('#tagsEditor .tag-chip');
-    var tags = [];
-    chips.forEach(function(c) { tags.push(c.getAttribute('data-tag')); });
-    return tags;
-}
+function addTag(val) { val=val.trim(); if(!val)return; var ex=collectTags(); if(ex.indexOf(val)!==-1)return; var ed=document.getElementById('tagsEditor'),inp=document.getElementById('tagInput'),chip=document.createElement('span'); chip.className='tag-chip'; chip.setAttribute('data-tag',val); chip.innerHTML=val+' <span class="tag-remove" onclick="removeTag(this)">&times;</span>'; ed.insertBefore(chip,inp); markDirty(); }
+function collectTags() { var chips=document.querySelectorAll('#tagsEditor .tag-chip'),tags=[]; chips.forEach(function(c){tags.push(c.getAttribute('data-tag'));}); return tags; }
 
-// Tags autocomplete
 (function() {
-    var tagInput = document.getElementById('tagInput');
-    var dropdown = document.getElementById('tagAutocomplete');
-
-    tagInput.addEventListener('focus', function() {
-        if (allTags.length === 0) {
-            fetch('/api/tags?limit=200')
-                .then(function(r) { return r.json(); })
-                .then(function(tags) { allTags = tags; filterTags(''); });
-        } else {
-            filterTags(tagInput.value);
-        }
-    });
-
-    tagInput.addEventListener('input', function() {
-        filterTags(this.value);
-    });
-
-    tagInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTag(this.value);
-            this.value = '';
-            dropdown.style.display = 'none';
-        } else if (e.key === 'Escape') {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('#tagsEditor')) {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    function filterTags(query) {
-        var q = query.toLowerCase().trim();
-        var existing = collectTags();
-        var matches = allTags.filter(function(t) {
-            return t.tag.toLowerCase().indexOf(q) !== -1 && existing.indexOf(t.tag) === -1;
-        }).slice(0, 6);
-
-        if (matches.length === 0) {
-            dropdown.style.display = 'none';
-            return;
-        }
-
-        dropdown.innerHTML = '';
-        matches.forEach(function(t) {
-            var item = document.createElement('div');
-            item.className = 'tag-suggestion';
-            item.innerHTML = '<span>' + t.tag + '</span><span class="tag-suggestion-count">' + t.cnt + '</span>';
-            item.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                addTag(t.tag);
-                tagInput.value = '';
-                dropdown.style.display = 'none';
-            });
-            dropdown.appendChild(item);
-        });
-        dropdown.style.display = 'block';
-    }
+    var tagInput=document.getElementById('tagInput'),dropdown=document.getElementById('tagAutocomplete');
+    tagInput.addEventListener('focus',function(){if(allTags.length===0){fetch('/api/tags?limit=200').then(function(r){return r.json();}).then(function(t){allTags=t;filterTags('');});}else{filterTags(tagInput.value);}});
+    tagInput.addEventListener('input',function(){filterTags(this.value);});
+    tagInput.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addTag(this.value);this.value='';dropdown.style.display='none';}else if(e.key==='Escape'){dropdown.style.display='none';}});
+    document.addEventListener('click',function(e){if(!e.target.closest('#tagsEditor'))dropdown.style.display='none';});
+    function filterTags(q){q=q.toLowerCase().trim();var ex=collectTags();var m=allTags.filter(function(t){return t.tag.toLowerCase().indexOf(q)!==-1&&ex.indexOf(t.tag)===-1;}).slice(0,6);if(!m.length){dropdown.style.display='none';return;}dropdown.innerHTML='';m.forEach(function(t){var item=document.createElement('div');item.className='tag-suggestion';item.innerHTML='<span>'+t.tag+'</span><span class="tag-suggestion-count">'+t.cnt+'</span>';item.addEventListener('mousedown',function(e){e.preventDefault();addTag(t.tag);tagInput.value='';dropdown.style.display='none';});dropdown.appendChild(item);});dropdown.style.display='block';}
 })();
 
-function showToast(msg) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(function() { t.classList.remove('show'); }, 2500);
-}
-
-function getSelectedStatus() {
-    var radios = document.getElementsByName('status');
-    for (var i = 0; i < radios.length; i++) {
-        if (radios[i].checked) return radios[i].value;
-    }
-    return 'draft';
-}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function getSelectedStatus(){var r=document.getElementsByName('status');for(var i=0;i<r.length;i++){if(r[i].checked)return r[i].value;}return'draft';}
 
 function collectArticleData() {
-    return {
-        title: document.getElementById('editTitle').value.trim(),
-        sub_category: document.getElementById('editCategory').value,
-        author: document.getElementById('editAuthor').value.trim(),
-        excerpt: document.getElementById('editExcerpt').value.trim(),
-        main_image: document.getElementById('editImage').value.trim(),
-        body_html: quill.root.innerHTML,
-        body_text: quill.getText().trim(),
-        status: getSelectedStatus(),
-        editor_note: document.getElementById('editNote').value.trim(),
-        tags: collectTags()
-    };
+    return editor.save().then(function(outputData) {
+        return {
+            title: document.getElementById('editTitle').value.trim(), sub_category: document.getElementById('editCategory').value,
+            author: document.getElementById('editAuthor').value.trim(), excerpt: document.getElementById('editExcerpt').value.trim(),
+            main_image: document.getElementById('editImage').value.trim(), body_blocks: JSON.stringify(outputData),
+            status: getSelectedStatus(), editor_note: document.getElementById('editNote').value.trim(), tags: collectTags(),
+            focal_x: parseFloat(document.getElementById('focalX').value)||0.5, focal_y: parseFloat(document.getElementById('focalY').value)||0.5,
+            scheduled_at: document.getElementById('scheduledAt').value || null,
+        };
+    });
 }
 
 function createArticle(isAutoSave) {
-    var data = collectArticleData();
-
-    // If we already have an ID (from a previous auto-save), use PATCH
-    if (ARTICLE_ID) {
-        if (!isAutoSave) {
-            var btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.textContent = 'Сохраняю...';
+    collectArticleData().then(function(data) {
+        if (ARTICLE_ID) {
+            if (!isAutoSave) { var btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='Сохраняю...'; }
+            updateSaveIndicator('saving');
+            if (isAutoSave) data._revision_type='auto_save';
+            fetch('/api/article/'+ARTICLE_ID,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.json();}).then(function(res){
+                if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';}
+                if(res.ok){isDirty=false;lastSavedAt=new Date();updateSaveIndicator('saved','только что');if(!isAutoSave)showToast('Сохранено');}else{updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка: '+(res.error||'неизвестная'));}
+            }).catch(function(){updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка сети');});
+            return;
         }
+        if (!isAutoSave) { if(!data.title){showToast('Заголовок обязателен');return;} if(!data.sub_category){showToast('Выберите категорию');return;} }
+        else { if(!data.title||!data.sub_category)return; }
+        if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='Создаю...';}
         updateSaveIndicator('saving');
-        if (isAutoSave) data._revision_type = 'auto_save';
-        fetch('/api/article/' + ARTICLE_ID, {
-            method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
-            if (!isAutoSave) {
-                var btn = document.getElementById('saveBtn');
-                btn.disabled = false;
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';
-            }
-            if (res.ok) {
-                isDirty = false;
-                lastSavedAt = new Date();
-                updateSaveIndicator('saved', 'только что');
-                if (!isAutoSave) showToast('Сохранено');
-            } else {
-                updateSaveIndicator('unsaved');
-                if (!isAutoSave) showToast('Ошибка: ' + (res.error || 'неизвестная'));
-            }
-        })
-        .catch(function() {
-            updateSaveIndicator('unsaved');
-            if (!isAutoSave) showToast('Ошибка сети');
-        });
-        return;
-    }
-
-    // First save: create via POST
-    if (!isAutoSave) {
-        var title = data.title;
-        var category = data.sub_category;
-        if (!title) { showToast('Заголовок обязателен'); return; }
-        if (!category) { showToast('Выберите категорию'); return; }
-    } else {
-        // For auto-save, need at least a title
-        if (!data.title) return;
-        if (!data.sub_category) return;
-    }
-
-    if (!isAutoSave) {
-        var btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.textContent = 'Создаю...';
-    }
-    updateSaveIndicator('saving');
-
-    fetch('/api/article', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-        if (res.ok && res.id) {
-            ARTICLE_ID = res.id;
-            isDirty = false;
-            lastSavedAt = new Date();
-            updateSaveIndicator('saved', 'только что');
-            if (!isAutoSave) {
-                showToast('Статья создана');
-                setTimeout(function() { window.location.href = '/admin/article/' + res.id; }, 600);
-            } else {
-                // Update the save button to show "Сохранить" instead of "Создать"
-                var btn = document.getElementById('saveBtn');
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';
-            }
-        } else {
-            if (!isAutoSave) {
-                var btn = document.getElementById('saveBtn');
-                btn.disabled = false;
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
-            }
-            updateSaveIndicator('unsaved');
-            if (!isAutoSave) showToast('Ошибка: ' + (res.error || 'неизвестная'));
-        }
-    })
-    .catch(function() {
-        if (!isAutoSave) {
-            var btn = document.getElementById('saveBtn');
-            btn.disabled = false;
-            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';
-        }
-        updateSaveIndicator('unsaved');
-        if (!isAutoSave) showToast('Ошибка сети');
+        fetch('/api/article',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.json();}).then(function(res){
+            if(res.ok&&res.id){ARTICLE_ID=res.id;isDirty=false;lastSavedAt=new Date();updateSaveIndicator('saved','только что');if(!isAutoSave){showToast('Статья создана');setTimeout(function(){window.location.href='/admin/article/'+res.id;},600);}else{var btn=document.getElementById('saveBtn');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';}}
+            else{if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';}updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка: '+(res.error||'неизвестная'));}
+        }).catch(function(){if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';}updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка сети');});
     });
 }
-
-// Auto-save every 30 seconds
-setInterval(function() {
-    if (isDirty) {
-        createArticle(true);
-    }
-}, 30000);
-
-// Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        createArticle(false);
-    }
-});
+setInterval(function() { if (isDirty) createArticle(true); }, 30000);
+document.addEventListener('keydown', function(e) { if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); createArticle(false); } });
 </script>
 {% endblock %}

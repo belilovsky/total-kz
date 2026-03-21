@@ -2,6 +2,7 @@
 
 import sqlite3
 import json
+import re as _re
 from pathlib import Path
 from datetime import datetime
 from contextlib import contextmanager
@@ -128,6 +129,16 @@ def init_db():
         if "editor_note" not in article_cols:
             conn.execute("ALTER TABLE articles ADD COLUMN editor_note TEXT")
 
+        # v10.2: add body_blocks, scheduled_at, focal_x, focal_y
+        if "body_blocks" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN body_blocks TEXT")
+        if "scheduled_at" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN scheduled_at TEXT")
+        if "focal_x" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN focal_x REAL DEFAULT 0.5")
+        if "focal_y" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN focal_y REAL DEFAULT 0.5")
+
         # Create media table
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS media (
@@ -154,6 +165,54 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_revisions_article ON article_revisions(article_id, changed_at DESC);
         """)
+
+
+def blocks_to_html(blocks_json: str) -> str:
+    """Convert Editor.js JSON blocks to HTML string."""
+    blocks = json.loads(blocks_json) if isinstance(blocks_json, str) else blocks_json
+    html_parts = []
+    for block in blocks.get("blocks", []):
+        t = block["type"]
+        d = block["data"]
+        if t == "header":
+            lvl = d.get("level", 2)
+            html_parts.append(f'<h{lvl}>{d["text"]}</h{lvl}>')
+        elif t == "paragraph":
+            html_parts.append(f'<p>{d["text"]}</p>')
+        elif t == "list":
+            tag = "ol" if d.get("style") == "ordered" else "ul"
+            items = "".join(f'<li>{i.get("content","") if isinstance(i,dict) else i}</li>' for i in d.get("items", []))
+            html_parts.append(f'<{tag}>{items}</{tag}>')
+        elif t == "quote":
+            caption = f'<cite>{d["caption"]}</cite>' if d.get("caption") else ""
+            html_parts.append(f'<blockquote><p>{d["text"]}</p>{caption}</blockquote>')
+        elif t == "image":
+            cap = f'<figcaption>{d["caption"]}</figcaption>' if d.get("caption") else ""
+            html_parts.append(f'<figure><img src="{d["file"]["url"]}" alt="{d.get("caption","")}" loading="lazy">{cap}</figure>')
+        elif t == "embed":
+            html_parts.append(f'<div class="embed-container"><iframe src="{d["embed"]}" frameborder="0" allowfullscreen></iframe></div>')
+        elif t == "delimiter":
+            html_parts.append('<hr>')
+        elif t == "code":
+            html_parts.append(f'<pre><code>{d["code"]}</code></pre>')
+    return "\n".join(html_parts)
+
+
+def blocks_to_text(blocks_json: str) -> str:
+    """Extract plain text from Editor.js blocks for search indexing."""
+    blocks = json.loads(blocks_json) if isinstance(blocks_json, str) else blocks_json
+    parts = []
+    for block in blocks.get("blocks", []):
+        d = block["data"]
+        if "text" in d:
+            parts.append(_re.sub(r'<[^>]+>', '', d["text"]))
+        if "items" in d:
+            for item in d["items"]:
+                text = item.get("content", "") if isinstance(item, dict) else str(item)
+                parts.append(_re.sub(r'<[^>]+>', '', text))
+        if "code" in d:
+            parts.append(d["code"])
+    return "\n".join(parts)
 
 
 # Russian date parsing is now in qazstack.content.parse_ru_date
@@ -458,9 +517,10 @@ def get_article(article_id: int) -> dict | None:
 
 
 def update_article(article_id: int, updates: dict) -> None:
-    """Update article fields. Supports: title, excerpt, sub_category, author, main_image, tags, body_html, body_text, status, editor_note, updated_at."""
+    """Update article fields."""
     allowed = {"title", "excerpt", "sub_category", "author", "main_image",
-               "body_html", "body_text", "status", "editor_note", "updated_at"}
+               "body_html", "body_text", "status", "editor_note", "updated_at",
+               "body_blocks", "scheduled_at", "focal_x", "focal_y"}
     with get_db() as conn:
         # Separate tags (JSON) from scalar fields
         tags = updates.pop("tags", None)
@@ -486,8 +546,9 @@ def create_article(data: dict) -> int:
         row = conn.execute("""
             INSERT INTO articles (url, pub_date, sub_category, category_label, title, author,
                                   excerpt, body_text, body_html, main_image, tags, status,
-                                  updated_at, editor_note, imported_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                  updated_at, editor_note, imported_at,
+                                  body_blocks, scheduled_at, focal_x, focal_y)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.get("url", ""),
             data.get("pub_date", now),
@@ -504,6 +565,10 @@ def create_article(data: dict) -> int:
             now,
             data.get("editor_note", ""),
             now,
+            data.get("body_blocks", None),
+            data.get("scheduled_at", None),
+            data.get("focal_x", 0.5),
+            data.get("focal_y", 0.5),
         ))
         conn.commit()
         return row.lastrowid

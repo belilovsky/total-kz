@@ -1,13 +1,14 @@
-"""FastAPI application – Total.kz v10 (public frontend + CMS admin)."""
+"""FastAPI application – Total.kz v10.2 (public frontend + CMS admin)."""
 
 import json
+import logging
 import re
 import unicodedata
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from fastapi import FastAPI, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
@@ -20,8 +21,11 @@ from qazstack.content.api import content_router, SQLiteContentProvider
 from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
+from . import search_engine as meili
 from .public_routes import router as public_router
 from .social_routes import router as social_router
+
+logger = logging.getLogger(__name__)
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
@@ -64,7 +68,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Total.kz", version="10.1.0", lifespan=lifespan)
+app = FastAPI(title="Total.kz", version="10.2.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -435,8 +439,17 @@ async def api_article(article_id: int):
 async def api_update_article(article_id: int, request: Request):
     body = await request.json()
     allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags",
-               "body_html", "body_text", "status", "editor_note"}
+               "body_html", "body_text", "status", "editor_note",
+               "body_blocks", "scheduled_at", "focal_x", "focal_y"}
     updates = {k: v for k, v in body.items() if k in allowed}
+
+    # If body_blocks provided, auto-generate body_html and body_text
+    if "body_blocks" in updates and updates["body_blocks"]:
+        try:
+            updates["body_html"] = db.blocks_to_html(updates["body_blocks"])
+            updates["body_text"] = db.blocks_to_text(updates["body_blocks"])
+        except Exception:
+            pass
     if not updates:
         return {"ok": False, "error": "Нет полей для обновления"}
     # Auto-set updated_at
@@ -471,6 +484,13 @@ async def api_update_article(article_id: int, request: Request):
             db.record_revision(article_id, changes, revision_type=revision_type)
         except Exception:
             pass
+        # Index in Meilisearch (fire-and-forget)
+        try:
+            article_data = db.get_article(article_id)
+            if article_data:
+                meili.index_article(article_data)
+        except Exception:
+            pass
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -487,6 +507,19 @@ async def api_create_article(request: Request):
         return JSONResponse({"ok": False, "error": "Категория обязательна"}, status_code=400)
     slug = _slugify(title)
     url = f"https://total.kz/ru/news/{sub_category}/{slug}"
+
+    body_blocks = body.get("body_blocks", None)
+    body_html = body.get("body_html", "")
+    body_text = body.get("body_text", "")
+
+    # If body_blocks provided, auto-generate body_html and body_text
+    if body_blocks:
+        try:
+            body_html = db.blocks_to_html(body_blocks)
+            body_text = db.blocks_to_text(body_blocks)
+        except Exception:
+            pass
+
     data = {
         "url": url,
         "title": title,
@@ -494,15 +527,25 @@ async def api_create_article(request: Request):
         "category_label": CATEGORY_LABELS.get(sub_category, sub_category),
         "author": body.get("author", ""),
         "excerpt": body.get("excerpt", ""),
-        "body_html": body.get("body_html", ""),
-        "body_text": body.get("body_text", ""),
+        "body_html": body_html,
+        "body_text": body_text,
         "main_image": body.get("main_image", ""),
         "tags": body.get("tags", []),
         "status": body.get("status", "draft"),
         "editor_note": body.get("editor_note", ""),
+        "body_blocks": body_blocks if isinstance(body_blocks, str) else (json.dumps(body_blocks) if body_blocks else None),
+        "scheduled_at": body.get("scheduled_at", None),
+        "focal_x": body.get("focal_x", 0.5),
+        "focal_y": body.get("focal_y", 0.5),
     }
     try:
         new_id = db.create_article(data)
+        # Index in Meilisearch
+        try:
+            data["id"] = new_id
+            meili.index_article(data)
+        except Exception:
+            pass
         return {"ok": True, "id": new_id}
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
@@ -512,6 +555,11 @@ async def api_create_article(request: Request):
 async def api_delete_article(article_id: int):
     try:
         db.update_article(article_id, {"status": "archived", "updated_at": datetime.now().isoformat(timespec="seconds")})
+        # Remove from Meilisearch
+        try:
+            meili.delete_article(article_id)
+        except Exception:
+            pass
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -591,6 +639,44 @@ async def api_seo_topics():
 @app.get("/api/seo/duplicates")
 async def api_seo_duplicates(limit: int = 30):
     return seo.get_duplicate_titles(limit)
+
+
+# ══════════════════════════════════════════════
+#  MEILISEARCH SEARCH API
+# ══════════════════════════════════════════════
+
+@app.get("/api/search/articles")
+async def api_search_articles(q: str = "", category: str = "", page: int = 1):
+    """Full-text search via Meilisearch with graceful fallback."""
+    if not q:
+        return {"hits": [], "total": 0, "query": ""}
+    filters = f'sub_category = "{category}"' if category else ""
+    try:
+        return meili.search(q, filters=filters, page=page)
+    except Exception:
+        # Fallback to SQLite LIKE search
+        result = db.search_articles(query=q, category=category, page=page)
+        return {"hits": result["articles"], "total": result["total"], "query": q}
+
+
+# ══════════════════════════════════════════════
+#  IMGPROXY PROXY
+# ══════════════════════════════════════════════
+
+@app.get("/imgproxy/{path:path}")
+async def imgproxy_proxy(path: str):
+    """Forward requests to imgproxy container."""
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"http://imgproxy:8080/{path}", timeout=10)
+            return Response(
+                content=r.content,
+                media_type=r.headers.get("content-type", "image/webp"),
+                headers={"Cache-Control": "public, max-age=2592000"},
+            )
+    except Exception:
+        return Response(status_code=502)
 
 
 # ── Data Audit endpoint ─────────────────────

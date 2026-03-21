@@ -389,8 +389,16 @@ def dedup_entities(entities: list, max_count: int = 5) -> list:
     return result
 
 
+def imgproxy_url(source_url: str, width: int = 800) -> str:
+    """Generate imgproxy URL for an image."""
+    if not source_url or not source_url.startswith("http"):
+        return source_url or ""
+    return f"/imgproxy/insecure/resize:fit:{width}:0/plain/{source_url}@webp"
+
+
 templates.env.globals["dedup_entities"] = dedup_entities
 templates.env.globals["current_year"] = lambda: datetime.now().year
+templates.env.globals["imgproxy_url"] = imgproxy_url
 templates.env.filters["format_num"] = format_num
 
 
@@ -665,15 +673,34 @@ async def search_page(
     q: str = "",
     page: int = Query(1, ge=1),
 ):
-    """Search results page."""
+    """Search results page — uses Meilisearch with SQLite fallback."""
+    meili_results = None
     try:
-        result = db.search_articles(query=q, page=page, per_page=20) if q else {
-            "articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20,
-        }
-        if result.get("articles"):
-            result["articles"] = rewrite_articles_images(result["articles"])
+        if q:
+            # Try Meilisearch first
+            try:
+                from . import search_engine as meili
+                meili_results = meili.search(q, page=page, per_page=20)
+            except Exception:
+                pass
 
-        # Pass popular tags for empty search page
+            if meili_results and meili_results.get("hits"):
+                result = {
+                    "articles": rewrite_articles_images(meili_results["hits"]),
+                    "total": meili_results["total"],
+                    "page": page,
+                    "per_page": 20,
+                    "pages": max(1, (meili_results["total"] + 19) // 20),
+                    "meili": True,
+                }
+            else:
+                # Fallback to SQLite
+                result = db.search_articles(query=q, page=page, per_page=20)
+                if result.get("articles"):
+                    result["articles"] = rewrite_articles_images(result["articles"])
+        else:
+            result = {"articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20}
+
         popular_tags = db.get_trending_tags(limit=20) if not q else None
     except Exception:
         logger.exception("Database error in search_page for q=%s", q)

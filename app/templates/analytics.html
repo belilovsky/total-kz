@@ -4,6 +4,7 @@
 {% block page_title %}Аналитика{% endblock %}
 
 {% block content %}
+<!-- Umami self-hosted analytics is available at http://localhost:3000 (see docker-compose.yml) -->
 {% set d = gsc %}
 {% set t = d.totals %}
 {% set pc = d.get('period_comparison', {}) %}

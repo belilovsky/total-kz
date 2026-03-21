@@ -87,7 +87,9 @@
   {# ── Hero image / placeholder ── #}
   {% if article.main_image %}
   <figure class="article-hero-image">
-    <img src="{{ article.main_image }}" alt="{{ article.title }}" loading="eager">
+    <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
+         srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
+         sizes="(max-width: 768px) 100vw, 800px">
     {% if article.image_credit %}
       <figcaption>{{ article.image_credit }}</figcaption>
     {% endif %}
@@ -264,7 +266,7 @@
       <a href="{{ article_url(art) }}" class="related-item">
         {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
-          <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
         </div>
         {% else %}
         <div class="related-thumb related-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}">

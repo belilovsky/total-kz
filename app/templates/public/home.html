@@ -13,7 +13,9 @@
       {% for hero in hero_articles %}
       <div class="hero-slide {% if loop.first %}active{% endif %}">
         {% if hero.main_image or hero.thumbnail %}
-          <img src="{{ hero.main_image or hero.thumbnail }}" alt="{{ hero.title }}" loading="eager">
+          <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 1200) }}" alt="{{ hero.title }}" loading="eager"
+               srcset="{{ imgproxy_url(hero.main_image or hero.thumbnail, 400) }} 400w, {{ imgproxy_url(hero.main_image or hero.thumbnail, 800) }} 800w, {{ imgproxy_url(hero.main_image or hero.thumbnail, 1200) }} 1200w"
+               sizes="100vw">
         {% endif %}
         <div class="hero-slide-body">
           <span class="cat-badge" data-cat="{{ nav_slug_for(hero.sub_category) }}">
@@ -56,7 +58,7 @@
         <article class="cat-highlight-item">
           {% if art.main_image or art.thumbnail %}
           <div class="cat-highlight-thumb">
-            <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
           </div>
           {% else %}
           <div class="cat-highlight-thumb cat-highlight-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
@@ -98,7 +100,7 @@
         </div>
         {% if art.main_image or art.thumbnail %}
         <div class="feed-item-thumb">
-          <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
         </div>
         {% else %}
         <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>

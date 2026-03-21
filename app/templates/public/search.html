@@ -37,14 +37,16 @@
           <span class="sep">·</span>
           <span>{{ format_date_short(art.pub_date) }}</span>
         </div>
-        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-        {% if art.excerpt %}
+        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ (art._formatted.title if art._formatted is defined and art._formatted.title) | default(art.title) | safe }}</a></h3>
+        {% if art._formatted is defined and art._formatted.excerpt %}
+          <p class="feed-item-excerpt">{{ art._formatted.excerpt | safe }}</p>
+        {% elif art.excerpt %}
           <p class="feed-item-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
         {% endif %}
       </div>
       {% if art.main_image or art.thumbnail %}
       <div class="feed-item-thumb">
-        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
       </div>
       {% else %}
       <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
