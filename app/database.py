@@ -435,6 +435,24 @@ def get_article(article_id: int) -> dict | None:
         return None
 
 
+def update_article(article_id: int, updates: dict) -> None:
+    """Update article fields. Supports: title, excerpt, sub_category, author, main_image, tags."""
+    with get_db() as conn:
+        # Separate tags (JSON) from scalar fields
+        tags = updates.pop("tags", None)
+        if updates:
+            cols = []
+            vals = []
+            for k, v in updates.items():
+                cols.append(f"{k} = ?")
+                vals.append(v)
+            vals.append(article_id)
+            conn.execute(f"UPDATE articles SET {', '.join(cols)} WHERE id = ?", vals)
+        if tags is not None:
+            conn.execute("UPDATE articles SET tags = ? WHERE id = ?", (json.dumps(tags, ensure_ascii=False), article_id))
+        conn.commit()
+
+
 def _load_enrichment(conn, article_id: int) -> dict | None:
     """Load GPT enrichment data for an article. Returns None gracefully if table missing."""
     try:

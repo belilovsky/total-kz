@@ -16,6 +16,50 @@
 {% endblock %}
 
 {% block content %}
+<!-- Mobile filter button -->
+<button class="mobile-filter-btn" onclick="document.getElementById('filterSheet').classList.add('open');document.getElementById('sheetOverlay').classList.add('open')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    Фильтры{% if q or category or author or date_from or date_to or tag or entity_id %} •{% endif %}
+</button>
+
+<!-- Mobile bottom sheet for filters -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="this.classList.remove('open');document.getElementById('filterSheet').classList.remove('open')"></div>
+<div class="bottom-sheet" id="filterSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Фильтры</div>
+    <form method="get" action="/admin/articles" style="display:flex;flex-direction:column;gap:12px">
+        <div class="filter-group">
+            <label class="filter-label">Поиск</label>
+            <input type="text" name="q" value="{{ q }}" placeholder="Заголовок, текст..." class="filter-input" style="width:100%;min-height:44px">
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Категория</label>
+            <select name="category" class="filter-select" style="width:100%;min-height:44px">
+                <option value="">Все категории</option>
+                {% for c in categories %}
+                <option value="{{ c.sub_category }}" {% if category == c.sub_category %}selected{% endif %}>{{ cat_label(c.sub_category) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Автор</label>
+            <select name="author" class="filter-select" style="width:100%;min-height:44px">
+                <option value="">Все авторы</option>
+                {% for a in authors[:100] %}
+                <option value="{{ a.author }}" {% if author == a.author %}selected{% endif %}>{{ a.author }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if entity_id %}<input type="hidden" name="entity_id" value="{{ entity_id }}">{% endif %}
+        <div style="display:flex;gap:8px;padding-top:8px">
+            <button type="submit" class="btn btn-primary" style="flex:1;min-height:48px;font-size:15px">Применить</button>
+            {% if q or category or author or date_from or date_to or tag or entity_id %}
+            <a href="/admin/articles" class="btn btn-ghost" style="min-height:48px;font-size:15px">Сброс</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
 <div class="filters-bar">
     <form method="get" action="/admin/articles" class="filters-form" id="filtersForm">
         <div class="filter-group grow">

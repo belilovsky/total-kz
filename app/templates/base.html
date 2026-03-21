@@ -2,14 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Total.kz Dashboard{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=4.0">
+    <link rel="stylesheet" href="/static/css/style.css?v=9.2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
-        // Apply theme immediately to prevent flash
         (function() {
             var theme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', theme);
@@ -20,6 +19,7 @@
 <body>
     <div class="sidebar-overlay" onclick="document.body.classList.remove('sidebar-open')"></div>
     
+    <!-- Desktop/Tablet Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">T</div>
@@ -49,7 +49,7 @@
         </nav>
         <div class="sidebar-footer">
             <a href="/" class="version-badge" style="text-decoration:none;color:inherit">← На сайт</a>
-            <div class="version-badge">v8.0 – Total.kz Admin</div>
+            <div class="version-badge">v9.2 – Total.kz Admin</div>
         </div>
     </aside>
 
@@ -72,7 +72,34 @@
         </div>
     </main>
 
-    <script src="/static/js/app.js?v=4.0"></script>
+    <!-- Mobile Bottom Tab Bar -->
+    <nav class="mobile-tabs">
+        <a href="/admin" class="mobile-tab {% if active == 'dashboard' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Дашборд</span>
+        </a>
+        <a href="/admin/articles" class="mobile-tab {% if active == 'articles' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Статьи</span>
+        </a>
+        <a href="/admin/content" class="mobile-tab {% if active == 'content' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <span>Контент</span>
+        </a>
+        <a href="/admin/analytics" class="mobile-tab {% if active == 'analytics' %}active{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Аналитика</span>
+        </a>
+        <a href="/" class="mobile-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Сайт</span>
+        </a>
+    </nav>
+
+    <!-- Toast notifications -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/js/app.js?v=9.2"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

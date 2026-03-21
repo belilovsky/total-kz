@@ -244,9 +244,12 @@ async def admin_article_detail(request: Request, article_id: int):
     article = db.get_article(article_id)
     if not article:
         return HTMLResponse("Статья не найдена", status_code=404)
+    stats = db.get_stats()
+    cat_slugs = [c["sub_category"] for c in stats["categories"]]
     return templates.TemplateResponse("article.html", {
         "request": request,
         "article": article,
+        "categories": cat_slugs,
         "cat_label": cat_label,
         "entity_type_label": entity_type_label,
     })
@@ -358,6 +361,19 @@ async def api_articles(
 @app.get("/api/article/{article_id}")
 async def api_article(article_id: int):
     return db.get_article(article_id) or {"error": "not found"}
+
+@app.patch("/api/article/{article_id}")
+async def api_update_article(article_id: int, request: Request):
+    body = await request.json()
+    allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags"}
+    updates = {k: v for k, v in body.items() if k in allowed}
+    if not updates:
+        return {"ok": False, "error": "Нет полей для обновления"}
+    try:
+        db.update_article(article_id, updates)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 @app.get("/api/tags")
 async def api_tags(limit: int = 100):
