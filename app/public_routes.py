@@ -35,29 +35,14 @@ EXT_CONTENT_TYPE = {
 
 
 def rewrite_image_url(url: str | None) -> str | None:
-    """Rewrite total.kz/storage/... URLs to local /img/... proxy."""
-    if not url:
-        return url
-    if url.startswith("https://total.kz/storage/"):
-        return url.replace("https://total.kz/storage/", "/img/")
-    if url.startswith("http://total.kz/storage/"):
-        return url.replace("http://total.kz/storage/", "/img/")
+    """Pass through image URLs directly (proxy disabled for now).
+    Images load from https://total.kz/storage/ via Cloudflare CDN.
+    Proxy can be re-enabled later for self-hosting."""
     return url
 
 
 def rewrite_article_images(article: dict) -> dict:
-    """Rewrite image URLs in an article dict."""
-    if article.get("main_image"):
-        article["main_image"] = rewrite_image_url(article["main_image"])
-    if article.get("thumbnail"):
-        article["thumbnail"] = rewrite_image_url(article["thumbnail"])
-    # Rewrite inline images in body_html
-    if article.get("body_html"):
-        article["body_html"] = (
-            article["body_html"]
-            .replace("https://total.kz/storage/", "/img/")
-            .replace("http://total.kz/storage/", "/img/")
-        )
+    """Pass through article images (proxy disabled for now)."""
     return article
 
 

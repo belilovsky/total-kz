@@ -616,13 +616,14 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
   .article-sidebar-inner { position:sticky; top:5rem; }
 }
 
-/* Sidebar share buttons (vertical) */
-.sidebar-share { display:flex; flex-direction:column; gap:var(--space-2); margin-bottom:var(--space-8); }
+/* Sidebar share buttons (horizontal row) */
+.sidebar-share { margin-bottom:var(--space-6); }
 .sidebar-share-label {
-  font-size:var(--text-xs); font-weight:600; color:var(--text-muted);
-  text-transform:uppercase; letter-spacing:0.06em; margin-bottom:var(--space-1);
+  display:block; font-size:var(--text-xs); font-weight:600; color:var(--text-muted);
+  text-transform:uppercase; letter-spacing:0.06em; margin-bottom:var(--space-2);
 }
-.sidebar-share .share-btn { width:36px; height:36px; }
+.sidebar-share-row { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.sidebar-share .share-btn { width:34px; height:34px; }
 
 /* Sidebar entities + tags */
 .sidebar-entities { margin-bottom:var(--space-6); }
@@ -630,10 +631,10 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
   display:block; font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
   letter-spacing:0.06em; color:var(--text-secondary); margin-bottom:var(--space-3);
 }
-.sidebar-chips { display:flex; flex-direction:column; gap:var(--space-1); }
+.sidebar-chips { display:flex; flex-wrap:wrap; gap:var(--space-1); }
 .sidebar-chips .entity-chip {
   font-size:0.75rem; padding:var(--space-1) var(--space-2);
-  justify-content:flex-start; width:100%;
+  width:auto;
 }
 .sidebar-chips .tag-pill {
   font-size:0.75rem; padding:var(--space-1) var(--space-2);
@@ -1397,28 +1398,63 @@ img[loading="lazy"].loaded { opacity:1; }
 /* ── Print Styles ────────────────────────────── */
 @media print {
   *, *::before, *::after { color:#000 !important; background:transparent !important; box-shadow:none !important; text-shadow:none !important; }
-  body { font-size:11pt; line-height:1.6; }
+  body { font-size:11pt; line-height:1.6; font-family:Georgia,'Times New Roman',serif; }
+
+  /* Hide non-content elements */
   .site-header, .site-footer, .back-to-top, .reading-progress,
-  .mobile-share-bar, .share-buttons, .sidebar-share, .article-sidebar,
-  .article-toc, .print-btn, .search-overlay, .mobile-menu,
-  .article-timeline, .related-section, .cat-badge { display:none !important; }
+  .mobile-share-bar, .share-buttons, .sidebar-share, .sidebar-share-row,
+  .article-sidebar, .article-toc, .print-btn, .search-overlay, .mobile-menu,
+  .article-timeline, .related-section, .cat-badge,
+  .hero-slider, .pagination { display:none !important; }
+
   .article-page { max-width:100% !important; padding:0 !important; }
   .article-layout { display:block !important; }
-  .article-title { font-size:22pt !important; line-height:1.2 !important; }
-  .article-excerpt { font-size:12pt !important; }
-  .article-meta { border-top:1px solid #ccc !important; }
-  .article-body { font-size:11pt !important; line-height:1.6 !important; }
-  .article-body h2 { font-size:16pt !important; page-break-after:avoid; }
-  .article-body h3 { font-size:13pt !important; page-break-after:avoid; }
-  .article-body img { max-width:100% !important; page-break-inside:avoid; }
-  .article-body blockquote { border-left:3px solid #999 !important; padding-left:12pt !important; }
-  .article-hero-image { margin:12pt 0 !important; }
-  .article-hero-image img { border-radius:0 !important; }
-  a[href]::after { content:" (" attr(href) ")"; font-size:9pt; color:#666 !important; }
-  .breadcrumbs a::after, .article-meta a::after, .entity-chip::after, .article-top-bar a::after { content:"" !important; }
-  .article-footer-meta { border-top:1px solid #ccc !important; }
+
+  /* Article top bar: simple breadcrumb */
+  .article-top-bar { font-size:9pt !important; margin-bottom:6pt !important; color:#666 !important; }
+  .article-top-bar a { text-decoration:none !important; color:#666 !important; }
   .article-top-bar .cat-badge { display:none !important; }
-  @page { margin:2cm; }
+
+  /* Typography */
+  .article-title { font-size:20pt !important; line-height:1.25 !important; font-weight:700 !important; margin-bottom:6pt !important; }
+  .article-excerpt { font-size:11pt !important; color:#444 !important; margin-bottom:8pt !important; font-style:italic !important; }
+  .article-meta { font-size:9pt !important; padding:6pt 0 !important; margin-bottom:12pt !important; border-bottom:1pt solid #ccc !important; border-top:none !important; }
+  .article-meta .sep { color:#999 !important; }
+  .article-body { font-size:11pt !important; line-height:1.65 !important; }
+  .article-body h2 { font-size:14pt !important; font-weight:700 !important; margin:16pt 0 8pt !important; page-break-after:avoid; }
+  .article-body h3 { font-size:12pt !important; font-weight:600 !important; margin:12pt 0 6pt !important; page-break-after:avoid; }
+  .article-body p { margin-bottom:8pt !important; orphans:3; widows:3; }
+  .article-body img { max-width:100% !important; page-break-inside:avoid; margin:8pt 0 !important; }
+  .article-body blockquote {
+    border-left:3pt solid #999 !important; padding:6pt 0 6pt 12pt !important;
+    margin:12pt 0 !important; font-style:italic !important;
+  }
+
+  /* Hero image */
+  .article-hero-image { margin:8pt 0 12pt !important; }
+  .article-hero-image img { border-radius:0 !important; }
+
+  /* Suppress URL suffixes everywhere */
+  a[href]::after { content:"" !important; }
+
+  /* Entities + tags: compact inline flow */
+  .article-footer-meta {
+    border-top:1pt solid #ccc !important;
+    padding:8pt 0 !important; margin-top:12pt !important;
+    display:flex !important; flex-wrap:wrap !important; gap:4pt !important;
+  }
+  .entity-chip, .tag-pill {
+    font-size:8pt !important; padding:2pt 6pt !important;
+    border:1pt solid #bbb !important; border-radius:100px !important;
+    text-decoration:none !important; display:inline-flex !important;
+    color:#333 !important;
+  }
+  .entity-icon { display:none !important; }
+  .entity-full { display:inline !important; }
+  .entity-short { display:none !important; }
+
+  @page { margin:1.5cm 2cm; }
+  @page:first { margin-top:2cm; }
 }
 
 /* ── Mobile card separators ─────────────────── */
