@@ -436,15 +436,18 @@ def get_article(article_id: int) -> dict | None:
 
 
 def _load_enrichment(conn, article_id: int) -> dict | None:
-    """Load GPT enrichment data for an article."""
-    row = conn.execute("""
-        SELECT summary, meta_description, keywords, quote, quote_author
-        FROM article_enrichments WHERE article_id = ?
-    """, (article_id,)).fetchone()
-    if row:
-        d = dict(row)
-        d["keywords"] = json.loads(d.get("keywords") or "[]")
-        return d
+    """Load GPT enrichment data for an article. Returns None gracefully if table missing."""
+    try:
+        row = conn.execute("""
+            SELECT summary, meta_description, keywords, quote, quote_author
+            FROM article_enrichments WHERE article_id = ?
+        """, (article_id,)).fetchone()
+        if row:
+            d = dict(row)
+            d["keywords"] = json.loads(d.get("keywords") or "[]")
+            return d
+    except Exception:
+        pass
     return None
 
 
@@ -480,15 +483,29 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
     """Get latest articles for homepage."""
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
-                   COALESCE(NULLIF(a.excerpt, ''), ae.summary) as excerpt,
-                   a.thumbnail, a.main_image
-            FROM articles a
-            LEFT JOIN article_enrichments ae ON ae.article_id = a.id
-            ORDER BY a.pub_date DESC
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles
+            ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
         """, (limit, offset)).fetchall()
-        return [dict(r) for r in rows]
+        articles = [dict(r) for r in rows]
+        # Backfill empty excerpts with GPT summaries
+        try:
+            ids = [a["id"] for a in articles if not a.get("excerpt")]
+            if ids:
+                placeholders = ','.join('?' * len(ids))
+                sums = conn.execute(f"""
+                    SELECT article_id, summary FROM article_enrichments
+                    WHERE article_id IN ({placeholders})
+                """, ids).fetchall()
+                smap = {r["article_id"]: r["summary"] for r in sums}
+                for a in articles:
+                    if not a.get("excerpt") and a["id"] in smap:
+                        a["excerpt"] = smap[a["id"]]
+        except Exception:
+            pass
+        return articles
 
 
 def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> dict:
@@ -498,13 +515,10 @@ def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> d
             "SELECT COUNT(*) FROM articles WHERE sub_category = ?", (category,)
         ).fetchone()[0]
         rows = conn.execute("""
-            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
-                   COALESCE(NULLIF(a.excerpt, ''), ae.summary) as excerpt,
-                   a.thumbnail, a.main_image
-            FROM articles a
-            LEFT JOIN article_enrichments ae ON ae.article_id = a.id
-            WHERE a.sub_category = ?
-            ORDER BY a.pub_date DESC
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles WHERE sub_category = ?
+            ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
         """, (category, limit, offset)).fetchall()
         return {
@@ -583,8 +597,14 @@ def get_story_timeline(article_id: int, pub_date: str) -> dict | None:
     Returns {story_title, prev: [...], next: [...]} or None if no story found.
     Only returns results for stories with 2+ articles (confidence >= 0.3).
     """
+    try:
+        return _get_story_timeline_inner(article_id, pub_date)
+    except Exception:
+        return None
+
+
+def _get_story_timeline_inner(article_id: int, pub_date: str) -> dict | None:
     with get_db() as conn:
-        # Find the story this article belongs to (highest confidence)
         story_row = conn.execute("""
             SELECT s.id, s.title_ru, s.article_count
             FROM article_stories as2
