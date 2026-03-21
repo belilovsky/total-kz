@@ -152,17 +152,29 @@
     </svg>
   </button>
 
-  <!-- ═══ FOOTER ═══ -->
+  <!-- ═══ FOOTER — BBC-minimal ═══ -->
   <footer class="site-footer">
     <div class="footer-inner">
-      <!-- Column 1: Brand + Social -->
-      <div class="footer-brand">
-        <a href="/" class="site-logo" style="text-decoration:none;">
+      <!-- Row 1: Logo + inline navigation -->
+      <div class="footer-top">
+        <a href="/" style="text-decoration:none;flex-shrink:0;">
           <img src="/static/img/logotype.png" alt="Total.kz" class="site-logo-img">
         </a>
-        <p style="font-size:var(--text-sm); color:var(--text-muted); line-height:1.5; margin-top:var(--space-1);">
-          Total Media Qazaqstan
-        </p>
+        <nav class="footer-nav-inline" aria-label="Навигация">
+          {% if nav_sections is defined %}
+            {% for section in nav_sections %}
+              <a href="/news/{{ section.slug }}">{{ section.label }}</a>
+            {% endfor %}
+          {% endif %}
+          <a href="/page/reklama">Реклама</a>
+          <a href="/page/pravila">Правила</a>
+          <a href="/page/contacts">Контакты</a>
+        </nav>
+      </div>
+
+      <!-- Row 2: Social icons -->
+      <div class="footer-social-row">
+        <span class="footer-social-label">Мы в соцсетях</span>
         <div class="footer-social">
           <a href="https://t.me/total_kz" target="_blank" rel="noopener" aria-label="Telegram" class="footer-social-link">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
@@ -182,41 +194,15 @@
         </div>
       </div>
 
-      <!-- Column 2: Navigation -->
-      <nav class="footer-nav-columns">
-        <div class="footer-nav-col">
-          <span class="footer-nav-heading">Разделы</span>
-          <a href="/">Главная</a>
-          {% if nav_sections is defined %}
-            {% for section in nav_sections[:3] %}
-              <a href="/news/{{ section.slug }}">{{ section.label }}</a>
-            {% endfor %}
-          {% endif %}
-        </div>
-        <div class="footer-nav-col">
-          <span class="footer-nav-heading">Ещё</span>
-          {% if nav_sections is defined %}
-            {% for section in nav_sections[3:] %}
-              <a href="/news/{{ section.slug }}">{{ section.label }}</a>
-            {% endfor %}
-          {% endif %}
-        </div>
-        <div class="footer-nav-col">
-          <span class="footer-nav-heading">Компания</span>
-          <a href="/page/reklama">Реклама</a>
-          <a href="/page/pravila">Правила</a>
-          <a href="/page/contacts">Контакты</a>
-        </div>
-      </nav>
-
-      <!-- Column 3: Copyright + Contact -->
-      <div class="footer-meta">
+      <!-- Row 3: Legal / copyright -->
+      <div class="footer-legal">
         <span>&copy; 2011–2026 Total Media Qazaqstan</span>
-        <span>Все права защищены</span>
+        <span class="sep">·</span>
         <span>Свидетельство СМИ №16942-ИА</span>
-        <span style="margin-top:var(--space-2);">РК, г. Алматы, пр. Жибек жолы, 115/46, офис 306</span>
-        <a href="tel:+77009787854" style="margin-top:var(--space-1);">+7 700 978-78-54</a>
-        <span style="font-size:var(--text-xs); color:var(--text-faint);">рекламная служба</span>
+        <span class="sep">·</span>
+        <span>г. Алматы, пр. Жибек жолы, 115/46, оф. 306</span>
+        <span class="sep">·</span>
+        <a href="tel:+77009787854">+7 700 978-78-54</a>
       </div>
     </div>
   </footer>

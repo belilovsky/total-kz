@@ -394,16 +394,28 @@ async def article_page(request: Request, category: str, slug: str):
         }, status_code=404)
 
     rewrite_article_images(article)
-    related = rewrite_articles_images(db.get_related_articles(article["id"], category, limit=4))
 
-    # Timeline: prev/next articles in same category
+    # Entity IDs for smart matching (timeline + related)
+    entity_ids = [e["id"] for e in article.get("entities", [])]
+
+    # Related: by shared entities first, then fill from category (6 cards)
+    related = rewrite_articles_images(
+        db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
+    )
+
+    # Timeline: by shared entities (contextual, not whole category)
     timeline_raw = db.get_timeline_articles(
-        article["id"], category, article.get("pub_date", "")
+        article["id"], category, article.get("pub_date", ""),
+        entity_ids=entity_ids if entity_ids else None
     )
     timeline = {
         "prev": rewrite_articles_images(timeline_raw["prev"]),
         "next": rewrite_articles_images(timeline_raw["next"]),
     }
+    # Build a human-readable timeline topic from top entity name
+    timeline_topic = ""
+    if entity_ids and article.get("entities"):
+        timeline_topic = article["entities"][0]["name"]
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
@@ -418,6 +430,7 @@ async def article_page(request: Request, category: str, slug: str):
         "article": article,
         "related": related,
         "timeline": timeline,
+        "timeline_topic": timeline_topic,
         "category": category,
         "category_name": cat_label(category),
         "nav_section": nav_section,

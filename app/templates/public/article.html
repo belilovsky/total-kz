@@ -51,19 +51,20 @@
 {% block content %}
 {% set slug = article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') %}
 <article class="article-page">
-  <nav class="breadcrumbs" aria-label="Навигация">
+
+  {# ── Top bar: breadcrumbs + badge in one compact row ── #}
+  <div class="article-top-bar">
     <a href="/">Главная</a>
     <span class="sep">›</span>
     <a href="/news/{{ nav_section }}">{{ nav_section_name }}</a>
-    <span class="sep">›</span>
-    <span>{{ article.title[:50] }}{% if article.title|length > 50 %}…{% endif %}</span>
-  </nav>
-
-  <header class="article-page-header">
     <span class="cat-badge" data-cat="{{ nav_section }}">
       <span class="cat-dot"></span>
       <span class="cat-name">{{ nav_section_name }}</span>
     </span>
+  </div>
+
+  {# ── Compact header ── #}
+  <header class="article-page-header">
     <h1 class="article-title">{{ article.title }}</h1>
     {% if article.excerpt %}
       <p class="article-excerpt">{{ article.excerpt }}</p>
@@ -81,6 +82,7 @@
     </div>
   </header>
 
+  {# ── Hero image with overlay caption ── #}
   {% if article.main_image %}
   <figure class="article-hero-image">
     <img src="{{ article.main_image }}" alt="{{ article.title }}" loading="eager">
@@ -102,6 +104,7 @@
         {% endif %}
       </div>
 
+      {# ── Inline share (mobile/tablet only, hidden >=1100px) ── #}
       <div class="share-buttons">
         <span class="share-label">Поделиться</span>
         <a href="https://t.me/share/url?url=https://total.kz/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram">
@@ -124,33 +127,31 @@
         </button>
       </div>
 
-      {% if article.entities %}
-      <div class="article-entities">
-        <span class="entities-label">Упоминаются</span>
-        <div class="entity-chips">
+      {# ── Merged entities + tags in one compact block ── #}
+      {% if article.entities or article.tags %}
+      <div class="article-footer-meta">
+        {% if article.entities %}
           {% for ent in article.entities %}
             <a href="/entity/{{ ent.id }}" class="entity-chip entity-{{ ent.entity_type }}" title="{{ ent.entity_type == 'person' and 'Персона' or ent.entity_type == 'org' and 'Организация' or 'Локация' }}">
               <span class="entity-icon">{% if ent.entity_type == 'person' %}•{% elif ent.entity_type == 'org' %}▪{% else %}○{% endif %}</span>
               {{ ent.name }}
             </a>
           {% endfor %}
-        </div>
+        {% endif %}
+        {% if article.tags %}
+          {% for tag in article.tags %}
+            <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
+          {% endfor %}
+        {% endif %}
       </div>
       {% endif %}
 
-      {% if article.tags %}
-      <div class="article-tags">
-        {% for tag in article.tags %}
-          <a href="/tag/{{ tag }}" class="tag-pill">{{ tag }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-
+      {# ── Timeline: contextual by entities ── #}
       {% if timeline and (timeline.prev or timeline.next) %}
       <section class="article-timeline">
         <h2 class="timeline-heading">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Хронология: {{ nav_section_name }}
+          Хронология{% if timeline_topic %}: {{ timeline_topic }}{% endif %}
         </h2>
         <div class="timeline-track">
           {% for art in timeline.next|reverse %}
@@ -206,6 +207,7 @@
     </aside>
   </div>
 
+  {# ── Related articles: 6 cards ── #}
   {% if related %}
   <section class="related-section">
     <h2 class="related-heading">Читайте также</h2>
@@ -214,7 +216,7 @@
       <a href="{{ article_url(art) }}" class="related-item">
         {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
-          <img src="{{ art.main_image or art.thumbnail }}" alt="" >
+          <img src="{{ art.main_image or art.thumbnail }}" alt="" loading="lazy">
         </div>
         {% endif %}
         <div class="related-body">

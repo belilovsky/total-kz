@@ -503,27 +503,88 @@ def get_related_articles(article_id: int, category: str, limit: int = 4) -> list
         return [dict(r) for r in rows]
 
 
-def get_timeline_articles(article_id: int, category: str, pub_date: str) -> dict:
-    """Get previous and next articles in same category for timeline navigation."""
+def get_timeline_articles(article_id: int, category: str, pub_date: str, entity_ids: list = None) -> dict:
+    """Get timeline articles related by shared entities (or fallback to category)."""
     with get_db() as conn:
-        prev_rows = conn.execute("""
-            SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
-            FROM articles
-            WHERE sub_category = ? AND id != ? AND pub_date < ?
-            ORDER BY pub_date DESC
-            LIMIT 3
-        """, (category, article_id, pub_date)).fetchall()
-        next_rows = conn.execute("""
-            SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
-            FROM articles
-            WHERE sub_category = ? AND id != ? AND pub_date > ?
-            ORDER BY pub_date ASC
-            LIMIT 3
-        """, (category, article_id, pub_date)).fetchall()
+        if entity_ids:
+            # Find articles sharing at least one entity, ordered by relevance (shared count)
+            placeholders = ','.join('?' * len(entity_ids))
+            prev_rows = conn.execute(f"""
+                SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.thumbnail, a.main_image,
+                       COUNT(DISTINCT ae.entity_id) as shared
+                FROM articles a
+                JOIN article_entities ae ON ae.article_id = a.id
+                WHERE ae.entity_id IN ({placeholders})
+                  AND a.id != ? AND a.pub_date <= ?
+                GROUP BY a.id
+                ORDER BY a.pub_date DESC
+                LIMIT 3
+            """, (*entity_ids, article_id, pub_date)).fetchall()
+            next_rows = conn.execute(f"""
+                SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.thumbnail, a.main_image,
+                       COUNT(DISTINCT ae.entity_id) as shared
+                FROM articles a
+                JOIN article_entities ae ON ae.article_id = a.id
+                WHERE ae.entity_id IN ({placeholders})
+                  AND a.id != ? AND a.pub_date > ?
+                GROUP BY a.id
+                ORDER BY a.pub_date ASC
+                LIMIT 3
+            """, (*entity_ids, article_id, pub_date)).fetchall()
+        else:
+            # Fallback: same sub_category
+            prev_rows = conn.execute("""
+                SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
+                FROM articles
+                WHERE sub_category = ? AND id != ? AND pub_date <= ?
+                ORDER BY pub_date DESC
+                LIMIT 3
+            """, (category, article_id, pub_date)).fetchall()
+            next_rows = conn.execute("""
+                SELECT id, url, pub_date, sub_category, title, thumbnail, main_image
+                FROM articles
+                WHERE sub_category = ? AND id != ? AND pub_date > ?
+                ORDER BY pub_date ASC
+                LIMIT 3
+            """, (category, article_id, pub_date)).fetchall()
         return {
             "prev": [dict(r) for r in prev_rows],
             "next": [dict(r) for r in next_rows],
         }
+
+
+def get_related_by_entities(article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
+    """Get related articles by shared entities, falling back to category."""
+    with get_db() as conn:
+        results = []
+        if entity_ids:
+            placeholders = ','.join('?' * len(entity_ids))
+            rows = conn.execute(f"""
+                SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author, a.excerpt,
+                       a.thumbnail, a.main_image,
+                       COUNT(DISTINCT ae.entity_id) as shared
+                FROM articles a
+                JOIN article_entities ae ON ae.article_id = a.id
+                WHERE ae.entity_id IN ({placeholders}) AND a.id != ?
+                GROUP BY a.id
+                ORDER BY shared DESC, a.pub_date DESC
+                LIMIT ?
+            """, (*entity_ids, article_id, limit)).fetchall()
+            results = [dict(r) for r in rows]
+        # Fill remaining slots from same category
+        if len(results) < limit:
+            existing_ids = [r['id'] for r in results] + [article_id]
+            placeholders2 = ','.join('?' * len(existing_ids))
+            fill = conn.execute(f"""
+                SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                       thumbnail, main_image
+                FROM articles
+                WHERE sub_category = ? AND id NOT IN ({placeholders2})
+                ORDER BY pub_date DESC
+                LIMIT ?
+            """, (category, *existing_ids, limit - len(results))).fetchall()
+            results.extend([dict(r) for r in fill])
+        return results
 
 
 def get_trending_tags(limit: int = 20) -> list:
