@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="wide-layout">
+  <h1 class="sr-only">Total.kz — Новости Казахстана</h1>
 
   <!-- ═══ HERO SLIDER ═══ -->
   {% if hero_articles %}
@@ -12,7 +13,7 @@
       {% for hero in hero_articles %}
       <div class="hero-slide {% if loop.first %}active{% endif %}">
         {% if hero.main_image or hero.thumbnail %}
-          <img src="{{ hero.main_image or hero.thumbnail }}" alt="" loading="eager">
+          <img src="{{ hero.main_image or hero.thumbnail }}" alt="{{ hero.title }}" loading="eager">
         {% endif %}
         <div class="hero-slide-body">
           <span class="cat-badge" data-cat="{{ nav_slug_for(hero.sub_category) }}">
@@ -55,7 +56,7 @@
         <article class="cat-highlight-item">
           {% if art.main_image or art.thumbnail %}
           <div class="cat-highlight-thumb">
-            <img src="{{ art.main_image or art.thumbnail }}" alt="">
+            <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
           </div>
           {% endif %}
           <div class="cat-highlight-body">
@@ -95,7 +96,7 @@
         </div>
         {% if art.main_image or art.thumbnail %}
         <div class="feed-item-thumb">
-          <img src="{{ art.main_image or art.thumbnail }}" alt="">
+          <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
         </div>
         {% endif %}
       </article>

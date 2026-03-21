@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS articles (
 CREATE INDEX IF NOT EXISTS idx_articles_pub_date ON articles(pub_date);
 CREATE INDEX IF NOT EXISTS idx_articles_sub_category ON articles(sub_category);
 CREATE INDEX IF NOT EXISTS idx_articles_author ON articles(author);
+CREATE INDEX IF NOT EXISTS idx_articles_sub_category_pub_date ON articles(sub_category, pub_date DESC);
 
 -- NER-сущности: персоны, организации, события, локации
 CREATE TABLE IF NOT EXISTS entities (

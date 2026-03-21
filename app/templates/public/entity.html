@@ -1,13 +1,22 @@
 {% extends "public/base.html" %}
 
 {% block title %}{{ entity.name }} — {{ type_label }} — Total.kz{% endblock %}
-{% block description %}Все статьи, связанные с {{ entity.name }}. {{ pluralize_articles(result.total) }} на Total.kz{% endblock %}
+{% block description %}Новости и статьи о {{ entity.name }} на Total.kz{% endblock %}
+{% block og_title %}{{ entity.name }} — {{ type_label }}{% endblock %}
+{% block og_description %}{{ pluralize_articles(result.total) }} о {{ entity.name }} на Total.kz{% endblock %}
+
+{% block head_extra %}
+{% if page > 1 %}<link rel="prev" href="/entity/{{ entity.id }}?page={{ page - 1 }}">{% endif %}
+{% if page < result.pages %}<link rel="next" href="/entity/{{ entity.id }}?page={{ page + 1 }}">{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="entity-page">
 
   <nav class="breadcrumbs" aria-label="Навигация">
     <a href="/">Главная</a>
+    <span class="sep">›</span>
+    <span>Сущности</span>
     <span class="sep">›</span>
     <span>{{ entity.name }}</span>
   </nav>
@@ -41,7 +50,7 @@
       </div>
       {% if art.main_image or art.thumbnail %}
       <div class="feed-item-thumb">
-        <img src="{{ art.main_image or art.thumbnail }}" alt="" >
+        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
       </div>
       {% endif %}
     </article>

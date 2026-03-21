@@ -6,8 +6,19 @@
 {% block og_description %}Последние новости раздела «{{ category_name }}» на Total.kz{% endblock %}
 {% block canonical %}/news/{{ category }}{% endblock %}
 
+{% block head_extra %}
+{% if page > 1 %}<link rel="prev" href="/news/{{ category }}?page={{ page - 1 }}">{% endif %}
+{% if page < pages %}<link rel="next" href="/news/{{ category }}?page={{ page + 1 }}">{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="wide-layout">
+
+  <nav class="breadcrumbs" aria-label="Навигация">
+    <a href="/">Главная</a>
+    <span class="sep">›</span>
+    <span>{{ category_name }}</span>
+  </nav>
 
   <div class="category-header">
     <h1 class="category-name"><span class="cat-badge" data-cat="{{ category }}"><span class="cat-dot"></span></span>{{ category_name }}</h1>
@@ -21,7 +32,7 @@
     <article class="featured-card">
       {% if art.main_image or art.thumbnail %}
       <div class="card-image">
-        <img src="{{ art.main_image or art.thumbnail }}" alt="">
+        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
       </div>
       {% endif %}
       <div class="card-body">
@@ -64,7 +75,7 @@
         </div>
         {% if art.main_image or art.thumbnail %}
         <div class="feed-item-thumb">
-          <img src="{{ art.main_image or art.thumbnail }}" alt="">
+          <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
         </div>
         {% endif %}
       </article>

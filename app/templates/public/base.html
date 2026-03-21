@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://total.kz{{ request.url.path }}">
   <meta property="og:site_name" content="Total.kz">
   <meta property="og:locale" content="ru_RU">
-  {% block og_image %}<meta property="og:image" content="https://total.kz/static/og-default.png">{% endblock %}
+  {% block og_image %}<meta property="og:image" content="https://total.kz/static/img/og-default.png">{% endblock %}
   <meta name="twitter:card" content="summary_large_image">
   {% endblock %}
 
@@ -39,13 +39,17 @@
   </script>
   {% endblock %}
 
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.svg">
+  {% block head_extra %}{% endblock %}
+
   <!-- Fonts: Onest (all text) + JetBrains Mono (code/meta) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css">
+  <link rel="stylesheet" href="/static/css/public.css?v=8.9">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -130,6 +134,11 @@
       </nav>
 
       <div class="mobile-menu-footer">
+        <div class="mobile-menu-links">
+          <a href="/page/reklama">Реклама</a>
+          <a href="/page/pravila">Правила</a>
+          <a href="/page/contacts">Контакты</a>
+        </div>
         <button data-theme-toggle-mobile aria-label="Переключить тему">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
@@ -196,7 +205,7 @@
 
       <!-- Row 3: Legal / copyright -->
       <div class="footer-legal">
-        <span>&copy; 2011–2026 Total Media Qazaqstan</span>
+        <span>&copy; 2011–{{ current_year() }} Total Media Qazaqstan</span>
         <span class="sep">·</span>
         <span>Свидетельство СМИ №16942-ИА</span>
         <span class="sep">·</span>
@@ -289,7 +298,9 @@
       document.body.style.overflow = '';
     }
 
-    menuBtn     && menuBtn.addEventListener('click', openMenu);
+    menuBtn     && menuBtn.addEventListener('click', function() {
+      if (mobileMenu && mobileMenu.classList.contains('is-open')) { closeMenu(); } else { openMenu(); }
+    });
     menuClose   && menuClose.addEventListener('click', closeMenu);
     menuOverlay && menuOverlay.addEventListener('click', closeMenu);
 
@@ -325,9 +336,10 @@
           if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
         });
       }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
-      document.querySelectorAll('.feed-item, .article-card, .cat-highlight-item, .related-item').forEach(function (el) { io.observe(el); });
-    } else {
-      document.querySelectorAll('.feed-item, .article-card, .cat-highlight-item, .related-item').forEach(function (el) { el.classList.add('visible'); });
+      document.querySelectorAll('.feed-item, .article-card, .cat-highlight-item, .related-item').forEach(function (el) {
+        el.classList.add('will-animate');
+        io.observe(el);
+      });
     }
 
   })();

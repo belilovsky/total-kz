@@ -44,7 +44,7 @@
       </div>
       {% if art.main_image or art.thumbnail %}
       <div class="feed-item-thumb">
-        <img src="{{ art.main_image or art.thumbnail }}" alt="">
+        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
       </div>
       {% endif %}
     </article>

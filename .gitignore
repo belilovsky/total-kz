@@ -24,3 +24,10 @@ venv/
 Thumbs.db
 data/total.db.backup-pre-gov-entities
 data/*.backup*
+
+# Generated / temp files
+audit_*.json
+audit_*.py
+diagnose_*.py
+gsc_analysis.json
+app/*.db

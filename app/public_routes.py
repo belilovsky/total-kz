@@ -2,6 +2,7 @@
 
 import hashlib
 import httpx
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
@@ -9,6 +10,8 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from . import database as db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -64,6 +67,21 @@ def rewrite_articles_images(articles: list) -> list:
 
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+def _error_response(request: Request, status_code: int = 503):
+    """Return an error page response for DB or other failures."""
+    return templates.TemplateResponse("public/404.html", {
+        "request": request,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "cat_label": cat_label,
+        "nav_slug_for": nav_slug_for,
+        "article_url": article_url,
+        "format_date": format_date,
+        "format_date_short": format_date_short,
+    }, status_code=status_code)
+
 
 # Category labels
 CATEGORY_LABELS = {
@@ -213,6 +231,16 @@ def format_date_short(date_str: str | None) -> str:
         return date_str[:10] if date_str else ""
 
 
+# ── Register template utilities as Jinja2 globals ──
+templates.env.globals["format_date"] = format_date
+templates.env.globals["format_date_short"] = format_date_short
+templates.env.globals["cat_label"] = cat_label
+templates.env.globals["nav_slug_for"] = nav_slug_for
+templates.env.globals["article_url"] = article_url
+templates.env.globals["pluralize_articles"] = pluralize_articles
+templates.env.globals["current_year"] = lambda: datetime.now().year
+
+
 # ══════════════════════════════════════════════
 #  IMAGE PROXY ENDPOINT
 # ══════════════════════════════════════════════
@@ -299,19 +327,23 @@ async def redirect_old_root():
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     """Homepage: hero + category highlights + chronological feed."""
-    hero_articles = rewrite_articles_images(db.get_latest_articles(limit=5))
-    latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=5))
+    try:
+        hero_articles = rewrite_articles_images(db.get_latest_articles(limit=5))
+        latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=5))
 
-    # Fetch 3 latest articles per nav section for category highlights
-    category_highlights = []
-    for section in NAV_SECTIONS:
-        result = db.get_latest_by_categories(section["subcats"], limit=3, offset=0)
-        if result["articles"]:
-            category_highlights.append({
-                "slug": section["slug"],
-                "label": section["label"],
-                "articles": rewrite_articles_images(result["articles"]),
-            })
+        # Fetch 3 latest articles per nav section for category highlights
+        category_highlights = []
+        for section in NAV_SECTIONS:
+            result = db.get_latest_by_categories(section["subcats"], limit=3, offset=0)
+            if result["articles"]:
+                category_highlights.append({
+                    "slug": section["slug"],
+                    "label": section["label"],
+                    "articles": rewrite_articles_images(result["articles"]),
+                })
+    except Exception:
+        logger.exception("Database error in homepage")
+        return _error_response(request)
 
     return templates.TemplateResponse("public/home.html", {
         "request": request,
@@ -320,11 +352,6 @@ async def homepage(request: Request):
         "category_highlights": category_highlights,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
     })
 
 
@@ -335,27 +362,26 @@ async def category_page(
     page: int = Query(1, ge=1),
 ):
     """Category listing — handles both nav section slugs and legacy sub_category slugs."""
-    per_page = 20
-    offset = (page - 1) * per_page
+    try:
+        per_page = 20
+        offset = (page - 1) * per_page
 
-    # Check if this is a grouped nav section
-    if category in NAV_SLUG_MAP:
-        subcats = NAV_SLUG_MAP[category]
-        result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
-    else:
-        # Legacy: direct sub_category slug
-        result = db.get_latest_by_category(category, limit=per_page, offset=offset)
+        # Check if this is a grouped nav section
+        if category in NAV_SLUG_MAP:
+            subcats = NAV_SLUG_MAP[category]
+            result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
+        else:
+            # Legacy: direct sub_category slug
+            result = db.get_latest_by_category(category, limit=per_page, offset=offset)
+    except Exception:
+        logger.exception("Database error in category_page for %s", category)
+        return _error_response(request)
 
     if not result["articles"] and page == 1:
         return templates.TemplateResponse("public/404.html", {
             "request": request,
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
-            "cat_label": cat_label,
-            "nav_slug_for": nav_slug_for,
-            "article_url": article_url,
-            "format_date": format_date,
-            "format_date_short": format_date_short,
         }, status_code=404)
 
     return templates.TemplateResponse("public/category.html", {
@@ -368,29 +394,23 @@ async def category_page(
         "category_name": cat_label(category),
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
-        "pluralize_articles": pluralize_articles,
     })
 
 
 @router.get("/news/{category}/{slug}", response_class=HTMLResponse)
 async def article_page(request: Request, category: str, slug: str):
     """Single article page."""
-    article = db.get_article_by_slug(category, slug)
+    try:
+        article = db.get_article_by_slug(category, slug)
+    except Exception:
+        logger.exception("Database error in article_page for %s/%s", category, slug)
+        return _error_response(request)
+
     if not article:
         return templates.TemplateResponse("public/404.html", {
             "request": request,
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
-            "cat_label": cat_label,
-            "nav_slug_for": nav_slug_for,
-            "article_url": article_url,
-            "format_date": format_date,
-            "format_date_short": format_date_short,
         }, status_code=404)
 
     rewrite_article_images(article)
@@ -398,33 +418,39 @@ async def article_page(request: Request, category: str, slug: str):
     # Entity IDs for smart matching (timeline + related)
     entity_ids = [e["id"] for e in article.get("entities", [])]
 
-    # Related: by shared entities first, then fill from category (6 cards)
-    related = rewrite_articles_images(
-        db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
-    )
-
-    # Timeline: by the most specific entity (person/org > location)
-    # Pick the best entity for timeline context
-    timeline_entity = None
-    if article.get("entities"):
-        # Priority: person > org > location
-        priority = {"person": 0, "org": 1, "location": 2}
-        sorted_ents = sorted(
-            article["entities"],
-            key=lambda e: priority.get(e.get("entity_type", "location"), 3)
+    try:
+        # Related: by shared entities first, then fill from category (6 cards)
+        related = rewrite_articles_images(
+            db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
         )
-        timeline_entity = sorted_ents[0] if sorted_ents else None
 
-    timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
-    timeline_raw = db.get_timeline_articles(
-        article["id"], category, article.get("pub_date", ""),
-        entity_ids=timeline_entity_ids
-    )
-    timeline = {
-        "prev": rewrite_articles_images(timeline_raw["prev"]),
-        "next": rewrite_articles_images(timeline_raw["next"]),
-    }
-    timeline_topic = timeline_entity["name"] if timeline_entity else ""
+        # Timeline: by the most specific entity (person/org > location)
+        # Pick the best entity for timeline context
+        timeline_entity = None
+        if article.get("entities"):
+            # Priority: person > org > location
+            priority = {"person": 0, "org": 1, "location": 2}
+            sorted_ents = sorted(
+                article["entities"],
+                key=lambda e: priority.get(e.get("entity_type", "location"), 3)
+            )
+            timeline_entity = sorted_ents[0] if sorted_ents else None
+
+        timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
+        timeline_raw = db.get_timeline_articles(
+            article["id"], category, article.get("pub_date", ""),
+            entity_ids=timeline_entity_ids
+        )
+        timeline = {
+            "prev": rewrite_articles_images(timeline_raw["prev"]),
+            "next": rewrite_articles_images(timeline_raw["next"]),
+        }
+        timeline_topic = timeline_entity["name"] if timeline_entity else ""
+    except Exception:
+        logger.exception("Database error loading related/timeline for %s/%s", category, slug)
+        related = []
+        timeline = {"prev": [], "next": []}
+        timeline_topic = ""
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
@@ -446,11 +472,6 @@ async def article_page(request: Request, category: str, slug: str):
         "nav_section_name": cat_label(nav_section),
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
         "reading_time": estimate_reading_time(article.get("body_text", "")),
         "slug": article_slug,
     })
@@ -463,14 +484,18 @@ async def search_page(
     page: int = Query(1, ge=1),
 ):
     """Search results page."""
-    result = db.search_articles(query=q, page=page, per_page=20) if q else {
-        "articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20,
-    }
-    if result.get("articles"):
-        result["articles"] = rewrite_articles_images(result["articles"])
+    try:
+        result = db.search_articles(query=q, page=page, per_page=20) if q else {
+            "articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20,
+        }
+        if result.get("articles"):
+            result["articles"] = rewrite_articles_images(result["articles"])
 
-    # Pass popular tags for empty search page
-    popular_tags = db.get_trending_tags(limit=20) if not q else None
+        # Pass popular tags for empty search page
+        popular_tags = db.get_trending_tags(limit=20) if not q else None
+    except Exception:
+        logger.exception("Database error in search_page for q=%s", q)
+        return _error_response(request)
 
     return templates.TemplateResponse("public/search.html", {
         "request": request,
@@ -479,11 +504,6 @@ async def search_page(
         "popular_tags": popular_tags,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
     })
 
 
@@ -504,11 +524,6 @@ async def tag_page(
         "result": result,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
     })
 
 
@@ -526,22 +541,26 @@ async def entity_page(
     page: int = Query(1, ge=1),
 ):
     """Articles linked to an entity."""
-    entity = db.get_entity(entity_id)
+    try:
+        entity = db.get_entity(entity_id)
+    except Exception:
+        logger.exception("Database error in entity_page for entity_id=%s", entity_id)
+        return _error_response(request)
+
     if not entity:
         return templates.TemplateResponse("public/404.html", {
             "request": request,
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
-            "cat_label": cat_label,
-            "nav_slug_for": nav_slug_for,
-            "article_url": article_url,
-            "format_date": format_date,
-            "format_date_short": format_date_short,
         }, status_code=404)
 
-    result = db.get_articles_by_entity(entity_id, page=page, per_page=20)
-    if result.get("articles"):
-        result["articles"] = rewrite_articles_images(result["articles"])
+    try:
+        result = db.get_articles_by_entity(entity_id, page=page, per_page=20)
+        if result.get("articles"):
+            result["articles"] = rewrite_articles_images(result["articles"])
+    except Exception:
+        logger.exception("Database error loading articles for entity_id=%s", entity_id)
+        result = {"articles": [], "total": 0, "page": 1, "pages": 1}
     type_label = ENTITY_TYPE_LABELS.get(entity["entity_type"], entity["entity_type"])
 
     return templates.TemplateResponse("public/entity.html", {
@@ -552,12 +571,6 @@ async def entity_page(
         "page": page,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
-        "pluralize_articles": pluralize_articles,
     })
 
 
@@ -581,11 +594,6 @@ async def static_page(request: Request, page_slug: str):
             "request": request,
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
-            "cat_label": cat_label,
-            "nav_slug_for": nav_slug_for,
-            "article_url": article_url,
-            "format_date": format_date,
-            "format_date_short": format_date_short,
         }, status_code=404)
 
     return templates.TemplateResponse(page["template"], {
@@ -593,11 +601,6 @@ async def static_page(request: Request, page_slug: str):
         "page_title": page["title"],
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-        "cat_label": cat_label,
-        "nav_slug_for": nav_slug_for,
-        "article_url": article_url,
-        "format_date": format_date,
-        "format_date_short": format_date_short,
     })
 
 
@@ -620,7 +623,11 @@ Sitemap: https://total.kz/sitemap.xml
 @router.get("/sitemap.xml", response_class=Response)
 async def sitemap_xml():
     """Dynamic sitemap from database."""
-    urls = db.generate_sitemap_urls(limit=50000)
+    try:
+        urls = db.generate_sitemap_urls(limit=50000)
+    except Exception:
+        logger.exception("Database error in sitemap_xml")
+        return Response(content="Service unavailable", status_code=503)
 
     xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
