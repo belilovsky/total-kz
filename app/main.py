@@ -20,8 +20,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from qazstack.core import health_router
 from qazstack.content.api import content_router, SQLiteContentProvider
+from .config import settings
 
-from . import database as db
+from . import db_backend as db
 from . import seo_analytics as seo
 from . import search_analytics as search
 from . import search_engine as meili
@@ -229,12 +230,13 @@ app.include_router(social_router)
 # ══════════════════════════════════════════════
 #  HEADLESS CONTENT API (qazstack.content.api)
 # ══════════════════════════════════════════════
-_content_provider = SQLiteContentProvider(db.get_db_path())
-app.include_router(
-    content_router(_content_provider),
-    prefix="/api/content",
-    tags=["content"],
-)
+if not settings.use_postgres:
+    _content_provider = SQLiteContentProvider(db.get_db_path())
+    app.include_router(
+        content_router(_content_provider),
+        prefix="/api/content",
+        tags=["content"],
+    )
 
 
 # ══════════════════════════════════════════════
@@ -332,27 +334,32 @@ async def admin_articles_list(
     entity_name = ""
     entity_type = ""
     if entity_id:
-        with db.get_db() as conn:
-            row = conn.execute("SELECT name, entity_type FROM entities WHERE id = ?", (entity_id,)).fetchone()
-            if row:
-                entity_name = row[0]
-                entity_type = row[1]
+        ent = db.get_entity(entity_id)
+        if ent:
+            entity_name = ent["name"]
+            entity_type = ent["entity_type"]
 
     # Get status counts for tabs
-    with db.get_db() as conn:
-        status_counts = {}
-        for s in ("published", "draft", "archived", "review", "ready"):
-            cnt = conn.execute("SELECT COUNT(*) FROM articles WHERE status = ?", (s,)).fetchone()[0]
-            status_counts[s] = cnt
-        status_counts["all"] = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
-        # Count articles assigned to current user
-        if user:
-            status_counts["my"] = conn.execute(
-                "SELECT COUNT(*) FROM articles WHERE assigned_to = ?",
-                (user.get("username", ""),)
-            ).fetchone()[0]
-        else:
+    if settings.use_postgres:
+        status_counts = db.get_status_counts(
+            user_id=user.get("user_id") if user else None
+        )
+        if "my" not in status_counts:
             status_counts["my"] = 0
+    else:
+        with db.get_db() as conn:
+            status_counts = {}
+            for s in ("published", "draft", "archived", "review", "ready"):
+                cnt = conn.execute("SELECT COUNT(*) FROM articles WHERE status = ?", (s,)).fetchone()[0]
+                status_counts[s] = cnt
+            status_counts["all"] = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+            if user:
+                status_counts["my"] = conn.execute(
+                    "SELECT COUNT(*) FROM articles WHERE assigned_to = ?",
+                    (user.get("username", ""),)
+                ).fetchone()[0]
+            else:
+                status_counts["my"] = 0
 
     return templates.TemplateResponse("articles.html", _ctx(request,
         result=result,
@@ -856,9 +863,12 @@ async def api_create_tag(request: Request):
     if not tag:
         return JSONResponse({"ok": False, "error": "Тег обязателен"}, status_code=400)
     if article_id:
-        with db.get_db() as conn:
-            conn.execute("INSERT OR IGNORE INTO article_tags (article_id, tag) VALUES (?, ?)", (article_id, tag))
-            conn.commit()
+        if settings.use_postgres:
+            db.add_tag_to_article(article_id, tag)
+        else:
+            with db.get_db() as conn:
+                conn.execute("INSERT OR IGNORE INTO article_tags (article_id, tag) VALUES (?, ?)", (article_id, tag))
+                conn.commit()
     return {"ok": True}
 
 
@@ -1469,6 +1479,8 @@ async def imgproxy_proxy(path: str):
 @app.get("/api/audit")
 async def api_audit():
     """Full data quality audit."""
+    if settings.use_postgres:
+        return db.get_full_audit()
     from collections import defaultdict
     with db.get_db() as conn:
         total = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]

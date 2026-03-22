@@ -1785,3 +1785,244 @@ def get_audit_log(user_id: int = 0, action: str = "", entity_type: str = "",
             "page": page,
             "pages": _paginate(total, per_page),
         }
+
+
+# ═══════════════════════════════════════════════
+# Extra helpers (replace raw SQL in main.py)
+# ═══════════════════════════════════════════════
+
+def get_status_counts(user_id: int | None = None) -> dict:
+    """Article counts grouped by status + optional user assignment count."""
+    with get_pg_session() as db:
+        counts: dict[str, int] = {}
+        for s in ("published", "draft", "archived", "review", "ready"):
+            counts[s] = db.execute(
+                select(func.count()).select_from(Article).where(Article.status == s)
+            ).scalar() or 0
+        counts["all"] = db.execute(
+            select(func.count()).select_from(Article)
+        ).scalar() or 0
+        if user_id:
+            counts["my"] = db.execute(
+                select(func.count()).select_from(Article).where(Article.assigned_to == user_id)
+            ).scalar() or 0
+        return counts
+
+
+def add_tag_to_article(article_id: int, tag: str) -> None:
+    """Link a tag to an article (idempotent)."""
+    with get_pg_session() as db:
+        stmt = pg_insert(ArticleTag).values(
+            article_id=article_id, tag=tag
+        ).on_conflict_do_nothing()
+        db.execute(stmt)
+
+
+def get_full_audit() -> dict:
+    """Full data-quality audit (PG version of /api/audit)."""
+    from collections import defaultdict
+
+    with get_pg_session() as db:
+        total = db.execute(select(func.count()).select_from(Article)).scalar() or 0
+        if total == 0:
+            return {"total_articles": 0}
+
+        # 1. Content completeness
+        fields_check = {}
+        text_fields = [
+            "title", "body_text", "body_html", "excerpt", "author",
+            "main_image", "thumbnail", "image_credit", "sub_category", "category_label",
+        ]
+        for field in text_fields:
+            col = getattr(Article, field, None)
+            if col is None:
+                continue
+            empty = db.execute(
+                select(func.count()).select_from(Article).where(
+                    or_(col.is_(None), col == "")
+                )
+            ).scalar() or 0
+            fields_check[field] = {"empty": empty, "pct": round(empty / total * 100, 1)}
+
+        no_tags = db.execute(
+            select(func.count()).select_from(Article).where(
+                or_(Article.tags.is_(None), Article.tags == "", Article.tags == "[]")
+            )
+        ).scalar() or 0
+        fields_check["tags_json"] = {"empty": no_tags, "pct": round(no_tags / total * 100, 1)}
+
+        no_inline = db.execute(
+            select(func.count()).select_from(Article).where(
+                or_(Article.inline_images.is_(None), Article.inline_images == "", Article.inline_images == "[]")
+            )
+        ).scalar() or 0
+        fields_check["inline_images_json"] = {"empty": no_inline, "pct": round(no_inline / total * 100, 1)}
+
+        # 2. Body text stats
+        avg_body = db.execute(
+            select(func.avg(func.length(Article.body_text))).where(
+                Article.body_text.isnot(None), Article.body_text != ""
+            )
+        ).scalar() or 0
+        short_body = db.execute(
+            select(func.count()).select_from(Article).where(
+                func.length(Article.body_text) < 100,
+                Article.body_text.isnot(None),
+                Article.body_text != "",
+            )
+        ).scalar() or 0
+
+        # 3. Monthly distribution
+        rows = db.execute(
+            select(
+                func.to_char(Article.pub_date, "YYYY-MM").label("month"),
+                func.count().label("cnt"),
+            ).where(Article.pub_date.isnot(None))
+            .group_by(text("1")).order_by(text("1"))
+        ).all()
+        monthly = [{"month": r.month, "count": r.cnt} for r in rows]
+        gaps = [m for m in monthly if m["count"] < 200]
+
+        # 4. Categories
+        cats = db.execute(
+            select(Article.sub_category, func.count().label("cnt"))
+            .group_by(Article.sub_category)
+            .order_by(func.count().desc())
+        ).all()
+        categories = [{"name": r.sub_category or "(empty)", "count": r.cnt} for r in cats]
+
+        # 5. Authors top-30
+        authors_q = db.execute(
+            select(Article.author, func.count().label("cnt"))
+            .where(Article.author.isnot(None), Article.author != "")
+            .group_by(Article.author)
+            .order_by(func.count().desc())
+            .limit(30)
+        ).all()
+        author_list = [{"name": r.author, "count": r.cnt} for r in authors_q]
+        unique_authors = db.execute(
+            select(func.count(distinct(Article.author))).where(
+                Article.author.isnot(None), Article.author != ""
+            )
+        ).scalar() or 0
+
+        # 6. Tags audit
+        total_tag_links = db.execute(
+            select(func.count()).select_from(ArticleTag)
+        ).scalar() or 0
+        unique_tags = db.execute(
+            select(func.count(distinct(ArticleTag.tag)))
+        ).scalar() or 0
+        articles_with_tags = db.execute(
+            select(func.count(distinct(ArticleTag.article_id)))
+        ).scalar() or 0
+
+        top_tags_q = db.execute(
+            select(ArticleTag.tag, func.count().label("cnt"))
+            .group_by(ArticleTag.tag)
+            .order_by(func.count().desc())
+            .limit(50)
+        ).all()
+        tag_list = [{"tag": r.tag, "count": r.cnt} for r in top_tags_q]
+
+        all_tags_raw = db.execute(
+            select(ArticleTag.tag, func.count().label("cnt"))
+            .group_by(ArticleTag.tag)
+        ).all()
+        tag_groups: dict[str, list] = defaultdict(list)
+        for t in all_tags_raw:
+            tag_groups[t.tag.lower().strip()].append({"tag": t.tag, "count": t.cnt})
+        tag_dupes = []
+        for lower, variants in tag_groups.items():
+            if len(variants) > 1:
+                tag_dupes.append({"normalized": lower, "variants": variants})
+        tag_dupes.sort(key=lambda x: -sum(v["count"] for v in x["variants"]))
+
+        # Latin-only tags (no Cyrillic)
+        latin_tags_q = db.execute(
+            select(ArticleTag.tag, func.count().label("cnt"))
+            .where(~ArticleTag.tag.op("~")("[а-яА-ЯёЁ]"), ArticleTag.tag != "")
+            .group_by(ArticleTag.tag)
+            .order_by(func.count().desc())
+            .limit(30)
+        ).all()
+        latin_tag_list = [{"tag": r.tag, "count": r.cnt} for r in latin_tags_q]
+
+        # 7. Entities audit
+        total_entities = db.execute(
+            select(func.count()).select_from(NerEntity)
+        ).scalar() or 0
+        total_entity_links = db.execute(
+            select(func.count()).select_from(ArticleEntity)
+        ).scalar() or 0
+        entity_types = db.execute(
+            select(NerEntity.entity_type, func.count())
+            .group_by(NerEntity.entity_type)
+        ).all()
+        entity_type_counts = {r[0]: r[1] for r in entity_types}
+
+        top_entities: dict[str, list] = {}
+        for etype in ["person", "org", "location", "event"]:
+            top = db.execute(
+                select(
+                    NerEntity.name, NerEntity.normalized,
+                    func.count(ArticleEntity.article_id).label("cnt"),
+                ).join(ArticleEntity, ArticleEntity.entity_id == NerEntity.id)
+                .where(NerEntity.entity_type == etype)
+                .group_by(NerEntity.id, NerEntity.name, NerEntity.normalized)
+                .order_by(func.count(ArticleEntity.article_id).desc())
+                .limit(20)
+            ).all()
+            top_entities[etype] = [
+                {"name": r.name, "normalized": r.normalized, "articles": r.cnt}
+                for r in top
+            ]
+
+        entity_dupes = db.execute(
+            select(
+                NerEntity.normalized,
+                NerEntity.entity_type,
+                func.string_agg(NerEntity.name, " | ").label("names"),
+                func.count().label("cnt"),
+            ).group_by(NerEntity.normalized, NerEntity.entity_type)
+            .having(func.count() > 1)
+            .order_by(func.count().desc())
+            .limit(30)
+        ).all()
+        entity_dupe_list = [
+            {"normalized": r.normalized, "type": r.entity_type,
+             "names": r.names, "variant_count": r.cnt}
+            for r in entity_dupes
+        ]
+
+        orphan_entities = db.execute(
+            select(func.count()).select_from(NerEntity)
+            .outerjoin(ArticleEntity, ArticleEntity.entity_id == NerEntity.id)
+            .where(ArticleEntity.article_id.is_(None))
+        ).scalar() or 0
+
+        return {
+            "total_articles": total,
+            "content_completeness": fields_check,
+            "body_text_avg_length": int(avg_body or 0),
+            "body_text_short_count": short_body,
+            "monthly_gaps": gaps,
+            "categories": categories,
+            "authors": {"top_30": author_list, "unique_count": unique_authors},
+            "tags": {
+                "total_links": total_tag_links,
+                "unique": unique_tags,
+                "articles_with_tags": articles_with_tags,
+                "top_50": tag_list,
+                "case_duplicates": tag_dupes[:30],
+                "latin_only": latin_tag_list,
+            },
+            "entities": {
+                "total": total_entities,
+                "total_links": total_entity_links,
+                "by_type": entity_type_counts,
+                "top_by_type": top_entities,
+                "duplicates": entity_dupe_list,
+                "orphans": orphan_entities,
+            },
+        }

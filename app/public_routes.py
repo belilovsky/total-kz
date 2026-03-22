@@ -12,7 +12,7 @@ from pathlib import Path
 
 from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
 
-from . import database as db
+from . import db_backend as db
 
 logger = logging.getLogger(__name__)
 

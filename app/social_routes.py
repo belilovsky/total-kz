@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from . import social
-from . import database as db
+from . import db_backend as db
 
 router = APIRouter(prefix="/admin/social")
 
