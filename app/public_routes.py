@@ -693,13 +693,20 @@ async def article_page(request: Request, category: str, slug: str):
     # Entity IDs for smart matching (timeline + related)
     entity_ids = [e["id"] for e in article.get("entities", [])]
 
+    # ── Related articles (independent try/except) ──
     try:
-        # Related: by shared entities first, then fill from category (6 cards)
         related = rewrite_articles_images(
             db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
         )
+    except Exception:
+        logger.exception("Error loading related for %s/%s", category, slug)
+        related = []
 
-        # Timeline: prefer story-based, fallback to entity-based
+    # ── Timeline (independent try/except) ──
+    timeline = {"prev": [], "next": []}
+    timeline_topic = ""
+    timeline_total = 0
+    try:
         story_tl = db.get_story_timeline(article["id"], article.get("pub_date", ""))
         if story_tl and (story_tl["prev"] or story_tl["next"]):
             timeline = {
@@ -731,11 +738,7 @@ async def article_page(request: Request, category: str, slug: str):
             timeline_topic = timeline_entity["name"] if timeline_entity else ""
             timeline_total = 0
     except Exception:
-        logger.exception("Database error loading related/timeline for %s/%s", category, slug)
-        related = []
-        timeline = {"prev": [], "next": []}
-        timeline_topic = ""
-        timeline_total = 0
+        logger.exception("Error loading timeline for %s/%s", category, slug)
 
     # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
