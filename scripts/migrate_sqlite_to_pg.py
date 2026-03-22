@@ -128,11 +128,20 @@ def migrate_table(
             d = dict(row)
             # Parse JSON TEXT → Python dict/list for JSONB columns
             for jcol in jsonb_cols:
-                if jcol in d and isinstance(d[jcol], str):
+                val = d.get(jcol)
+                if val is None:
+                    continue
+                if isinstance(val, str):
                     try:
-                        d[jcol] = json.loads(d[jcol])
+                        val = json.loads(val)
                     except (json.JSONDecodeError, TypeError):
-                        d[jcol] = None
+                        val = None
+                # Wrap as Json so psycopg2 sends JSONB, not ARRAY
+                if val is not None:
+                    from psycopg2.extras import Json
+                    d[jcol] = Json(val)
+                else:
+                    d[jcol] = None
             params.append(d)
         pg_session.execute(insert_sql, params)
         pg_session.commit()
