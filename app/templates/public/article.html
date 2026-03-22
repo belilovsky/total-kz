@@ -133,13 +133,6 @@
         {% endif %}
       </div>
 
-      {# ── Author byline at end of article ── #}
-      {% if article.author %}
-      <div class="article-author-byline">
-        <a href="/search?q={{ article.author | urlencode }}">{{ article.author }}</a>
-      </div>
-      {% endif %}
-
       {# Pull quote hidden — data kept for social cards / sharing #}
 
       {# ── Inline share (mobile/tablet only, hidden >=1100px) ── #}
@@ -230,6 +223,14 @@
             <span class="cat-name">{{ nav_section_name }}</span>
           </a>
         </div>
+
+        {# ── Reading time ── #}
+        {% if reading_time %}
+        <div class="sidebar-reading-time">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>{{ reading_time }} мин чтения</span>
+        </div>
+        {% endif %}
 
         {# ── TOC: most useful for navigation ── #}
         <nav class="article-toc" id="article-toc" aria-label="Оглавление">

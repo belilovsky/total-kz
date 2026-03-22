@@ -6,41 +6,50 @@
 <div class="wide-layout">
   <h1 class="sr-only">Total.kz – Новости Казахстана</h1>
 
-  <!-- ═══ HERO SLIDER ═══ -->
+  <!-- ═══ HERO GRID ═══ -->
   {% if hero_articles %}
-  <div class="hero-slider" id="hero-slider">
-    <div class="hero-slider-track">
-      {% for hero in hero_articles %}
-      <div class="hero-slide {% if loop.first %}active{% endif %}">
-        {% if hero.main_image or hero.thumbnail %}
-          <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 1200) }}" alt="{{ hero.title }}" loading="eager"
-               srcset="{{ imgproxy_url(hero.main_image or hero.thumbnail, 400) }} 400w, {{ imgproxy_url(hero.main_image or hero.thumbnail, 800) }} 800w, {{ imgproxy_url(hero.main_image or hero.thumbnail, 1200) }} 1200w"
-               sizes="100vw">
+  <div class="hero-grid">
+    {# Main story — first article #}
+    {% set main = hero_articles[0] %}
+    <a href="{{ article_url(main) }}" class="hero-main">
+      {% if main.main_image or main.thumbnail %}
+        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 900) }}" alt="{{ main.title }}" loading="eager"
+             srcset="{{ imgproxy_url(main.main_image or main.thumbnail, 400) }} 400w, {{ imgproxy_url(main.main_image or main.thumbnail, 900) }} 900w"
+             sizes="(max-width:768px) 100vw, 60vw">
+      {% endif %}
+      <div class="hero-main-body">
+        <span class="cat-badge" data-cat="{{ nav_slug_for(main.sub_category) }}">
+          <span class="cat-dot"></span>
+          <span class="cat-name">{{ cat_label(nav_slug_for(main.sub_category)) }}</span>
+        </span>
+        <h2 class="hero-main-title">{{ main.title }}</h2>
+        {% if main.excerpt %}
+          <p class="hero-main-excerpt">{{ main.excerpt[:180] }}{% if main.excerpt|length > 180 %}…{% endif %}</p>
         {% endif %}
-        <div class="hero-slide-body">
-          <span class="cat-badge" data-cat="{{ nav_slug_for(hero.sub_category) }}">
+        <span class="hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
+      </div>
+    </a>
+
+    {# Side stories — articles 2-5 #}
+    <div class="hero-side">
+      {% for hero in hero_articles[1:5] %}
+      <a href="{{ article_url(hero) }}" class="hero-side-item">
+        {% if hero.main_image or hero.thumbnail %}
+        <div class="hero-side-thumb">
+          <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 300) }}" alt="{{ hero.title }}" loading="eager">
+        </div>
+        {% endif %}
+        <div class="hero-side-body">
+          <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
             <span class="cat-dot"></span>
             <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
           </span>
-          <h2 class="hero-slide-title">{{ hero.title }}</h2>
-          {% if hero.excerpt %}
-            <p class="hero-slide-excerpt">{{ hero.excerpt[:160] }}{% if hero.excerpt|length > 160 %}…{% endif %}</p>
-          {% endif %}
-          <span class="hero-slide-meta">{{ format_date_short(hero.pub_date) }}<span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ hero|fake_views|format_num }}</span></span>
+          <h3 class="hero-side-title">{{ hero.title }}</h3>
+          <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
         </div>
-        <a href="{{ article_url(hero) }}" class="hero-slide-link" aria-label="{{ hero.title }}"></a>
-      </div>
+      </a>
       {% endfor %}
     </div>
-    {% if hero_articles|length > 1 %}
-    <button class="hero-slider-btn prev" onclick="heroSlider.prev()" aria-label="Назад">‹</button>
-    <button class="hero-slider-btn next" onclick="heroSlider.next()" aria-label="Вперёд">›</button>
-    <div class="hero-slider-dots">
-      {% for hero in hero_articles %}
-      <button class="hero-dot {% if loop.first %}active{% endif %}" onclick="heroSlider.goTo({{ loop.index0 }})" aria-label="Слайд {{ loop.index }}"></button>
-      {% endfor %}
-    </div>
-    {% endif %}
   </div>
   {% endif %}
 
@@ -167,38 +176,6 @@
 
 {% block extra_js %}
 <script>
-const heroSlider = (() => {
-  const el = document.getElementById('hero-slider');
-  if (!el) return { prev(){}, next(){}, goTo(){} };
-  const slides = el.querySelectorAll('.hero-slide');
-  const dots = el.querySelectorAll('.hero-dot');
-  let cur = 0, timer = null, total = slides.length;
-  if (total <= 1) return { prev(){}, next(){}, goTo(){} };
-
-  function show(i) {
-    slides[cur].classList.remove('active');
-    if (dots[cur]) dots[cur].classList.remove('active');
-    cur = (i + total) % total;
-    slides[cur].classList.add('active');
-    if (dots[cur]) dots[cur].classList.add('active');
-  }
-  function next() { show(cur + 1); resetTimer(); }
-  function prev() { show(cur - 1); resetTimer(); }
-  function goTo(i) { show(i); resetTimer(); }
-  function resetTimer() { clearInterval(timer); timer = setInterval(next, 6000); }
-  resetTimer();
-
-  // Swipe support
-  let sx = 0;
-  el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, {passive:true});
-  el.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - sx;
-    if (Math.abs(dx) > 50) dx > 0 ? prev() : next();
-  }, {passive:true});
-
-  return { prev, next, goTo };
-})();
-
 // ── Load more ──
 (function() {
   var btn = document.getElementById('load-more-btn');
