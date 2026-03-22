@@ -928,3 +928,54 @@ async def sitemap_xml():
 
     xml_parts.append("</urlset>")
     return Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
+@router.get("/rss.xml", response_class=Response)
+@router.get("/feed", response_class=Response)
+async def rss_feed():
+    """RSS 2.0 feed — latest 50 articles."""
+    try:
+        articles = db.get_latest_articles(limit=50)
+    except Exception:
+        logger.exception("Database error in rss_feed")
+        return Response(content="Service unavailable", status_code=503)
+
+    import html as html_mod
+    items = []
+    for art in articles:
+        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+        if len(url_parts) >= 2:
+            link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        else:
+            link = f"https://total.kz/"
+        cat = cat_label(nav_slug_for(art.get("sub_category", "")))
+        pub = art.get("pub_date", "")
+        # RFC 822 date
+        try:
+            dt = datetime.strptime(pub[:19].replace('T', ' '), "%Y-%m-%d %H:%M:%S")
+            rfc_date = dt.strftime("%a, %d %b %Y %H:%M:%S +0500")
+        except Exception:
+            rfc_date = ""
+        desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
+        items.append(f"""    <item>
+      <title>{html_mod.escape(art['title'])}</title>
+      <link>{link}</link>
+      <description>{desc}</description>
+      <category>{html_mod.escape(cat)}</category>
+      <pubDate>{rfc_date}</pubDate>
+      <guid isPermaLink="true">{link}</guid>
+    </item>""")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ТÓТАЛ — Новости Казахстана</title>
+    <link>https://total.kz</link>
+    <description>Последние новости Казахстана — политика, экономика, общество, спорт</description>
+    <language>ru</language>
+    <atom:link href="https://total.kz/rss.xml" rel="self" type="application/rss+xml"/>
+    <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return Response(content=xml, media_type="application/xml; charset=utf-8")
