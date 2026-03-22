@@ -132,7 +132,7 @@ NAV_SECTIONS = [
     {
         "slug": "obshchestvo",
         "label": "Общество",
-        "subcats": ["obshchestvo_sobitiya", "zhizn", "proisshestviya", "bezopasnost", "stil_zhizni", "religiya"],
+        "subcats": ["obshchestvo_sobitiya", "obshchestvo", "zhizn", "proisshestviya", "bezopasnost", "stil_zhizni", "religiya", "kultura", "mneniya", "den_v_istorii"],
     },
     {
         "slug": "nauka",
@@ -235,6 +235,30 @@ def article_url(article: dict) -> str:
     return f"/news/article/{article.get('id', 0)}"
 
 
+def _parse_datetime(date_str: str) -> datetime | None:
+    """Parse a date string trying multiple formats. Returns None on failure."""
+    dt = None
+    try:
+        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        pass
+    if dt is None:
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                dt = datetime.strptime(date_str.strip(), fmt)
+                break
+            except (ValueError, TypeError):
+                continue
+    if dt is None:
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", date_str)
+        if m:
+            try:
+                dt = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            except ValueError:
+                pass
+    return dt
+
+
 def format_date(date_str: str | None) -> str:
     """Format ISO date to Russian readable (full month names).
     Today:           12 марта, 14:14
@@ -243,19 +267,18 @@ def format_date(date_str: str | None) -> str:
     """
     if not date_str:
         return ""
-    try:
-        months = ["января", "февраля", "марта", "апреля", "мая", "июня",
-                  "июля", "августа", "сентября", "октября", "ноября", "декабря"]
-        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
-        if dt.date() == now.date():
-            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
-        elif dt.year == now.year:
-            return f"{dt.day} {months[dt.month - 1]}"
-        else:
-            return f"{dt.day} {months[dt.month - 1]} {dt.year}"
-    except Exception:
-        return date_str[:10] if date_str else ""
+    months = ["января", "февраля", "марта", "апреля", "мая", "июня",
+              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+    dt = _parse_datetime(date_str)
+    if dt is None:
+        return date_str[:10] if len(date_str) >= 10 else date_str
+    now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+    if dt.date() == now.date():
+        return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+    elif dt.year == now.year:
+        return f"{dt.day} {months[dt.month - 1]}"
+    else:
+        return f"{dt.day} {months[dt.month - 1]} {dt.year}"
 
 
 def format_date_short(date_str: str | None) -> str:
@@ -266,19 +289,18 @@ def format_date_short(date_str: str | None) -> str:
     """
     if not date_str:
         return ""
-    try:
-        months = ["янв", "фев", "мар", "апр", "мая", "июн",
-                  "июл", "авг", "сен", "окт", "ноя", "дек"]
-        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
-        if dt.date() == now.date():
-            return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
-        elif dt.year == now.year:
-            return f"{dt.day} {months[dt.month - 1]}"
-        else:
-            return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
-    except Exception:
-        return date_str[:10] if date_str else ""
+    months = ["янв", "фев", "мар", "апр", "мая", "июн",
+              "июл", "авг", "сен", "окт", "ноя", "дек"]
+    dt = _parse_datetime(date_str)
+    if dt is None:
+        return date_str[:10] if len(date_str) >= 10 else date_str
+    now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+    if dt.date() == now.date():
+        return f"{dt.day} {months[dt.month - 1]}, {dt.strftime('%H:%M')}"
+    elif dt.year == now.year:
+        return f"{dt.day} {months[dt.month - 1]}"
+    else:
+        return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
 
 
 def format_date_day(date_str: str | None) -> str:
@@ -288,17 +310,16 @@ def format_date_day(date_str: str | None) -> str:
     """
     if not date_str:
         return ""
-    try:
-        months = ["янв", "фев", "мар", "апр", "мая", "июн",
-                  "июл", "авг", "сен", "окт", "ноя", "дек"]
-        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
-        if dt.year == now.year:
-            return f"{dt.day} {months[dt.month - 1]}"
-        else:
-            return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
-    except Exception:
-        return date_str[:10] if date_str else ""
+    months = ["янв", "фев", "мар", "апр", "мая", "июн",
+              "июл", "авг", "сен", "окт", "ноя", "дек"]
+    dt = _parse_datetime(date_str)
+    if dt is None:
+        return date_str[:10] if len(date_str) >= 10 else date_str
+    now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+    if dt.year == now.year:
+        return f"{dt.day} {months[dt.month - 1]}"
+    else:
+        return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
 
 
 def short_entity_name(entity: dict) -> str:
