@@ -49,7 +49,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=12.1">
+  <link rel="stylesheet" href="/static/css/public.css?v=12.2">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   {% block extra_css %}{% endblock %}
 </head>
@@ -512,6 +512,13 @@
         adDiv.textContent = 'Реклама';
         paras[2].parentNode.insertBefore(adDiv, paras[2].nextSibling);
       }
+      // Auto-wrap tables in scrollable container
+      artBody.querySelectorAll(':scope > table').forEach(function(t) {
+        var wrap = document.createElement('div');
+        wrap.className = 'table-wrap';
+        t.parentNode.insertBefore(wrap, t);
+        wrap.appendChild(t);
+      });
     }
 
     // ── Feed items entrance ──────────────────────────────────────────────
