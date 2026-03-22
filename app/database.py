@@ -868,7 +868,7 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
     with get_db() as conn:
         rows = conn.execute("""
             SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                   thumbnail, main_image
+                   thumbnail, main_image, COALESCE(views, 0) as views
             FROM articles
             ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
@@ -900,7 +900,7 @@ def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> d
         ).fetchone()[0]
         rows = conn.execute("""
             SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                   thumbnail, main_image
+                   thumbnail, main_image, COALESCE(views, 0) as views
             FROM articles WHERE sub_category = ?
             ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
@@ -1107,7 +1107,7 @@ def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0)
         ).fetchone()[0]
         rows = conn.execute(f"""
             SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                   thumbnail, main_image
+                   thumbnail, main_image, COALESCE(views, 0) as views
             FROM articles WHERE sub_category IN ({placeholders})
             ORDER BY pub_date DESC
             LIMIT ? OFFSET ?

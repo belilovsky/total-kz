@@ -411,14 +411,27 @@ templates.env.globals["imgproxy_url"] = imgproxy_url
 templates.env.filters["format_num"] = format_num
 
 
-def fake_views_func(article_id):
-    """Deterministic fake view count based on article ID."""
-    h = int(hashlib.md5(str(article_id).encode()).hexdigest()[:8], 16)
-    return h % 4900 + 100
+def get_views_func(article):
+    """Get real view count from article dict or fallback to deterministic fake."""
+    if isinstance(article, dict):
+        v = article.get("views", 0) or 0
+        if v > 0:
+            return v
+        aid = article.get("id", 0)
+    else:
+        aid = article
+        v = 0
+    # Fallback for articles without views yet
+    if v <= 0:
+        h = int(hashlib.md5(str(aid).encode()).hexdigest()[:8], 16)
+        return h % 4900 + 100
+    return v
 
 
-templates.env.filters["fake_views"] = fake_views_func
-templates.env.globals["fake_views"] = fake_views_func
+templates.env.filters["fake_views"] = get_views_func
+templates.env.globals["fake_views"] = get_views_func
+templates.env.filters["get_views"] = get_views_func
+templates.env.globals["get_views"] = get_views_func
 
 
 # ══════════════════════════════════════════════
@@ -525,7 +538,7 @@ async def homepage(request: Request):
         logger.exception("Database error in homepage")
         return _error_response(request)
 
-    popular = sorted(latest, key=lambda a: fake_views_func(a['id']), reverse=True)
+    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)
 
     return templates.TemplateResponse("public/home.html", {
         "request": request,
@@ -554,7 +567,7 @@ async def api_feed_more(request: Request, offset: int = Query(30, ge=0), limit: 
         cat = cat_label(cat_slug)
         img = imgproxy_url(art.get("main_image") or art.get("thumbnail", ""), 400)
         url = article_url(art)
-        views = format_num(fake_views_func(art["id"]))
+        views = format_num(get_views_func(art))
         date_s = format_date_short(art.get("pub_date", ""))
         excerpt = (art.get("excerpt") or "")[:140]
         if len(art.get("excerpt") or "") > 140:
@@ -1014,3 +1027,19 @@ async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
         return Response(content=json_mod.dumps(results, ensure_ascii=False), media_type="application/json")
     except Exception:
         return Response(content="[]", media_type="application/json")
+
+
+@router.post("/api/view/{article_id}")
+async def api_track_view(article_id: int):
+    """Increment view count for an article. Called client-side on page load."""
+    try:
+        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+        conn.execute("UPDATE articles SET views = COALESCE(views, 0) + 1 WHERE id = ?", (article_id,))
+        conn.commit()
+        cur = conn.execute("SELECT views FROM articles WHERE id = ?", (article_id,))
+        row = cur.fetchone()
+        conn.close()
+        views = row[0] if row else 0
+        return {"ok": True, "views": views}
+    except Exception:
+        return {"ok": False}

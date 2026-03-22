@@ -48,7 +48,7 @@
         {% endif %}
         <div class="card-meta">
           <span>{{ format_date_short(art.pub_date) }}</span>
-          <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
+          <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art|fake_views|format_num }}</span>
         </div>
       </div>
     </article>
@@ -74,7 +74,7 @@
               </span>
               <span class="sep">·</span>
               <span>{{ format_date_short(art.pub_date) }}</span>
-              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
+              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art|fake_views|format_num }}</span>
             </div>
             <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
             {% if art.excerpt %}

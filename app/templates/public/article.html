@@ -392,5 +392,11 @@ function copyLink(btn) {
     }, { passive: true });
   }
 })();
+
+// Track page view
+(function(){
+  var aid = {{ article.id }};
+  if (aid) fetch('/api/view/' + aid, { method: 'POST' }).catch(function(){});
+})();
 </script>
 {% endblock %}
