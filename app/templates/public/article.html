@@ -118,15 +118,7 @@
       </div>
       {% endif %}
 
-      {# ── Pull quote from enrichment ── #}
-      {% if article.enrichment and article.enrichment.quote %}
-      <blockquote class="article-pullquote">
-        <p>{{ article.enrichment.quote }}</p>
-        {% if article.enrichment.quote_author %}
-        <cite>{{ article.enrichment.quote_author }}</cite>
-        {% endif %}
-      </blockquote>
-      {% endif %}
+      {# Pull quote hidden — data kept for social cards / sharing #}
 
       {# ── Inline share (mobile/tablet only, hidden >=1100px) ── #}
       <div class="share-buttons">
