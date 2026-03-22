@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ app/
 COPY scraper/ scraper/
 COPY scripts/ scripts/
+COPY alembic.ini .
+COPY alembic/ alembic/
 
 RUN mkdir -p data
 
