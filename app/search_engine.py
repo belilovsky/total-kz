@@ -119,6 +119,25 @@ def reindex_all():
                 SELECT id, title, excerpt, body_text, author, sub_category, pub_date, tags, status, thumbnail, main_image
                 FROM articles
             """).fetchall()
+            # Pre-load article_tags for enrichment keywords
+            tag_map = {}
+            try:
+                tag_rows = conn.execute("SELECT article_id, tag FROM article_tags").fetchall()
+                for tr in tag_rows:
+                    tag_map.setdefault(tr[0], []).append(tr[1])
+            except Exception:
+                pass
+            # Pre-load enrichment keywords
+            kw_map = {}
+            try:
+                kw_rows = conn.execute("SELECT article_id, keywords FROM article_enrichments WHERE keywords IS NOT NULL").fetchall()
+                for kr in kw_rows:
+                    try:
+                        kw_map[kr[0]] = json.loads(kr[1])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             docs = []
             for r in rows:
                 tags = []
@@ -126,11 +145,13 @@ def reindex_all():
                     tags = json.loads(r["tags"] or "[]")
                 except Exception:
                     pass
+                # Merge: article.tags + article_tags + enrichment keywords
+                all_tags = list(set(tags + tag_map.get(r["id"], []) + kw_map.get(r["id"], [])))
                 docs.append({
                     "id": r["id"], "title": r["title"] or "", "excerpt": r["excerpt"] or "",
                     "body_text": (r["body_text"] or "")[:5000], "author": r["author"] or "",
                     "sub_category": r["sub_category"] or "", "pub_date": r["pub_date"] or "",
-                    "tags": tags, "status": r["status"] or "published",
+                    "tags": all_tags, "status": r["status"] or "published",
                     "thumbnail": r["thumbnail"] or r["main_image"] or "",
                 })
     # Batch in chunks of 1000

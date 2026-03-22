@@ -160,3 +160,21 @@
 [2026-03-22 14:20:14] DONE: 500 enriched, 0 errors, 175 with quotes in 40m
 [2026-03-22 14:20:14] === ENRICHMENT COMPLETE ===
 [2026-03-22 14:20:14] === ENRICHMENT COMPLETE ===
+[2026-03-22 14:26:32] START: 500 articles to enrich
+[2026-03-22 14:26:32] START: 500 articles to enrich
+[2026-03-22 14:30:23] PROGRESS: 100/500 (0.4 art/s, ETA 15m) | ok: 100 err: 0 quotes: 8
+[2026-03-22 14:30:23] PROGRESS: 100/500 (0.4 art/s, ETA 15m) | ok: 100 err: 0 quotes: 8
+[2026-03-22 14:34:23] PROGRESS: 200/500 (0.4 art/s, ETA 12m) | ok: 200 err: 0 quotes: 17
+[2026-03-22 14:34:23] PROGRESS: 200/500 (0.4 art/s, ETA 12m) | ok: 200 err: 0 quotes: 17
+[2026-03-22 14:38:23] PROGRESS: 300/500 (0.4 art/s, ETA 8m) | ok: 300 err: 0 quotes: 19
+[2026-03-22 14:38:23] PROGRESS: 300/500 (0.4 art/s, ETA 8m) | ok: 300 err: 0 quotes: 19
+[2026-03-22 14:58:53] PROGRESS: 400/500 (0.2 art/s, ETA 8m) | ok: 400 err: 0 quotes: 27
+[2026-03-22 14:58:53] PROGRESS: 400/500 (0.2 art/s, ETA 8m) | ok: 400 err: 0 quotes: 27
+[2026-03-22 15:03:46] PROGRESS: 500/500 (0.2 art/s, ETA 0m) | ok: 500 err: 0 quotes: 30
+[2026-03-22 15:03:46] PROGRESS: 500/500 (0.2 art/s, ETA 0m) | ok: 500 err: 0 quotes: 30
+[2026-03-22 15:03:46] DONE: 500 enriched, 0 errors, 30 with quotes in 37m
+[2026-03-22 15:03:46] DONE: 500 enriched, 0 errors, 30 with quotes in 37m
+[2026-03-22 15:03:46] === ENRICHMENT COMPLETE ===
+[2026-03-22 15:03:46] === ENRICHMENT COMPLETE ===
+[2026-03-22 16:47:46] START: 1000 articles to enrich
+[2026-03-22 16:47:46] START: 1000 articles to enrich
