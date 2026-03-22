@@ -356,6 +356,36 @@ def blocks_to_html(blocks_json: str) -> str:
             title = d.get("title", "")
             msg = d.get("message", "")
             html_parts.append(f'<div class="article-warning"><strong>{title}</strong><p>{msg}</p></div>')
+        elif t == "infobox":
+            title = d.get("title", "")
+            text_html = "".join(f"<p>{p}</p>" for p in d.get("text", "").split("\n") if p.strip())
+            html_parts.append(
+                f'<div class="article-infobox">'
+                f'<div class="article-infobox-header">'
+                f'<div class="article-infobox-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div>'
+                f'<div class="article-infobox-title">{title}</div>'
+                f'</div>{text_html}</div>'
+            )
+        elif t == "callout":
+            ctype = d.get("type", "info")
+            title = d.get("title", "")
+            text = d.get("text", "")
+            html_parts.append(
+                f'<div class="article-callout article-callout--{ctype}">'
+                f'<div class="article-callout-title">{title}</div>'
+                f'<p>{text}</p></div>'
+            )
+        elif t == "numberbox":
+            items = d.get("items", [])
+            stats = ""
+            for it in items:
+                val = it.get("value", "")
+                label = it.get("label", "")
+                delta = it.get("delta", "")
+                delta_class = "up" if delta.startswith(("+", "↑")) else ("down" if delta.startswith(("-", "↓")) else "")
+                delta_html = f'<span class="article-number-delta {delta_class}">{delta}</span>' if delta else ""
+                stats += f'<div class="article-number-stat"><span class="article-number-value">{val}</span><span class="article-number-label">{label}</span>{delta_html}</div>'
+            html_parts.append(f'<div class="article-number-box"><div class="article-number-box-grid">{stats}</div></div>')
     return "\n".join(html_parts)
 
 
@@ -379,6 +409,18 @@ def blocks_to_text(blocks_json: str) -> str:
         if block["type"] == "warning":
             parts.append(_re.sub(r'<[^>]+>', '', d.get("title", "")))
             parts.append(_re.sub(r'<[^>]+>', '', d.get("message", "")))
+        if block["type"] in ("infobox", "callout"):
+            if d.get("title"):
+                parts.append(_re.sub(r'<[^>]+>', '', d["title"]))
+            if d.get("text"):
+                parts.append(_re.sub(r'<[^>]+>', '', d["text"]))
+        if block["type"] == "numberbox":
+            for it in d.get("items", []):
+                if isinstance(it, dict):
+                    if it.get("value"):
+                        parts.append(it["value"])
+                    if it.get("label"):
+                        parts.append(it["label"])
     return "\n".join(parts)
 
 

@@ -114,6 +114,133 @@
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.4.1/dist/table.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/warning@1.4.0/dist/warning.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/underline@1.1.0/dist/underline.umd.js"></script>
+
+<!-- Custom block tools: Infobox, Callout, NumberBox -->
+<script>
+/* ═══ InfoboxTool ═══ */
+function InfoboxTool(params) {
+  var d = (params && params.data) || {};
+  this._title = d.title || '';
+  this._text = d.text || '';
+}
+InfoboxTool.prototype.render = function() {
+  var w = document.createElement('div');
+  w.style.cssText = 'border:1px solid #dee2e6;border-radius:8px;padding:12px 16px;background:#f8f9fa;';
+  w.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+    '<span style="width:28px;height:28px;border-radius:50%;background:#fdf2f2;display:flex;align-items:center;justify-content:center;color:#d83236;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>' +
+    '<input type="text" placeholder="\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a \u0438\u043d\u0444\u043e\u0431\u043e\u043a\u0441\u0430" value="' + this._title.replace(/"/g,'&quot;') + '" style="flex:1;border:none;background:none;font-weight:700;font-size:15px;outline:none;">' +
+    '</div>' +
+    '<textarea placeholder="\u0422\u0435\u043a\u0441\u0442 \u0438\u043d\u0444\u043e\u0431\u043e\u043a\u0441\u0430" rows="3" style="width:100%;border:none;background:none;font-size:14px;line-height:1.6;resize:vertical;outline:none;color:#495057;">' + this._text + '</textarea>';
+  this._el = w;
+  return w;
+};
+InfoboxTool.prototype.save = function() {
+  return {
+    title: this._el.querySelector('input').value.trim(),
+    text: this._el.querySelector('textarea').value.trim()
+  };
+};
+InfoboxTool.prototype.validate = function(d) { return d.title || d.text; };
+InfoboxTool.toolbox = { title: '\u0418\u043d\u0444\u043e\u0431\u043e\u043a\u0441', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' };
+
+/* ═══ CalloutTool ═══ */
+function CalloutTool(params) {
+  var d = (params && params.data) || {};
+  this._type = d.type || 'info';
+  this._title = d.title || '';
+  this._text = d.text || '';
+}
+CalloutTool.prototype._colors = { info: '#006494', warning: '#d19900', success: '#437a22' };
+CalloutTool.prototype._bgs = { info: 'rgba(0,100,148,.08)', warning: '#fef3cd', success: 'rgba(67,122,34,.08)' };
+CalloutTool.prototype.render = function() {
+  var self = this;
+  var w = document.createElement('div');
+  w.style.cssText = 'border-left:4px solid ' + this._colors[this._type] + ';background:' + this._bgs[this._type] + ';border-radius:0 8px 8px 0;padding:12px 16px;';
+  w.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+    '<select style="border:1px solid #ccc;border-radius:4px;padding:2px 6px;font-size:12px;background:#fff;">' +
+    '<option value="info"' + (this._type === 'info' ? ' selected' : '') + '>\u0418\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u044f</option>' +
+    '<option value="warning"' + (this._type === 'warning' ? ' selected' : '') + '>\u041f\u0440\u0435\u0434\u0443\u043f\u0440\u0435\u0436\u0434\u0435\u043d\u0438\u0435</option>' +
+    '<option value="success"' + (this._type === 'success' ? ' selected' : '') + '>\u0423\u0441\u043f\u0435\u0445</option>' +
+    '</select>' +
+    '<input type="text" placeholder="\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a" value="' + this._title.replace(/"/g,'&quot;') + '" style="flex:1;border:none;background:none;font-weight:700;font-size:14px;outline:none;color:' + this._colors[this._type] + ';">' +
+    '</div>' +
+    '<textarea placeholder="\u0422\u0435\u043a\u0441\u0442 \u0432\u044b\u043d\u043e\u0441\u043a\u0438" rows="2" style="width:100%;border:none;background:none;font-size:14px;line-height:1.6;resize:vertical;outline:none;">' + this._text + '</textarea>';
+  var sel = w.querySelector('select');
+  sel.addEventListener('change', function() {
+    self._type = sel.value;
+    w.style.borderLeftColor = self._colors[self._type];
+    w.style.background = self._bgs[self._type];
+    w.querySelector('input').style.color = self._colors[self._type];
+  });
+  this._el = w;
+  return w;
+};
+CalloutTool.prototype.save = function() {
+  return {
+    type: this._el.querySelector('select').value,
+    title: this._el.querySelector('input').value.trim(),
+    text: this._el.querySelector('textarea').value.trim()
+  };
+};
+CalloutTool.prototype.validate = function(d) { return d.title || d.text; };
+CalloutTool.toolbox = { title: '\u0412\u044b\u043d\u043e\u0441\u043a\u0430', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' };
+
+/* ═══ NumberBoxTool ═══ */
+function NumberBoxTool(params) {
+  var d = (params && params.data) || {};
+  this._items = d.items && d.items.length ? d.items : [{ value: '', label: '', delta: '' }, { value: '', label: '', delta: '' }];
+}
+NumberBoxTool.prototype.render = function() {
+  var self = this;
+  var w = document.createElement('div');
+  w.style.cssText = 'border:1px solid #dee2e6;border-radius:8px;padding:16px;background:#fafaf8;';
+  var grid = document.createElement('div');
+  grid.className = 'nb-grid';
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;';
+
+  function addItem(it) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border:1px solid #eee;border-radius:6px;padding:10px;position:relative;';
+    card.innerHTML = '<input type="text" placeholder="\u0427\u0438\u0441\u043b\u043e" value="' + (it.value || '').replace(/"/g,'&quot;') + '" style="width:100%;border:none;font-size:22px;font-weight:800;color:#d83236;text-align:center;outline:none;margin-bottom:4px;" class="nb-val">' +
+      '<input type="text" placeholder="\u041f\u043e\u0434\u043f\u0438\u0441\u044c" value="' + (it.label || '').replace(/"/g,'&quot;') + '" style="width:100%;border:none;font-size:12px;text-align:center;color:#868e96;text-transform:uppercase;letter-spacing:0.05em;outline:none;" class="nb-lbl">' +
+      '<input type="text" placeholder="\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u0435" value="' + (it.delta || '').replace(/"/g,'&quot;') + '" style="width:100%;border:none;font-size:13px;text-align:center;font-weight:600;outline:none;margin-top:2px;" class="nb-dlt">' +
+      '<button style="position:absolute;top:2px;right:4px;background:none;border:none;cursor:pointer;color:#aaa;font-size:16px;" class="nb-rm" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c">\u00d7</button>';
+    card.querySelector('.nb-rm').addEventListener('click', function() {
+      if (grid.children.length > 1) card.remove();
+    });
+    grid.appendChild(card);
+  }
+
+  this._items.forEach(function(it) { addItem(it); });
+
+  var addBtn = document.createElement('button');
+  addBtn.textContent = '+ \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c';
+  addBtn.style.cssText = 'margin-top:8px;padding:4px 12px;border:1px dashed #aaa;border-radius:4px;background:none;cursor:pointer;font-size:13px;color:#666;';
+  addBtn.addEventListener('click', function() { addItem({ value: '', label: '', delta: '' }); });
+
+  w.appendChild(grid);
+  w.appendChild(addBtn);
+  this._el = w;
+  this._grid = grid;
+  return w;
+};
+NumberBoxTool.prototype.save = function() {
+  var items = [];
+  var cards = this._grid.children;
+  for (var i = 0; i < cards.length; i++) {
+    var c = cards[i];
+    items.push({
+      value: c.querySelector('.nb-val').value.trim(),
+      label: c.querySelector('.nb-lbl').value.trim(),
+      delta: c.querySelector('.nb-dlt').value.trim()
+    });
+  }
+  return { items: items };
+};
+NumberBoxTool.prototype.validate = function(d) { return d.items && d.items.length > 0 && d.items.some(function(i) { return i.value; }); };
+NumberBoxTool.toolbox = { title: '\u0426\u0438\u0444\u0440\u044b', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3L8 21"/><path d="M16 3l-2 18"/></svg>' };
+</script>
+
 <script>
 var editor, isDirty = false, lastSavedAt = null, ARTICLE_ID = null, allTags = [];
 
@@ -133,6 +260,9 @@ function formatNum(n) { if (Math.abs(n) < 1000) return String(n); return String(
             underline: { class: Underline },
             table: { class: Table, inlineToolbar: true, config: { rows: 3, cols: 3 } },
             warning: { class: Warning, config: { titlePlaceholder: 'Заголовок', messagePlaceholder: 'Сообщение' } },
+            infobox: { class: InfoboxTool },
+            callout: { class: CalloutTool },
+            numberbox: { class: NumberBoxTool },
         },
         data: {},
         onChange: function() { markDirty(); updateWordCount(); }
