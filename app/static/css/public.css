@@ -138,9 +138,12 @@ p { text-wrap:pretty; }
   position:relative; display:inline-block;
 }
 .logo-accent::after {
-  content:'\0301'; position:absolute;
-  left:50%; top:-0.15em; transform:translateX(-50%);
-  font-size:0.85em; line-height:1; pointer-events:none;
+  content:''; position:absolute;
+  left:50%; top:-0.22em;
+  width:0.38em; height:0.11em;
+  transform:translateX(-50%) rotate(-25deg);
+  background:currentColor; border-radius:1px;
+  pointer-events:none;
 }
 .footer-logo .site-logo-text { font-size:1.25rem; }
 @media (min-width:640px) { .footer-logo .site-logo-text { font-size:1.375rem; } }
