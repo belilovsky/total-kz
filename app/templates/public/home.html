@@ -26,7 +26,7 @@
           {% if hero.excerpt %}
             <p class="hero-slide-excerpt">{{ hero.excerpt[:160] }}{% if hero.excerpt|length > 160 %}…{% endif %}</p>
           {% endif %}
-          <span class="hero-slide-meta">{{ format_date_short(hero.pub_date) }}{% if hero.author %} · {{ hero.author }}{% endif %}</span>
+          <span class="hero-slide-meta">{{ format_date_short(hero.pub_date) }}</span>
         </div>
         <a href="{{ article_url(hero) }}" class="hero-slide-link" aria-label="{{ hero.title }}"></a>
       </div>
