@@ -127,6 +127,10 @@ def _format_num(n) -> str:
 templates.env.filters["format_num"] = _format_num
 templates.env.globals["format_num"] = _format_num
 
+# Currency rates (live from NB RK, cached 1h)
+from app.currency import get_rates as _get_currency_rates
+templates.env.globals["get_currency_rates"] = _get_currency_rates
+
 
 def _ctx(request: Request, **kwargs) -> dict:
     """Build template context with current_user always available."""

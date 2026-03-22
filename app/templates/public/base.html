@@ -95,11 +95,10 @@
   <!-- ═══ CURRENCY STRIP ═══ -->
   <div class="currency-strip">
     <div class="currency-strip-inner">
-      <span class="currency-item">🇺🇸 USD 523.4</span>
-      <span class="currency-sep">|</span>
-      <span class="currency-item">🇪🇺 EUR 557.1</span>
-      <span class="currency-sep">|</span>
-      <span class="currency-item">🇷🇺 RUB 5.74</span>
+      {% for r in get_currency_rates() %}
+      {% if not loop.first %}<span class="currency-sep">|</span>{% endif %}
+      <span class="currency-item">{{ r.flag }} {{ r.code }} {{ r.rate }}{% if r.direction %} <span class="currency-dir {{ 'up' if r.direction == '↑' else 'down' }}">{{ r.direction }}</span>{% endif %}</span>
+      {% endfor %}
     </div>
   </div>
 

@@ -341,6 +341,10 @@ templates.env.globals["pluralize_materials"] = pluralize_materials
 templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
 
+# Currency rates (live from NB RK, cached 1h)
+from app.currency import get_rates as _get_currency_rates
+templates.env.globals["get_currency_rates"] = _get_currency_rates
+
 
 def _names_match(a: str, b: str) -> bool:
     """Check if two names refer to the same person/org (fuzzy).
