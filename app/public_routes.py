@@ -322,6 +322,21 @@ def format_date_day(date_str: str | None) -> str:
         return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
 
 
+def format_date_full(date_str: str | None) -> str:
+    """Full date with day, full month, year and time.
+    Example: 20 марта 2026, 10:48
+    """
+    if not date_str:
+        return ""
+    months = ["января", "февраля", "марта", "апреля", "мая", "июня",
+              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+    dt = _parse_datetime(date_str)
+    if dt is None:
+        return date_str[:10] if len(date_str) >= 10 else date_str
+    time_part = dt.strftime("%H:%M")
+    return f"{dt.day} {months[dt.month - 1]} {dt.year}, {time_part}"
+
+
 def short_entity_name(entity: dict) -> str:
     """Short display name for entity pills.
     Strips АО, НК, ТОО, НАО, ОО prefixes and quotes from org names.
@@ -355,6 +370,7 @@ def short_entity_name(entity: dict) -> str:
 templates.env.globals["format_date"] = format_date
 templates.env.globals["format_date_short"] = format_date_short
 templates.env.globals["format_date_day"] = format_date_day
+templates.env.globals["format_date_full"] = format_date_full
 templates.env.globals["cat_label"] = cat_label
 templates.env.globals["nav_slug_for"] = nav_slug_for
 templates.env.globals["article_url"] = article_url

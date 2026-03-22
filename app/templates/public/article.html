@@ -76,16 +76,12 @@
 
 <article class="article-page">
 
-  {# ── Top bar: breadcrumbs + badge in one compact row ── #}
+  {# ── Top bar: breadcrumbs only (badge moved to sidebar) ── #}
   <nav aria-label="Навигация">
     <div class="article-top-bar">
       <a href="/">Главная</a>
       <span class="sep">›</span>
       <a href="/news/{{ nav_section }}">{{ nav_section_name }}</a>
-      <span class="cat-badge" data-cat="{{ nav_section }}">
-        <span class="cat-dot"></span>
-        <span class="cat-name">{{ nav_section_name }}</span>
-      </span>
     </div>
   </nav>
 
@@ -94,11 +90,10 @@
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
       <div class="article-header-aside">
+        <span class="header-date">{{ format_date_full(article.pub_date) }}</span>
         {% if article.author %}
         <span class="header-author">{{ article.author }}</span>
         {% endif %}
-        <span class="header-date">{{ format_date(article.pub_date) }}</span>
-        <span class="header-reading">• {{ reading_time }} мин чтения</span>
       </div>
     </div>
     {# Mobile-only meta (below title) #}
@@ -228,11 +223,12 @@
     <aside class="article-sidebar">
       <div class="article-sidebar-inner">
 
-        {# ── Compact meta line: date · reading time (author moved to article bottom) ── #}
-        <div class="sidebar-meta">
-          <span class="sidebar-meta-date">{{ format_date(article.pub_date) }}</span>
-          <span class="sidebar-meta-sep">·</span>
-          <span class="sidebar-meta-reading">{{ reading_time }} мин</span>
+        {# ── Category badge (moved from header top-bar) ── #}
+        <div class="sidebar-badge">
+          <a href="/news/{{ nav_section }}" class="cat-badge" data-cat="{{ nav_section }}">
+            <span class="cat-dot"></span>
+            <span class="cat-name">{{ nav_section_name }}</span>
+          </a>
         </div>
 
         {# ── TOC: most useful for navigation ── #}

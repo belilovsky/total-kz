@@ -651,22 +651,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .article-sidebar-inner { position:sticky; top:5rem; }
 }
 
-/* Sidebar meta: compact inline — author · date · reading time */
-.sidebar-meta {
-  margin-bottom:var(--space-4);
-  display:flex; flex-wrap:wrap; align-items:baseline; gap:0;
-  font-size:var(--text-xs); color:var(--text-muted); line-height:1.5;
+/* Sidebar badge: category at top of sidebar */
+.sidebar-badge {
+  margin-bottom:var(--space-3);
 }
-.sidebar-meta-author {
-  font-weight:600; color:var(--text-secondary);
-  text-decoration:none;
-}
-.sidebar-meta-author:hover { color:var(--accent); }
-.sidebar-meta-sep { margin:0 4px; opacity:.4; }
-.sidebar-meta-date { /* inherits */ }
-.sidebar-meta-reading {
-  font-style:normal; background:var(--surface-2); padding:1px 6px; border-radius:var(--radius-sm);
-}
+.sidebar-badge .cat-badge { text-decoration:none; }
 
 /* Sidebar actions: share + print in one compact row */
 .sidebar-actions {
@@ -780,9 +769,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .header-date {
   font-size:11px; color:var(--text-muted);
 }
-.header-reading {
-  font-size:11px; color:var(--text-muted);
-}
+
 
 /* Title – compact, capped at text-xl on desktop */
 .article-title {
