@@ -129,8 +129,8 @@ p { text-wrap:pretty; }
 }
 .site-logo:hover .site-logo-text { opacity:.8; }
 .site-logo-text {
-  font-family:var(--font-display); font-weight:900;
-  font-size:1.5rem; letter-spacing:-0.03em; line-height:1;
+  font-family:'Montserrat',var(--font-display),sans-serif; font-weight:900;
+  font-size:1.5rem; letter-spacing:-0.02em; line-height:1;
   color:var(--accent); text-transform:uppercase;
 }
 @media (min-width:640px) { .site-logo-text { font-size:1.75rem; } }
