@@ -659,6 +659,14 @@ async def stage_download(workers=15, resume=False):
 
 def stage_import():
     """Этап 3: Импорт articles.jsonl → SQLite + Meilisearch."""
+    # Автоматический бэкап перед импортом
+    log("БЭКАП: Создаю бэкап БД перед импортом...")
+    try:
+        from scraper.backup_db import backup
+        backup(tag="pre-import")
+    except Exception as e:
+        log(f"⚠ Бэкап не удался: {e} — продолжаю импорт")
+
     log("ЭТАП 3: Импорт в БД")
 
     if not ARTICLES_FILE.exists():
@@ -731,6 +739,14 @@ def stage_import():
     except Exception as e:
         log(f"⚠ Meilisearch переиндексация: {e}")
         log("  Запустите вручную: python -m scraper.reindex_meilisearch")
+
+    # Финальный бэкап после успешного импорта
+    log("БЭКАП: Создаю бэкап после импорта...")
+    try:
+        from scraper.backup_db import backup
+        backup(tag="post-import")
+    except Exception as e:
+        log(f"⚠ Финальный бэкап: {e}")
 
 
 def _insert_batch(conn, batch):
