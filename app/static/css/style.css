@@ -4063,3 +4063,280 @@ body.sidebar-open .sidebar-overlay { display: block; }
     font-family: inherit;
     cursor: pointer;
 }
+
+/* ============================================
+   Workflow UI – v12.0
+   ============================================ */
+
+/* ── Workflow Status Badges ── */
+.wf-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+.wf-status-draft {
+    background: rgba(107, 114, 128, 0.12);
+    color: #6b7280;
+}
+.wf-status-review {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+.wf-status-ready {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+}
+.wf-status-published {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+.wf-status-archived {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+}
+.wf-status-scheduled {
+    background: rgba(124, 58, 237, 0.12);
+    color: #7c3aed;
+}
+
+/* ── Workflow Panel ── */
+.wf-section { }
+.wf-panel {
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+}
+.wf-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.wf-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+.wf-assigned-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2px 10px 2px 6px;
+}
+.wf-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.wf-action-btn {
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: var(--radius-xs);
+    transition: all var(--transition);
+}
+.wf-action-btn.wf-action-review {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.wf-action-btn.wf-action-review:hover {
+    background: rgba(245, 158, 11, 0.22);
+}
+.wf-action-btn.wf-action-draft {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+.wf-action-btn.wf-action-draft:hover {
+    background: rgba(107, 114, 128, 0.2);
+}
+.wf-action-btn.wf-action-ready {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.wf-action-btn.wf-action-ready:hover {
+    background: rgba(59, 130, 246, 0.22);
+}
+.wf-action-btn.wf-action-published {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.wf-action-btn.wf-action-published:hover {
+    background: rgba(34, 197, 94, 0.22);
+}
+.wf-action-btn.wf-action-archived {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+.wf-action-btn.wf-action-archived:hover {
+    background: var(--border);
+}
+.wf-comment-inline {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+
+/* ── Comments Thread ── */
+.wf-comments-thread {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+.wf-comment-item {
+    padding: 10px 12px;
+    border-radius: var(--radius-xs);
+    margin-bottom: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+}
+.wf-comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+.wf-comment-author {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+.wf-comment-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+.wf-comment-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.wf-no-comments {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 12px 0;
+}
+.wf-comment-form {
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+}
+
+/* ── Role Badges ── */
+.wf-role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.wf-role-admin {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+.wf-role-editor {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+.wf-role-journalist {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+/* ── Workflow History ── */
+.wf-history-list {
+    padding-left: 4px;
+}
+.wf-history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+}
+.wf-history-item:last-child {
+    border-bottom: none;
+}
+.wf-history-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+.wf-dot-workflow {
+    background: var(--accent);
+}
+.wf-dot-assign {
+    background: #f59e0b;
+}
+.wf-dot-other {
+    background: var(--text-muted);
+}
+.wf-history-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    flex: 1;
+    min-width: 0;
+}
+.wf-history-user {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.wf-history-details {
+    color: var(--text-secondary);
+    word-break: break-word;
+}
+.wf-history-time {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* ── Assigned Tag in Article Lists ── */
+.article-assigned-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 1px 6px;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+/* ── My Articles Tab ── */
+.status-tab.status-tab-my {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.status-tab.status-tab-my svg {
+    flex-shrink: 0;
+}

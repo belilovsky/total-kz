@@ -22,7 +22,7 @@
 {% block content %}
 <!-- Status filter tabs -->
 <div class="status-tabs">
-    <a href="/admin/articles?{{ 'q=' + q|urlencode + '&' if q }}{{ 'category=' + category|urlencode + '&' if category }}{{ 'author=' + author|urlencode + '&' if author }}{{ 'tag=' + tag|urlencode + '&' if tag }}" class="status-tab {% if not status %}active{% endif %}">
+    <a href="/admin/articles?{{ 'q=' + q|urlencode + '&' if q }}{{ 'category=' + category|urlencode + '&' if category }}{{ 'author=' + author|urlencode + '&' if author }}{{ 'tag=' + tag|urlencode + '&' if tag }}" class="status-tab {% if not status and not my %}active{% endif %}">
         Все <span class="status-tab-count">{{ format_num(status_counts.all) }}</span>
     </a>
     <a href="/admin/articles?status=published{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'published' %}active{% endif %}">
@@ -31,9 +31,21 @@
     <a href="/admin/articles?status=draft{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'draft' %}active{% endif %}">
         Черновики <span class="status-tab-count">{{ format_num(status_counts.draft) }}</span>
     </a>
+    <a href="/admin/articles?status=review{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'review' %}active{% endif %}">
+        На рецензии <span class="status-tab-count">{{ format_num(status_counts.review) }}</span>
+    </a>
+    <a href="/admin/articles?status=ready{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'ready' %}active{% endif %}">
+        Готово <span class="status-tab-count">{{ format_num(status_counts.ready) }}</span>
+    </a>
     <a href="/admin/articles?status=archived{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'archived' %}active{% endif %}">
         Архив <span class="status-tab-count">{{ format_num(status_counts.archived) }}</span>
     </a>
+    {% if current_user %}
+    <a href="/admin/articles?my=1{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab status-tab-my {% if my == '1' %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Мои статьи <span class="status-tab-count">{{ format_num(status_counts.my) }}</span>
+    </a>
+    {% endif %}
 </div>
 
 <!-- Mobile filter button -->
@@ -205,8 +217,10 @@
     <div class="bulk-actions">
         <select id="bulkStatusSelect" class="filter-select" style="min-width:140px">
             <option value="">Изменить статус</option>
-            <option value="published">Опубликовать</option>
             <option value="draft">В черновики</option>
+            <option value="review">На рецензию</option>
+            <option value="ready">Готово к публикации</option>
+            <option value="published">Опубликовать</option>
             <option value="archived">В архив</option>
         </select>
         <button class="btn btn-sm btn-ghost" onclick="applyBulkStatus()">Применить</button>
@@ -232,8 +246,8 @@
                 </div>
                 {% endif %}
                 {% if a.status and a.status != 'published' %}
-                <span class="article-card-status status-badge status-{{ a.status }}">
-                    {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+                <span class="article-card-status wf-status-badge wf-status-{{ a.status }}">
+                    {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% elif a.status == 'review' %}На рецензии{% elif a.status == 'ready' %}Готово{% endif %}
                 </span>
                 {% endif %}
             </div>
@@ -245,17 +259,18 @@
                 <h3 class="article-card-title">{{ a.title }}</h3>
                 <p class="article-card-excerpt">{{ a.excerpt[:200] if a.excerpt else '' }}{% if a.excerpt and a.excerpt|length > 200 %}...{% endif %}</p>
                 <div class="article-card-footer">
-                    {% if a.author %}
                     <span class="article-card-author">
+                        {% if a.author %}
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         {{ a.author }}
+                        {% endif %}
+                        {% if a.assigned_to %}
+                        <span class="article-assigned-tag" title="Назначено: {{ a.assigned_to }}">→ {{ a.assigned_to }}</span>
+                        {% endif %}
                     </span>
-                    {% else %}
-                    <span></span>
-                    {% endif %}
                     {% if a.status and a.status != 'published' %}
-                    <span class="status-badge status-{{ a.status }}" style="font-size:11px">
-                        {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+                    <span class="wf-status-badge wf-status-{{ a.status }}" style="font-size:11px">
+                        {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% elif a.status == 'review' %}На рецензии{% elif a.status == 'ready' %}Готово{% endif %}
                     </span>
                     {% endif %}
                 </div>
@@ -286,8 +301,8 @@
                 <div class="article-list-meta">
                     <span class="badge badge-cat">{{ cat_label(a.sub_category) }}</span>
                     {% if a.status and a.status != 'published' %}
-                    <span class="status-badge status-{{ a.status }}" style="font-size:11px">
-                        {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% endif %}
+                    <span class="wf-status-badge wf-status-{{ a.status }}" style="font-size:11px">
+                        {% if a.status == 'draft' %}Черновик{% elif a.status == 'archived' %}Архив{% elif a.status == 'review' %}На рецензии{% elif a.status == 'ready' %}Готово{% endif %}
                     </span>
                     {% endif %}
                 </div>
@@ -298,6 +313,9 @@
                 <span class="article-list-date">{{ a.pub_date[:10] if a.pub_date else '' }}</span>
                 {% if a.author %}
                 <span class="article-list-author">{{ a.author }}</span>
+                {% endif %}
+                {% if a.assigned_to %}
+                <span class="article-assigned-tag">{{ a.assigned_to }}</span>
                 {% endif %}
             </div>
         </a>

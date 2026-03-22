@@ -233,6 +233,25 @@ def init_db():
         if "credit" not in media_cols:
             conn.execute("ALTER TABLE media ADD COLUMN credit TEXT DEFAULT ''")
 
+        # v12: Workflow — article_comments table
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS article_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                article_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                role TEXT NOT NULL,
+                comment TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (article_id) REFERENCES articles(id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_comments_article ON article_comments(article_id);
+        """)
+
+        # v12: Workflow — assigned_to column on articles
+        if "assigned_to" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN assigned_to TEXT")
+
         # Seed admin user if users table is empty
         from . import auth as _auth
         user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -506,6 +525,7 @@ def search_articles(
     tag: str = "",
     entity_id: int = 0,
     status: str = "",
+    assigned_to: str = "",
     page: int = 1,
     per_page: int = 30,
 ) -> dict:
@@ -530,6 +550,10 @@ def search_articles(
         if author:
             conditions.append("a.author = ?")
             params.append(author)
+
+        if assigned_to:
+            conditions.append("a.assigned_to = ?")
+            params.append(assigned_to)
 
         if date_from:
             conditions.append("a.pub_date >= ?")
@@ -560,7 +584,7 @@ def search_articles(
         rows = conn.execute(f"""
             SELECT DISTINCT a.id, a.url, a.pub_date, a.sub_category, a.category_label,
                    a.title, a.author, a.excerpt, a.thumbnail, a.main_image,
-                   a.status, a.updated_at
+                   a.status, a.updated_at, a.assigned_to
             FROM articles a {join_sql} {where}
             ORDER BY a.pub_date DESC
             LIMIT ? OFFSET ?
@@ -646,7 +670,7 @@ def update_article(article_id: int, updates: dict) -> None:
     """Update article fields."""
     allowed = {"title", "excerpt", "sub_category", "author", "main_image",
                "body_html", "body_text", "status", "editor_note", "updated_at",
-               "body_blocks", "scheduled_at", "focal_x", "focal_y"}
+               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to"}
     with get_db() as conn:
         # Separate tags (JSON) from scalar fields
         tags = updates.pop("tags", None)

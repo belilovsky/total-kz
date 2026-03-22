@@ -26,6 +26,8 @@
                 <option value="delete" {% if filter_action == 'delete' %}selected{% endif %}>Удаление</option>
                 <option value="publish" {% if filter_action == 'publish' %}selected{% endif %}>Публикация</option>
                 <option value="bulk" {% if filter_action == 'bulk' %}selected{% endif %}>Массовое</option>
+                <option value="workflow" {% if filter_action == 'workflow' %}selected{% endif %}>Рабочий процесс</option>
+                <option value="assign" {% if filter_action == 'assign' %}selected{% endif %}>Назначение</option>
             </select>
         </div>
         <div class="filter-group">
@@ -88,6 +90,8 @@
                     {% elif entry.action == 'delete' %}удалил {{ entry.entity_type }}
                     {% elif entry.action == 'publish' %}опубликовал {{ entry.entity_type }}
                     {% elif entry.action == 'bulk' %}массовое действие: {{ entry.entity_type }}
+                    {% elif entry.action == 'workflow' %}изменил статус {{ entry.entity_type }}
+                    {% elif entry.action == 'assign' %}назначил {{ entry.entity_type }}
                     {% else %}{{ entry.action }} {{ entry.entity_type }}
                     {% endif %}
                     {% if entry.entity_id %}<span style="color:var(--text-muted)">#{{ entry.entity_id }}</span>{% endif %}

@@ -20,8 +20,8 @@
 {% endblock %}
 
 {% block actions %}
-<span class="status-badge status-{{ article.status or 'published' }}">
-    {% if article.status == 'draft' %}Черновик{% elif article.status == 'archived' %}Архив{% elif article.status == 'review' %}На проверке{% elif article.status == 'scheduled' %}Запланировано{% else %}Опубликовано{% endif %}
+<span class="wf-status-badge wf-status-{{ article.status or 'published' }}">
+    {% if article.status == 'draft' %}Черновик{% elif article.status == 'archived' %}В архиве{% elif article.status == 'review' %}На рецензии{% elif article.status == 'ready' %}Готово к публикации{% elif article.status == 'scheduled' %}Запланировано{% else %}Опубликовано{% endif %}
 </span>
 <a href="{{ article.url }}" target="_blank" class="btn btn-ghost btn-sm" title="Открыть на сайте">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -112,20 +112,70 @@
         <textarea class="editor-textarea auto-resize" id="editNote" rows="2" placeholder="Внутренние заметки для редакции...">{{ article.editor_note or '' }}</textarea>
     </div>
 
-    <!-- Status -->
+    <!-- Workflow Section -->
+    <div class="editor-section wf-section">
+        <label class="editor-label">Рабочий процесс</label>
+        <div class="wf-panel">
+            <div class="wf-status-row">
+                <span class="wf-label">Текущий статус:</span>
+                <span class="wf-status-badge wf-status-{{ article.status or 'published' }}">
+                    {% if article.status == 'draft' %}Черновик{% elif article.status == 'archived' %}В архиве{% elif article.status == 'review' %}На рецензии{% elif article.status == 'ready' %}Готово к публикации{% elif article.status == 'scheduled' %}Запланировано{% else %}Опубликовано{% endif %}
+                </span>
+                {% if article.assigned_to %}
+                <span class="wf-assigned-badge" title="Назначено">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    {{ article.assigned_to }}
+                </span>
+                {% endif %}
+            </div>
+            {% if workflow_actions %}
+            <div class="wf-actions">
+                {% for wa in workflow_actions %}
+                <button class="btn btn-sm wf-action-btn wf-action-{{ wa.to_status }}" onclick="doWorkflowAction('{{ wa.action }}')" title="{{ wa.label }}">
+                    {% if wa.to_status == 'review' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    {% elif wa.to_status == 'draft' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    {% elif wa.to_status == 'ready' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                    {% elif wa.to_status == 'published' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+                    {% elif wa.to_status == 'archived' %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                    {% endif %}
+                    {{ wa.label }}
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="wf-comment-inline" id="wfCommentInline" style="display:none">
+                <textarea class="editor-textarea" id="wfActionComment" rows="2" placeholder="Комментарий к действию (необязательно)..."></textarea>
+                <div style="display:flex;gap:8px;margin-top:6px">
+                    <button class="btn btn-primary btn-sm" id="wfConfirmBtn" onclick="confirmWorkflowAction()">Подтвердить</button>
+                    <button class="btn btn-ghost btn-sm" onclick="cancelWorkflowAction()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment -->
+    {% if current_user and current_user.role in ('editor', 'admin') %}
     <div class="editor-section">
-        <label class="editor-label">Статус</label>
-        <div class="status-radios">
-            <label class="status-radio"><input type="radio" name="status" value="draft" {% if article.status == 'draft' %}checked{% endif %}><span class="status-badge status-draft">Черновик</span></label>
-            <label class="status-radio"><input type="radio" name="status" value="review" {% if article.status == 'review' %}checked{% endif %}><span class="status-badge" style="background:rgba(234,179,8,0.15);color:#a16207">На проверке</span></label>
-            <label class="status-radio"><input type="radio" name="status" value="published" {% if article.status == 'published' or (article.status != 'draft' and article.status != 'archived' and article.status != 'review' and article.status != 'scheduled') %}checked{% endif %}><span class="status-badge status-published">Опубликовано</span></label>
-            <label class="status-radio"><input type="radio" name="status" value="scheduled" {% if article.status == 'scheduled' %}checked{% endif %}><span class="status-badge" style="background:rgba(59,130,246,0.15);color:#1d4ed8">Запланировано</span></label>
-            <label class="status-radio"><input type="radio" name="status" value="archived" {% if article.status == 'archived' %}checked{% endif %}><span class="status-badge status-archived">Архив</span></label>
-        </div>
-        <div class="schedule-picker" id="schedulePicker">
-            <label style="font-size:13px;color:var(--text-muted)">Дата публикации:</label>
-            <input type="datetime-local" id="scheduledAt" class="editor-input" style="width:auto" value="{{ article.scheduled_at or '' }}">
-        </div>
+        <label class="editor-label">Назначить</label>
+        <select class="editor-select" id="editAssignedTo" onchange="assignArticle()">
+            <option value="">— не назначено —</option>
+            {% for u in journalists %}
+            <option value="{{ u.username }}" {% if u.username == article.assigned_to %}selected{% endif %}>{{ u.display_name }} ({{ u.username }}) — {{ u.role }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    <!-- Status (hidden for form save, controlled by workflow) -->
+    <input type="hidden" name="status" id="articleStatusHidden" value="{{ article.status or 'published' }}">
+    <div class="schedule-picker" id="schedulePicker" {% if article.status != 'scheduled' %}style="display:none"{% endif %}>
+        <label style="font-size:13px;color:var(--text-muted)">Дата публикации:</label>
+        <input type="datetime-local" id="scheduledAt" class="editor-input" style="width:auto" value="{{ article.scheduled_at or '' }}">
     </div>
 
     <!-- Entities (read-only) -->
@@ -150,6 +200,58 @@
             <svg id="revisionArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle;transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
         </label>
         <div class="revision-list" id="revisionList" style="display:none"><div class="revision-loading" id="revisionLoading">Загрузка...</div></div>
+    </div>
+
+    <!-- Comments -->
+    <div class="editor-section">
+        <label class="editor-label">Комментарии</label>
+        <div class="wf-comments-thread" id="commentsThread">
+            {% if comments %}
+            {% for c in comments %}
+            <div class="wf-comment-item">
+                <div class="wf-comment-header">
+                    <span class="wf-comment-author">{{ c.username }}</span>
+                    <span class="wf-role-badge wf-role-{{ c.role }}">{% if c.role == 'admin' %}Админ{% elif c.role == 'editor' %}Редактор{% else %}Журналист{% endif %}</span>
+                    <span class="wf-comment-time">{{ c.created_at[:16] if c.created_at else '' }}</span>
+                </div>
+                <div class="wf-comment-body">{{ c.comment }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="wf-no-comments">Комментариев пока нет</div>
+            {% endif %}
+        </div>
+        <div class="wf-comment-form">
+            <textarea class="editor-textarea" id="newCommentText" rows="2" placeholder="Написать комментарий..."></textarea>
+            <button class="btn btn-sm btn-primary" onclick="addComment()" style="margin-top:6px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Отправить
+            </button>
+        </div>
+    </div>
+
+    <!-- Workflow History -->
+    <div class="editor-section">
+        <label class="editor-label" style="cursor:pointer;user-select:none" onclick="toggleWfHistory()">
+            История рабочего процесса
+            <svg id="wfHistoryArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle;transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+        </label>
+        <div class="wf-history-list" id="wfHistoryList" style="display:none">
+            {% if workflow_history %}
+            {% for h in workflow_history %}
+            <div class="wf-history-item">
+                <div class="wf-history-dot {% if h.action == 'workflow' %}wf-dot-workflow{% elif h.action == 'assign' %}wf-dot-assign{% else %}wf-dot-other{% endif %}"></div>
+                <div class="wf-history-content">
+                    <span class="wf-history-user">{{ h.username }}</span>
+                    <span class="wf-history-details">{{ h.details or h.action }}</span>
+                    <span class="wf-history-time">{{ h.created_at[:16] if h.created_at else '' }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="wf-no-comments">Нет записей</div>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Metadata -->
@@ -270,12 +372,85 @@ function setFocalPoint(e) {
     var ch = document.getElementById('focalCrosshair'); ch.style.left = (x*100)+'%'; ch.style.top = (y*100)+'%'; markDirty();
 }
 
-function updateScheduleVisibility() {
-    var s = document.querySelector('input[name="status"][value="scheduled"]');
-    document.getElementById('schedulePicker').classList.toggle('visible', s && s.checked);
+// Workflow action handling
+var pendingWfAction = null;
+function doWorkflowAction(action) {
+    pendingWfAction = action;
+    document.getElementById('wfCommentInline').style.display = 'block';
+    document.getElementById('wfActionComment').value = '';
+    document.getElementById('wfActionComment').focus();
 }
-document.querySelectorAll('input[name="status"]').forEach(function(el) { el.addEventListener('change', function() { updateScheduleVisibility(); markDirty(); }); });
-updateScheduleVisibility();
+function cancelWorkflowAction() {
+    pendingWfAction = null;
+    document.getElementById('wfCommentInline').style.display = 'none';
+}
+function confirmWorkflowAction() {
+    if (!pendingWfAction) return;
+    var comment = document.getElementById('wfActionComment').value.trim();
+    var btn = document.getElementById('wfConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Выполняю...';
+    fetch('/api/article/' + ARTICLE_ID + '/workflow/' + pendingWfAction, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({comment: comment})
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        btn.disabled = false; btn.textContent = 'Подтвердить';
+        if (res.ok) {
+            showToast(res.message || 'Статус изменён');
+            setTimeout(function() { location.reload(); }, 600);
+        } else {
+            showToast('Ошибка: ' + (res.error || 'неизвестная'));
+        }
+    }).catch(function() {
+        btn.disabled = false; btn.textContent = 'Подтвердить';
+        showToast('Ошибка сети');
+    });
+}
+
+function assignArticle() {
+    var val = document.getElementById('editAssignedTo').value;
+    fetch('/api/article/' + ARTICLE_ID + '/assign', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({assigned_to: val})
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.ok) showToast(res.message || 'Назначено');
+        else showToast('Ошибка: ' + (res.error || 'неизвестная'));
+    }).catch(function() { showToast('Ошибка сети'); });
+}
+
+function addComment() {
+    var text = document.getElementById('newCommentText').value.trim();
+    if (!text) return;
+    fetch('/api/article/' + ARTICLE_ID + '/comment', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({comment: text})
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.ok) {
+            document.getElementById('newCommentText').value = '';
+            showToast('Комментарий добавлен');
+            // Append comment to thread
+            var thread = document.getElementById('commentsThread');
+            var noComm = thread.querySelector('.wf-no-comments');
+            if (noComm) noComm.remove();
+            var c = res.comment;
+            var roleLabel = c.role === 'admin' ? 'Админ' : c.role === 'editor' ? 'Редактор' : 'Журналист';
+            var div = document.createElement('div');
+            div.className = 'wf-comment-item';
+            div.innerHTML = '<div class="wf-comment-header"><span class="wf-comment-author">' + c.username + '</span><span class="wf-role-badge wf-role-' + c.role + '">' + roleLabel + '</span><span class="wf-comment-time">' + (c.created_at || '').substring(0,16) + '</span></div><div class="wf-comment-body">' + (c.comment || text) + '</div>';
+            thread.appendChild(div);
+            thread.scrollTop = thread.scrollHeight;
+        } else {
+            showToast('Ошибка: ' + (res.error || 'неизвестная'));
+        }
+    }).catch(function() { showToast('Ошибка сети'); });
+}
+
+function toggleWfHistory() {
+    var list = document.getElementById('wfHistoryList');
+    var arrow = document.getElementById('wfHistoryArrow');
+    var visible = list.style.display !== 'none';
+    list.style.display = visible ? 'none' : 'block';
+    arrow.style.transform = visible ? '' : 'rotate(180deg)';
+}
 
 function markDirty() { if (!isDirty) { isDirty = true; updateSaveIndicator('unsaved'); } }
 document.querySelectorAll('#editTitle, #editExcerpt, #editImage, #editCategory, #editAuthor, #editNote, #scheduledAt').forEach(function(el) { el.addEventListener('input', markDirty); el.addEventListener('change', markDirty); });
@@ -311,7 +486,7 @@ function collectTags() { var chips=document.querySelectorAll('#tagsEditor .tag-c
 })();
 
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
-function getSelectedStatus(){var r=document.getElementsByName('status');for(var i=0;i<r.length;i++){if(r[i].checked)return r[i].value;}return'published';}
+function getSelectedStatus(){return document.getElementById('articleStatusHidden').value || 'published';}
 
 function collectArticleData() {
     return editor.save().then(function(outputData) {

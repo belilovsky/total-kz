@@ -25,6 +25,7 @@ from . import seo_analytics as seo
 from . import search_analytics as search
 from . import search_engine as meili
 from . import auth
+from . import workflow as wf
 from .public_routes import router as public_router
 from .social_routes import router as social_router
 
@@ -284,12 +285,22 @@ async def admin_articles_list(
     tag: str = "",
     entity_id: int = 0,
     status: str = "",
+    assigned_to: str = "",
+    my: str = "",
     page: int = Query(1, ge=1),
 ):
+    user = getattr(request.state, "current_user", None)
+
+    # "Мои статьи" filter for current user
+    effective_assigned = assigned_to
+    if my == "1" and user:
+        effective_assigned = user.get("username", "")
+
     result = db.search_articles(
         query=q, category=category, author=author,
         date_from=date_from, date_to=date_to,
-        tag=tag, entity_id=entity_id, status=status, page=page,
+        tag=tag, entity_id=entity_id, status=status,
+        assigned_to=effective_assigned, page=page,
     )
     stats = db.get_stats()
     authors = db.get_authors()
@@ -307,10 +318,18 @@ async def admin_articles_list(
     # Get status counts for tabs
     with db.get_db() as conn:
         status_counts = {}
-        for s in ("published", "draft", "archived"):
+        for s in ("published", "draft", "archived", "review", "ready"):
             cnt = conn.execute("SELECT COUNT(*) FROM articles WHERE status = ?", (s,)).fetchone()[0]
             status_counts[s] = cnt
         status_counts["all"] = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+        # Count articles assigned to current user
+        if user:
+            status_counts["my"] = conn.execute(
+                "SELECT COUNT(*) FROM articles WHERE assigned_to = ?",
+                (user.get("username", ""),)
+            ).fetchone()[0]
+        else:
+            status_counts["my"] = 0
 
     return templates.TemplateResponse("articles.html", _ctx(request,
         result=result,
@@ -324,6 +343,8 @@ async def admin_articles_list(
         entity_name=entity_name,
         entity_type=entity_type,
         status=status,
+        assigned_to=assigned_to,
+        my=my,
         status_counts=status_counts,
         categories=stats["categories"],
         authors=authors,
@@ -354,12 +375,26 @@ async def admin_article_detail(request: Request, article_id: int):
         return HTMLResponse("Статья не найдена", status_code=404)
     stats = db.get_stats()
     cat_slugs = [c["sub_category"] for c in stats["categories"]]
+    user = getattr(request.state, "current_user", None)
+    role = user.get("role", "journalist") if user else "journalist"
+    current_status = article.get("status") or "published"
+    workflow_actions = wf.get_available_actions(current_status, role)
+    comments = wf.get_comments(article_id)
+    workflow_history = wf.get_workflow_history(article_id)
+    # Get journalists for assignment dropdown
+    all_users = db.get_all_users()
+    journalists = [u for u in all_users if u.get("is_active")]
     return templates.TemplateResponse("article.html", _ctx(request,
         article=article,
         categories=cat_slugs,
         cat_label=cat_label,
         entity_type_label=entity_type_label,
         category_labels=CATEGORY_LABELS,
+        workflow_actions=workflow_actions,
+        workflow_statuses=wf.STATUSES,
+        comments=comments,
+        workflow_history=workflow_history,
+        journalists=journalists,
     ))
 
 
@@ -995,7 +1030,7 @@ async def api_articles_bulk(request: Request):
     ip = request.client.host if request.client else ""
     if action == "status":
         status = body.get("status", "")
-        if status not in ("published", "draft", "archived"):
+        if status not in ("published", "draft", "archived", "review", "ready"):
             return JSONResponse({"ok": False, "error": "Неверный статус"}, status_code=400)
         updated = db.bulk_update_articles(article_ids, {"status": status})
         if user:
@@ -1016,6 +1051,84 @@ async def api_articles_bulk(request: Request):
                           f"Архивировано {len(article_ids)} статей", ip)
         return {"ok": True, "updated": updated}
     return JSONResponse({"ok": False, "error": "Неизвестное действие"}, status_code=400)
+
+
+# ══════════════════════════════════════════════
+#  CMS v12: EDITORIAL WORKFLOW API
+# ══════════════════════════════════════════════
+
+@app.post("/api/article/{article_id}/workflow/{action}")
+async def api_workflow_action(article_id: int, action: str, request: Request):
+    """Execute a workflow transition on an article."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Не авторизован"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    comment = (body.get("comment") or "").strip()
+    try:
+        result = wf.execute_transition(article_id, action, user, comment)
+        return result
+    except wf.PermissionDeniedError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=403)
+    except wf.InvalidStateError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=409)
+    except wf.WorkflowError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+
+@app.post("/api/article/{article_id}/assign")
+async def api_assign_article(article_id: int, request: Request):
+    """Assign an article to a user."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Не авторизован"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    assigned_to = (body.get("assigned_to") or "").strip()
+    try:
+        result = wf.assign_article(article_id, assigned_to, user)
+        return result
+    except wf.PermissionDeniedError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=403)
+    except wf.WorkflowError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+
+@app.post("/api/article/{article_id}/comment")
+async def api_add_comment(article_id: int, request: Request):
+    """Add a comment to an article."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Не авторизован"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Невалидный JSON"}, status_code=400)
+    comment_text = (body.get("comment") or "").strip()
+    if not comment_text:
+        return JSONResponse({"ok": False, "error": "Комментарий не может быть пустым"}, status_code=400)
+    try:
+        comment = wf.add_comment(
+            article_id, user["user_id"], user["username"], user["role"], comment_text
+        )
+        return {"ok": True, "comment": comment}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/article/{article_id}/comments")
+async def api_get_comments(article_id: int):
+    """Get all comments for an article."""
+    try:
+        comments = wf.get_comments(article_id)
+        return {"ok": True, "comments": comments}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "comments": []}
 
 
 # ══════════════════════════════════════════════
@@ -1080,7 +1193,7 @@ async def api_update_article(article_id: int, request: Request):
     body = await request.json()
     allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags",
                "body_html", "body_text", "status", "editor_note",
-               "body_blocks", "scheduled_at", "focal_x", "focal_y"}
+               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to"}
     updates = {k: v for k, v in body.items() if k in allowed}
 
     # If body_blocks provided, auto-generate body_html and body_text
