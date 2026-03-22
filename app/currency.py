@@ -1,5 +1,5 @@
 """
-Курсы валют НБ РК — кэшированный запрос к nationalbank.kz
+Курсы валют НБ РК + Brent + Gold — кэшированный запрос.
 Обновляется не чаще раза в час; при ошибке отдаёт последние известные.
 """
 import time, logging, xml.etree.ElementTree as ET
@@ -13,19 +13,24 @@ _cache: dict | None = None
 _cache_ts: float = 0
 _TTL = 3600  # 1 hour
 
-_CODES = ("USD", "EUR", "RUB")
-_FLAGS = {"USD": "🇺🇸", "EUR": "🇪🇺", "RUB": "🇷🇺"}
+_CODES = ("USD", "EUR", "CNY", "RUB")
+_FLAGS = {"USD": "🇺🇸", "EUR": "🇪🇺", "CNY": "🇨🇳", "RUB": "🇷🇺"}
 
 # Fallback if API is down
-_FALLBACK = [
+_FALLBACK_RATES = [
     {"code": "USD", "flag": "🇺🇸", "rate": "482.33", "change": "0.00", "direction": ""},
     {"code": "EUR", "flag": "🇪🇺", "rate": "557.57", "change": "0.00", "direction": ""},
+    {"code": "CNY", "flag": "🇨🇳", "rate": "70.05",  "change": "0.00", "direction": ""},
     {"code": "RUB", "flag": "🇷🇺", "rate": "5.74",   "change": "0.00", "direction": ""},
+]
+_FALLBACK_COMMODITIES = [
+    {"code": "BRENT", "icon": "🛢️", "label": "Brent", "value": "$72.00", "direction": ""},
+    {"code": "GOLD",  "icon": "🥇", "label": "Золото", "value": "$3 050", "direction": ""},
 ]
 
 
-def _fetch() -> list[dict]:
-    """Fetch from NB RK XML API."""
+def _fetch_rates() -> list[dict]:
+    """Fetch currency rates from NB RK XML API."""
     today = datetime.now().strftime("%d.%m.%Y")
     url = f"https://nationalbank.kz/rss/get_rates.cfm?fdate={today}"
     resp = httpx.get(url, timeout=10, follow_redirects=True)
@@ -39,9 +44,7 @@ def _fetch() -> list[dict]:
         raw_rate = item.findtext("description", "0").strip()
         quant = int(item.findtext("quant", "1").strip())
         change_val = item.findtext("change", "0").strip()
-        # Rate per 1 unit
         rate_per_one = float(raw_rate) / quant if quant > 1 else float(raw_rate)
-        # Direction arrow
         change_f = float(change_val) if change_val else 0.0
         if change_f > 0:
             direction = "↑"
@@ -49,32 +52,102 @@ def _fetch() -> list[dict]:
             direction = "↓"
         else:
             direction = ""
+        # Format rate nicely
+        if rate_per_one >= 10:
+            rate_str = f"{rate_per_one:.2f}"
+        else:
+            rate_str = f"{rate_per_one:.2f}"
         rates.append({
             "code": code,
             "flag": _FLAGS.get(code, ""),
-            "rate": f"{rate_per_one:.2f}".rstrip("0").rstrip(".") if rate_per_one != int(rate_per_one) else str(int(rate_per_one)),
+            "rate": rate_str,
             "change": change_val,
             "direction": direction,
         })
-    # Ensure order: USD, EUR, RUB
     order = {c: i for i, c in enumerate(_CODES)}
     rates.sort(key=lambda r: order.get(r["code"], 99))
     return rates
 
 
+def _fetch_commodities() -> list[dict]:
+    """Fetch Brent crude oil and Gold prices from Yahoo Finance."""
+    results = []
+    symbols = [
+        ("BZ=F", "BRENT", "🛢️", "Brent"),
+        ("GC=F", "GOLD", "🥇", "Золото"),
+    ]
+    headers = {"User-Agent": "Mozilla/5.0 (total.kz/1.0)"}
+    for symbol, code, icon, label in symbols:
+        try:
+            resp = httpx.get(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=2d",
+                headers=headers, timeout=8,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            meta = data["chart"]["result"][0]["meta"]
+            price = meta["regularMarketPrice"]
+            prev = meta.get("chartPreviousClose", price)
+            change = price - prev
+            if change > 0.01:
+                direction = "↑"
+            elif change < -0.01:
+                direction = "↓"
+            else:
+                direction = ""
+            # Format price
+            if price >= 1000:
+                # Space as thousands separator
+                whole = int(price)
+                frac = int((price - whole) * 100)
+                value = f"${whole:,}".replace(",", " ")
+            else:
+                value = f"${price:.2f}"
+            results.append({
+                "code": code, "icon": icon, "label": label,
+                "value": value, "direction": direction,
+            })
+        except Exception as e:
+            log.warning("Commodity fetch failed for %s: %s", code, e)
+    return results
+
+
 def get_rates() -> list[dict]:
-    """Return cached rates; refresh if stale."""
+    """Return cached currency rates; refresh if stale."""
     global _cache, _cache_ts
     now = time.time()
     if _cache and (now - _cache_ts) < _TTL:
         return _cache
     try:
-        rates = _fetch()
+        rates = _fetch_rates()
         if rates:
             _cache = rates
             _cache_ts = now
-            log.info("Currency rates refreshed: %s", rates)
+            log.info("Currency rates refreshed: %s", [r["code"] for r in rates])
             return rates
     except Exception as e:
         log.warning("Currency fetch failed: %s", e)
-    return _cache or _FALLBACK
+    return _cache or _FALLBACK_RATES
+
+
+# Commodities cache
+_comm_cache: list | None = None
+_comm_cache_ts: float = 0
+_COMM_TTL = 1800  # 30 min
+
+
+def get_commodities() -> list[dict]:
+    """Return cached commodity prices; refresh if stale."""
+    global _comm_cache, _comm_cache_ts
+    now = time.time()
+    if _comm_cache and (now - _comm_cache_ts) < _COMM_TTL:
+        return _comm_cache
+    try:
+        data = _fetch_commodities()
+        if data:
+            _comm_cache = data
+            _comm_cache_ts = now
+            return data
+    except Exception as e:
+        log.warning("Commodities fetch failed: %s", e)
+    return _comm_cache or _FALLBACK_COMMODITIES

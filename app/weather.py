@@ -2,6 +2,7 @@
 Weather widget for total.kz header.
 Uses wttr.in (free, no API key, JSON output).
 Caches 30 min to avoid rate-limiting.
+Shows weather for major Kazakhstan cities.
 """
 import httpx
 import time
@@ -15,6 +16,10 @@ CACHE_TTL = 1800  # 30 minutes
 CITIES = [
     {"name": "Астана", "query": "Astana"},
     {"name": "Алматы", "query": "Almaty"},
+    {"name": "Шымкент", "query": "Shymkent"},
+    {"name": "Актау", "query": "Aktau,Kazakhstan"},
+    {"name": "Караганда", "query": "Karaganda"},
+    {"name": "Актобе", "query": "Aktobe"},
 ]
 
 

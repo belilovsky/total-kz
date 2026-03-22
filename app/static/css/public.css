@@ -1894,19 +1894,33 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   height:28px; display:flex; align-items:center;
   border-bottom:1px solid var(--border);
   background:var(--surface);
-  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  overflow:hidden; position:relative;
 }
 .currency-strip-inner {
   max-width:var(--content-wide); margin:0 auto; padding:0 var(--space-4);
   display:flex; align-items:center; gap:var(--space-3);
   font-size:11px; color:var(--text-faint); white-space:nowrap;
 }
+.currency-item { letter-spacing:-0.01em; }
 .currency-sep { opacity:0.4; }
 .currency-dir { font-weight:700; }
 .currency-dir.up { color:#16a34a; }
 .currency-dir.down { color:var(--accent); }
 @media (max-width:767px) {
-  .currency-strip-inner { padding:0 var(--space-3); gap:var(--space-2); font-size:10px; }
+  .currency-strip { overflow:hidden; }
+  .currency-strip-inner {
+    padding:0 var(--space-3); gap:var(--space-2); font-size:10px;
+    animation:ticker-scroll 40s linear infinite;
+    width:max-content; max-width:none;
+  }
+  .currency-strip:hover .currency-strip-inner,
+  .currency-strip:active .currency-strip-inner {
+    animation-play-state:paused;
+  }
+}
+@keyframes ticker-scroll {
+  0%   { transform:translateX(0); }
+  100% { transform:translateX(-50%); }
 }
 
 /* ── 7. Mobile Bottom Navigation ──────────────── */

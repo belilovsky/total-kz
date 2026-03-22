@@ -178,3 +178,16 @@
 [2026-03-22 15:03:46] === ENRICHMENT COMPLETE ===
 [2026-03-22 16:47:46] START: 1000 articles to enrich
 [2026-03-22 16:47:46] START: 1000 articles to enrich
+[2026-03-22 16:52:21] PROGRESS: 100/1000 (0.4 art/s, ETA 41m) | ok: 100 err: 0 quotes: 8
+[2026-03-22 16:56:33] PROGRESS: 200/1000 (0.4 art/s, ETA 35m) | ok: 200 err: 0 quotes: 12
+[2026-03-22 17:01:03] PROGRESS: 300/1000 (0.4 art/s, ETA 31m) | ok: 300 err: 0 quotes: 21
+[2026-03-22 17:05:48] PROGRESS: 400/1000 (0.4 art/s, ETA 27m) | ok: 400 err: 0 quotes: 31
+[2026-03-22 17:10:05] PROGRESS: 500/1000 (0.4 art/s, ETA 22m) | ok: 500 err: 0 quotes: 44
+[2026-03-22 17:14:19] PROGRESS: 600/1000 (0.4 art/s, ETA 18m) | ok: 600 err: 0 quotes: 51
+[2026-03-22 17:18:14] PROGRESS: 700/1000 (0.4 art/s, ETA 13m) | ok: 700 err: 0 quotes: 56
+[2026-03-22 17:21:44]   API error (attempt 1): Error code: 400 - {'error': {'message': "We could not parse the JSON body of your request. (HINT: This likely means you aren't using your HTTP library correctly. The OpenAI API expects a JSON payload, but what was sent was not valid JSON. If you have trouble figuring out how to fix this, please contact us through our help center at help.openai.com.)", 'type': 'invalid_request_error', 'param': None, 'code': None}}
+[2026-03-22 17:22:03] PROGRESS: 800/1000 (0.4 art/s, ETA 9m) | ok: 800 err: 0 quotes: 63
+[2026-03-22 17:25:58] PROGRESS: 900/1000 (0.4 art/s, ETA 4m) | ok: 900 err: 0 quotes: 71
+[2026-03-22 17:41:09] PROGRESS: 1000/1000 (0.3 art/s, ETA 0m) | ok: 1000 err: 0 quotes: 74
+[2026-03-22 17:41:09] DONE: 1000 enriched, 0 errors, 74 with quotes in 53m
+[2026-03-22 17:41:09] === ENRICHMENT COMPLETE ===

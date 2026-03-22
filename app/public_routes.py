@@ -364,8 +364,9 @@ templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
 
 # Currency rates (live from NB RK, cached 1h)
-from app.currency import get_rates as _get_currency_rates
+from app.currency import get_rates as _get_currency_rates, get_commodities as _get_commodities
 templates.env.globals["get_currency_rates"] = _get_currency_rates
+templates.env.globals["get_commodities"] = _get_commodities
 
 # Weather (wttr.in, cached 30 min)
 from app.weather import get_weather as _get_weather
