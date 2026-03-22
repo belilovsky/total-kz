@@ -41,12 +41,12 @@
 
 <!-- Media Gallery -->
 <div class="results-info">
-    Файлов: <strong>{{ format_num(result.total) }}</strong>
-    {% if result.pages > 1 %}&middot; Страница {{ result.page }} из {{ result.pages }}{% endif %}
+    Файлов: <strong>{{ format_num(result['total']) }}</strong>
+    {% if result['pages'] > 1 %}&middot; Страница {{ result['page'] }} из {{ result['pages'] }}{% endif %}
 </div>
 
 <div class="media-gallery">
-    {% for item in result.items %}
+    {% for item in result['items'] %}
     <div class="media-item" onclick="showMediaDetail({{ item.id }}, '{{ item.filename }}', '{{ item.original_name|e }}', '{{ item.mime_type }}', {{ item.file_size }}, '{{ item.alt_text|default("", true)|e }}', '{{ item.credit|default("", true)|e }}', '{{ item.url }}')">
         <div class="media-thumb">
             <img src="{{ item.url }}" alt="{{ item.alt_text or item.original_name }}" loading="lazy">
@@ -59,7 +59,7 @@
     {% endfor %}
 </div>
 
-{% if result.items|length == 0 %}
+{% if result['items']|length == 0 %}
 <div class="empty-state">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     <h3>Медиатека пуста</h3>
@@ -67,13 +67,13 @@
 </div>
 {% endif %}
 
-{% if result.pages > 1 %}
+{% if result['pages'] > 1 %}
 <div class="pagination">
-    {% if result.page > 1 %}<a href="/admin/media?q={{ q }}&page={{ result.page - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
-    {% for p in range(1, result.pages + 1) %}
-    <a href="/admin/media?q={{ q }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    {% if result['page'] > 1 %}<a href="/admin/media?q={{ q }}&page={{ result['page'] - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
+    {% for p in range(1, result['pages'] + 1) %}
+    <a href="/admin/media?q={{ q }}&page={{ p }}" class="page-link {% if p == result['page'] %}active{% endif %}">{{ p }}</a>
     {% endfor %}
-    {% if result.page < result.pages %}<a href="/admin/media?q={{ q }}&page={{ result.page + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
+    {% if result['page'] < result['pages'] %}<a href="/admin/media?q={{ q }}&page={{ result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
 </div>
 {% endif %}
 

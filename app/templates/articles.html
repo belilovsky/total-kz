@@ -207,8 +207,8 @@
 {% endif %}
 
 <div class="results-info">
-    Найдено <strong>{{ result.total|format_num }}</strong> статей
-    &middot; Страница {{ result.page }} из {{ result.pages }}
+    Найдено <strong>{{ result['total']|format_num }}</strong> статей
+    &middot; Страница {{ result['page'] }} из {{ result['pages'] }}
 </div>
 
 <!-- Bulk Action Bar -->
@@ -331,27 +331,27 @@
 </div>
 {% endif %}
 
-{% if result.pages > 1 %}
+{% if result['pages'] > 1 %}
 <div class="pagination">
     {% set base_url = "/admin/articles?" + ('status=' + status + '&' if status else '') + "q=" + q|urlencode + "&category=" + category|urlencode + "&author=" + author|urlencode + "&date_from=" + date_from + "&date_to=" + date_to + "&tag=" + tag|urlencode + "&entity_id=" + entity_id|string %}
-    {% if result.page > 1 %}
-    <a href="{{ base_url }}&page={{ result.page - 1 }}" class="page-link">&larr; Назад</a>
+    {% if result['page'] > 1 %}
+    <a href="{{ base_url }}&page={{ result['page'] - 1 }}" class="page-link">&larr; Назад</a>
     {% endif %}
-    {% set start_page = [1, result.page - 3]|max %}
-    {% set end_page = [result.pages, result.page + 3]|min %}
+    {% set start_page = [1, result['page'] - 3]|max %}
+    {% set end_page = [result['pages'], result['page'] + 3]|min %}
     {% if start_page > 1 %}
     <a href="{{ base_url }}&page=1" class="page-link">1</a>
     {% if start_page > 2 %}<span class="page-dots">...</span>{% endif %}
     {% endif %}
     {% for p in range(start_page, end_page + 1) %}
-    <a href="{{ base_url }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    <a href="{{ base_url }}&page={{ p }}" class="page-link {% if p == result['page'] %}active{% endif %}">{{ p }}</a>
     {% endfor %}
-    {% if end_page < result.pages %}
-    {% if end_page < result.pages - 1 %}<span class="page-dots">...</span>{% endif %}
-    <a href="{{ base_url }}&page={{ result.pages }}" class="page-link">{{ result.pages }}</a>
+    {% if end_page < result['pages'] %}
+    {% if end_page < result['pages'] - 1 %}<span class="page-dots">...</span>{% endif %}
+    <a href="{{ base_url }}&page={{ result['pages'] }}" class="page-link">{{ result['pages'] }}</a>
     {% endif %}
-    {% if result.page < result.pages %}
-    <a href="{{ base_url }}&page={{ result.page + 1 }}" class="page-link">Вперёд &rarr;</a>
+    {% if result['page'] < result['pages'] %}
+    <a href="{{ base_url }}&page={{ result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>
     {% endif %}
 </div>
 {% endif %}

@@ -25,11 +25,11 @@
 </div>
 
 <div class="results-info">
-    Сюжетов: <strong>{{ format_num(result.total) }}</strong>
+    Сюжетов: <strong>{{ format_num(result['total']) }}</strong>
 </div>
 
 <div class="stories-list">
-    {% for story in result.items %}
+    {% for story in result['items'] %}
     <div class="card story-card" style="margin-bottom:12px">
         <div class="story-header" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px">
             <div>
@@ -53,7 +53,7 @@
     {% endfor %}
 </div>
 
-{% if result.items|length == 0 %}
+{% if result['items']|length == 0 %}
 <div class="empty-state">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     <h3>Сюжетов пока нет</h3>
