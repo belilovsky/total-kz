@@ -89,11 +89,21 @@
     </div>
   </nav>
 
-  {# ── Compact header: title only, meta moved to sidebar ── #}
+  {# ── Header: title left, meta info right (under badge) ── #}
   <header class="article-page-header">
-    <h1 class="article-title">{{ article.title }}</h1>
-    {# Mobile-only meta (hidden on desktop where sidebar shows it) #}
+    <div class="article-header-grid">
+      <h1 class="article-title">{{ article.title }}</h1>
+      <div class="article-header-aside">
+        {% if article.author %}
+        <span class="header-author">{{ article.author }}</span>
+        {% endif %}
+        <span class="header-date">{{ format_date(article.pub_date) }}</span>
+        <span class="header-reading">• {{ reading_time }} мин чтения</span>
+      </div>
+    </div>
+    {# Mobile-only meta (below title) #}
     <div class="article-meta article-meta--mobile">
+      {% if article.author %}<span class="header-author">{{ article.author }}</span><span class="sep">·</span>{% endif %}
       <span>{{ format_date(article.pub_date) }}</span>
       <span class="sep">·</span>
       <span class="reading-time">{{ reading_time }} мин</span>

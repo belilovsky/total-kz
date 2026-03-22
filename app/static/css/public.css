@@ -755,6 +755,35 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .article-top-bar .sep { opacity:.5; }
 .article-top-bar .cat-badge { margin-left:auto; }
 
+/* Header grid: title left, meta right on desktop */
+.article-header-grid {
+  display:block;
+}
+@media (min-width:1100px) {
+  .article-header-grid {
+    display:grid; grid-template-columns:1fr 180px; gap:var(--space-4); align-items:start;
+  }
+}
+.article-header-aside {
+  display:none;
+}
+@media (min-width:1100px) {
+  .article-header-aside {
+    display:flex; flex-direction:column; gap:2px;
+    padding-top:var(--space-1);
+    text-align:right;
+  }
+}
+.header-author {
+  font-size:var(--text-xs); font-weight:500; color:var(--text-secondary);
+}
+.header-date {
+  font-size:11px; color:var(--text-muted);
+}
+.header-reading {
+  font-size:11px; color:var(--text-muted);
+}
+
 /* Title – compact, capped at text-xl on desktop */
 .article-title {
   font-size:var(--text-lg); font-weight:800; line-height:1.2;
