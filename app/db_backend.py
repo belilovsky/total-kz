@@ -34,6 +34,7 @@ if settings.use_postgres:
         add_article_to_story, remove_article_from_story, log_audit,
         get_audit_log, blocks_to_html, blocks_to_text,
         get_status_counts, add_tag_to_article, get_full_audit,
+        suggest_articles, track_view,
     )
 
     # PG mode doesn't have get_db_path / get_db — these are SQLite-only

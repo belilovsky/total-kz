@@ -61,6 +61,9 @@ class Article(Base):
     focal_x: Mapped[float | None] = mapped_column(Float, server_default="0.5")
     focal_y: Mapped[float | None] = mapped_column(Float, server_default="0.5")
 
+    # v11 — View tracking
+    views: Mapped[int | None] = mapped_column(Integer, server_default="0")
+
     # v12 — Workflow
     assigned_to: Mapped[str | None] = mapped_column(Text)
 

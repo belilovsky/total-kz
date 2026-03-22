@@ -92,6 +92,22 @@ def blocks_to_html(blocks_json: str) -> str:
             html_parts.append('<hr>')
         elif t == "code":
             html_parts.append(f'<pre><code>{d["code"]}</code></pre>')
+        elif t == "table":
+            rows = d.get("content", [])
+            with_headings = d.get("withHeadings", False)
+            thtml = '<table class="article-table"><tbody>'
+            for ri, row in enumerate(rows):
+                thtml += '<tr>'
+                for cell in row:
+                    tag = 'th' if with_headings and ri == 0 else 'td'
+                    thtml += f'<{tag}>{cell}</{tag}>'
+                thtml += '</tr>'
+            thtml += '</tbody></table>'
+            html_parts.append(thtml)
+        elif t == "warning":
+            title = d.get("title", "")
+            msg = d.get("message", "")
+            html_parts.append(f'<div class="article-warning"><strong>{title}</strong><p>{msg}</p></div>')
     return "\n".join(html_parts)
 
 
@@ -109,6 +125,12 @@ def blocks_to_text(blocks_json: str) -> str:
                 parts.append(_re.sub(r'<[^>]+>', '', txt))
         if "code" in d:
             parts.append(d["code"])
+        if block["type"] == "table":
+            for row in d.get("content", []):
+                parts.append(" ".join(_re.sub(r'<[^>]+>', '', c) for c in row))
+        if block["type"] == "warning":
+            parts.append(_re.sub(r'<[^>]+>', '', d.get("title", "")))
+            parts.append(_re.sub(r'<[^>]+>', '', d.get("message", "")))
     return "\n".join(parts)
 
 
@@ -133,7 +155,7 @@ _ARTICLE_COLUMNS = [
 _ARTICLE_LIST_COLUMNS = [
     Article.id, Article.url, Article.pub_date, Article.sub_category,
     Article.title, Article.author, Article.excerpt, Article.thumbnail,
-    Article.main_image,
+    Article.main_image, func.coalesce(Article.views, 0).label("views"),
 ]
 
 _ARTICLE_SEARCH_COLUMNS = [
@@ -775,7 +797,7 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
             .limit(limit).offset(offset)
         ).all()
         keys = ["id", "url", "pub_date", "sub_category", "title", "author",
-                "excerpt", "thumbnail", "main_image"]
+                "excerpt", "thumbnail", "main_image", "views"]
         articles = [_row_to_dict(r, keys) for r in rows]
         # Backfill empty excerpts with GPT summaries
         try:
@@ -807,7 +829,7 @@ def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> d
             .limit(limit).offset(offset)
         ).all()
         keys = ["id", "url", "pub_date", "sub_category", "title", "author",
-                "excerpt", "thumbnail", "main_image"]
+                "excerpt", "thumbnail", "main_image", "views"]
         return {
             "articles": [_row_to_dict(r, keys) for r in rows],
             "total": total,
@@ -825,7 +847,7 @@ def get_related_articles(article_id: int, category: str, limit: int = 4) -> list
             .limit(limit)
         ).all()
         keys = ["id", "url", "pub_date", "sub_category", "title", "author",
-                "excerpt", "thumbnail", "main_image"]
+                "excerpt", "thumbnail", "main_image", "views"]
         return [_row_to_dict(r, keys) for r in rows]
 
 
@@ -1020,7 +1042,7 @@ def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0)
             .limit(limit).offset(offset)
         ).all()
         keys = ["id", "url", "pub_date", "sub_category", "title", "author",
-                "excerpt", "thumbnail", "main_image"]
+                "excerpt", "thumbnail", "main_image", "views"]
         return {
             "articles": [_row_to_dict(r, keys) for r in rows],
             "total": total,
@@ -1060,7 +1082,7 @@ def get_articles_by_entity(entity_id: int, page: int = 1, per_page: int = 20) ->
             .limit(per_page).offset(offset)
         ).all()
         keys = ["id", "url", "pub_date", "sub_category", "title", "author",
-                "excerpt", "thumbnail", "main_image"]
+                "excerpt", "thumbnail", "main_image", "views"]
         return {
             "articles": [_row_to_dict(r, keys) for r in rows],
             "total": total,
@@ -2026,3 +2048,34 @@ def get_full_audit() -> dict:
                 "orphans": orphan_entities,
             },
         }
+
+
+# ─── View tracking ──────────────────────────────────────────
+
+def suggest_articles(query: str, limit: int = 7) -> list:
+    """Fast autocomplete: returns up to `limit` article title suggestions."""
+    if len(query) < 2:
+        return []
+    with get_pg_session() as db:
+        rows = db.execute(
+            select(Article.title, Article.sub_category, Article.pub_date, Article.url)
+            .where(Article.title.ilike(f"%{query}%"))
+            .order_by(Article.pub_date.desc())
+            .limit(limit)
+        ).all()
+        return [{"title": r[0], "sub_category": r[1], "pub_date": r[2], "url": r[3]} for r in rows]
+
+
+def track_view(article_id: int) -> int:
+    """Increment view count for an article. Returns new count."""
+    with get_pg_session() as db:
+        db.execute(
+            sa_update(Article)
+            .where(Article.id == article_id)
+            .values(views=func.coalesce(Article.views, 0) + 1)
+        )
+        db.commit()
+        row = db.execute(
+            select(Article.views).where(Article.id == article_id)
+        ).scalar()
+        return row or 0

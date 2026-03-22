@@ -1006,24 +1006,36 @@ async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
     if len(q) < 2:
         return Response(content="[]", media_type="application/json")
     try:
-        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT title, sub_category, pub_date, url FROM articles "
-            "WHERE title LIKE ? ORDER BY pub_date DESC LIMIT 7",
-            (f"%{q}%",)
-        )
-        results = []
-        for row in cur.fetchall():
-            url_parts = row["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
-            link = f"/news/{url_parts[0]}/{url_parts[1]}" if len(url_parts) >= 2 else "/"
-            results.append({
-                "title": row["title"],
-                "url": link,
-                "cat": cat_label(nav_slug_for(row["sub_category"] or "")),
-            })
-        conn.close()
+        if db._BACKEND == "postgresql":
+            rows = db.suggest_articles(q, limit=7)
+            results = []
+            for row in rows:
+                url_parts = row["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+                link = f"/news/{url_parts[0]}/{url_parts[1]}" if len(url_parts) >= 2 else "/"
+                results.append({
+                    "title": row["title"],
+                    "url": link,
+                    "cat": cat_label(nav_slug_for(row["sub_category"] or "")),
+                })
+        else:
+            conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT title, sub_category, pub_date, url FROM articles "
+                "WHERE title LIKE ? ORDER BY pub_date DESC LIMIT 7",
+                (f"%{q}%",)
+            )
+            results = []
+            for row in cur.fetchall():
+                url_parts = row["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+                link = f"/news/{url_parts[0]}/{url_parts[1]}" if len(url_parts) >= 2 else "/"
+                results.append({
+                    "title": row["title"],
+                    "url": link,
+                    "cat": cat_label(nav_slug_for(row["sub_category"] or "")),
+                })
+            conn.close()
         return Response(content=json_mod.dumps(results, ensure_ascii=False), media_type="application/json")
     except Exception:
         return Response(content="[]", media_type="application/json")
@@ -1033,13 +1045,16 @@ async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
 async def api_track_view(article_id: int):
     """Increment view count for an article. Called client-side on page load."""
     try:
-        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
-        conn.execute("UPDATE articles SET views = COALESCE(views, 0) + 1 WHERE id = ?", (article_id,))
-        conn.commit()
-        cur = conn.execute("SELECT views FROM articles WHERE id = ?", (article_id,))
-        row = cur.fetchone()
-        conn.close()
-        views = row[0] if row else 0
+        if db._BACKEND == "postgresql":
+            views = db.track_view(article_id)
+        else:
+            conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+            conn.execute("UPDATE articles SET views = COALESCE(views, 0) + 1 WHERE id = ?", (article_id,))
+            conn.commit()
+            cur = conn.execute("SELECT views FROM articles WHERE id = ?", (article_id,))
+            row = cur.fetchone()
+            conn.close()
+            views = row[0] if row else 0
         return {"ok": True, "views": views}
     except Exception:
         return {"ok": False}
