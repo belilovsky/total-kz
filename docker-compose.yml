@@ -81,6 +81,26 @@ services:
     networks:
       - app_net
 
+  db-pg:
+    image: pgvector/pgvector:pg16
+    container_name: total_kz_pg
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5437:5432"
+    environment:
+      - POSTGRES_DB=total_kz
+      - POSTGRES_USER=total_kz
+      - POSTGRES_PASSWORD=total_kz
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U total_kz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
     container_name: total_kz_umami
@@ -112,6 +132,7 @@ services:
 volumes:
   meili_data:
   umami_data:
+  pg_data:
 
 networks:
   app_net:
