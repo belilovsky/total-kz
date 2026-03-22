@@ -107,7 +107,7 @@ def migrate_table(
 
     # Determine conflict target
     inspector = inspect(engine)
-    pk_cols = [c["name"] for c in inspector.get_pk_constraint(table).get("constrained_columns", [])]
+    pk_cols = inspector.get_pk_constraint(table).get("constrained_columns", [])
     if not pk_cols:
         pk_cols = ["id"]
 
