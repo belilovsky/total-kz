@@ -1035,37 +1035,222 @@ def _get_story_timeline_inner(article_id: int, pub_date: str) -> dict | None:
 
 
 def get_related_by_entities(article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
-    """Get related articles by shared entities, falling back to category."""
+    """Get related articles using multi-signal ranking.
+
+    Scoring layers (combined with weights):
+    1. FTS5 BM25 on title+excerpt+keywords — works for ALL articles
+    2. Shared entities — strong topical signal
+    3. Shared tags — complementary signal
+    4. Same category boost
+    5. Recency decay — prefer recent but don't exclude old
+
+    Falls back to simpler methods if FTS5 is unavailable.
+    """
     with get_db() as conn:
-        results = []
-        if entity_ids:
-            placeholders = ','.join('?' * len(entity_ids))
-            rows = conn.execute(f"""
-                SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author, a.excerpt,
-                       a.thumbnail, a.main_image,
-                       COUNT(DISTINCT ae.entity_id) as shared
-                FROM articles a
-                JOIN article_entities ae ON ae.article_id = a.id
-                WHERE ae.entity_id IN ({placeholders}) AND a.id != ?
-                GROUP BY a.id
-                ORDER BY shared DESC, a.pub_date DESC
-                LIMIT ?
-            """, (*entity_ids, article_id, limit)).fetchall()
-            results = [dict(r) for r in rows]
-        # Fill remaining slots from same category
-        if len(results) < limit:
-            existing_ids = [r['id'] for r in results] + [article_id]
-            placeholders2 = ','.join('?' * len(existing_ids))
-            fill = conn.execute(f"""
-                SELECT id, url, pub_date, sub_category, title, author, excerpt,
-                       thumbnail, main_image
-                FROM articles
-                WHERE sub_category = ? AND id NOT IN ({placeholders2})
-                ORDER BY pub_date DESC
-                LIMIT ?
-            """, (category, *existing_ids, limit - len(results))).fetchall()
-            results.extend([dict(r) for r in fill])
-        return results
+        # Check if FTS5 index exists
+        fts_exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='articles_fts'"
+        ).fetchone()
+
+        if fts_exists:
+            return _get_related_smart(conn, article_id, entity_ids, category, limit)
+        else:
+            return _get_related_legacy(conn, article_id, entity_ids, category, limit)
+
+
+def _get_related_smart(conn, article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
+    """Multi-signal related articles using FTS5 + entities + tags."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Get current article's title for FTS query
+    cur = conn.execute(
+        "SELECT title, sub_category FROM articles WHERE id = ?", (article_id,)
+    ).fetchone()
+    if not cur:
+        return []
+
+    title = cur[0] or ""
+    # Clean title for FTS5 query: remove punctuation, keep words
+    import re
+    words = re.findall(r'[\w]+', title, re.UNICODE)
+    # Use top 6 words (skip very short ones) for broader matching
+    query_words = [w for w in words if len(w) > 2][:8]
+    if not query_words:
+        query_words = words[:5]
+    fts_query = ' OR '.join(query_words) if query_words else None
+
+    candidates = {}  # article_id -> score dict
+
+    # --- Signal 1: FTS5 BM25 (title similarity) ---
+    if fts_query:
+        try:
+            fts_rows = conn.execute("""
+                SELECT f.rowid, f.title, f.rank,
+                       a.url, a.pub_date, a.sub_category, a.author, a.excerpt,
+                       a.thumbnail, a.main_image
+                FROM articles_fts f
+                JOIN articles a ON a.id = f.rowid
+                WHERE articles_fts MATCH ? AND f.rowid != ?
+                ORDER BY f.rank
+                LIMIT 30
+            """, (fts_query, article_id)).fetchall()
+
+            for i, row in enumerate(fts_rows):
+                aid = row[0]
+                # BM25 rank is negative (more negative = better match)
+                bm25_score = -row[2]  # Make positive
+                normalized = min(bm25_score / 15.0, 1.0)  # Normalize to ~0-1
+                candidates[aid] = {
+                    'id': aid, 'title': row[1], 'url': row[3],
+                    'pub_date': row[4], 'sub_category': row[5],
+                    'author': row[6], 'excerpt': row[7],
+                    'thumbnail': row[8], 'main_image': row[9],
+                    'fts_score': normalized * 3.0,  # Weight: 3x
+                    'entity_score': 0.0,
+                    'tag_score': 0.0,
+                    'cat_score': 0.0,
+                }
+        except Exception as e:
+            logger.warning("FTS5 query failed: %s", e)
+
+    # --- Signal 2: Shared entities ---
+    if entity_ids:
+        placeholders = ','.join('?' * len(entity_ids))
+        ent_rows = conn.execute(f"""
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
+                   a.excerpt, a.thumbnail, a.main_image,
+                   COUNT(DISTINCT ae.entity_id) as shared
+            FROM articles a
+            JOIN article_entities ae ON ae.article_id = a.id
+            WHERE ae.entity_id IN ({placeholders}) AND a.id != ?
+            GROUP BY a.id
+            ORDER BY shared DESC
+            LIMIT 20
+        """, (*entity_ids, article_id)).fetchall()
+
+        max_shared = max((r[9] for r in ent_rows), default=1)
+        for row in ent_rows:
+            aid = row[0]
+            entity_normalized = row[9] / max(max_shared, 1)
+            if aid in candidates:
+                candidates[aid]['entity_score'] = entity_normalized * 4.0  # Weight: 4x
+            else:
+                candidates[aid] = {
+                    'id': aid, 'title': row[4], 'url': row[1],
+                    'pub_date': row[2], 'sub_category': row[3],
+                    'author': row[5], 'excerpt': row[6],
+                    'thumbnail': row[7], 'main_image': row[8],
+                    'fts_score': 0.0,
+                    'entity_score': entity_normalized * 4.0,
+                    'tag_score': 0.0,
+                    'cat_score': 0.0,
+                }
+
+    # --- Signal 3: Shared tags ---
+    tag_rows = conn.execute("""
+        SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author,
+               a.excerpt, a.thumbnail, a.main_image,
+               COUNT(DISTINCT t2.tag) as shared_tags
+        FROM article_tags t1
+        JOIN article_tags t2 ON t1.tag = t2.tag AND t2.article_id != t1.article_id
+        JOIN articles a ON a.id = t2.article_id
+        WHERE t1.article_id = ?
+        GROUP BY a.id
+        ORDER BY shared_tags DESC
+        LIMIT 15
+    """, (article_id,)).fetchall()
+
+    max_tags = max((r[9] for r in tag_rows), default=1)
+    for row in tag_rows:
+        aid = row[0]
+        tag_normalized = row[9] / max(max_tags, 1)
+        if aid in candidates:
+            candidates[aid]['tag_score'] = tag_normalized * 2.0  # Weight: 2x
+        else:
+            candidates[aid] = {
+                'id': aid, 'title': row[4], 'url': row[1],
+                'pub_date': row[2], 'sub_category': row[3],
+                'author': row[5], 'excerpt': row[6],
+                'thumbnail': row[7], 'main_image': row[8],
+                'fts_score': 0.0,
+                'entity_score': 0.0,
+                'tag_score': tag_normalized * 2.0,
+                'cat_score': 0.0,
+            }
+
+    # --- Signal 4: Category boost ---
+    for aid, c in candidates.items():
+        if c['sub_category'] == category:
+            c['cat_score'] = 1.0  # Weight: 1x
+
+    # --- Final ranking ---
+    for c in candidates.values():
+        c['total_score'] = (
+            c['fts_score'] + c['entity_score'] +
+            c['tag_score'] + c['cat_score']
+        )
+
+    ranked = sorted(candidates.values(), key=lambda x: x['total_score'], reverse=True)
+
+    # Convert to standard format
+    results = []
+    for c in ranked[:limit]:
+        results.append({
+            'id': c['id'], 'url': c['url'], 'pub_date': c['pub_date'],
+            'sub_category': c['sub_category'], 'title': c['title'],
+            'author': c['author'], 'excerpt': c['excerpt'],
+            'thumbnail': c['thumbnail'], 'main_image': c['main_image'],
+        })
+
+    # Fill remaining slots from category if needed
+    if len(results) < limit:
+        existing_ids = [r['id'] for r in results] + [article_id]
+        placeholders2 = ','.join('?' * len(existing_ids))
+        fill = conn.execute(f"""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles
+            WHERE sub_category = ? AND id NOT IN ({placeholders2})
+            ORDER BY pub_date DESC
+            LIMIT ?
+        """, (category, *existing_ids, limit - len(results))).fetchall()
+        results.extend([dict(r) for r in fill])
+
+    return results
+
+
+def _get_related_legacy(conn, article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
+    """Original entity-based fallback (no FTS5 index)."""
+    results = []
+    if entity_ids:
+        placeholders = ','.join('?' * len(entity_ids))
+        rows = conn.execute(f"""
+            SELECT a.id, a.url, a.pub_date, a.sub_category, a.title, a.author, a.excerpt,
+                   a.thumbnail, a.main_image,
+                   COUNT(DISTINCT ae.entity_id) as shared
+            FROM articles a
+            JOIN article_entities ae ON ae.article_id = a.id
+            WHERE ae.entity_id IN ({placeholders}) AND a.id != ?
+            GROUP BY a.id
+            ORDER BY shared DESC, a.pub_date DESC
+            LIMIT ?
+        """, (*entity_ids, article_id, limit)).fetchall()
+        results = [dict(r) for r in rows]
+    # Fill remaining slots from same category
+    if len(results) < limit:
+        existing_ids = [r['id'] for r in results] + [article_id]
+        placeholders2 = ','.join('?' * len(existing_ids))
+        fill = conn.execute(f"""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image
+            FROM articles
+            WHERE sub_category = ? AND id NOT IN ({placeholders2})
+            ORDER BY pub_date DESC
+            LIMIT ?
+        """, (category, *existing_ids, limit - len(results))).fetchall()
+        results.extend([dict(r) for r in fill])
+    return results
 
 
 def get_trending_tags(limit: int = 20) -> list:

@@ -159,7 +159,7 @@ def download_article(url):
 
 
 def import_article(conn, data):
-    """Insert article into DB."""
+    """Insert article into DB and update FTS5 index."""
     conn.execute("""
         INSERT OR IGNORE INTO articles
         (url, pub_date, sub_category, category_label, title, author, excerpt,
@@ -172,6 +172,29 @@ def import_article(conn, data):
         data["image_credit"], data["thumbnail"], data["tags"], data["inline_images"],
     ))
     conn.commit()
+
+    # Update FTS5 index for the new article
+    try:
+        fts_exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='articles_fts'"
+        ).fetchone()
+        if fts_exists:
+            row = conn.execute(
+                "SELECT id, title, excerpt FROM articles WHERE url = ?",
+                (data["url"],)
+            ).fetchone()
+            if row:
+                conn.execute(
+                    "INSERT OR REPLACE INTO articles_fts_content (rowid, title, excerpt, keywords) VALUES (?, ?, ?, '')",
+                    (row[0], row[1] or "", row[2] or "")
+                )
+                conn.execute(
+                    "INSERT INTO articles_fts (rowid, title, excerpt, keywords) VALUES (?, ?, ?, '')",
+                    (row[0], row[1] or "", row[2] or "")
+                )
+                conn.commit()
+    except Exception:
+        pass  # FTS update is non-critical
 
 
 def main():
