@@ -9,6 +9,7 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote as _url_quote, unquote as _url_unquote
 from fastapi import FastAPI, Request, Query, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -80,13 +81,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
             user = auth.get_current_user(request)
             if not user:
                 return RedirectResponse(url="/admin/login", status_code=302)
-            # Enrich with display_name from cookie
-            user["display_name"] = request.cookies.get("display_name", user.get("username", ""))
+            # Enrich with display_name from cookie (URL-encoded for Cyrillic safety)
+            user["display_name"] = _url_unquote(request.cookies.get("display_name", user.get("username", "")))
             request.state.current_user = user
         else:
             user = auth.get_current_user(request)
             if user:
-                user["display_name"] = request.cookies.get("display_name", user.get("username", ""))
+                user["display_name"] = _url_unquote(request.cookies.get("display_name", user.get("username", "")))
             request.state.current_user = user
         response = await call_next(request)
         return response
@@ -482,7 +483,7 @@ async def admin_login_submit(request: Request):
     response = RedirectResponse(url="/admin", status_code=302)
     auth.set_session_cookie(response, user["id"], user["username"], user["role"])
     # Store display_name in a separate non-httponly cookie for UI
-    response.set_cookie("display_name", user["display_name"], max_age=auth.SESSION_MAX_AGE, path="/", samesite="lax")
+    response.set_cookie("display_name", _url_quote(user["display_name"], safe=""), max_age=auth.SESSION_MAX_AGE, path="/", samesite="lax")
     return response
 
 
