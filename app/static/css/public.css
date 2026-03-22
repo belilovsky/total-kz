@@ -1721,3 +1721,190 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .feed-item + .feed-item { border-top:1px solid var(--border); }
   .cat-highlight-item + .cat-highlight-item { border-top:1px solid var(--border); }
 }
+
+/* ═══════════════════════════════════════════════
+   NEW FEATURES: Ads, Share, Views, Tabs, Currency,
+   Mobile Nav, Ticker
+   ═══════════════════════════════════════════════ */
+
+/* ── 1. Ad Placeholders ───────────────────────── */
+.ad-placeholder {
+  display:flex; align-items:center; justify-content:center;
+  border:2px dashed var(--border); border-radius:var(--radius-md);
+  background:var(--surface-2); opacity:0.5;
+  color:var(--text-faint); font-size:var(--text-xs);
+  text-transform:uppercase; letter-spacing:0.1em;
+}
+.ad-leaderboard {
+  max-width:728px; height:90px; margin:var(--space-6) auto;
+}
+.ad-in-feed {
+  width:100%; height:80px; margin:var(--space-4) 0;
+}
+.ad-inline {
+  width:100%; height:80px; margin:var(--space-4) 0;
+}
+.ad-sidebar {
+  width:300px; height:250px; margin:var(--space-4) 0; position:sticky; top:5rem;
+}
+.ad-below-header {
+  max-width:728px; height:90px; margin:var(--space-3) auto;
+}
+@media (max-width:1099px) {
+  .ad-sidebar { display:none; }
+  .ad-below-header { display:none; }
+}
+@media (max-width:767px) {
+  .ad-leaderboard { max-width:100%; height:60px; }
+}
+
+/* ── 2. Floating Share Sidebar ────────────────── */
+.floating-share {
+  position:fixed; left:max(calc((100vw - var(--content-default))/2 - 60px), 12px);
+  top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:8px;
+  z-index:90; opacity:0; pointer-events:none;
+  transition:opacity var(--transition);
+}
+.floating-share.is-visible { opacity:1; pointer-events:auto; }
+.floating-share-btn {
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; border:1px solid var(--border); background:var(--surface);
+  color:var(--text-faint); cursor:pointer; transition:all var(--transition);
+  text-decoration:none;
+}
+.floating-share-btn:hover {
+  background:var(--accent); color:#fff; border-color:var(--accent);
+}
+@media (max-width:1099px) {
+  .floating-share { display:none; }
+}
+
+/* ── 3. View Count ────────────────────────────── */
+.view-count {
+  display:inline-flex; align-items:center; gap:3px;
+  opacity:0.7; font-size:var(--text-xs); white-space:nowrap;
+  margin-left:var(--space-2);
+}
+.view-count svg { flex-shrink:0; }
+.hero-slide-meta .view-count { margin-left:var(--space-3); }
+
+/* ── 4. Feed Tabs ─────────────────────────────── */
+.feed-tabs {
+  display:flex; gap:var(--space-1); align-items:center;
+}
+.feed-tab {
+  background:none; border:none; border-bottom:2px solid transparent;
+  padding:var(--space-2) var(--space-4);
+  font-family:var(--font-display); font-size:var(--text-base);
+  font-weight:600; color:var(--text-faint); cursor:pointer;
+  transition:all var(--transition);
+}
+.feed-tab:hover { color:var(--text); }
+.feed-tab.active {
+  color:var(--accent); border-bottom-color:var(--accent);
+}
+
+/* ── 5. Currency Strip ────────────────────────── */
+.currency-strip {
+  height:28px; display:flex; align-items:center;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.currency-strip-inner {
+  max-width:var(--content-wide); margin:0 auto; padding:0 var(--space-4);
+  display:flex; align-items:center; gap:var(--space-3);
+  font-size:11px; color:var(--text-faint); white-space:nowrap;
+}
+.currency-sep { opacity:0.4; }
+@media (max-width:767px) {
+  .currency-strip-inner { padding:0 var(--space-3); gap:var(--space-2); font-size:10px; }
+}
+
+/* ── 7. Mobile Bottom Navigation ──────────────── */
+.mobile-bottom-bar {
+  display:none;
+}
+@media (max-width:767px) {
+  .mobile-bottom-bar {
+    position:fixed; bottom:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-around;
+    height:56px; background:var(--surface);
+    border-top:1px solid var(--border);
+    padding-bottom:env(safe-area-inset-bottom, 0);
+    transition:transform 0.3s ease;
+  }
+  .mobile-bottom-bar.is-hidden { transform:translateY(100%); }
+  .bottom-bar-item {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:none; border:none; padding:var(--space-1);
+    color:var(--text-faint); font-size:10px;
+    font-family:var(--font-body); cursor:pointer;
+    text-decoration:none; -webkit-tap-highlight-color:transparent;
+  }
+  .bottom-bar-item.active { color:var(--accent); }
+  .bottom-bar-item:hover { color:var(--text); }
+
+  /* Add padding to body so content isn't hidden behind bottom bar */
+  body { padding-bottom:56px; }
+  /* Hide back-to-top when mobile bar visible */
+  .back-to-top { bottom:70px; }
+}
+
+/* ── 8. News Ticker (Desktop) ─────────────────── */
+.news-ticker {
+  position:fixed; bottom:0; left:0; right:0; z-index:99;
+  height:40px; display:flex; align-items:center;
+  background:#1a1a1a; color:#fff;
+  border-left:4px solid var(--accent);
+  font-size:var(--text-sm); padding:0 var(--space-4);
+}
+.ticker-label {
+  font-weight:700; font-size:var(--text-xs);
+  text-transform:uppercase; letter-spacing:0.05em;
+  color:var(--accent); margin-right:var(--space-3);
+  flex-shrink:0;
+}
+.ticker-content {
+  flex:1; overflow:hidden; position:relative; height:100%;
+  display:flex; align-items:center;
+}
+.ticker-headline {
+  position:absolute; opacity:0; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  max-width:100%; color:#fff; text-decoration:none;
+  transition:opacity 0.4s ease;
+}
+.ticker-headline:hover { text-decoration:underline; }
+.ticker-headline.active { opacity:1; position:relative; }
+.ticker-controls {
+  display:flex; align-items:center; gap:var(--space-1);
+  margin-left:var(--space-3); flex-shrink:0;
+}
+.ticker-btn {
+  background:none; border:none; color:#aaa; cursor:pointer;
+  font-size:18px; padding:2px 6px; line-height:1;
+  transition:color var(--transition);
+}
+.ticker-btn:hover { color:#fff; }
+@media (max-width:767px) {
+  .news-ticker { display:none; }
+}
+
+/* ── Category page layout with sidebar ────────── */
+@media (min-width:1100px) {
+  .category-layout {
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:var(--space-8);
+    max-width:var(--content-wide);
+    margin:0 auto;
+  }
+  .category-main { min-width:0; }
+  .category-sidebar { padding-top:var(--space-4); }
+}
+@media (max-width:1099px) {
+  .category-layout { max-width:var(--content-default); margin:0 auto; }
+  .category-sidebar { display:none; }
+}

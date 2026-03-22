@@ -26,7 +26,7 @@
           {% if hero.excerpt %}
             <p class="hero-slide-excerpt">{{ hero.excerpt[:160] }}{% if hero.excerpt|length > 160 %}…{% endif %}</p>
           {% endif %}
-          <span class="hero-slide-meta">{{ format_date_short(hero.pub_date) }}</span>
+          <span class="hero-slide-meta">{{ format_date_short(hero.pub_date) }}<span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ hero.id|fake_views|format_num }}</span></span>
         </div>
         <a href="{{ article_url(hero) }}" class="hero-slide-link" aria-label="{{ hero.title }}"></a>
       </div>
@@ -43,6 +43,9 @@
     {% endif %}
   </div>
   {% endif %}
+
+  <!-- ═══ AD: AFTER HERO ═══ -->
+  <div class="ad-placeholder ad-leaderboard" aria-hidden="true">Реклама</div>
 
   <!-- ═══ CATEGORY HIGHLIGHTS ═══ -->
   {% if category_highlights %}
@@ -65,7 +68,7 @@
           {% endif %}
           <div class="cat-highlight-body">
             <h3 class="cat-highlight-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-            <span class="cat-highlight-meta">{{ format_date_short(art.pub_date) }}</span>
+            <span class="cat-highlight-meta">{{ format_date_short(art.pub_date) }}<span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span></span>
           </div>
         </article>
         {% endfor %}
@@ -75,13 +78,18 @@
   </div>
   {% endif %}
 
-  <!-- ═══ ALL NEWS FEED ═══ -->
+  <!-- ═══ ALL NEWS FEED WITH TABS ═══ -->
   {% if latest|length > 0 %}
-  <div class="feed-section">
+  <div class="feed-section" id="feed-section">
     <div class="section-header">
-      <h2 class="section-title">Все новости</h2>
+      <div class="feed-tabs">
+        <button class="feed-tab active" data-tab="latest">Последние</button>
+        <button class="feed-tab" data-tab="popular">Популярные</button>
+      </div>
     </div>
-    <div class="feed-list">
+
+    <!-- Latest list -->
+    <div class="feed-list" id="feed-list-latest">
       {% for art in latest %}
       <article class="feed-item">
         <div class="feed-item-body">
@@ -92,6 +100,7 @@
             </span>
             <span class="sep">·</span>
             <span>{{ format_date_short(art.pub_date) }}</span>
+            <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
           </div>
           <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
           {% if art.excerpt %}
@@ -106,9 +115,42 @@
         <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
         {% endif %}
       </article>
-
       {% if loop.index == 10 %}
-      <div class="feed-divider" aria-hidden="true"></div>
+      <!-- ═══ AD: IN-FEED AFTER 10TH ═══ -->
+      <div class="ad-placeholder ad-in-feed" aria-hidden="true">Реклама</div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Popular list (hidden by default) -->
+    <div class="feed-list" id="feed-list-popular" style="display:none;">
+      {% for art in popular %}
+      <article class="feed-item">
+        <div class="feed-item-body">
+          <div class="feed-item-meta">
+            <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+              <span class="cat-dot"></span>
+              <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+            </span>
+            <span class="sep">·</span>
+            <span>{{ format_date_short(art.pub_date) }}</span>
+            <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
+          </div>
+          <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+          {% if art.excerpt %}
+            <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
+          {% endif %}
+        </div>
+        {% if art.main_image or art.thumbnail %}
+        <div class="feed-item-thumb">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
+        </div>
+        {% else %}
+        <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+        {% endif %}
+      </article>
+      {% if loop.index == 10 %}
+      <div class="ad-placeholder ad-in-feed" aria-hidden="true">Реклама</div>
       {% endif %}
       {% endfor %}
     </div>
@@ -151,5 +193,16 @@ const heroSlider = (() => {
 
   return { prev, next, goTo };
 })();
+
+// ── Feed tabs ──
+document.querySelectorAll('.feed-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.feed-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    var which = tab.dataset.tab;
+    document.getElementById('feed-list-latest').style.display = which === 'latest' ? '' : 'none';
+    document.getElementById('feed-list-popular').style.display = which === 'popular' ? '' : 'none';
+  });
+});
 </script>
 {% endblock %}

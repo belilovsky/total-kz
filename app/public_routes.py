@@ -402,6 +402,16 @@ templates.env.globals["imgproxy_url"] = imgproxy_url
 templates.env.filters["format_num"] = format_num
 
 
+def fake_views_func(article_id):
+    """Deterministic fake view count based on article ID."""
+    h = int(hashlib.md5(str(article_id).encode()).hexdigest()[:8], 16)
+    return h % 4900 + 100
+
+
+templates.env.filters["fake_views"] = fake_views_func
+templates.env.globals["fake_views"] = fake_views_func
+
+
 # ══════════════════════════════════════════════
 #  IMAGE PROXY ENDPOINT
 # ══════════════════════════════════════════════
@@ -506,13 +516,17 @@ async def homepage(request: Request):
         logger.exception("Database error in homepage")
         return _error_response(request)
 
+    popular = sorted(latest, key=lambda a: fake_views_func(a['id']), reverse=True)
+
     return templates.TemplateResponse("public/home.html", {
         "request": request,
         "hero_articles": hero_articles,
         "latest": latest,
+        "popular": popular,
         "category_highlights": category_highlights,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
+        "ticker_articles": hero_articles[:5],
     })
 
 
@@ -545,9 +559,10 @@ async def category_page(
             "nav_categories": NAV_CATEGORIES,
         }, status_code=404)
 
+    articles_list = rewrite_articles_images(result["articles"])
     return templates.TemplateResponse("public/category.html", {
         "request": request,
-        "articles": rewrite_articles_images(result["articles"]),
+        "articles": articles_list,
         "total": result["total"],
         "pages": result["pages"],
         "page": page,
@@ -555,6 +570,7 @@ async def category_page(
         "category_name": cat_label(category),
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
+        "ticker_articles": articles_list[:5],
     })
 
 
@@ -649,6 +665,9 @@ async def article_page(request: Request, category: str, slug: str):
     # Resolve nav section for this sub_category
     nav_section = nav_slug_for(category)
 
+    # Ticker: use related articles, fallback to latest
+    ticker_articles = related[:5] if related else []
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
@@ -664,6 +683,7 @@ async def article_page(request: Request, category: str, slug: str):
         "nav_categories": NAV_CATEGORIES,
         "reading_time": estimate_reading_time(article.get("body_text", "")),
         "slug": article_slug,
+        "ticker_articles": ticker_articles,
     })
 
 

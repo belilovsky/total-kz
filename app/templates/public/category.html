@@ -48,6 +48,7 @@
         {% endif %}
         <div class="card-meta">
           <span>{{ format_date_short(art.pub_date) }}</span>
+          <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
         </div>
       </div>
     </article>
@@ -55,36 +56,45 @@
   </div>
   {% endif %}
 
-  <!-- ═══ REMAINING ARTICLES ═══ -->
+  <!-- ═══ AD: BETWEEN FEATURED AND FEED ═══ -->
+  <div class="ad-placeholder ad-leaderboard" aria-hidden="true">Реклама</div>
+
+  <!-- ═══ REMAINING ARTICLES + SIDEBAR ═══ -->
   {% if articles|length > 3 %}
-  <div style="max-width:var(--content-default); margin:0 auto;">
-    <div class="feed-list">
-      {% for art in articles[3:] %}
-      <article class="feed-item">
-        <div class="feed-item-body">
-          <div class="feed-item-meta">
-            <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-              <span class="cat-dot"></span>
-              <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
-            </span>
-            <span class="sep">·</span>
-            <span>{{ format_date_short(art.pub_date) }}</span>
+  <div class="category-layout">
+    <div class="category-main">
+      <div class="feed-list">
+        {% for art in articles[3:] %}
+        <article class="feed-item">
+          <div class="feed-item-body">
+            <div class="feed-item-meta">
+              <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
+                <span class="cat-dot"></span>
+                <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+              </span>
+              <span class="sep">·</span>
+              <span>{{ format_date_short(art.pub_date) }}</span>
+              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art.id|fake_views|format_num }}</span>
+            </div>
+            <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+            {% if art.excerpt %}
+              <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
+            {% endif %}
           </div>
-          <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-          {% if art.excerpt %}
-            <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
+          {% if art.main_image or art.thumbnail %}
+          <div class="feed-item-thumb">
+            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
+          </div>
+          {% else %}
+          <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
           {% endif %}
-        </div>
-        {% if art.main_image or art.thumbnail %}
-        <div class="feed-item-thumb">
-          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
-        </div>
-        {% else %}
-        <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
-        {% endif %}
-      </article>
-      {% endfor %}
+        </article>
+        {% endfor %}
+      </div>
     </div>
+    <aside class="category-sidebar">
+      <div class="ad-placeholder ad-sidebar" aria-hidden="true">Реклама</div>
+    </aside>
   </div>
   {% endif %}
 

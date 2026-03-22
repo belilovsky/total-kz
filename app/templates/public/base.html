@@ -92,6 +92,20 @@
     </div>
   </header>
 
+  <!-- ═══ CURRENCY STRIP ═══ -->
+  <div class="currency-strip">
+    <div class="currency-strip-inner">
+      <span class="currency-item">🇺🇸 USD 523.4</span>
+      <span class="currency-sep">|</span>
+      <span class="currency-item">🇪🇺 EUR 557.1</span>
+      <span class="currency-sep">|</span>
+      <span class="currency-item">🇷🇺 RUB 5.74</span>
+    </div>
+  </div>
+
+  <!-- ═══ AD: BELOW HEADER (desktop only) ═══ -->
+  <div class="ad-placeholder ad-below-header" aria-hidden="true">Реклама</div>
+
   <!-- ═══ SEARCH OVERLAY ═══ -->
   <div class="search-overlay" id="search-overlay">
     <div class="search-overlay-backdrop" id="search-backdrop"></div>
@@ -216,6 +230,43 @@
     </div>
   </footer>
 
+  <!-- ═══ MOBILE BOTTOM BAR ═══ -->
+  <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Быстрая навигация">
+    <a href="/" class="bottom-bar-item{% if request.url.path == '/' %} active{% endif %}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <span>Главная</span>
+    </a>
+    <button class="bottom-bar-item" id="bottom-bar-search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <span>Поиск</span>
+    </button>
+    <a href="/#feed-section" class="bottom-bar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <span>Свежее</span>
+    </a>
+    <button class="bottom-bar-item" id="bottom-bar-menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      <span>Меню</span>
+    </button>
+  </nav>
+
+  <!-- ═══ NEWS TICKER (desktop) ═══ -->
+  {% if ticker_articles is defined and ticker_articles %}
+  <div class="news-ticker" id="news-ticker">
+    <span class="ticker-label">ПОСЛЕДНИЕ:</span>
+    <div class="ticker-content">
+      {% for art in ticker_articles %}
+      <a href="{{ article_url(art) }}" class="ticker-headline{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">{{ art.title }}</a>
+      {% endfor %}
+    </div>
+    <div class="ticker-controls">
+      <button class="ticker-btn ticker-prev" aria-label="Назад">‹</button>
+      <button class="ticker-btn ticker-next" aria-label="Вперёд">›</button>
+      <button class="ticker-btn ticker-close" aria-label="Закрыть">×</button>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ═══ SCRIPTS ═══ -->
   <script>
   (function () {
@@ -327,6 +378,80 @@
         const pct = h - window.innerHeight > 0 ? Math.min(100, Math.max(0, s / (h - window.innerHeight) * 100)) : 0;
         progress.style.width = pct + '%';
       }, { passive: true });
+    }
+
+    // ── Mobile bottom bar ─────────────────────────────────────────────
+    var bottomBar = document.getElementById('mobile-bottom-bar');
+    if (bottomBar) {
+      var lastScrollY = window.scrollY;
+      window.addEventListener('scroll', function() {
+        var curr = window.scrollY;
+        if (curr > lastScrollY && curr > 100) {
+          bottomBar.classList.add('is-hidden');
+        } else {
+          bottomBar.classList.remove('is-hidden');
+        }
+        lastScrollY = curr;
+      }, { passive: true });
+      var bbSearch = document.getElementById('bottom-bar-search');
+      if (bbSearch) bbSearch.addEventListener('click', openSearch);
+      var bbMenu = document.getElementById('bottom-bar-menu');
+      if (bbMenu) bbMenu.addEventListener('click', openMenu);
+    }
+
+    // ── News ticker (desktop) ───────────────────────────────────────
+    var ticker = document.getElementById('news-ticker');
+    if (ticker) {
+      if (sessionStorage.getItem('ticker-dismissed')) {
+        ticker.style.display = 'none';
+      } else {
+        var headlines = ticker.querySelectorAll('.ticker-headline');
+        var tickerIdx = 0, tickerTotal = headlines.length;
+        function showTickerItem(i) {
+          headlines.forEach(function(h) { h.classList.remove('active'); });
+          tickerIdx = ((i % tickerTotal) + tickerTotal) % tickerTotal;
+          headlines[tickerIdx].classList.add('active');
+        }
+        var tickerTimer = setInterval(function() { showTickerItem(tickerIdx + 1); }, 5000);
+        ticker.querySelector('.ticker-prev').addEventListener('click', function() {
+          clearInterval(tickerTimer); showTickerItem(tickerIdx - 1);
+          tickerTimer = setInterval(function() { showTickerItem(tickerIdx + 1); }, 5000);
+        });
+        ticker.querySelector('.ticker-next').addEventListener('click', function() {
+          clearInterval(tickerTimer); showTickerItem(tickerIdx + 1);
+          tickerTimer = setInterval(function() { showTickerItem(tickerIdx + 1); }, 5000);
+        });
+        ticker.querySelector('.ticker-close').addEventListener('click', function() {
+          ticker.style.display = 'none';
+          sessionStorage.setItem('ticker-dismissed', '1');
+          clearInterval(tickerTimer);
+        });
+      }
+    }
+
+    // ── Floating share sidebar (article pages, desktop) ─────────────
+    var floatingShare = document.querySelector('.floating-share');
+    var articleBodyEl = document.querySelector('.article-body');
+    if (floatingShare && articleBodyEl && 'IntersectionObserver' in window) {
+      var shareObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          floatingShare.classList.toggle('is-visible', e.isIntersecting);
+        });
+      }, { threshold: 0 });
+      shareObs.observe(articleBodyEl);
+    }
+
+    // ── Ad injection into article body (after 3rd <p>) ──────────────
+    var artBody = document.getElementById('article-body');
+    if (artBody) {
+      var paras = artBody.querySelectorAll(':scope > p');
+      if (paras.length >= 3) {
+        var adDiv = document.createElement('div');
+        adDiv.className = 'ad-placeholder ad-inline';
+        adDiv.setAttribute('aria-hidden', 'true');
+        adDiv.textContent = 'Реклама';
+        paras[2].parentNode.insertBefore(adDiv, paras[2].nextSibling);
+      }
     }
 
     // ── Feed items entrance ──────────────────────────────────────────────
