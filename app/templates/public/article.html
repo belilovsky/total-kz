@@ -77,7 +77,6 @@
     <h1 class="article-title">{{ article.title }}</h1>
     {# Mobile-only meta (hidden on desktop where sidebar shows it) #}
     <div class="article-meta article-meta--mobile">
-      {% if article.author %}<a href="/search?q={{ article.author | urlencode }}">{{ article.author }}</a><span class="sep">·</span>{% endif %}
       <span>{{ format_date(article.pub_date) }}</span>
       <span class="sep">·</span>
       <span class="reading-time">{{ reading_time }} мин</span>
@@ -111,6 +110,13 @@
           {% endfor %}
         {% endif %}
       </div>
+
+      {# ── Author byline at end of article ── #}
+      {% if article.author %}
+      <div class="article-author-byline">
+        <a href="/search?q={{ article.author | urlencode }}">{{ article.author }}</a>
+      </div>
+      {% endif %}
 
       {# ── Pull quote from enrichment ── #}
       {% if article.enrichment and article.enrichment.quote %}
@@ -203,12 +209,8 @@
     <aside class="article-sidebar">
       <div class="article-sidebar-inner">
 
-        {# ── Compact meta line: author · date · reading time ── #}
+        {# ── Compact meta line: date · reading time (author moved to article bottom) ── #}
         <div class="sidebar-meta">
-          {% if article.author %}
-            <a href="/search?q={{ article.author | urlencode }}" class="sidebar-meta-author">{{ article.author }}</a>
-            <span class="sidebar-meta-sep">·</span>
-          {% endif %}
           <span class="sidebar-meta-date">{{ format_date(article.pub_date) }}</span>
           <span class="sidebar-meta-sep">·</span>
           <span class="sidebar-meta-reading">{{ reading_time }} мин</span>
@@ -225,7 +227,7 @@
         {% set display_ent = dedup_entities(article.entities or []) if not display_tags else [] %}
         {% if display_tags or display_ent %}
         <div class="sidebar-topics">
-          <span class="sidebar-topics-label">Темы</span>
+          {# label removed — pills are self-explanatory #}
           <div class="sidebar-pills" id="sidebar-pills">
             {% for tag in display_tags[:8] %}
               <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
