@@ -371,11 +371,11 @@
 
     // ── Reading progress ─────────────────────────────────────────────────
     const progress = document.getElementById('reading-progress');
-    const body     = document.querySelector('.article-body');
-    if (progress && body) {
+    const articleWrap = document.querySelector('.article-body') || document.querySelector('.article-content');
+    if (progress && articleWrap) {
       window.addEventListener('scroll', function () {
-        const top = body.offsetTop, h = body.offsetHeight, s = window.scrollY - top;
-        const pct = h - window.innerHeight > 0 ? Math.min(100, Math.max(0, s / (h - window.innerHeight) * 100)) : 0;
+        var docH = document.documentElement.scrollHeight - window.innerHeight;
+        var pct = docH > 0 ? Math.min(100, Math.max(0, (window.scrollY / docH) * 100)) : 0;
         progress.style.width = pct + '%';
       }, { passive: true });
     }

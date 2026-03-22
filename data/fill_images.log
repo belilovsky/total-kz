@@ -1,0 +1,128 @@
+[2026-03-21 16:40:12] Setting up category fallback images...
+[2026-03-21 16:40:12]   vnutrennyaya_politika: searching 'Ak Orda presidential palace Kazakhstan'...
+[2026-03-21 16:40:13]   vnutrennyaya_politika: ✓ downloaded
+[2026-03-21 16:40:14]   vneshnyaya_politika: searching 'Kazakhstan Ministry of Foreign Affairs diplomacy'...
+[2026-03-21 16:40:15]   vneshnyaya_politika: ✓ downloaded
+[2026-03-21 16:40:16]   ekonomika_sobitiya: searching 'Kazakhstan economy astana business center'...
+[2026-03-21 16:40:16]   ekonomika_sobitiya: ✗ no results
+[2026-03-21 16:40:17]   finansi: searching 'Kazakhstan National Bank tenge currency'...
+[2026-03-21 16:40:18]   finansi: ✓ downloaded
+[2026-03-21 16:40:19]   gossektor: searching 'Kazakhstan government building Nur-Sultan'...
+[2026-03-21 16:40:20]   gossektor: ✓ downloaded
+[2026-03-21 16:40:21]   zhizn: searching 'Kazakhstan people daily life Almaty'...
+[2026-03-21 16:40:22]   zhizn: ✗ no results
+[2026-03-21 16:40:23]   obshchestvo_sobitiya: searching 'Kazakhstan society people Astana'...
+[2026-03-21 16:40:25]   obshchestvo_sobitiya: ✓ downloaded
+[2026-03-21 16:40:26]   bezopasnost: searching 'Kazakhstan police security forces'...
+[2026-03-21 16:40:27]   bezopasnost: ✓ downloaded
+[2026-03-21 16:40:28]   proisshestviya: searching 'Kazakhstan emergency services police'...
+[2026-03-21 16:40:28]   proisshestviya: ✗ no results
+[2026-03-21 16:40:29]   mir: searching 'United Nations diplomacy international'...
+[2026-03-21 16:40:30]   mir: ✓ downloaded
+[2026-03-21 16:40:31]   sport: searching 'Kazakhstan sport athletes Olympic'...
+[2026-03-21 16:40:32]   sport: ✓ downloaded
+[2026-03-21 16:40:33]   nauka: searching 'science research laboratory'...
+[2026-03-21 16:40:34]   nauka: ✓ downloaded
+[2026-03-21 16:40:35]   tehno: searching 'technology digital innovation Kazakhstan'...
+[2026-03-21 16:40:35]   tehno: ✗ no results
+[2026-03-21 16:40:36]   mneniya: searching 'Kazakhstan discussion parliament debate'...
+[2026-03-21 16:40:37]   mneniya: ✗ no results
+[2026-03-21 16:40:38]   kultura: searching 'Kazakhstan culture traditional art'...
+[2026-03-21 16:40:38]   kultura: ✗ no results
+[2026-03-21 16:40:39] Articles without images: 5
+[2026-03-21 16:40:39] [1/5] Токаев поручил АФМ упорядочить финансовые потоки в социально
+[2026-03-21 16:40:40]   Search query: Kazakhstan social finance
+[2026-03-21 16:40:40]   ✓ Assigned specific image: /static/images/stock/wm_324.png
+[2026-03-21 16:40:41] [2/5] О государственной важности старых газет заявила сенатор
+[2026-03-21 16:40:42]   Search query: old newspapers senator
+[2026-03-21 16:40:43]   ✓ Assigned specific image: /static/images/stock/wm_422.jpg
+[2026-03-21 16:40:44] [3/5] Четыре миллиона тенге штрафа заплатил подрядчик за ремонт до
+[2026-03-21 16:40:44]   Search query: Akmolinskaya region roads
+[2026-03-21 16:40:45]   ✗ No image found
+[2026-03-21 16:40:46] [4/5] Скрывавшийся 19 лет за разбой казахстанец выявлен в России
+[2026-03-21 16:40:47]   Search query: Kazakhstan fugitive Russia
+[2026-03-21 16:40:47]   ✗ No image found
+[2026-03-21 16:40:48] [5/5] МЧС утвердил новые правила взаимодействия дежурных и экстрен
+[2026-03-21 16:40:49]   Search query: emergency services Kazakhstan
+[2026-03-21 16:40:50]   ✓ Assigned specific image: /static/images/stock/wm_1002.jpg
+[2026-03-21 16:40:51] Done: 3/5 articles got images
+[2026-03-21 16:41:01] Setting up category fallback images...
+[2026-03-21 16:41:01]   vnutrennyaya_politika: already exists
+[2026-03-21 16:41:01]   vneshnyaya_politika: searching 'Kazakhstan Ministry of Foreign Affairs diplomacy'...
+[2026-03-21 16:41:02]   vneshnyaya_politika: ✓ downloaded
+[2026-03-21 16:41:03]   ekonomika_sobitiya: searching 'Kazakhstan economy astana business center'...
+[2026-03-21 16:41:03]   ekonomika_sobitiya: ✗ no results
+[2026-03-21 16:41:04]   finansi: searching 'Kazakhstan National Bank tenge currency'...
+[2026-03-21 16:41:05]   finansi: ✓ downloaded
+[2026-03-21 16:41:06]   gossektor: already exists
+[2026-03-21 16:41:06]   zhizn: searching 'Kazakhstan people daily life Almaty'...
+[2026-03-21 16:41:06]   zhizn: ✗ no results
+[2026-03-21 16:41:07]   obshchestvo_sobitiya: already exists
+[2026-03-21 16:41:07]   bezopasnost: already exists
+[2026-03-21 16:41:07]   proisshestviya: searching 'Kazakhstan emergency services police'...
+[2026-03-21 16:41:07]   proisshestviya: ✗ no results
+[2026-03-21 16:41:08]   mir: already exists
+[2026-03-21 16:41:08]   sport: already exists
+[2026-03-21 16:41:08]   nauka: already exists
+[2026-03-21 16:41:08]   tehno: searching 'technology digital innovation Kazakhstan'...
+[2026-03-21 16:41:09]   tehno: ✗ no results
+[2026-03-21 16:41:10]   mneniya: searching 'Kazakhstan discussion parliament debate'...
+[2026-03-21 16:41:10]   mneniya: ✗ no results
+[2026-03-21 16:41:11]   kultura: searching 'Kazakhstan culture traditional art'...
+[2026-03-21 16:41:11]   kultura: ✗ no results
+[2026-03-21 16:41:12] Articles without images: 18
+[2026-03-21 16:41:12] [1/18] Четыре миллиона тенге штрафа заплатил подрядчик за ремонт до
+[2026-03-21 16:41:13]   Search query: Akmolinsk region roads
+[2026-03-21 16:41:14]   ✗ No image found
+[2026-03-21 16:41:15] [2/18] Скрывавшийся 19 лет за разбой казахстанец выявлен в России
+[2026-03-21 16:41:15]   Search query: Kazakhstan fugitive Russia
+[2026-03-21 16:41:16]   ✗ No image found
+[2026-03-21 16:41:17] [3/18] Более 14 миллионов тенге отсудила вдова полицейского в Шымке
+[2026-03-21 16:41:17]   Search query: Shymkent police widow
+[2026-03-21 16:41:18]   ✗ No image found
+[2026-03-21 16:41:19] [4/18] Главный прокурор МУС покидает пост до окончания расследовани
+[2026-03-21 16:41:20]   Search query: Chief Prosecutor MUS
+[2026-03-21 16:41:20]   ✓ Assigned category fallback: /static/images/stock/cat_mir.jpg
+[2026-03-21 16:41:21] [5/18] Осужден председатель Актауского городского суда Мангистауско
+[2026-03-21 16:41:21]   Search query: Akтау city court
+[2026-03-21 16:41:22]   ✗ No image found
+[2026-03-21 16:41:23] [6/18] В Казахстане внедрят новую систему урегулирования неплатежес
+[2026-03-21 16:41:24]   Search query: Kazakhstan banking system
+[2026-03-21 16:41:25]   ✓ Assigned specific image: /static/images/stock/wm_4119.png
+[2026-03-21 16:41:26] [7/18] Казахстан и Узбекистан создадут центр промышленной коопераци
+[2026-03-21 16:41:26]   Search query: Kazakhstan Uzbekistan cooperation center
+[2026-03-21 16:41:27]   ✓ Assigned specific image: /static/images/stock/wm_8525.jpeg
+[2026-03-21 16:41:28] [8/18] Долги по алиментам превысили 4 миллиарда тенге в Шымкенте
+[2026-03-21 16:41:28]   Search query: Shymkent alimony debt
+[2026-03-21 16:41:29]   ✗ No image found
+[2026-03-21 16:41:30] [9/18] Единая судебная практика по делам о госзакупках установлена 
+[2026-03-21 16:41:31]   Search query: Kazakhstan court procurement
+[2026-03-21 16:41:31]   ✓ Assigned specific image: /static/images/stock/wm_8724.png
+[2026-03-21 16:41:32] [10/18] Какие продукты подешевели в Казахстане
+[2026-03-21 16:41:33]   Search query: Kazakhstan food prices
+[2026-03-21 16:41:34]   ✓ Assigned specific image: /static/images/stock/wm_13660.png
+[2026-03-21 16:41:35] [11/18] Семейная пара изготавливала наркотики в Алматы
+[2026-03-21 16:41:35]   Search query: Almaty drug manufacturing
+[2026-03-21 16:41:36]   ✗ No image found
+[2026-03-21 16:41:37] [12/18] Перечислены полезные для сердца упражнения
+[2026-03-21 16:41:37]   Search query: heart exercises
+[2026-03-21 16:41:38]   ✓ Assigned specific image: /static/images/stock/wm_14084.png
+[2026-03-21 16:41:39] [13/18] Евросоюз приостановил процесс вступления Грузии
+[2026-03-21 16:41:40]   Search query: Georgia EU accession
+[2026-03-21 16:41:41]   ✓ Assigned specific image: /static/images/stock/wm_9643.png
+[2026-03-21 16:41:42] [14/18] Уголовное дело о несчастном случае на производстве пять раз 
+[2026-03-21 16:41:42]   Search query: industrial accident Kazakhstan
+[2026-03-21 16:41:43]   ✗ No image found
+[2026-03-21 16:41:44] [15/18] Налоговые льготы предлагают предоставить операторам связи в 
+[2026-03-21 16:41:45]   Search query: Kazakhstan telecom operators
+[2026-03-21 16:41:45]   ✗ No image found
+[2026-03-21 16:41:46] [16/18] Дэвид Мойес покинет «Вест Хэм» по завершении сезона
+[2026-03-21 16:41:47]   Search query: David Moyes West Ham
+[2026-03-21 16:41:48]   ✓ Assigned specific image: /static/images/stock/wm_14319.jpg
+[2026-03-21 16:41:49] [17/18] Голландский плеймейкер может покинуть «Барселону» летом
+[2026-03-21 16:41:49]   Search query: Dutch playmaker Barcelona
+[2026-03-21 16:41:49]   ✓ Assigned category fallback: /static/images/stock/cat_sport.jpg
+[2026-03-21 16:41:50] [18/18] Голландский форвард «Боруссии» может перейти в АПЛ
+[2026-03-21 16:41:51]   Search query: Dutch forward Borussia
+[2026-03-21 16:41:51]   ✓ Assigned category fallback: /static/images/stock/cat_sport.jpg
+[2026-03-21 16:41:52] Done: 10/18 articles got images
