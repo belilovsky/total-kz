@@ -124,25 +124,18 @@ p { text-wrap:pretty; }
   height:56px; display:flex; align-items:center; gap:var(--space-8);
 }
 .site-logo {
-  display:flex; align-items:center; gap:var(--space-2); flex-shrink:0;
-  font-family:var(--font-display); font-weight:800; font-size:var(--text-lg); color:var(--text);
+  display:flex; align-items:center; flex-shrink:0;
+  text-decoration:none;
 }
-.site-logo:hover { color:var(--accent); }
-.site-logo-img {
-  height:30px; width:auto; display:block;
+.site-logo:hover .site-logo-text { opacity:.8; }
+.site-logo-text {
+  font-family:var(--font-display); font-weight:900;
+  font-size:1.5rem; letter-spacing:-0.03em; line-height:1;
+  color:var(--accent); text-transform:uppercase;
 }
-@media (min-width:640px) { .site-logo-img { height:36px; } }
-[data-theme="dark"] .site-logo-img { filter:brightness(0) invert(1); }
-@media (prefers-color-scheme:dark) {
-  :root:not([data-theme]) .site-logo-img { filter:brightness(0) invert(1); }
-}
-.site-logo-text { font-family:var(--font-display); font-weight:800; font-size:var(--text-lg); }
-.site-logo-text span { color:var(--accent); }
-.site-logo .logo-icon {
-  width:28px; height:28px; background:var(--accent); color:#fff;
-  border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;
-  font-size:0.875rem; font-weight:800; letter-spacing:-0.02em; flex-shrink:0;
-}
+@media (min-width:640px) { .site-logo-text { font-size:1.75rem; } }
+.footer-logo .site-logo-text { font-size:1.25rem; }
+@media (min-width:640px) { .footer-logo .site-logo-text { font-size:1.375rem; } }
 .header-nav { flex:1; display:none; }
 @media (min-width:900px) {
   .header-nav { display:flex; align-items:center; justify-content:center; gap:var(--space-1); }
@@ -1330,7 +1323,7 @@ main { padding-top:var(--space-4); padding-bottom:var(--space-10); }
   padding-bottom:var(--space-5); border-bottom:1px solid var(--border);
 }
 @media (min-width:640px) { .footer-top { flex-direction:row; align-items:center; gap:var(--space-8); } }
-.footer-top .site-logo-img { height:22px; width:auto; }
+/* footer logo size handled by .footer-logo .site-logo-text */
 .footer-nav-inline {
   display:flex; flex-wrap:wrap; gap:var(--space-1) var(--space-4);
 }
