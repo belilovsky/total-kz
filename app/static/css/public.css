@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
-   Total.kz v9.0 · Onest · #d83236 · Light default
-   Visual audit polish: spacing, alignment, badges
+   Total.kz v9.1 · Onest · #d83236 · Light default
+   Phase 1: hover polish, gradient ads, compact ticker
    ═══════════════════════════════════════════════ */
 
 /* ── Reset ───────────────────────────────────── */
@@ -421,7 +421,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .article-card {
   background:var(--card-bg); border-radius:var(--radius-lg); overflow:hidden;
   box-shadow:var(--shadow-sm); border:1px solid var(--border-light);
-  transition:transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease;
+  transition:transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease, border-color 200ms ease;
   display:flex; flex-direction:column;
 }
 .article-card.will-animate { opacity:0; transform:translateY(12px); }
@@ -432,9 +432,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .article-card:hover {
   transform:translateY(-4px);
   box-shadow:var(--shadow-md);
+  border-color:var(--accent);
 }
 .article-card.visible:hover {
   transform:translateY(-3px);
+  border-color:var(--accent);
 }
 
 .card-image {
@@ -550,12 +552,13 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .featured-card {
   background:var(--card-bg); border-radius:var(--radius-lg); overflow:hidden;
   box-shadow:var(--shadow-sm); border:1px solid var(--border-light);
-  transition:transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease;
+  transition:transform 300ms cubic-bezier(0.16,1,0.3,1), box-shadow 300ms ease, border-color 200ms ease;
   display:flex; flex-direction:row;
 }
 .featured-card:hover {
   transform:translateY(-2px);
   box-shadow:var(--shadow-md);
+  border-color:var(--accent);
 }
 .featured-card .card-image { width:110px; min-height:80px; aspect-ratio:auto; flex-shrink:0; }
 .featured-card .card-body { padding:var(--space-3); display:flex; flex-direction:column; justify-content:center; flex:1; min-width:0; }
@@ -579,7 +582,8 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   padding:var(--space-3) var(--space-3); border-bottom:1px solid var(--border-light);
   position:relative; border-radius:var(--radius-md);
   margin:0 calc(-1 * var(--space-3));
-  transition:background var(--transition);
+  border-left:3px solid transparent;
+  transition:background var(--transition), border-color 200ms ease;
 }
 .feed-item.will-animate { opacity:0; transform:translateY(10px); }
 @media (min-width:640px) {
@@ -589,7 +593,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   opacity:1; transform:translateY(0);
   transition:background var(--transition), opacity 400ms ease, transform 400ms cubic-bezier(0.16,1,0.3,1);
 }
-.feed-item:hover { background:var(--feed-hover); }
+.feed-item:hover {
+  background:var(--feed-hover);
+  border-left-color:var(--accent);
+}
 .feed-item:last-child { border-bottom:none; }
 
 .feed-item-body { flex:1; min-width:0; }
@@ -1342,7 +1349,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   transition:background var(--transition), box-shadow var(--transition), border-color var(--transition),
     transform 500ms cubic-bezier(0.16,1,0.3,1), opacity 500ms ease;
 }
-.related-item:hover { background:var(--surface-2); box-shadow:var(--shadow-sm); border-color:var(--border); transform:translateY(-2px); }
+.related-item:hover { background:var(--surface-2); box-shadow:var(--shadow-sm); border-color:var(--accent); transform:translateY(-2px); }
 
 .related-thumb {
   width:100%; aspect-ratio:16/10; overflow:hidden; background:var(--surface-3);
@@ -1864,10 +1871,16 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* ── 1. Ad Placeholders ───────────────────────── */
 .ad-placeholder {
   display:flex; align-items:center; justify-content:center;
-  border:2px dashed var(--border); border-radius:var(--radius-md);
-  background:var(--surface-2); opacity:0.5;
+  border:none; border-radius:var(--radius-md);
+  background:linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  opacity:0.45; position:relative; overflow:hidden;
   color:var(--text-faint); font-size:var(--text-xs);
   text-transform:uppercase; letter-spacing:0.1em;
+}
+.ad-placeholder::before {
+  content:''; position:absolute; inset:0;
+  border:1px solid var(--border-light); border-radius:inherit;
+  pointer-events:none;
 }
 .ad-leaderboard {
   max-width:728px; height:90px; margin:var(--space-6) auto;
@@ -2014,10 +2027,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* ── 8. News Ticker (Desktop) ─────────────────── */
 .news-ticker {
   position:fixed; bottom:0; left:0; right:0; z-index:99;
-  height:40px; display:flex; align-items:center;
-  background:#1a1a1a; color:#fff;
-  border-left:4px solid var(--accent);
-  font-size:var(--text-sm); padding:0 var(--space-4);
+  height:32px; display:flex; align-items:center;
+  background:rgba(26,26,26,.95); backdrop-filter:blur(8px);
+  color:#fff; border-top:2px solid var(--accent);
+  font-size:var(--text-xs); padding:0 var(--space-4);
 }
 .ticker-label {
   font-weight:700; font-size:var(--text-xs);

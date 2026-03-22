@@ -49,7 +49,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=12.0">
+  <link rel="stylesheet" href="/static/css/public.css?v=12.1">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   {% block extra_css %}{% endblock %}
 </head>
@@ -424,13 +424,18 @@
       }, { passive: true });
     }
 
-    // ── Reading progress ─────────────────────────────────────────────────
+    // ── Reading progress (tracks article body, not full page) ────────────
     const progress = document.getElementById('reading-progress');
     const articleWrap = document.querySelector('.article-body') || document.querySelector('.article-content');
     if (progress && articleWrap) {
       window.addEventListener('scroll', function () {
-        var docH = document.documentElement.scrollHeight - window.innerHeight;
-        var pct = docH > 0 ? Math.min(100, Math.max(0, (window.scrollY / docH) * 100)) : 0;
+        var start = articleWrap.offsetTop;
+        var end = start + articleWrap.offsetHeight;
+        var scrollY = window.scrollY + window.innerHeight * 0.3;
+        var pct;
+        if (scrollY <= start) { pct = 0; }
+        else if (scrollY >= end) { pct = 100; }
+        else { pct = ((scrollY - start) / (end - start)) * 100; }
         progress.style.width = pct + '%';
       }, { passive: true });
     }
