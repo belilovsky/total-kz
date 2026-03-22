@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% set active = "media" %}
+
+{% block title %}Медиа – Total.kz{% endblock %}
+{% block page_title %}Медиа{% endblock %}
+
+{% block actions %}
+<button class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Загрузить
+</button>
+<input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="uploadFiles(this.files)">
+{% endblock %}
+
+{% block content %}
+<!-- Search bar -->
+<div class="filters-bar" style="margin-bottom:16px">
+    <form method="get" action="/admin/media" class="filters-form">
+        <div class="filter-group grow">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Поиск по имени файла...">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Найти</button>
+    </form>
+</div>
+
+<!-- Drop zone -->
+<div class="media-dropzone" id="dropZone">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <p>Перетащите файлы сюда для загрузки</p>
+    <p style="font-size:12px;color:var(--text-muted)">JPG, PNG, GIF, WebP, SVG — до 10 МБ</p>
+</div>
+
+<!-- Upload progress -->
+<div class="upload-progress" id="uploadProgress" style="display:none">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span id="uploadStatus">Загрузка...</span>
+</div>
+
+<!-- Media Gallery -->
+<div class="results-info">
+    Файлов: <strong>{{ format_num(result.total) }}</strong>
+    {% if result.pages > 1 %}&middot; Страница {{ result.page }} из {{ result.pages }}{% endif %}
+</div>
+
+<div class="media-gallery">
+    {% for item in result.items %}
+    <div class="media-item" onclick="showMediaDetail({{ item.id }}, '{{ item.filename }}', '{{ item.original_name|e }}', '{{ item.mime_type }}', {{ item.file_size }}, '{{ item.alt_text|default("", true)|e }}', '{{ item.credit|default("", true)|e }}', '{{ item.url }}')">
+        <div class="media-thumb">
+            <img src="{{ item.url }}" alt="{{ item.alt_text or item.original_name }}" loading="lazy">
+        </div>
+        <div class="media-item-info">
+            <span class="media-item-name" title="{{ item.original_name }}">{{ item.original_name[:30] }}{% if item.original_name|length > 30 %}...{% endif %}</span>
+            <span class="media-item-size">{{ (item.file_size / 1024)|int }}&nbsp;КБ</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if result.items|length == 0 %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <h3>Медиатека пуста</h3>
+    <p>Загрузите изображения через кнопку или перетащите файлы.</p>
+</div>
+{% endif %}
+
+{% if result.pages > 1 %}
+<div class="pagination">
+    {% if result.page > 1 %}<a href="/admin/media?q={{ q }}&page={{ result.page - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
+    {% for p in range(1, result.pages + 1) %}
+    <a href="/admin/media?q={{ q }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if result.page < result.pages %}<a href="/admin/media?q={{ q }}&page={{ result.page + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
+</div>
+{% endif %}
+
+<!-- Media Detail Modal -->
+<div class="modal-overlay" id="mediaDetailModal" onclick="if(event.target===this)closeModal('mediaDetailModal')">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 id="mediaDetailTitle">Файл</h3>
+            <button class="btn-icon" onclick="closeModal('mediaDetailModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="display:flex;gap:20px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+                <img id="mediaDetailImg" src="" alt="" style="width:100%;border-radius:8px;object-fit:contain;max-height:400px">
+            </div>
+            <div style="flex:1;min-width:200px">
+                <div class="form-group"><label>Имя файла</label><div id="mediaDetailFilename" style="font-size:13px;color:var(--text-secondary)"></div></div>
+                <div class="form-group"><label>Тип</label><div id="mediaDetailType" style="font-size:13px;color:var(--text-secondary)"></div></div>
+                <div class="form-group"><label>Размер</label><div id="mediaDetailSize" style="font-size:13px;color:var(--text-secondary)"></div></div>
+                <div class="form-group"><label>Alt текст</label><input type="text" id="mediaDetailAlt" class="filter-input" style="width:100%"></div>
+                <div class="form-group"><label>Автор/Кредит</label><input type="text" id="mediaDetailCredit" class="filter-input" style="width:100%"></div>
+                <div class="form-group"><label>URL</label><input type="text" id="mediaDetailUrl" class="filter-input" style="width:100%;font-size:12px" readonly onclick="this.select()"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" style="color:var(--red)" onclick="deleteMedia()">Удалить</button>
+            <button class="btn btn-primary" onclick="saveMediaMeta()">Сохранить</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var currentMediaId=null;
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function showMediaDetail(id,filename,origName,mime,size,alt,credit,url){
+    currentMediaId=id;
+    document.getElementById('mediaDetailTitle').textContent=origName;
+    document.getElementById('mediaDetailImg').src=url;
+    document.getElementById('mediaDetailFilename').textContent=origName;
+    document.getElementById('mediaDetailType').textContent=mime;
+    document.getElementById('mediaDetailSize').textContent=Math.round(size/1024)+' КБ';
+    document.getElementById('mediaDetailAlt').value=alt;
+    document.getElementById('mediaDetailCredit').value=credit;
+    document.getElementById('mediaDetailUrl').value=location.origin+url;
+    openModal('mediaDetailModal');
+}
+
+function saveMediaMeta(){
+    if(!currentMediaId)return;
+    fetch('/api/media/'+currentMediaId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        alt_text:document.getElementById('mediaDetailAlt').value,
+        credit:document.getElementById('mediaDetailCredit').value
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok)showToast('Сохранено');else showToast('Ошибка');
+        closeModal('mediaDetailModal');
+    }).catch(()=>showToast('Ошибка сети'));
+}
+
+function deleteMedia(){
+    if(!currentMediaId||!confirm('Удалить файл?'))return;
+    fetch('/api/media/'+currentMediaId,{method:'DELETE'}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Удалено');closeModal('mediaDetailModal');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка');
+    }).catch(()=>showToast('Ошибка сети'));
+}
+
+function uploadFiles(files){
+    if(!files.length)return;
+    var prog=document.getElementById('uploadProgress');
+    var fill=document.getElementById('progressFill');
+    var status=document.getElementById('uploadStatus');
+    prog.style.display='';
+    var done=0,total=files.length;
+    Array.from(files).forEach(function(file){
+        if(file.size>10*1024*1024){showToast('Файл '+file.name+' слишком большой (макс. 10 МБ)');done++;return}
+        var fd=new FormData();fd.append('file',file);
+        fetch('/api/media/upload',{method:'POST',body:fd}).then(r=>r.json()).then(function(res){
+            done++;
+            fill.style.width=Math.round(done/total*100)+'%';
+            status.textContent='Загружено '+done+' из '+total;
+            if(done===total){showToast('Загрузка завершена');setTimeout(()=>location.reload(),800)}
+        }).catch(function(){done++;status.textContent='Ошибка при загрузке '+file.name});
+    });
+}
+
+// Drag & Drop
+var dz=document.getElementById('dropZone');
+['dragenter','dragover'].forEach(function(ev){
+    document.body.addEventListener(ev,function(e){e.preventDefault();dz.classList.add('drag-active')});
+});
+['dragleave','drop'].forEach(function(ev){
+    document.body.addEventListener(ev,function(e){e.preventDefault();dz.classList.remove('drag-active')});
+});
+document.body.addEventListener('drop',function(e){
+    e.preventDefault();
+    if(e.dataTransfer.files.length)uploadFiles(e.dataTransfer.files);
+});
+</script>
+{% endblock %}

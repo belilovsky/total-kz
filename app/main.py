@@ -1,13 +1,15 @@
-"""FastAPI application – Total.kz v10.2 (public frontend + CMS admin)."""
+"""FastAPI application – Total.kz v11.0 (public frontend + CMS admin)."""
 
 import json
 import logging
+import os
 import re
 import unicodedata
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Request, Query, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,10 +24,15 @@ from . import database as db
 from . import seo_analytics as seo
 from . import search_analytics as search
 from . import search_engine as meili
+from . import auth
 from .public_routes import router as public_router
 from .social_routes import router as social_router
 
 logger = logging.getLogger(__name__)
+
+MEDIA_DIR = Path(__file__).parent.parent / "data" / "media"
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
@@ -61,17 +68,42 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class AuthMiddleware(BaseHTTPMiddleware):
+    """Require authentication for /admin/* routes (except login)."""
+    OPEN_PATHS = {"/admin/login"}
+
+    async def dispatch(self, request, call_next):
+        path = request.url.path.rstrip("/")
+        # Only protect admin routes
+        if path.startswith("/admin") and path not in self.OPEN_PATHS:
+            user = auth.get_current_user(request)
+            if not user:
+                return RedirectResponse(url="/admin/login", status_code=302)
+            # Enrich with display_name from cookie
+            user["display_name"] = request.cookies.get("display_name", user.get("username", ""))
+            request.state.current_user = user
+        else:
+            user = auth.get_current_user(request)
+            if user:
+                user["display_name"] = request.cookies.get("display_name", user.get("username", ""))
+            request.state.current_user = user
+        response = await call_next(request)
+        return response
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown."""
+    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     db.init_db()
     yield
 
 
-app = FastAPI(title="Total.kz", version="10.2.0", lifespan=lifespan)
+app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuthMiddleware)
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -92,6 +124,13 @@ def _format_num(n) -> str:
 
 templates.env.filters["format_num"] = _format_num
 templates.env.globals["format_num"] = _format_num
+
+
+def _ctx(request: Request, **kwargs) -> dict:
+    """Build template context with current_user always available."""
+    ctx = {"request": request, "current_user": getattr(request.state, "current_user", None)}
+    ctx.update(kwargs)
+    return ctx
 
 # Category labels in Russian (for admin dashboard)
 CATEGORY_LABELS = {
@@ -215,24 +254,23 @@ async def admin_dashboard(request: Request):
     heatmap_data = json.dumps(stats.get("cat_by_year", []), ensure_ascii=False)
     cat_labels_json = json.dumps(CATEGORY_LABELS, ensure_ascii=False)
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "stats": stats,
-        "persons": persons,
-        "orgs": orgs,
-        "locations": locations,
-        "chart_months": chart_months,
-        "chart_counts": chart_counts,
-        "chart_cats": chart_cats,
-        "chart_cat_counts": chart_cat_counts,
-        "chart_cat_slugs": chart_cat_slugs,
-        "chart_years": chart_years,
-        "chart_year_counts": chart_year_counts,
-        "heatmap_data": heatmap_data,
-        "cat_labels_json": cat_labels_json,
-        "cat_label": cat_label,
-        "entity_type_label": entity_type_label,
-    })
+    return templates.TemplateResponse("dashboard.html", _ctx(request,
+        stats=stats,
+        persons=persons,
+        orgs=orgs,
+        locations=locations,
+        chart_months=chart_months,
+        chart_counts=chart_counts,
+        chart_cats=chart_cats,
+        chart_cat_counts=chart_cat_counts,
+        chart_cat_slugs=chart_cat_slugs,
+        chart_years=chart_years,
+        chart_year_counts=chart_year_counts,
+        heatmap_data=heatmap_data,
+        cat_labels_json=cat_labels_json,
+        cat_label=cat_label,
+        entity_type_label=entity_type_label,
+    ))
 
 
 @app.get("/admin/articles", response_class=HTMLResponse)
@@ -274,27 +312,26 @@ async def admin_articles_list(
             status_counts[s] = cnt
         status_counts["all"] = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
 
-    return templates.TemplateResponse("articles.html", {
-        "request": request,
-        "result": result,
-        "q": q,
-        "category": category,
-        "author": author,
-        "date_from": date_from,
-        "date_to": date_to,
-        "tag": tag,
-        "entity_id": entity_id,
-        "entity_name": entity_name,
-        "entity_type": entity_type,
-        "status": status,
-        "status_counts": status_counts,
-        "categories": stats["categories"],
-        "authors": authors,
-        "tags": tags,
-        "cat_label": cat_label,
-        "entity_type_label": entity_type_label,
-        "format_num": _format_num,
-    })
+    return templates.TemplateResponse("articles.html", _ctx(request,
+        result=result,
+        q=q,
+        category=category,
+        author=author,
+        date_from=date_from,
+        date_to=date_to,
+        tag=tag,
+        entity_id=entity_id,
+        entity_name=entity_name,
+        entity_type=entity_type,
+        status=status,
+        status_counts=status_counts,
+        categories=stats["categories"],
+        authors=authors,
+        tags=tags,
+        cat_label=cat_label,
+        entity_type_label=entity_type_label,
+        format_num=_format_num,
+    ))
 
 
 @app.get("/admin/create", response_class=HTMLResponse)
@@ -302,13 +339,12 @@ async def admin_create_article(request: Request):
     stats = db.get_stats()
     cat_slugs = [c["sub_category"] for c in stats["categories"]]
     authors = db.get_authors()
-    return templates.TemplateResponse("article_create.html", {
-        "request": request,
-        "categories": cat_slugs,
-        "cat_label": cat_label,
-        "authors": authors,
-        "category_labels": CATEGORY_LABELS,
-    })
+    return templates.TemplateResponse("article_create.html", _ctx(request,
+        categories=cat_slugs,
+        cat_label=cat_label,
+        authors=authors,
+        category_labels=CATEGORY_LABELS,
+    ))
 
 
 @app.get("/admin/article/{article_id}", response_class=HTMLResponse)
@@ -318,14 +354,13 @@ async def admin_article_detail(request: Request, article_id: int):
         return HTMLResponse("Статья не найдена", status_code=404)
     stats = db.get_stats()
     cat_slugs = [c["sub_category"] for c in stats["categories"]]
-    return templates.TemplateResponse("article.html", {
-        "request": request,
-        "article": article,
-        "categories": cat_slugs,
-        "cat_label": cat_label,
-        "entity_type_label": entity_type_label,
-        "category_labels": CATEGORY_LABELS,
-    })
+    return templates.TemplateResponse("article.html", _ctx(request,
+        article=article,
+        categories=cat_slugs,
+        cat_label=cat_label,
+        entity_type_label=entity_type_label,
+        category_labels=CATEGORY_LABELS,
+    ))
 
 
 @app.get("/admin/content", response_class=HTMLResponse)
@@ -340,18 +375,17 @@ async def admin_content_page(request: Request):
     cq = seo.get_content_quality(500)
     dupes = seo.get_duplicate_titles(20)
 
-    return templates.TemplateResponse("content.html", {
-        "request": request,
-        "persons": persons,
-        "orgs": orgs,
-        "locations": locations,
-        "tags": tags,
-        "authors": authors,
-        "total_articles": stats["total"],
-        "cq": cq,
-        "dupes": dupes,
-        "entity_type_label": entity_type_label,
-    })
+    return templates.TemplateResponse("content.html", _ctx(request,
+        persons=persons,
+        orgs=orgs,
+        locations=locations,
+        tags=tags,
+        authors=authors,
+        total_articles=stats["total"],
+        cq=cq,
+        dupes=dupes,
+        entity_type_label=entity_type_label,
+    ))
 
 
 @app.get("/admin/analytics", response_class=HTMLResponse)
@@ -366,16 +400,622 @@ async def admin_analytics_page(request: Request):
     schema_json = json.dumps(schema, ensure_ascii=False)
     fresh_json = json.dumps(freshness, ensure_ascii=False)
 
-    return templates.TemplateResponse("analytics.html", {
-        "request": request,
-        "gsc": gsc,
-        "gsc_json": gsc_json,
-        "geo": geo,
-        "schema": schema,
-        "schema_json": schema_json,
-        "fresh_json": fresh_json,
-        "cat_label": cat_label,
+    return templates.TemplateResponse("analytics.html", _ctx(request,
+        gsc=gsc,
+        gsc_json=gsc_json,
+        geo=geo,
+        schema=schema,
+        schema_json=schema_json,
+        fresh_json=fresh_json,
+        cat_label=cat_label,
+    ))
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: AUTH ROUTES
+# ══════════════════════════════════════════════
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_page(request: Request):
+    user = auth.get_current_user(request)
+    if user:
+        return RedirectResponse(url="/admin", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "", "username": ""})
+
+
+@app.post("/admin/login", response_class=HTMLResponse)
+async def admin_login_submit(request: Request):
+    form = await request.form()
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+    user = db.get_user_by_username(username)
+    if not user or not auth.check_password(password, user["password_hash"]):
+        return templates.TemplateResponse("login.html", {
+            "request": request, "error": "Неверное имя пользователя или пароль", "username": username,
+        })
+    if not user.get("is_active"):
+        return templates.TemplateResponse("login.html", {
+            "request": request, "error": "Аккаунт деактивирован", "username": username,
+        })
+    # Update last_login
+    db.update_user(user["id"], {"last_login": datetime.now().isoformat(timespec="seconds")})
+    # Log audit
+    ip = request.client.host if request.client else ""
+    db.log_audit(user["id"], user["username"], "login", "user", user["id"], "", ip)
+    # Create session
+    # Load display_name for session
+    response = RedirectResponse(url="/admin", status_code=302)
+    auth.set_session_cookie(response, user["id"], user["username"], user["role"])
+    # Store display_name in a separate non-httponly cookie for UI
+    response.set_cookie("display_name", user["display_name"], max_age=auth.SESSION_MAX_AGE, path="/", samesite="lax")
+    return response
+
+
+@app.get("/admin/logout")
+async def admin_logout(request: Request):
+    user = auth.get_current_user(request)
+    if user:
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "login", "user", user["user_id"], "logout", ip)
+    response = RedirectResponse(url="/admin/login", status_code=302)
+    auth.clear_session_cookie(response)
+    response.delete_cookie("display_name", path="/")
+    return response
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: NEW ADMIN PAGES
+# ══════════════════════════════════════════════
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def admin_users_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin", status_code=302)
+    users = db.get_all_users()
+    return templates.TemplateResponse("users.html", _ctx(request, users=users))
+
+
+@app.get("/admin/categories", response_class=HTMLResponse)
+async def admin_categories_page(request: Request):
+    categories = db.get_all_categories()
+    return templates.TemplateResponse("categories.html", _ctx(request,
+        categories=categories, format_num=_format_num))
+
+
+@app.get("/admin/authors", response_class=HTMLResponse)
+async def admin_authors_page(request: Request):
+    authors = db.get_all_authors_managed()
+    return templates.TemplateResponse("authors_managed.html", _ctx(request,
+        authors=authors, format_num=_format_num))
+
+
+@app.get("/admin/media", response_class=HTMLResponse)
+async def admin_media_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
+    result = db.get_all_media(q=q, page=page)
+    return templates.TemplateResponse("media.html", _ctx(request,
+        result=result, q=q, format_num=_format_num))
+
+
+@app.get("/admin/tags", response_class=HTMLResponse)
+async def admin_tags_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
+    result = db.get_tags_full(q=q, page=page)
+    return templates.TemplateResponse("tags.html", _ctx(request,
+        result=result, q=q, format_num=_format_num))
+
+
+@app.get("/admin/entities", response_class=HTMLResponse)
+async def admin_entities_page(request: Request, q: str = "", entity_type: str = "", page: int = Query(1, ge=1)):
+    result = db.get_entities_full(q=q, entity_type=entity_type, page=page)
+    return templates.TemplateResponse("entities_manage.html", _ctx(request,
+        result=result, q=q, entity_type=entity_type, format_num=_format_num))
+
+
+@app.get("/admin/stories", response_class=HTMLResponse)
+async def admin_stories_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
+    result = db.get_all_stories(q=q, page=page)
+    return templates.TemplateResponse("stories.html", _ctx(request,
+        result=result, q=q, format_num=_format_num))
+
+
+@app.get("/admin/audit", response_class=HTMLResponse)
+async def admin_audit_page(
+    request: Request,
+    user_id: int = 0,
+    action: str = "",
+    entity_type: str = "",
+    date_from: str = "",
+    date_to: str = "",
+    page: int = Query(1, ge=1),
+):
+    result = db.get_audit_log(
+        user_id=user_id, action=action, entity_type=entity_type,
+        date_from=date_from, date_to=date_to, page=page,
+    )
+    users = db.get_all_users()
+    return templates.TemplateResponse("audit.html", _ctx(request,
+        result=result, users=users,
+        filter_user_id=user_id, filter_action=action,
+        filter_entity_type=entity_type,
+        filter_date_from=date_from, filter_date_to=date_to,
+        format_num=_format_num,
+    ))
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: USER API
+# ══════════════════════════════════════════════
+
+@app.post("/api/user")
+async def api_create_user(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    body = await request.json()
+    username = (body.get("username") or "").strip()
+    password = body.get("password", "")
+    if not username or not password:
+        return JSONResponse({"ok": False, "error": "Имя и пароль обязательны"}, status_code=400)
+    if db.get_user_by_username(username):
+        return JSONResponse({"ok": False, "error": "Пользователь уже существует"}, status_code=400)
+    try:
+        new_id = db.create_user({
+            "username": username,
+            "password_hash": auth.hash_password(password),
+            "display_name": body.get("display_name", username),
+            "email": body.get("email", ""),
+            "role": body.get("role", "journalist"),
+        })
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "create", "user", new_id,
+                      f"Создан пользователь @{username}", ip)
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/user/{user_id}")
+async def api_update_user(request: Request, user_id: int):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    body = await request.json()
+    updates = {}
+    for k in ("email", "display_name", "role", "is_active", "avatar_url"):
+        if k in body:
+            updates[k] = body[k]
+    if "password" in body and body["password"]:
+        updates["password_hash"] = auth.hash_password(body["password"])
+    try:
+        db.update_user(user_id, updates)
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "update", "user", user_id, "", ip)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/user/{user_id}")
+async def api_delete_user(request: Request, user_id: int):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    if user["user_id"] == user_id:
+        return JSONResponse({"ok": False, "error": "Нельзя удалить себя"}, status_code=400)
+    try:
+        db.delete_user(user_id)
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "delete", "user", user_id, "", ip)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: CATEGORY API
+# ══════════════════════════════════════════════
+
+@app.post("/api/category")
+async def api_create_category(request: Request):
+    body = await request.json()
+    if not body.get("slug") or not body.get("name_ru"):
+        return JSONResponse({"ok": False, "error": "Slug и название обязательны"}, status_code=400)
+    try:
+        new_id = db.create_category(body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "create", "category", new_id,
+                          body.get("name_ru", ""), request.client.host if request.client else "")
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/category/{cat_id}")
+async def api_update_category(request: Request, cat_id: int):
+    body = await request.json()
+    try:
+        db.update_category(cat_id, body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "update", "category", cat_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/category/{cat_id}")
+async def api_delete_category(request: Request, cat_id: int):
+    try:
+        db.delete_category(cat_id)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "delete", "category", cat_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: AUTHOR API
+# ══════════════════════════════════════════════
+
+@app.post("/api/author")
+async def api_create_author(request: Request):
+    body = await request.json()
+    if not body.get("name") or not body.get("slug"):
+        return JSONResponse({"ok": False, "error": "Имя и slug обязательны"}, status_code=400)
+    try:
+        new_id = db.create_author_managed(body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "create", "author", new_id,
+                          body.get("name", ""), request.client.host if request.client else "")
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/author/{author_id}")
+async def api_update_author(request: Request, author_id: int):
+    body = await request.json()
+    try:
+        db.update_author_managed(author_id, body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "update", "author", author_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/author/{author_id}")
+async def api_delete_author(request: Request, author_id: int):
+    try:
+        db.delete_author_managed(author_id)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "delete", "author", author_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: MEDIA API
+# ══════════════════════════════════════════════
+
+@app.post("/api/media/upload")
+async def api_media_upload(request: Request, file: UploadFile = File(...)):
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        return JSONResponse({"ok": False, "error": "Неподдерживаемый формат файла"}, status_code=400)
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        return JSONResponse({"ok": False, "error": "Файл слишком большой (макс. 10 МБ)"}, status_code=400)
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = MEDIA_DIR / filename
+    filepath.write_bytes(content)
+    mime = file.content_type or f"image/{ext.lstrip('.')}"
+    user = getattr(request.state, "current_user", None)
+    new_id = db.create_media({
+        "filename": filename,
+        "original_name": file.filename or filename,
+        "mime_type": mime,
+        "file_size": len(content),
+        "url": f"/media/{filename}",
+        "uploaded_by": user["user_id"] if user else None,
     })
+    if user:
+        db.log_audit(user["user_id"], user["username"], "create", "media", new_id,
+                      file.filename or "", request.client.host if request.client else "")
+    return {"ok": True, "id": new_id, "url": f"/media/{filename}"}
+
+
+@app.patch("/api/media/{media_id}")
+async def api_update_media(request: Request, media_id: int):
+    body = await request.json()
+    try:
+        db.update_media(media_id, body)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/media/{media_id}")
+async def api_delete_media(request: Request, media_id: int):
+    item = db.delete_media(media_id)
+    if not item:
+        return JSONResponse({"ok": False, "error": "Не найдено"}, status_code=404)
+    # Delete physical file
+    try:
+        (MEDIA_DIR / item["filename"]).unlink(missing_ok=True)
+    except Exception:
+        pass
+    user = getattr(request.state, "current_user", None)
+    if user:
+        db.log_audit(user["user_id"], user["username"], "delete", "media", media_id,
+                      item.get("original_name", ""), request.client.host if request.client else "")
+    return {"ok": True}
+
+
+@app.get("/media/{filename}")
+async def serve_media(filename: str):
+    """Serve uploaded media files."""
+    filepath = MEDIA_DIR / filename
+    if not filepath.exists() or not filepath.is_file():
+        return Response(status_code=404)
+    ext = filepath.suffix.lower()
+    mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+                ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml"}
+    mime = mime_map.get(ext, "application/octet-stream")
+    return Response(content=filepath.read_bytes(), media_type=mime,
+                    headers={"Cache-Control": "public, max-age=2592000"})
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: TAG API
+# ══════════════════════════════════════════════
+
+@app.post("/api/tag")
+async def api_create_tag(request: Request):
+    body = await request.json()
+    tag = (body.get("tag") or "").strip()
+    article_id = body.get("article_id")
+    if not tag:
+        return JSONResponse({"ok": False, "error": "Тег обязателен"}, status_code=400)
+    if article_id:
+        with db.get_db() as conn:
+            conn.execute("INSERT OR IGNORE INTO article_tags (article_id, tag) VALUES (?, ?)", (article_id, tag))
+            conn.commit()
+    return {"ok": True}
+
+
+@app.patch("/api/tag/{old_tag:path}")
+async def api_rename_tag(request: Request, old_tag: str):
+    body = await request.json()
+    new_tag = (body.get("new_tag") or "").strip()
+    if not new_tag:
+        return JSONResponse({"ok": False, "error": "Новый тег обязателен"}, status_code=400)
+    count = db.rename_tag(old_tag, new_tag)
+    user = getattr(request.state, "current_user", None)
+    if user:
+        db.log_audit(user["user_id"], user["username"], "update", "tag", 0,
+                      f"{old_tag} → {new_tag}", request.client.host if request.client else "")
+    return {"ok": True, "updated": count}
+
+
+@app.delete("/api/tag/{tag:path}")
+async def api_delete_tag(request: Request, tag: str):
+    count = db.delete_tag(tag)
+    user = getattr(request.state, "current_user", None)
+    if user:
+        db.log_audit(user["user_id"], user["username"], "delete", "tag", 0,
+                      tag, request.client.host if request.client else "")
+    return {"ok": True, "deleted": count}
+
+
+@app.post("/api/tags/merge")
+async def api_merge_tags(request: Request):
+    body = await request.json()
+    tags = body.get("tags", [])
+    target = (body.get("target") or "").strip()
+    if len(tags) < 2 or not target:
+        return JSONResponse({"ok": False, "error": "Нужно минимум 2 тега и целевой тег"}, status_code=400)
+    count = db.merge_tags(tags, target)
+    user = getattr(request.state, "current_user", None)
+    if user:
+        db.log_audit(user["user_id"], user["username"], "update", "tag", 0,
+                      f"Объединено {len(tags)} тегов → {target}", request.client.host if request.client else "")
+    return {"ok": True, "merged": count}
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: ENTITY API
+# ══════════════════════════════════════════════
+
+@app.post("/api/entity")
+async def api_create_entity(request: Request):
+    body = await request.json()
+    name = (body.get("name") or "").strip()
+    entity_type = body.get("entity_type", "person")
+    if not name:
+        return JSONResponse({"ok": False, "error": "Имя обязательно"}, status_code=400)
+    try:
+        new_id = db.create_entity({
+            "name": name,
+            "short_name": body.get("short_name", ""),
+            "entity_type": entity_type,
+        })
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "create", "entity", new_id,
+                          name, request.client.host if request.client else "")
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/entity/{entity_id}")
+async def api_update_entity(request: Request, entity_id: int):
+    body = await request.json()
+    try:
+        db.update_entity(entity_id, body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "update", "entity", entity_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/entity/{entity_id}")
+async def api_delete_entity(request: Request, entity_id: int):
+    try:
+        db.delete_entity(entity_id)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "delete", "entity", entity_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/entities/merge")
+async def api_merge_entities(request: Request):
+    body = await request.json()
+    entity_ids = body.get("entity_ids", [])
+    target_id = body.get("target_id")
+    if len(entity_ids) < 2 or not target_id:
+        return JSONResponse({"ok": False, "error": "Нужно минимум 2 сущности и целевой ID"}, status_code=400)
+    count = db.merge_entities(entity_ids, target_id)
+    user = getattr(request.state, "current_user", None)
+    if user:
+        db.log_audit(user["user_id"], user["username"], "update", "entity", target_id,
+                      f"Объединено {len(entity_ids)} сущностей", request.client.host if request.client else "")
+    return {"ok": True, "merged": count}
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: STORY API
+# ══════════════════════════════════════════════
+
+@app.get("/api/story/{story_id}")
+async def api_get_story(story_id: int):
+    story = db.get_story(story_id)
+    if not story:
+        return JSONResponse({"ok": False, "error": "Не найдено"}, status_code=404)
+    return {"ok": True, "story": story}
+
+
+@app.post("/api/story")
+async def api_create_story(request: Request):
+    body = await request.json()
+    title = (body.get("title_ru") or "").strip()
+    if not title:
+        return JSONResponse({"ok": False, "error": "Название обязательно"}, status_code=400)
+    try:
+        new_id = db.create_story(body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "create", "story", new_id,
+                          title, request.client.host if request.client else "")
+        return {"ok": True, "id": new_id}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/story/{story_id}")
+async def api_update_story(request: Request, story_id: int):
+    body = await request.json()
+    try:
+        db.update_story(story_id, body)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "update", "story", story_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/story/{story_id}")
+async def api_delete_story(request: Request, story_id: int):
+    try:
+        db.delete_story(story_id)
+        user = getattr(request.state, "current_user", None)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "delete", "story", story_id,
+                          "", request.client.host if request.client else "")
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/story/{story_id}/articles")
+async def api_add_to_story(request: Request, story_id: int):
+    body = await request.json()
+    article_id = body.get("article_id")
+    if not article_id:
+        return JSONResponse({"ok": False, "error": "article_id обязателен"}, status_code=400)
+    try:
+        db.add_article_to_story(story_id, article_id)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/story/{story_id}/articles/{article_id}")
+async def api_remove_from_story(request: Request, story_id: int, article_id: int):
+    try:
+        db.remove_article_from_story(story_id, article_id)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+# ══════════════════════════════════════════════
+#  CMS v11: BULK ARTICLE ACTIONS
+# ══════════════════════════════════════════════
+
+@app.post("/api/articles/bulk")
+async def api_articles_bulk(request: Request):
+    body = await request.json()
+    article_ids = body.get("article_ids", [])
+    action = body.get("action", "")
+    if not article_ids:
+        return JSONResponse({"ok": False, "error": "Нет выбранных статей"}, status_code=400)
+    user = getattr(request.state, "current_user", None)
+    ip = request.client.host if request.client else ""
+    if action == "status":
+        status = body.get("status", "")
+        if status not in ("published", "draft", "archived"):
+            return JSONResponse({"ok": False, "error": "Неверный статус"}, status_code=400)
+        updated = db.bulk_update_articles(article_ids, {"status": status})
+        if user:
+            db.log_audit(user["user_id"], user["username"], "bulk", "article", 0,
+                          f"Статус → {status} для {len(article_ids)} статей", ip)
+        return {"ok": True, "updated": updated}
+    elif action == "category":
+        cat = body.get("category", "")
+        updated = db.bulk_update_articles(article_ids, {"sub_category": cat})
+        if user:
+            db.log_audit(user["user_id"], user["username"], "bulk", "article", 0,
+                          f"Категория → {cat} для {len(article_ids)} статей", ip)
+        return {"ok": True, "updated": updated}
+    elif action == "delete":
+        updated = db.bulk_delete_articles(article_ids)
+        if user:
+            db.log_audit(user["user_id"], user["username"], "bulk", "article", 0,
+                          f"Архивировано {len(article_ids)} статей", ip)
+        return {"ok": True, "updated": updated}
+    return JSONResponse({"ok": False, "error": "Неизвестное действие"}, status_code=400)
 
 
 # ══════════════════════════════════════════════

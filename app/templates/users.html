@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% set active = "users" %}
+
+{% block title %}Пользователи – Total.kz{% endblock %}
+{% block page_title %}Пользователи{% endblock %}
+
+{% block actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('createUserModal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Добавить
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Статус</th>
+                    <th>Создан</th>
+                    <th>Последний вход</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div class="avatar-sm">{{ user.username[0]|upper }}</div>
+                            <div>
+                                <div style="font-weight:500">{{ user.display_name }}</div>
+                                <div style="font-size:12px;color:var(--text-muted)">@{{ user.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user.email or '—' }}</td>
+                    <td><span class="role-badge role-{{ user.role }}">{{ user.role }}</span></td>
+                    <td>
+                        {% if user.is_active %}
+                        <span class="status-badge status-published">Активен</span>
+                        {% else %}
+                        <span class="status-badge status-archived">Заблокирован</span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap">{{ user.created_at[:10] if user.created_at else '—' }}</td>
+                    <td style="white-space:nowrap">{{ user.last_login[:16] if user.last_login else '—' }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn-icon" title="Редактировать" onclick="editUser({{ user.id }}, '{{ user.username }}', '{{ user.email or '' }}', '{{ user.display_name }}', '{{ user.role }}', {{ user.is_active }})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            {% if user.id != current_user.user_id %}
+                            <button class="btn-icon btn-icon-danger" title="Удалить" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="createUserModal" onclick="if(event.target===this)closeModal('createUserModal')">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Новый пользователь</h3>
+            <button class="btn-icon" onclick="closeModal('createUserModal')">&times;</button>
+        </div>
+        <form onsubmit="return createUser(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя пользователя</label><input type="text" id="newUsername" required></div>
+                <div class="form-group"><label>Отображаемое имя</label><input type="text" id="newDisplayName" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="newEmail"></div>
+                <div class="form-group"><label>Пароль</label><input type="password" id="newPassword" required minlength="4"></div>
+                <div class="form-group">
+                    <label>Роль</label>
+                    <select id="newRole" class="filter-select">
+                        <option value="journalist">Журналист</option>
+                        <option value="editor">Редактор</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('createUserModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editUserModal" onclick="if(event.target===this)closeModal('editUserModal')">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Редактировать пользователя</h3>
+            <button class="btn-icon" onclick="closeModal('editUserModal')">&times;</button>
+        </div>
+        <form onsubmit="return saveUser(event)">
+            <input type="hidden" id="editUserId">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя пользователя</label><input type="text" id="editUsername" disabled style="opacity:0.6"></div>
+                <div class="form-group"><label>Отображаемое имя</label><input type="text" id="editDisplayName" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="editEmail"></div>
+                <div class="form-group"><label>Новый пароль (оставьте пустым, чтобы не менять)</label><input type="password" id="editPassword"></div>
+                <div class="form-group">
+                    <label>Роль</label>
+                    <select id="editRole" class="filter-select">
+                        <option value="journalist">Журналист</option>
+                        <option value="editor">Редактор</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="editIsActive"> Активен</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editUserModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function createUser(e){
+    e.preventDefault();
+    fetch('/api/user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        username:document.getElementById('newUsername').value,
+        display_name:document.getElementById('newDisplayName').value,
+        email:document.getElementById('newEmail').value,
+        password:document.getElementById('newPassword').value,
+        role:document.getElementById('newRole').value
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Пользователь создан');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function editUser(id,username,email,displayName,role,isActive){
+    document.getElementById('editUserId').value=id;
+    document.getElementById('editUsername').value=username;
+    document.getElementById('editDisplayName').value=displayName;
+    document.getElementById('editEmail').value=email;
+    document.getElementById('editPassword').value='';
+    document.getElementById('editRole').value=role;
+    document.getElementById('editIsActive').checked=!!isActive;
+    openModal('editUserModal');
+}
+
+function saveUser(e){
+    e.preventDefault();
+    var id=document.getElementById('editUserId').value;
+    var body={
+        display_name:document.getElementById('editDisplayName').value,
+        email:document.getElementById('editEmail').value,
+        role:document.getElementById('editRole').value,
+        is_active:document.getElementById('editIsActive').checked?1:0
+    };
+    var pw=document.getElementById('editPassword').value;
+    if(pw)body.password=pw;
+    fetch('/api/user/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function deleteUser(id,username){
+    if(!confirm('Удалить пользователя @'+username+'?'))return;
+    fetch('/api/user/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Пользователь удалён');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+}
+</script>
+{% endblock %}

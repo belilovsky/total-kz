@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% set active = "audit" %}
+
+{% block title %}Журнал – Total.kz{% endblock %}
+{% block page_title %}Журнал действий{% endblock %}
+
+{% block content %}
+<div class="filters-bar" style="margin-bottom:16px">
+    <form method="get" action="/admin/audit" class="filters-form">
+        <div class="filter-group">
+            <label class="filter-label">Пользователь</label>
+            <select name="user_id" class="filter-select">
+                <option value="">Все</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if filter_user_id == u.id %}selected{% endif %}>{{ u.display_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Действие</label>
+            <select name="action" class="filter-select">
+                <option value="">Все</option>
+                <option value="login" {% if filter_action == 'login' %}selected{% endif %}>Вход</option>
+                <option value="create" {% if filter_action == 'create' %}selected{% endif %}>Создание</option>
+                <option value="update" {% if filter_action == 'update' %}selected{% endif %}>Изменение</option>
+                <option value="delete" {% if filter_action == 'delete' %}selected{% endif %}>Удаление</option>
+                <option value="publish" {% if filter_action == 'publish' %}selected{% endif %}>Публикация</option>
+                <option value="bulk" {% if filter_action == 'bulk' %}selected{% endif %}>Массовое</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Тип объекта</label>
+            <select name="entity_type" class="filter-select">
+                <option value="">Все</option>
+                <option value="article" {% if filter_entity_type == 'article' %}selected{% endif %}>Статья</option>
+                <option value="category" {% if filter_entity_type == 'category' %}selected{% endif %}>Категория</option>
+                <option value="user" {% if filter_entity_type == 'user' %}selected{% endif %}>Пользователь</option>
+                <option value="tag" {% if filter_entity_type == 'tag' %}selected{% endif %}>Тег</option>
+                <option value="entity" {% if filter_entity_type == 'entity' %}selected{% endif %}>Сущность</option>
+                <option value="media" {% if filter_entity_type == 'media' %}selected{% endif %}>Медиа</option>
+                <option value="story" {% if filter_entity_type == 'story' %}selected{% endif %}>Сюжет</option>
+                <option value="author" {% if filter_entity_type == 'author' %}selected{% endif %}>Автор</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Дата от</label>
+            <input type="date" name="date_from" value="{{ filter_date_from }}" class="filter-input">
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Дата до</label>
+            <input type="date" name="date_to" value="{{ filter_date_to }}" class="filter-input">
+        </div>
+        <div class="btn-actions">
+            <button type="submit" class="btn btn-primary">Фильтр</button>
+            <a href="/admin/audit" class="btn btn-ghost">Сброс</a>
+        </div>
+    </form>
+</div>
+
+<div class="results-info">
+    Записей: <strong>{{ format_num(result.total) }}</strong>
+    {% if result.pages > 1 %}&middot; Страница {{ result.page }} из {{ result.pages }}{% endif %}
+</div>
+
+<div class="card">
+    <div class="audit-log">
+        {% for entry in result.items %}
+        <div class="audit-entry">
+            <div class="audit-icon audit-icon-{{ entry.action }}">
+                {% if entry.action == 'login' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                {% elif entry.action == 'create' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {% elif entry.action == 'update' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                {% elif entry.action == 'delete' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {% endif %}
+            </div>
+            <div class="audit-body">
+                <div class="audit-text">
+                    <strong>{{ entry.username or 'Система' }}</strong>
+                    {% if entry.action == 'login' %}вошёл в систему
+                    {% elif entry.action == 'create' %}создал {{ entry.entity_type }}
+                    {% elif entry.action == 'update' %}изменил {{ entry.entity_type }}
+                    {% elif entry.action == 'delete' %}удалил {{ entry.entity_type }}
+                    {% elif entry.action == 'publish' %}опубликовал {{ entry.entity_type }}
+                    {% elif entry.action == 'bulk' %}массовое действие: {{ entry.entity_type }}
+                    {% else %}{{ entry.action }} {{ entry.entity_type }}
+                    {% endif %}
+                    {% if entry.entity_id %}<span style="color:var(--text-muted)">#{{ entry.entity_id }}</span>{% endif %}
+                </div>
+                {% if entry.details %}<div class="audit-details">{{ entry.details[:200] }}</div>{% endif %}
+                <div class="audit-meta">
+                    {{ entry.created_at[:16] if entry.created_at else '' }}
+                    {% if entry.ip_address %}&middot; {{ entry.ip_address }}{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if result.items|length == 0 %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <h3>Журнал пуст</h3>
+    <p>Действия будут фиксироваться автоматически.</p>
+</div>
+{% endif %}
+
+{% if result.pages > 1 %}
+<div class="pagination">
+    {% set base = "/admin/audit?user_id=" + (filter_user_id|string if filter_user_id else '') + "&action=" + filter_action + "&entity_type=" + filter_entity_type + "&date_from=" + filter_date_from + "&date_to=" + filter_date_to %}
+    {% if result.page > 1 %}<a href="{{ base }}&page={{ result.page - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
+    {% for p in range(1, result.pages + 1) %}
+    <a href="{{ base }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if result.page < result.pages %}<a href="{{ base }}&page={{ result.page + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% set active = "content" %}
+
+{% block title %}Теги – Total.kz{% endblock %}
+{% block page_title %}Теги{% endblock %}
+
+{% block actions %}
+<a href="/admin/entities" class="btn btn-ghost btn-sm">Сущности</a>
+<a href="/admin/content" class="btn btn-ghost btn-sm">Контент</a>
+{% endblock %}
+
+{% block content %}
+<div class="filters-bar" style="margin-bottom:16px">
+    <form method="get" action="/admin/tags" class="filters-form">
+        <div class="filter-group grow">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Поиск тегов...">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Найти</button>
+    </form>
+</div>
+
+<div class="results-info">
+    Тегов: <strong>{{ format_num(result.total) }}</strong>
+    {% if result.pages > 1 %}&middot; Страница {{ result.page }} из {{ result.pages }}{% endif %}
+</div>
+
+<!-- Bulk action bar -->
+<div class="bulk-bar" id="bulkBar" style="display:none">
+    <span id="bulkCount">Выбрано: 0</span>
+    <button class="btn btn-sm btn-ghost" onclick="mergeSelected()">Объединить</button>
+    <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="deleteSelected()">Удалить</button>
+    <button class="btn btn-sm btn-ghost" onclick="clearSelection()">Отмена</button>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                    <th>Тег</th>
+                    <th>Статей</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tag in result.items %}
+                <tr>
+                    <td><input type="checkbox" class="tag-checkbox" value="{{ tag.tag }}" onchange="updateBulkBar()"></td>
+                    <td>
+                        <span class="editable-text" data-tag="{{ tag.tag }}" onclick="startTagEdit(this)">{{ tag.tag }}</span>
+                    </td>
+                    <td>
+                        <a href="/admin/articles?tag={{ tag.tag|urlencode }}" class="link-subtle">{{ format_num(tag.article_count) }}</a>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn-icon btn-icon-danger" onclick="deleteTag('{{ tag.tag|e }}')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if result.pages > 1 %}
+<div class="pagination">
+    {% if result.page > 1 %}<a href="/admin/tags?q={{ q }}&page={{ result.page - 1 }}" class="page-link">&larr;</a>{% endif %}
+    {% for p in range(1, result.pages + 1) %}
+    <a href="/admin/tags?q={{ q }}&page={{ p }}" class="page-link {% if p == result.page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if result.page < result.pages %}<a href="/admin/tags?q={{ q }}&page={{ result.page + 1 }}" class="page-link">&rarr;</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+function getSelected(){
+    return Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(c=>c.value);
+}
+
+function updateBulkBar(){
+    var sel=getSelected();
+    var bar=document.getElementById('bulkBar');
+    bar.style.display=sel.length?'':'none';
+    document.getElementById('bulkCount').textContent='Выбрано: '+sel.length;
+}
+
+function toggleSelectAll(el){
+    document.querySelectorAll('.tag-checkbox').forEach(c=>{c.checked=el.checked});
+    updateBulkBar();
+}
+
+function clearSelection(){
+    document.querySelectorAll('.tag-checkbox').forEach(c=>{c.checked=false});
+    document.getElementById('selectAll').checked=false;
+    updateBulkBar();
+}
+
+function startTagEdit(el){
+    var oldTag=el.textContent.trim();
+    var inp=document.createElement('input');
+    inp.type='text';inp.value=oldTag;inp.className='inline-edit-input';
+    inp.onblur=function(){
+        var newTag=inp.value.trim();
+        if(newTag&&newTag!==oldTag){
+            fetch('/api/tag/'+encodeURIComponent(oldTag),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({new_tag:newTag})})
+            .then(r=>r.json()).then(res=>{if(res.ok){el.textContent=newTag;el.dataset.tag=newTag;showToast('Тег переименован')}else{el.textContent=oldTag;showToast('Ошибка')}});
+        }else el.textContent=oldTag;
+        el.style.display='';
+    };
+    inp.onkeydown=function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=oldTag;inp.blur()}};
+    el.style.display='none';
+    el.parentNode.insertBefore(inp,el.nextSibling);
+    inp.focus();inp.select();
+}
+
+function deleteTag(tag){
+    if(!confirm('Удалить тег «'+tag+'»? Связи с статьями будут удалены.'))return;
+    fetch('/api/tag/'+encodeURIComponent(tag),{method:'DELETE'}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка')
+    }).catch(()=>showToast('Ошибка сети'));
+}
+
+function mergeSelected(){
+    var sel=getSelected();
+    if(sel.length<2){showToast('Выберите минимум 2 тега');return}
+    var target=prompt('Объединить выбранные теги в (введите целевой тег):',sel[0]);
+    if(!target)return;
+    fetch('/api/tags/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tags:sel,target:target})})
+    .then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Теги объединены');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка')
+    }).catch(()=>showToast('Ошибка сети'));
+}
+
+function deleteSelected(){
+    var sel=getSelected();
+    if(!sel.length)return;
+    if(!confirm('Удалить '+sel.length+' тегов?'))return;
+    Promise.all(sel.map(tag=>fetch('/api/tag/'+encodeURIComponent(tag),{method:'DELETE'}).then(r=>r.json())))
+    .then(()=>{showToast('Удалено');setTimeout(()=>location.reload(),600)})
+    .catch(()=>showToast('Ошибка сети'));
+}
+</script>
+{% endblock %}

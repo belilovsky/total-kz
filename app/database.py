@@ -166,6 +166,132 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_revisions_article ON article_revisions(article_id, changed_at DESC);
         """)
 
+        # ── v11: CMS Admin tables ──────────────────────
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE,
+                password_hash TEXT NOT NULL,
+                display_name TEXT NOT NULL,
+                avatar_url TEXT DEFAULT '',
+                role TEXT NOT NULL DEFAULT 'journalist',
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT (datetime('now')),
+                last_login TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT UNIQUE NOT NULL,
+                name_ru TEXT NOT NULL,
+                name_kz TEXT DEFAULT '',
+                parent_id INTEGER REFERENCES categories(id),
+                sort_order INTEGER DEFAULT 0,
+                is_active INTEGER DEFAULT 1,
+                article_count INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+
+            CREATE TABLE IF NOT EXISTS authors_managed (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                bio TEXT DEFAULT '',
+                avatar_url TEXT DEFAULT '',
+                email TEXT DEFAULT '',
+                is_active INTEGER DEFAULT 1,
+                article_count INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_authors_managed_slug ON authors_managed(slug);
+
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER REFERENCES users(id),
+                username TEXT,
+                action TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id INTEGER,
+                details TEXT,
+                ip_address TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
+        """)
+
+        # v11: add new columns to media table
+        media_cols = [r[1] for r in conn.execute("PRAGMA table_info(media)").fetchall()]
+        if "width" not in media_cols:
+            conn.execute("ALTER TABLE media ADD COLUMN width INTEGER")
+        if "height" not in media_cols:
+            conn.execute("ALTER TABLE media ADD COLUMN height INTEGER")
+        if "alt_text" not in media_cols:
+            conn.execute("ALTER TABLE media ADD COLUMN alt_text TEXT DEFAULT ''")
+        if "credit" not in media_cols:
+            conn.execute("ALTER TABLE media ADD COLUMN credit TEXT DEFAULT ''")
+
+        # Seed admin user if users table is empty
+        from . import auth as _auth
+        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        if user_count == 0:
+            conn.execute("""
+                INSERT INTO users (username, email, password_hash, display_name, role, is_active)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, ("admin", "admin@total.kz", _auth.hash_password("admin"),
+                  "Администратор", "admin", 1))
+
+        # Auto-populate categories from articles.sub_category
+        cat_count = conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0]
+        if cat_count == 0:
+            _cat_labels = {
+                "vnutrennyaya_politika": "Внутренняя политика",
+                "vneshnyaya_politika": "Внешняя политика",
+                "politika": "Политика", "mir": "Мир",
+                "bezopasnost": "Безопасность", "mneniya": "Мнения",
+                "ekonomika_sobitiya": "Экономика (События)",
+                "ekonomika": "Экономика", "biznes": "Бизнес",
+                "finansi": "Финансы", "gossektor": "Госсектор",
+                "tehno": "Технологии", "obshchestvo": "Общество",
+                "obshchestvo_sobitiya": "Общество (События)",
+                "proisshestviya": "Происшествия", "zhizn": "Жизнь",
+                "kultura": "Культура", "religiya": "Религия",
+                "den_v_istorii": "День в истории", "sport": "Спорт",
+                "nauka": "Наука", "stil_zhizni": "Стиль жизни",
+                "redaktsiya_tandau": "Выбор редакции", "drugoe": "Другое",
+            }
+            cats = conn.execute("""
+                SELECT sub_category, COUNT(*) as cnt
+                FROM articles WHERE sub_category IS NOT NULL AND sub_category != ''
+                GROUP BY sub_category ORDER BY cnt DESC
+            """).fetchall()
+            for i, row in enumerate(cats):
+                slug = row[0]
+                name = _cat_labels.get(slug, slug)
+                conn.execute("""
+                    INSERT OR IGNORE INTO categories (slug, name_ru, sort_order, article_count)
+                    VALUES (?, ?, ?, ?)
+                """, (slug, name, i, row[1]))
+
+        # Auto-populate authors_managed from articles.author
+        author_count = conn.execute("SELECT COUNT(*) FROM authors_managed").fetchone()[0]
+        if author_count == 0:
+            authors_raw = conn.execute("""
+                SELECT author, COUNT(*) as cnt
+                FROM articles WHERE author IS NOT NULL AND author != ''
+                GROUP BY author ORDER BY cnt DESC
+            """).fetchall()
+            for row in authors_raw:
+                name = row[0]
+                # Simple slug from name
+                slug = name.lower().replace(" ", "-").replace(".", "")[:120]
+                conn.execute("""
+                    INSERT OR IGNORE INTO authors_managed (name, slug, article_count)
+                    VALUES (?, ?, ?)
+                """, (name, slug, row[1]))
+
 
 def blocks_to_html(blocks_json: str) -> str:
     """Convert Editor.js JSON blocks to HTML string."""
@@ -994,3 +1120,547 @@ def generate_sitemap_urls(limit: int = 50000) -> list:
             LIMIT ?
         """, (limit,)).fetchall()
         return [dict(r) for r in rows]
+
+
+# ══════════════════════════════════════════════
+# CMS v11 – Users, Categories, Authors, Media,
+#            Audit, Stories, Tags, Entities
+# ══════════════════════════════════════════════
+
+# ── Users ────────────────────────────────────
+
+def get_user_by_username(username: str) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        return dict(row) if row else None
+
+
+def get_user(user_id: int) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def get_all_users() -> list:
+    with get_db() as conn:
+        rows = conn.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
+        return [dict(r) for r in rows]
+
+
+def create_user(data: dict) -> int:
+    with get_db() as conn:
+        row = conn.execute("""
+            INSERT INTO users (username, email, password_hash, display_name, role, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (data["username"], data.get("email", ""), data["password_hash"],
+              data["display_name"], data.get("role", "journalist"), data.get("is_active", 1)))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_user(user_id: int, updates: dict) -> None:
+    allowed = {"email", "display_name", "role", "is_active", "avatar_url", "password_hash", "last_login"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [user_id]
+        conn.execute(f"UPDATE users SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_user(user_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+
+
+# ── Categories ───────────────────────────────
+
+def get_all_categories() -> list:
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT c.*, (SELECT COUNT(*) FROM articles WHERE sub_category = c.slug) as live_count
+            FROM categories c ORDER BY c.sort_order, c.name_ru
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_category(cat_id: int) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM categories WHERE id = ?", (cat_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def create_category(data: dict) -> int:
+    with get_db() as conn:
+        row = conn.execute("""
+            INSERT INTO categories (slug, name_ru, name_kz, parent_id, sort_order, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (data["slug"], data["name_ru"], data.get("name_kz", ""),
+              data.get("parent_id"), data.get("sort_order", 0), data.get("is_active", 1)))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_category(cat_id: int, updates: dict) -> None:
+    allowed = {"name_ru", "name_kz", "slug", "parent_id", "sort_order", "is_active"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [cat_id]
+        conn.execute(f"UPDATE categories SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_category(cat_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM categories WHERE id = ?", (cat_id,))
+        conn.commit()
+
+
+# ── Authors Managed ──────────────────────────
+
+def get_all_authors_managed() -> list:
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT am.*, (SELECT COUNT(*) FROM articles WHERE author = am.name) as live_count,
+                   (SELECT MAX(pub_date) FROM articles WHERE author = am.name) as last_published
+            FROM authors_managed am ORDER BY am.article_count DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_author_managed(author_id: int) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM authors_managed WHERE id = ?", (author_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def create_author_managed(data: dict) -> int:
+    with get_db() as conn:
+        row = conn.execute("""
+            INSERT INTO authors_managed (name, slug, bio, avatar_url, email, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (data["name"], data["slug"], data.get("bio", ""),
+              data.get("avatar_url", ""), data.get("email", ""), data.get("is_active", 1)))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_author_managed(author_id: int, updates: dict) -> None:
+    allowed = {"name", "slug", "bio", "avatar_url", "email", "is_active"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [author_id]
+        conn.execute(f"UPDATE authors_managed SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_author_managed(author_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM authors_managed WHERE id = ?", (author_id,))
+        conn.commit()
+
+
+# ── Media Library ────────────────────────────
+
+def get_all_media(q: str = "", page: int = 1, per_page: int = 30) -> dict:
+    with get_db() as conn:
+        conditions = []
+        params = []
+        if q:
+            conditions.append("(m.original_name LIKE ? OR m.alt_text LIKE ?)")
+            params.extend([f"%{q}%", f"%{q}%"])
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        total = conn.execute(f"SELECT COUNT(*) FROM media m {where}", params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(f"""
+            SELECT * FROM media m {where} ORDER BY m.uploaded_at DESC LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
+def create_media(data: dict) -> int:
+    with get_db() as conn:
+        row = conn.execute("""
+            INSERT INTO media (filename, original_name, mime_type, file_size, url,
+                               width, height, alt_text, credit, uploaded_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (data["filename"], data["original_name"], data["mime_type"],
+              data["file_size"], data["url"], data.get("width"), data.get("height"),
+              data.get("alt_text", ""), data.get("credit", ""), data.get("uploaded_by")))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_media(media_id: int, updates: dict) -> None:
+    allowed = {"alt_text", "credit", "original_name"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [media_id]
+        conn.execute(f"UPDATE media SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_media(media_id: int) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM media WHERE id = ?", (media_id,)).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        conn.execute("DELETE FROM media WHERE id = ?", (media_id,))
+        conn.commit()
+        return d
+
+
+# ── Tags CRUD ────────────────────────────────
+
+def get_tags_full(q: str = "", page: int = 1, per_page: int = 50) -> dict:
+    with get_db() as conn:
+        conditions = []
+        params = []
+        if q:
+            conditions.append("at.tag LIKE ?")
+            params.append(f"%{q}%")
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        total = conn.execute(f"""
+            SELECT COUNT(DISTINCT at.tag) FROM article_tags at {where}
+        """, params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(f"""
+            SELECT at.tag, COUNT(*) as article_count
+            FROM article_tags at {where}
+            GROUP BY at.tag ORDER BY article_count DESC
+            LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
+def rename_tag(old_tag: str, new_tag: str) -> int:
+    with get_db() as conn:
+        cur = conn.execute("UPDATE article_tags SET tag = ? WHERE tag = ?", (new_tag, old_tag))
+        conn.execute("UPDATE articles SET tags = REPLACE(tags, ?, ?) WHERE tags LIKE ?",
+                      (f'"{old_tag}"', f'"{new_tag}"', f'%{old_tag}%'))
+        conn.commit()
+        return cur.rowcount
+
+
+def merge_tags(tags: list, target_tag: str) -> int:
+    """Merge multiple tags into one target tag."""
+    total = 0
+    with get_db() as conn:
+        for tag in tags:
+            if tag == target_tag:
+                continue
+            # Get articles with the source tag
+            rows = conn.execute("SELECT article_id FROM article_tags WHERE tag = ?", (tag,)).fetchall()
+            for row in rows:
+                # Try inserting target tag, ignore if already exists
+                try:
+                    conn.execute("INSERT OR IGNORE INTO article_tags (article_id, tag) VALUES (?, ?)",
+                                 (row[0], target_tag))
+                except Exception:
+                    pass
+            # Delete old tag
+            cur = conn.execute("DELETE FROM article_tags WHERE tag = ?", (tag,))
+            total += cur.rowcount
+            # Update JSON tags field
+            conn.execute("UPDATE articles SET tags = REPLACE(tags, ?, ?) WHERE tags LIKE ?",
+                          (f'"{tag}"', f'"{target_tag}"', f'%{tag}%'))
+        conn.commit()
+    return total
+
+
+def delete_tag(tag: str) -> int:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM article_tags WHERE tag = ?", (tag,))
+        conn.commit()
+        return cur.rowcount
+
+
+# ── Entities CRUD ────────────────────────────
+
+def get_entities_full(q: str = "", entity_type: str = "", page: int = 1, per_page: int = 50) -> dict:
+    with get_db() as conn:
+        conditions = []
+        params = []
+        if q:
+            conditions.append("e.name LIKE ?")
+            params.append(f"%{q}%")
+        if entity_type:
+            conditions.append("e.entity_type = ?")
+            params.append(entity_type)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        total = conn.execute(f"SELECT COUNT(*) FROM entities e {where}", params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(f"""
+            SELECT e.*, COUNT(ae.article_id) as article_count
+            FROM entities e
+            LEFT JOIN article_entities ae ON ae.entity_id = e.id
+            {where}
+            GROUP BY e.id
+            ORDER BY article_count DESC
+            LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
+def create_entity(data: dict) -> int:
+    with get_db() as conn:
+        name = data["name"]
+        normalized = data.get("normalized", name.lower().strip())
+        row = conn.execute("""
+            INSERT INTO entities (name, short_name, entity_type, normalized)
+            VALUES (?, ?, ?, ?)
+        """, (name, data.get("short_name", ""), data["entity_type"], normalized))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_entity(entity_id: int, updates: dict) -> None:
+    allowed = {"name", "short_name", "entity_type", "normalized"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [entity_id]
+        conn.execute(f"UPDATE entities SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_entity(entity_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM article_entities WHERE entity_id = ?", (entity_id,))
+        conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
+        conn.commit()
+
+
+def merge_entities(entity_ids: list, target_id: int) -> int:
+    total = 0
+    with get_db() as conn:
+        for eid in entity_ids:
+            if eid == target_id:
+                continue
+            rows = conn.execute("SELECT article_id, mention_count FROM article_entities WHERE entity_id = ?",
+                                 (eid,)).fetchall()
+            for row in rows:
+                existing = conn.execute(
+                    "SELECT mention_count FROM article_entities WHERE article_id = ? AND entity_id = ?",
+                    (row[0], target_id)).fetchone()
+                if existing:
+                    conn.execute("""
+                        UPDATE article_entities SET mention_count = mention_count + ?
+                        WHERE article_id = ? AND entity_id = ?
+                    """, (row[1], row[0], target_id))
+                else:
+                    conn.execute("""
+                        INSERT INTO article_entities (article_id, entity_id, mention_count)
+                        VALUES (?, ?, ?)
+                    """, (row[0], target_id, row[1]))
+            conn.execute("DELETE FROM article_entities WHERE entity_id = ?", (eid,))
+            conn.execute("DELETE FROM entities WHERE id = ?", (eid,))
+            total += 1
+        conn.commit()
+    return total
+
+
+# ── Stories ──────────────────────────────────
+
+def get_all_stories(q: str = "", page: int = 1, per_page: int = 30) -> dict:
+    with get_db() as conn:
+        try:
+            conn.execute("SELECT 1 FROM stories LIMIT 1")
+        except Exception:
+            return {"items": [], "total": 0, "page": 1, "pages": 1}
+        conditions = []
+        params = []
+        if q:
+            conditions.append("s.title_ru LIKE ?")
+            params.append(f"%{q}%")
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        total = conn.execute(f"SELECT COUNT(*) FROM stories s {where}", params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(f"""
+            SELECT s.* FROM stories s {where}
+            ORDER BY s.id DESC LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
+def get_story(story_id: int) -> dict | None:
+    with get_db() as conn:
+        try:
+            row = conn.execute("SELECT * FROM stories WHERE id = ?", (story_id,)).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            articles = conn.execute("""
+                SELECT a.id, a.title, a.pub_date, a.sub_category, a.thumbnail, a.main_image,
+                       a.author, a.excerpt, ars.confidence
+                FROM article_stories ars
+                JOIN articles a ON a.id = ars.article_id
+                WHERE ars.story_id = ?
+                ORDER BY a.pub_date ASC
+            """, (story_id,)).fetchall()
+            d["articles"] = [dict(a) for a in articles]
+            return d
+        except Exception:
+            return None
+
+
+def create_story(data: dict) -> int:
+    with get_db() as conn:
+        row = conn.execute("""
+            INSERT INTO stories (title_ru, description, article_count)
+            VALUES (?, ?, 0)
+        """, (data["title_ru"], data.get("description", "")))
+        conn.commit()
+        return row.lastrowid
+
+
+def update_story(story_id: int, updates: dict) -> None:
+    allowed = {"title_ru", "description"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [story_id]
+        conn.execute(f"UPDATE stories SET {cols} WHERE id = ?", vals)
+        conn.commit()
+
+
+def delete_story(story_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM article_stories WHERE story_id = ?", (story_id,))
+        conn.execute("DELETE FROM stories WHERE id = ?", (story_id,))
+        conn.commit()
+
+
+def add_article_to_story(story_id: int, article_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("""
+            INSERT OR IGNORE INTO article_stories (story_id, article_id, confidence)
+            VALUES (?, ?, 1.0)
+        """, (story_id, article_id))
+        conn.execute("UPDATE stories SET article_count = (SELECT COUNT(*) FROM article_stories WHERE story_id = ?) WHERE id = ?",
+                      (story_id, story_id))
+        conn.commit()
+
+
+def remove_article_from_story(story_id: int, article_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM article_stories WHERE story_id = ? AND article_id = ?",
+                      (story_id, article_id))
+        conn.execute("UPDATE stories SET article_count = (SELECT COUNT(*) FROM article_stories WHERE story_id = ?) WHERE id = ?",
+                      (story_id, story_id))
+        conn.commit()
+
+
+# ── Audit Log ────────────────────────────────
+
+def log_audit(user_id: int, username: str, action: str, entity_type: str,
+              entity_id: int = None, details: str = "", ip_address: str = "") -> None:
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, username, action, entity_type, entity_id, details, ip_address))
+        conn.commit()
+
+
+def get_audit_log(user_id: int = 0, action: str = "", entity_type: str = "",
+                  date_from: str = "", date_to: str = "",
+                  page: int = 1, per_page: int = 50) -> dict:
+    with get_db() as conn:
+        conditions = []
+        params = []
+        if user_id:
+            conditions.append("al.user_id = ?")
+            params.append(user_id)
+        if action:
+            conditions.append("al.action = ?")
+            params.append(action)
+        if entity_type:
+            conditions.append("al.entity_type = ?")
+            params.append(entity_type)
+        if date_from:
+            conditions.append("al.created_at >= ?")
+            params.append(date_from)
+        if date_to:
+            conditions.append("al.created_at <= ? || ' 23:59:59'")
+            params.append(date_to)
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        total = conn.execute(f"SELECT COUNT(*) FROM audit_log al {where}", params).fetchone()[0]
+        offset = (page - 1) * per_page
+        rows = conn.execute(f"""
+            SELECT al.* FROM audit_log al {where}
+            ORDER BY al.created_at DESC LIMIT ? OFFSET ?
+        """, params + [per_page, offset]).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "page": page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
+
+# ── Bulk operations on articles ──────────────
+
+def bulk_update_articles(article_ids: list, updates: dict) -> int:
+    """Bulk update status/category for multiple articles."""
+    if not article_ids:
+        return 0
+    allowed = {"status", "sub_category"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        return 0
+    with get_db() as conn:
+        placeholders = ",".join("?" * len(article_ids))
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + article_ids
+        cur = conn.execute(f"UPDATE articles SET {cols}, updated_at = datetime('now') WHERE id IN ({placeholders})", vals)
+        conn.commit()
+        return cur.rowcount
+
+
+def bulk_delete_articles(article_ids: list) -> int:
+    if not article_ids:
+        return 0
+    with get_db() as conn:
+        placeholders = ",".join("?" * len(article_ids))
+        cur = conn.execute(f"UPDATE articles SET status = 'archived', updated_at = datetime('now') WHERE id IN ({placeholders})",
+                            article_ids)
+        conn.commit()
+        return cur.rowcount

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% set active = "authors" %}
+
+{% block title %}Авторы – Total.kz{% endblock %}
+{% block page_title %}Авторы{% endblock %}
+
+{% block actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('createAuthorModal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Добавить
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="authors-grid">
+    {% for a in authors %}
+    <div class="author-card card" data-id="{{ a.id }}">
+        <div class="author-card-header">
+            <div class="author-avatar-lg">
+                {% if a.avatar_url %}
+                <img src="{{ a.avatar_url }}" alt="{{ a.name }}">
+                {% else %}
+                {{ a.name[0]|upper }}
+                {% endif %}
+            </div>
+            <div class="row-actions" style="position:absolute;top:12px;right:12px">
+                <button class="btn-icon" onclick="editAuthor({{ a.id }},'{{ a.name|e }}','{{ a.slug }}','{{ a.bio|e }}','{{ a.avatar_url|e }}','{{ a.email|e }}',{{ a.is_active }})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="btn-icon btn-icon-danger" onclick="deleteAuthor({{ a.id }},'{{ a.name|e }}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="author-card-body">
+            <h3>{{ a.name }}</h3>
+            {% if a.bio %}<p class="author-bio">{{ a.bio[:100] }}{% if a.bio|length > 100 %}...{% endif %}</p>{% endif %}
+            <div class="author-stats">
+                <a href="/admin/articles?author={{ a.name|urlencode }}" class="author-stat">
+                    <strong>{{ format_num(a.live_count) }}</strong>
+                    <span>статей</span>
+                </a>
+                <div class="author-stat">
+                    <strong>{{ a.last_published[:10] if a.last_published else '—' }}</strong>
+                    <span>последняя</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not authors %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <h3>Авторов пока нет</h3>
+    <p>Авторы будут автоматически добавлены из статей.</p>
+</div>
+{% endif %}
+
+<!-- Create Author Modal -->
+<div class="modal-overlay" id="createAuthorModal" onclick="if(event.target===this)closeModal('createAuthorModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новый автор</h3><button class="btn-icon" onclick="closeModal('createAuthorModal')">&times;</button></div>
+        <form onsubmit="return createAuthor(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="newAuthorName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="newAuthorSlug" required></div>
+                <div class="form-group"><label>Био</label><textarea id="newAuthorBio" rows="3" class="filter-input" style="width:100%"></textarea></div>
+                <div class="form-group"><label>Email</label><input type="email" id="newAuthorEmail"></div>
+                <div class="form-group"><label>URL аватара</label><input type="text" id="newAuthorAvatar"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('createAuthorModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Author Modal -->
+<div class="modal-overlay" id="editAuthorModal" onclick="if(event.target===this)closeModal('editAuthorModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Редактировать автора</h3><button class="btn-icon" onclick="closeModal('editAuthorModal')">&times;</button></div>
+        <form onsubmit="return saveAuthor(event)">
+            <input type="hidden" id="editAuthorId">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="editAuthorName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="editAuthorSlug" required></div>
+                <div class="form-group"><label>Био</label><textarea id="editAuthorBio" rows="3" class="filter-input" style="width:100%"></textarea></div>
+                <div class="form-group"><label>Email</label><input type="email" id="editAuthorEmail"></div>
+                <div class="form-group"><label>URL аватара</label><input type="text" id="editAuthorAvatar"></div>
+                <div class="form-group"><label><input type="checkbox" id="editAuthorActive"> Активен</label></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editAuthorModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function createAuthor(e){
+    e.preventDefault();
+    fetch('/api/author',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name:document.getElementById('newAuthorName').value,
+        slug:document.getElementById('newAuthorSlug').value,
+        bio:document.getElementById('newAuthorBio').value,
+        email:document.getElementById('newAuthorEmail').value,
+        avatar_url:document.getElementById('newAuthorAvatar').value
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Автор создан');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function editAuthor(id,name,slug,bio,avatar,email,isActive){
+    document.getElementById('editAuthorId').value=id;
+    document.getElementById('editAuthorName').value=name;
+    document.getElementById('editAuthorSlug').value=slug;
+    document.getElementById('editAuthorBio').value=bio;
+    document.getElementById('editAuthorEmail').value=email;
+    document.getElementById('editAuthorAvatar').value=avatar;
+    document.getElementById('editAuthorActive').checked=!!isActive;
+    openModal('editAuthorModal');
+}
+
+function saveAuthor(e){
+    e.preventDefault();
+    var id=document.getElementById('editAuthorId').value;
+    fetch('/api/author/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name:document.getElementById('editAuthorName').value,
+        slug:document.getElementById('editAuthorSlug').value,
+        bio:document.getElementById('editAuthorBio').value,
+        email:document.getElementById('editAuthorEmail').value,
+        avatar_url:document.getElementById('editAuthorAvatar').value,
+        is_active:document.getElementById('editAuthorActive').checked?1:0
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function deleteAuthor(id,name){
+    if(!confirm('Удалить автора «'+name+'»?'))return;
+    fetch('/api/author/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка')
+    }).catch(()=>showToast('Ошибка сети'));
+}
+</script>
+{% endblock %}

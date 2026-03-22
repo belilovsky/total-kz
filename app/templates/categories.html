@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% set active = "categories" %}
+
+{% block title %}Категории – Total.kz{% endblock %}
+{% block page_title %}Категории{% endblock %}
+
+{% block actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('createCatModal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Добавить
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th>Название</th>
+                    <th>Slug</th>
+                    <th>Родитель</th>
+                    <th>Статей</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="catTableBody">
+                {% for cat in categories %}
+                <tr data-id="{{ cat.id }}">
+                    <td style="color:var(--text-muted)">{{ cat.sort_order }}</td>
+                    <td>
+                        <span class="editable-text" data-field="name_ru" data-id="{{ cat.id }}" onclick="startInlineEdit(this)">{{ cat.name_ru }}</span>
+                    </td>
+                    <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">{{ cat.slug }}</td>
+                    <td>
+                        {% if cat.parent_id %}
+                        {% for p in categories if p.id == cat.parent_id %}{{ p.name_ru }}{% endfor %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <a href="/admin/articles?category={{ cat.slug }}" class="link-subtle">{{ format_num(cat.live_count) }}</a>
+                    </td>
+                    <td>
+                        {% if cat.is_active %}
+                        <span class="status-badge status-published">Активна</span>
+                        {% else %}
+                        <span class="status-badge status-archived">Скрыта</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn-icon" title="Редактировать" onclick="editCat({{ cat.id }},'{{ cat.slug }}','{{ cat.name_ru }}','{{ cat.name_kz or '' }}',{{ cat.parent_id or 'null' }},{{ cat.sort_order }},{{ cat.is_active }})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="btn-icon btn-icon-danger" title="Удалить" onclick="deleteCat({{ cat.id }},'{{ cat.name_ru }}')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createCatModal" onclick="if(event.target===this)closeModal('createCatModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новая категория</h3><button class="btn-icon" onclick="closeModal('createCatModal')">&times;</button></div>
+        <form onsubmit="return createCat(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Название (рус)</label><input type="text" id="newCatName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="newCatSlug" required pattern="[a-z0-9_-]+"></div>
+                <div class="form-group"><label>Название (каз)</label><input type="text" id="newCatNameKz"></div>
+                <div class="form-group">
+                    <label>Родительская категория</label>
+                    <select id="newCatParent" class="filter-select">
+                        <option value="">— Нет —</option>
+                        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name_ru }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>Порядок сортировки</label><input type="number" id="newCatSort" value="0"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('createCatModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editCatModal" onclick="if(event.target===this)closeModal('editCatModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Редактировать категорию</h3><button class="btn-icon" onclick="closeModal('editCatModal')">&times;</button></div>
+        <form onsubmit="return saveCat(event)">
+            <input type="hidden" id="editCatId">
+            <div class="modal-body">
+                <div class="form-group"><label>Название (рус)</label><input type="text" id="editCatName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="editCatSlug" required pattern="[a-z0-9_-]+"></div>
+                <div class="form-group"><label>Название (каз)</label><input type="text" id="editCatNameKz"></div>
+                <div class="form-group">
+                    <label>Родительская категория</label>
+                    <select id="editCatParent" class="filter-select">
+                        <option value="">— Нет —</option>
+                        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name_ru }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>Порядок сортировки</label><input type="number" id="editCatSort" value="0"></div>
+                <div class="form-group"><label><input type="checkbox" id="editCatActive"> Активна</label></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('editCatModal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function startInlineEdit(el){
+    var old=el.textContent.trim();
+    var inp=document.createElement('input');
+    inp.type='text';inp.value=old;inp.className='inline-edit-input';
+    inp.onblur=function(){
+        if(inp.value.trim()&&inp.value.trim()!==old){
+            var id=el.dataset.id;
+            fetch('/api/category/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name_ru:inp.value.trim()})})
+            .then(r=>r.json()).then(res=>{if(res.ok){el.textContent=inp.value.trim();showToast('Сохранено')}else{el.textContent=old;showToast('Ошибка')}});
+        }else el.textContent=old;
+        el.style.display='';
+    };
+    inp.onkeydown=function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=old;inp.blur()}};
+    el.style.display='none';
+    el.parentNode.insertBefore(inp,el.nextSibling);
+    inp.focus();inp.select();
+}
+
+function createCat(e){
+    e.preventDefault();
+    var parent=document.getElementById('newCatParent').value;
+    fetch('/api/category',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name_ru:document.getElementById('newCatName').value,
+        slug:document.getElementById('newCatSlug').value,
+        name_kz:document.getElementById('newCatNameKz').value,
+        parent_id:parent?parseInt(parent):null,
+        sort_order:parseInt(document.getElementById('newCatSort').value)||0
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Категория создана');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function editCat(id,slug,name,nameKz,parentId,sortOrder,isActive){
+    document.getElementById('editCatId').value=id;
+    document.getElementById('editCatName').value=name;
+    document.getElementById('editCatSlug').value=slug;
+    document.getElementById('editCatNameKz').value=nameKz;
+    document.getElementById('editCatParent').value=parentId||'';
+    document.getElementById('editCatSort').value=sortOrder;
+    document.getElementById('editCatActive').checked=!!isActive;
+    openModal('editCatModal');
+}
+
+function saveCat(e){
+    e.preventDefault();
+    var id=document.getElementById('editCatId').value;
+    var parent=document.getElementById('editCatParent').value;
+    fetch('/api/category/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name_ru:document.getElementById('editCatName').value,
+        slug:document.getElementById('editCatSlug').value,
+        name_kz:document.getElementById('editCatNameKz').value,
+        parent_id:parent?parseInt(parent):null,
+        sort_order:parseInt(document.getElementById('editCatSort').value)||0,
+        is_active:document.getElementById('editCatActive').checked?1:0
+    })}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка: '+(res.error||'неизвестная'))
+    }).catch(()=>showToast('Ошибка сети'));
+    return false;
+}
+
+function deleteCat(id,name){
+    if(!confirm('Удалить категорию «'+name+'»?'))return;
+    fetch('/api/category/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{
+        if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}
+        else showToast('Ошибка')
+    }).catch(()=>showToast('Ошибка сети'));
+}
+</script>
+{% endblock %}
