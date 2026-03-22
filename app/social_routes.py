@@ -36,6 +36,9 @@ templates.env.globals["format_num"] = _format_num
 @router.get("/", response_class=HTMLResponse)
 async def social_dashboard(request: Request):
     """Social media dashboard – overview of all accounts, stats, content plan."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
     social.init_social_db()
 
     accounts = social.get_all_stats_summary()

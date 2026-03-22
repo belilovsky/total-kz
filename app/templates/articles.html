@@ -22,7 +22,7 @@
 {% block content %}
 <!-- Status filter tabs -->
 <div class="status-tabs">
-    <a href="/admin/articles?{{ 'q=' + q|urlencode + '&' if q }}{{ 'category=' + category|urlencode + '&' if category }}{{ 'author=' + author|urlencode + '&' if author }}{{ 'tag=' + tag|urlencode + '&' if tag }}" class="status-tab {% if not status and not my %}active{% endif %}">
+    <a href="/admin/articles?my=0{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if not status and not my %}active{% endif %}">
         Все <span class="status-tab-count">{{ format_num(status_counts.all) }}</span>
     </a>
     <a href="/admin/articles?status=published{{ '&q=' + q|urlencode if q }}{{ '&category=' + category|urlencode if category }}{{ '&author=' + author|urlencode if author }}{{ '&tag=' + tag|urlencode if tag }}" class="status-tab {% if status == 'published' %}active{% endif %}">

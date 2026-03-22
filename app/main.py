@@ -240,6 +240,9 @@ app.include_router(
 @app.get("/admin", response_class=HTMLResponse)
 @app.get("/admin/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
     stats = db.get_stats()
     persons = db.get_entities(entity_type="person", limit=15)
     orgs = db.get_entities(entity_type="org", limit=15)
@@ -291,6 +294,21 @@ async def admin_articles_list(
     page: int = Query(1, ge=1),
 ):
     user = getattr(request.state, "current_user", None)
+
+    # Default "Мои статьи" for journalists when no explicit filter is set
+    qs = str(request.url.query)
+    if (
+        user
+        and user.get("role") == "journalist"
+        and not my
+        and "my=" not in qs
+        and not q and not category and not author and not status
+        and not assigned_to and not tag and not entity_id
+    ):
+        my = "1"
+    # Explicit my=0 means user chose "All" — clear the flag
+    if my == "0":
+        my = ""
 
     # "Мои статьи" filter for current user
     effective_assigned = assigned_to
@@ -401,6 +419,9 @@ async def admin_article_detail(request: Request, article_id: int):
 
 @app.get("/admin/content", response_class=HTMLResponse)
 async def admin_content_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
     persons = db.get_entities(entity_type="person", limit=50)
     orgs = db.get_entities(entity_type="org", limit=50)
     locations = db.get_entities(entity_type="location", limit=50)
@@ -426,6 +447,9 @@ async def admin_content_page(request: Request):
 
 @app.get("/admin/analytics", response_class=HTMLResponse)
 async def admin_analytics_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
     gsc = search.get_search_data()
     gsc_json = json.dumps(gsc, ensure_ascii=False)
 
@@ -507,7 +531,7 @@ async def admin_logout(request: Request):
 async def admin_users_page(request: Request):
     user = getattr(request.state, "current_user", None)
     if not user or user.get("role") != "admin":
-        return RedirectResponse(url="/admin", status_code=302)
+        return RedirectResponse(url="/admin/articles", status_code=302)
     users = db.get_all_users()
     return templates.TemplateResponse("users.html", _ctx(request, users=users))
 
@@ -564,6 +588,9 @@ async def admin_audit_page(
     date_to: str = "",
     page: int = Query(1, ge=1),
 ):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
     result = db.get_audit_log(
         user_id=user_id, action=action, entity_type=entity_type,
         date_from=date_from, date_to=date_to, page=page,
