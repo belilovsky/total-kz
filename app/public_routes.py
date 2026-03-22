@@ -534,6 +534,43 @@ async def homepage(request: Request):
     })
 
 
+@router.get("/api/feed", response_class=HTMLResponse)
+async def api_feed_more(request: Request, offset: int = Query(30, ge=0), limit: int = Query(20, ge=1, le=50)):
+    """Return more feed items as HTML fragment for infinite scroll / load-more."""
+    try:
+        articles = rewrite_articles_images(db.get_latest_articles(limit=limit, offset=offset + 5))  # +5 for hero
+    except Exception:
+        return HTMLResponse("")
+    if not articles:
+        return HTMLResponse("")
+    html_parts = []
+    for art in articles:
+        cat_slug = nav_slug_for(art.get("sub_category", ""))
+        cat = cat_label(cat_slug)
+        img = imgproxy_url(art.get("main_image") or art.get("thumbnail", ""), 400)
+        url = article_url(art)
+        views = format_num(fake_views_func(art["id"]))
+        date_s = format_date_short(art.get("pub_date", ""))
+        excerpt = (art.get("excerpt") or "")[:140]
+        if len(art.get("excerpt") or "") > 140:
+            excerpt += "\u2026"
+        thumb_html = f'<div class="feed-item-thumb"><img src="{img}" alt="" loading="lazy"></div>' if img else '<div class="feed-item-thumb feed-item-thumb--ph"></div>'
+        html_parts.append(f'''
+        <article class="feed-item">
+          <div class="feed-item-body">
+            <div class="feed-item-meta">
+              <span class="cat-badge" data-cat="{cat_slug}"><span class="cat-dot"></span><span class="cat-name">{cat}</span></span>
+              <span class="sep">\u00b7</span><span>{date_s}</span>
+              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{views}</span>
+            </div>
+            <h3 class="feed-item-title"><a href="{url}">{art["title"]}</a></h3>
+            {f"<p class='feed-item-excerpt'>{excerpt}</p>" if excerpt else ""}
+          </div>
+          {thumb_html}
+        </article>''')
+    return HTMLResponse("\n".join(html_parts))
+
+
 @router.get("/news/{category}", response_class=HTMLResponse)
 async def category_page(
     request: Request,

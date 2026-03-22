@@ -1806,6 +1806,19 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   color:var(--accent); border-bottom-color:var(--accent);
 }
 
+/* ── Load More Button ────────────────────────── */
+.load-more-wrap {
+  display:flex; justify-content:center; padding:var(--space-8) 0;
+}
+.load-more-btn {
+  padding:var(--space-3) var(--space-8);
+  border:1px solid var(--border); border-radius:var(--radius-md);
+  background:var(--surface); color:var(--text); font-size:var(--text-sm);
+  font-weight:600; cursor:pointer; transition:all 200ms;
+}
+.load-more-btn:hover { border-color:var(--accent); color:var(--accent); }
+.load-more-btn:disabled { opacity:0.5; cursor:default; border-color:var(--border); color:var(--text-faint); }
+
 /* ── 5. Currency Strip ────────────────────────── */
 .currency-strip {
   height:28px; display:flex; align-items:center;

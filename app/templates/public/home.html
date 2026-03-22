@@ -122,6 +122,11 @@
       {% endfor %}
     </div>
 
+    <!-- Load more button -->
+    <div class="load-more-wrap" id="load-more-wrap">
+      <button class="load-more-btn" id="load-more-btn">Загрузить ещё</button>
+    </div>
+
     <!-- Popular list (hidden by default) -->
     <div class="feed-list" id="feed-list-popular" style="display:none;">
       {% for art in popular %}
@@ -192,6 +197,35 @@ const heroSlider = (() => {
   }, {passive:true});
 
   return { prev, next, goTo };
+})();
+
+// ── Load more ──
+(function() {
+  var btn = document.getElementById('load-more-btn');
+  var wrap = document.getElementById('load-more-wrap');
+  var feed = document.getElementById('feed-list-latest');
+  var offset = {{ latest|length }};
+  var loading = false;
+  if (!btn || !feed) return;
+  btn.addEventListener('click', function() {
+    if (loading) return;
+    loading = true;
+    btn.textContent = 'Загрузка…';
+    fetch('/api/feed?offset=' + offset + '&limit=20')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        if (!html.trim()) {
+          btn.textContent = 'Больше нет статей';
+          btn.disabled = true;
+          return;
+        }
+        feed.insertAdjacentHTML('beforeend', html);
+        offset += 20;
+        btn.textContent = 'Загрузить ещё';
+      })
+      .catch(function() { btn.textContent = 'Ошибка, попробуйте снова'; })
+      .finally(function() { loading = false; });
+  });
 })();
 
 // ── Feed tabs ──
