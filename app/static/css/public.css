@@ -134,6 +134,14 @@ p { text-wrap:pretty; }
   color:var(--accent); text-transform:uppercase;
 }
 @media (min-width:640px) { .site-logo-text { font-size:1.75rem; } }
+.logo-accent {
+  position:relative; display:inline-block;
+}
+.logo-accent::after {
+  content:'\0301'; position:absolute;
+  left:50%; top:-0.15em; transform:translateX(-50%);
+  font-size:0.85em; line-height:1; pointer-events:none;
+}
 .footer-logo .site-logo-text { font-size:1.25rem; }
 @media (min-width:640px) { .footer-logo .site-logo-text { font-size:1.375rem; } }
 .header-nav { flex:1; display:none; }
