@@ -4,6 +4,7 @@ import hashlib
 import httpx
 import logging
 import re
+import sqlite3
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
@@ -979,3 +980,33 @@ async def rss_feed():
   </channel>
 </rss>"""
     return Response(content=xml, media_type="application/xml; charset=utf-8")
+
+
+@router.get("/api/suggest")
+async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
+    """Fast autocomplete: returns up to 7 article title suggestions."""
+    import json as json_mod
+    if len(q) < 2:
+        return Response(content="[]", media_type="application/json")
+    try:
+        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT title, sub_category, pub_date, url FROM articles "
+            "WHERE title LIKE ? ORDER BY pub_date DESC LIMIT 7",
+            (f"%{q}%",)
+        )
+        results = []
+        for row in cur.fetchall():
+            url_parts = row["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+            link = f"/news/{url_parts[0]}/{url_parts[1]}" if len(url_parts) >= 2 else "/"
+            results.append({
+                "title": row["title"],
+                "url": link,
+                "cat": cat_label(nav_slug_for(row["sub_category"] or "")),
+            })
+        conn.close()
+        return Response(content=json_mod.dumps(results, ensure_ascii=False), media_type="application/json")
+    except Exception:
+        return Response(content="[]", media_type="application/json")

@@ -49,7 +49,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=10.3">
+  <link rel="stylesheet" href="/static/css/public.css?v=10.4">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   {% block extra_css %}{% endblock %}
 </head>
@@ -122,6 +122,7 @@
           </svg>
         </button>
       </form>
+      <div class="search-suggest" id="search-suggest"></div>
     </div>
   </div>
 
@@ -331,6 +332,34 @@
         if (q) window.location.href = '/search?q=' + encodeURIComponent(q);
       });
     }
+
+    // ── Search autocomplete ────────────────────────────────────────────────
+    (function() {
+      var suggestEl = document.getElementById('search-suggest');
+      var input = document.getElementById('search-input');
+      if (!suggestEl || !input) return;
+      var timer = null;
+      input.addEventListener('input', function() {
+        clearTimeout(timer);
+        var q = input.value.trim();
+        if (q.length < 2) { suggestEl.innerHTML = ''; suggestEl.style.display = 'none'; return; }
+        timer = setTimeout(function() {
+          fetch('/api/suggest?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+              if (!items.length) { suggestEl.innerHTML = ''; suggestEl.style.display = 'none'; return; }
+              suggestEl.innerHTML = items.map(function(it) {
+                return '<a href="' + it.url + '" class="suggest-item"><span class="suggest-title">' + it.title + '</span><span class="suggest-cat">' + it.cat + '</span></a>';
+              }).join('');
+              suggestEl.style.display = 'block';
+            })
+            .catch(function() { suggestEl.style.display = 'none'; });
+        }, 250);
+      });
+      // Hide on blur (with delay for click)
+      input.addEventListener('blur', function() { setTimeout(function() { suggestEl.style.display = 'none'; }, 200); });
+      input.addEventListener('focus', function() { if (suggestEl.innerHTML) suggestEl.style.display = 'block'; });
+    })();
 
     // ── Mobile menu ──────────────────────────────────────────────────────
     const mobileMenu  = document.getElementById('mobile-menu');

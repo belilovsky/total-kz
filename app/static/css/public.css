@@ -175,7 +175,7 @@ p { text-wrap:pretty; }
 .search-overlay-inner {
   position:relative; z-index:1;
   width:100%; max-width:640px; margin:0 var(--space-4);
-  background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden;
+  background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:visible;
 }
 .search-overlay-form {
   display:flex; align-items:center; padding:var(--space-4) var(--space-5);
@@ -189,6 +189,29 @@ p { text-wrap:pretty; }
   padding:var(--space-1) var(--space-2); border:1px solid var(--border); border-radius:var(--radius-sm);
 }
 .search-overlay-close:hover { color:var(--text); border-color:var(--text-muted); }
+
+/* ── Search Autocomplete Dropdown ────────────── */
+.search-suggest {
+  display:none; position:absolute; top:100%; left:0; right:0;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow:var(--shadow-md); max-height:360px; overflow-y:auto;
+  z-index:200;
+}
+.suggest-item {
+  display:flex; align-items:center; justify-content:space-between; gap:var(--space-3);
+  padding:var(--space-3) var(--space-4); text-decoration:none; color:var(--text);
+  transition:background var(--transition);
+}
+.suggest-item:hover, .suggest-item:focus { background:var(--surface-2); }
+.suggest-title {
+  flex:1; font-size:var(--text-sm); font-weight:500;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.suggest-cat {
+  flex-shrink:0; font-size:var(--text-xs); color:var(--text-muted);
+  background:var(--surface-2); padding:2px 8px; border-radius:var(--radius-sm);
+}
 
 /* ── Mobile Menu Drawer ──────────────────────── */
 .mobile-menu { position:fixed; inset:0; z-index:150; pointer-events:none; }

@@ -140,3 +140,15 @@
 [2026-03-22 09:38:00] PROGRESS: 13300/16781 (0.2 art/s, ETA 280m) | ok: 13300 err: 0 quotes: 8035
 [2026-03-22 09:41:46] PROGRESS: 13400/16781 (0.2 art/s, ETA 270m) | ok: 13400 err: 0 quotes: 8035
 [2026-03-22 09:55:38] PROGRESS: 13500/16781 (0.2 art/s, ETA 264m) | ok: 13500 err: 0 quotes: 8037
+[2026-03-22 13:40:12] START: 5 articles to enrich
+[2026-03-22 13:40:32] PROGRESS: 5/5 (0.2 art/s, ETA 0m) | ok: 5 err: 0 quotes: 5
+[2026-03-22 13:40:32] DONE: 5 enriched, 0 errors, 5 with quotes in 0m
+[2026-03-22 13:40:32] === ENRICHMENT COMPLETE ===
+[2026-03-22 13:40:40] START: 500 articles to enrich
+[2026-03-22 13:40:40] START: 500 articles to enrich
+[2026-03-22 13:45:42] PROGRESS: 100/500 (0.3 art/s, ETA 20m) | ok: 100 err: 0 quotes: 90
+[2026-03-22 13:45:42] PROGRESS: 100/500 (0.3 art/s, ETA 20m) | ok: 100 err: 0 quotes: 90
+[2026-03-22 13:50:15] PROGRESS: 200/500 (0.3 art/s, ETA 14m) | ok: 200 err: 0 quotes: 160
+[2026-03-22 13:50:15] PROGRESS: 200/500 (0.3 art/s, ETA 14m) | ok: 200 err: 0 quotes: 160
+[2026-03-22 14:12:25] PROGRESS: 300/500 (0.2 art/s, ETA 21m) | ok: 300 err: 0 quotes: 163
+[2026-03-22 14:12:25] PROGRESS: 300/500 (0.2 art/s, ETA 21m) | ok: 300 err: 0 quotes: 163
