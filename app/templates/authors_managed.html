@@ -12,6 +12,23 @@
 {% endblock %}
 
 {% block content %}
+<div class="filters-bar" style="margin-bottom:16px">
+    <form method="get" action="/admin/authors" class="filters-form">
+        <div class="filter-group grow">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Поиск авторов...">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Найти</button>
+        {% if q %}<a href="/admin/authors" class="btn btn-ghost">Сброс</a>{% endif %}
+    </form>
+</div>
+
+<div class="results-info" style="margin-bottom:12px">
+    Авторов: <strong>{{ authors|length }}</strong>
+</div>
+
 <div class="authors-grid">
     {% for a in authors %}
     <div class="author-card card" data-id="{{ a.id }}">

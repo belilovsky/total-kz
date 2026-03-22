@@ -1248,13 +1248,20 @@ def delete_category(cat_id: int) -> None:
 
 # ── Authors Managed ──────────────────────────
 
-def get_all_authors_managed() -> list:
+def get_all_authors_managed(q: str = "") -> list:
     with get_db() as conn:
-        rows = conn.execute("""
-            SELECT am.*, (SELECT COUNT(*) FROM articles WHERE author = am.name) as live_count,
-                   (SELECT MAX(pub_date) FROM articles WHERE author = am.name) as last_published
-            FROM authors_managed am ORDER BY am.article_count DESC
-        """).fetchall()
+        if q:
+            rows = conn.execute("""
+                SELECT am.*, (SELECT COUNT(*) FROM articles WHERE author = am.name) as live_count,
+                       (SELECT MAX(pub_date) FROM articles WHERE author = am.name) as last_published
+                FROM authors_managed am WHERE am.name LIKE ? ORDER BY am.article_count DESC
+            """, (f"%{q}%",)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT am.*, (SELECT COUNT(*) FROM articles WHERE author = am.name) as live_count,
+                       (SELECT MAX(pub_date) FROM articles WHERE author = am.name) as last_published
+                FROM authors_managed am ORDER BY am.article_count DESC
+            """).fetchall()
         return [dict(r) for r in rows]
 
 
@@ -1531,7 +1538,11 @@ def get_all_stories(q: str = "", page: int = 1, per_page: int = 30) -> dict:
         total = conn.execute(f"SELECT COUNT(*) FROM stories s {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
         rows = conn.execute(f"""
-            SELECT s.* FROM stories s {where}
+            SELECT s.*,
+                   (SELECT COUNT(*) FROM story_articles sa WHERE sa.story_id = s.id) as article_count,
+                   (SELECT MIN(a2.pub_date) FROM story_articles sa2 JOIN articles a2 ON a2.id = sa2.article_id WHERE sa2.story_id = s.id) as first_date,
+                   (SELECT MAX(a3.pub_date) FROM story_articles sa3 JOIN articles a3 ON a3.id = sa3.article_id WHERE sa3.story_id = s.id) as last_date
+            FROM stories s {where}
             ORDER BY s.id DESC LIMIT ? OFFSET ?
         """, params + [per_page, offset]).fetchall()
         return {

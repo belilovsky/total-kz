@@ -544,10 +544,10 @@ async def admin_categories_page(request: Request):
 
 
 @app.get("/admin/authors", response_class=HTMLResponse)
-async def admin_authors_page(request: Request):
-    authors = db.get_all_authors_managed()
+async def admin_authors_page(request: Request, q: str = ""):
+    authors = db.get_all_authors_managed(q=q)
     return templates.TemplateResponse("authors_managed.html", _ctx(request,
-        authors=authors, format_num=_format_num))
+        authors=authors, q=q, format_num=_format_num))
 
 
 @app.get("/admin/media", response_class=HTMLResponse)
