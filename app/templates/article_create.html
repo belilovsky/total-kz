@@ -110,6 +110,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.3/dist/code.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@1.5.1/dist/inline-code.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/marker@1.4.0/dist/marker.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.4.1/dist/table.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/warning@1.4.0/dist/warning.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/underline@1.1.0/dist/underline.umd.js"></script>
 <script>
 var editor, isDirty = false, lastSavedAt = null, ARTICLE_ID = null, allTags = [];
 
@@ -125,6 +129,10 @@ function formatNum(n) { if (Math.abs(n) < 1000) return String(n); return String(
             quote: { class: Quote, config: { quotePlaceholder: 'Цитата', captionPlaceholder: 'Автор цитаты' } },
             image: { class: ImageTool, config: { uploader: { uploadByUrl: function(url) { return Promise.resolve({ success: 1, file: { url: url } }); } } } },
             embed: Embed, delimiter: Delimiter, code: CodeTool, inlineCode: InlineCode,
+            marker: { class: Marker },
+            underline: { class: Underline },
+            table: { class: Table, inlineToolbar: true, config: { rows: 3, cols: 3 } },
+            warning: { class: Warning, config: { titlePlaceholder: 'Заголовок', messagePlaceholder: 'Сообщение' } },
         },
         data: {},
         onChange: function() { markDirty(); updateWordCount(); }

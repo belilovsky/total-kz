@@ -152,3 +152,11 @@
 [2026-03-22 13:50:15] PROGRESS: 200/500 (0.3 art/s, ETA 14m) | ok: 200 err: 0 quotes: 160
 [2026-03-22 14:12:25] PROGRESS: 300/500 (0.2 art/s, ETA 21m) | ok: 300 err: 0 quotes: 163
 [2026-03-22 14:12:25] PROGRESS: 300/500 (0.2 art/s, ETA 21m) | ok: 300 err: 0 quotes: 163
+[2026-03-22 14:16:26] PROGRESS: 400/500 (0.2 art/s, ETA 9m) | ok: 400 err: 0 quotes: 170
+[2026-03-22 14:16:26] PROGRESS: 400/500 (0.2 art/s, ETA 9m) | ok: 400 err: 0 quotes: 170
+[2026-03-22 14:20:14] PROGRESS: 500/500 (0.2 art/s, ETA 0m) | ok: 500 err: 0 quotes: 175
+[2026-03-22 14:20:14] PROGRESS: 500/500 (0.2 art/s, ETA 0m) | ok: 500 err: 0 quotes: 175
+[2026-03-22 14:20:14] DONE: 500 enriched, 0 errors, 175 with quotes in 40m
+[2026-03-22 14:20:14] DONE: 500 enriched, 0 errors, 175 with quotes in 40m
+[2026-03-22 14:20:14] === ENRICHMENT COMPLETE ===
+[2026-03-22 14:20:14] === ENRICHMENT COMPLETE ===

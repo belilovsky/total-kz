@@ -340,6 +340,22 @@ def blocks_to_html(blocks_json: str) -> str:
             html_parts.append('<hr>')
         elif t == "code":
             html_parts.append(f'<pre><code>{d["code"]}</code></pre>')
+        elif t == "table":
+            rows = d.get("content", [])
+            with_headings = d.get("withHeadings", False)
+            thtml = '<table class="article-table"><tbody>'
+            for ri, row in enumerate(rows):
+                thtml += '<tr>'
+                for cell in row:
+                    tag = 'th' if with_headings and ri == 0 else 'td'
+                    thtml += f'<{tag}>{cell}</{tag}>'
+                thtml += '</tr>'
+            thtml += '</tbody></table>'
+            html_parts.append(thtml)
+        elif t == "warning":
+            title = d.get("title", "")
+            msg = d.get("message", "")
+            html_parts.append(f'<div class="article-warning"><strong>{title}</strong><p>{msg}</p></div>')
     return "\n".join(html_parts)
 
 
@@ -357,6 +373,12 @@ def blocks_to_text(blocks_json: str) -> str:
                 parts.append(_re.sub(r'<[^>]+>', '', text))
         if "code" in d:
             parts.append(d["code"])
+        if block["type"] == "table":
+            for row in d.get("content", []):
+                parts.append(" ".join(_re.sub(r'<[^>]+>', '', c) for c in row))
+        if block["type"] == "warning":
+            parts.append(_re.sub(r'<[^>]+>', '', d.get("title", "")))
+            parts.append(_re.sub(r'<[^>]+>', '', d.get("message", "")))
     return "\n".join(parts)
 
 
