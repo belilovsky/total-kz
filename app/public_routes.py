@@ -346,6 +346,10 @@ templates.env.globals["short_entity_name"] = short_entity_name
 from app.currency import get_rates as _get_currency_rates
 templates.env.globals["get_currency_rates"] = _get_currency_rates
 
+# Weather (wttr.in, cached 30 min)
+from app.weather import get_weather as _get_weather
+templates.env.globals["get_weather"] = _get_weather
+
 
 def _names_match(a: str, b: str) -> bool:
     """Check if two names refer to the same person/org (fuzzy).

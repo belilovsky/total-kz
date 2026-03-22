@@ -132,6 +132,10 @@ templates.env.globals["format_num"] = _format_num
 from app.currency import get_rates as _get_currency_rates
 templates.env.globals["get_currency_rates"] = _get_currency_rates
 
+# Weather (wttr.in, cached 30 min)
+from app.weather import get_weather as _get_weather
+templates.env.globals["get_weather"] = _get_weather
+
 
 def _ctx(request: Request, **kwargs) -> dict:
     """Build template context with current_user always available."""

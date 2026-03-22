@@ -96,6 +96,11 @@
   <!-- ═══ CURRENCY STRIP ═══ -->
   <div class="currency-strip">
     <div class="currency-strip-inner">
+      {% for w in get_weather() %}
+      <span class="currency-item weather-item">{{ w.emoji }} {{ w.city }} {{ w.temp }}°C</span>
+      {% if not loop.last %}<span class="currency-sep">|</span>{% endif %}
+      {% endfor %}
+      <span class="currency-sep">|</span>
       {% for r in get_currency_rates() %}
       {% if not loop.first %}<span class="currency-sep">|</span>{% endif %}
       <span class="currency-item">{{ r.flag }} {{ r.code }} {{ r.rate }}{% if r.direction %} <span class="currency-dir {{ 'up' if r.direction == '↑' else 'down' }}">{{ r.direction }}</span>{% endif %}</span>
