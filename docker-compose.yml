@@ -21,7 +21,10 @@ services:
       start_period: 15s
       retries: 3
     depends_on:
-      - meilisearch
+      db:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
     networks:
       - app_net
 
@@ -81,20 +84,20 @@ services:
     networks:
       - app_net
 
-  db-pg:
+  db:
     image: pgvector/pgvector:pg16
-    container_name: total_kz_pg
+    container_name: total_kz_db
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5437:5432"
+      - "127.0.0.1:${DB_PORT:-5437}:5432"
     environment:
-      - POSTGRES_DB=total_kz
-      - POSTGRES_USER=total_kz
-      - POSTGRES_PASSWORD=total_kz
+      POSTGRES_DB: ${DB_NAME:-total_kz}
+      POSTGRES_USER: ${DB_USER:-total_kz}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U total_kz"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-total_kz} -d ${DB_NAME:-total_kz}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -132,7 +135,8 @@ services:
 volumes:
   meili_data:
   umami_data:
-  pg_data:
+  pgdata:
+    name: total_kz_pgdata
 
 networks:
   app_net:
