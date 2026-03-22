@@ -30,6 +30,7 @@
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Найти</button>
+        {% if q or entity_type %}<a href="/admin/entities" class="btn btn-ghost">Сброс</a>{% endif %}
     </form>
 </div>
 
@@ -118,6 +119,14 @@
     {% if result['page'] < result['pages'] %}
     <a href="{{ base }}&page={{ result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>
     {% endif %}
+</div>
+{% endif %}
+
+{% if result['items']|length == 0 %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <h3>Сущностей не найдено</h3>
+    <p>Попробуйте изменить параметры поиска или добавьте новую сущность.</p>
 </div>
 {% endif %}
 

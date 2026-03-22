@@ -21,6 +21,7 @@
             </div>
         </div>
         <button type="submit" class="btn btn-primary">Найти</button>
+        {% if q %}<a href="/admin/tags" class="btn btn-ghost">Сброс</a>{% endif %}
     </form>
 </div>
 
@@ -94,6 +95,14 @@
     {% if result['page'] < result['pages'] %}
     <a href="{{ base_url }}&page={{ result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>
     {% endif %}
+</div>
+{% endif %}
+
+{% if result['items']|length == 0 %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    <h3>Тегов не найдено</h3>
+    <p>Попробуйте изменить поисковый запрос или добавьте новый тег.</p>
 </div>
 {% endif %}
 

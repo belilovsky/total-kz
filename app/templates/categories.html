@@ -12,6 +12,19 @@
 {% endblock %}
 
 {% block content %}
+<div class="filters-bar" style="margin-bottom:16px">
+    <div class="filter-group grow">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="catSearch" placeholder="Поиск категорий..." oninput="filterCats()">
+        </div>
+    </div>
+</div>
+
+<div class="results-info" style="margin-bottom:12px">
+    Категорий: <strong id="catCount">{{ categories|length }}</strong>
+</div>
+
 <div class="card">
     <div class="table-responsive">
         <table class="data-table">
@@ -65,6 +78,14 @@
         </table>
     </div>
 </div>
+
+{% if not categories %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    <h3>Категорий пока нет</h3>
+    <p>Добавьте первую категорию через кнопку «Добавить».</p>
+</div>
+{% endif %}
 
 <!-- Create Modal -->
 <div class="modal-overlay" id="createCatModal" onclick="if(event.target===this)closeModal('createCatModal')">
@@ -196,6 +217,19 @@ function deleteCat(id,name){
         if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}
         else showToast('Ошибка')
     }).catch(()=>showToast('Ошибка сети'));
+}
+
+function filterCats(){
+    var q=document.getElementById('catSearch').value.toLowerCase();
+    var rows=document.querySelectorAll('#catTableBody tr');
+    var visible=0;
+    rows.forEach(function(row){
+        var text=row.textContent.toLowerCase();
+        var show=!q||text.indexOf(q)!==-1;
+        row.style.display=show?'':'none';
+        if(show)visible++;
+    });
+    document.getElementById('catCount').textContent=visible;
 }
 </script>
 {% endblock %}

@@ -21,11 +21,13 @@
             </div>
         </div>
         <button type="submit" class="btn btn-primary">Найти</button>
+        {% if q %}<a href="/admin/stories" class="btn btn-ghost">Сброс</a>{% endif %}
     </form>
 </div>
 
 <div class="results-info">
     Сюжетов: <strong>{{ format_num(result['total']) }}</strong>
+    {% if result['pages'] > 1 %}&middot; Страница {{ result['page'] }} из {{ result['pages'] }}{% endif %}
 </div>
 
 <div class="stories-list">
@@ -52,6 +54,31 @@
     </div>
     {% endfor %}
 </div>
+
+{% if result['pages'] > 1 %}
+<div class="pagination">
+    {% set base_url = "/admin/stories?q=" + q|urlencode %}
+    {% if result['page'] > 1 %}
+    <a href="{{ base_url }}&page={{ result['page'] - 1 }}" class="page-link">&larr; Назад</a>
+    {% endif %}
+    {% set start_page = [1, result['page'] - 3]|max %}
+    {% set end_page = [result['pages'], result['page'] + 3]|min %}
+    {% if start_page > 1 %}
+    <a href="{{ base_url }}&page=1" class="page-link">1</a>
+    {% if start_page > 2 %}<span class="page-dots">...</span>{% endif %}
+    {% endif %}
+    {% for p in range(start_page, end_page + 1) %}
+    <a href="{{ base_url }}&page={{ p }}" class="page-link {% if p == result['page'] %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if end_page < result['pages'] %}
+    {% if end_page < result['pages'] - 1 %}<span class="page-dots">...</span>{% endif %}
+    <a href="{{ base_url }}&page={{ result['pages'] }}" class="page-link">{{ result['pages'] }}</a>
+    {% endif %}
+    {% if result['page'] < result['pages'] %}
+    <a href="{{ base_url }}&page={{ result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>
+    {% endif %}
+</div>
+{% endif %}
 
 {% if result['items']|length == 0 %}
 <div class="empty-state">

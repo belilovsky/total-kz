@@ -12,6 +12,19 @@
 {% endblock %}
 
 {% block content %}
+<div class="filters-bar" style="margin-bottom:16px">
+    <div class="filter-group grow">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="userSearch" placeholder="Поиск пользователей..." oninput="filterUsers()">
+        </div>
+    </div>
+</div>
+
+<div class="results-info" style="margin-bottom:12px">
+    Пользователей: <strong id="userCount">{{ users|length }}</strong>
+</div>
+
 <div class="card">
     <div class="table-responsive">
         <table class="data-table">
@@ -26,7 +39,7 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="userTableBody">
                 {% for user in users %}
                 <tr>
                     <td>
@@ -67,6 +80,14 @@
         </table>
     </div>
 </div>
+
+{% if not users %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <h3>Пользователей пока нет</h3>
+    <p>Добавьте первого пользователя через кнопку «Добавить».</p>
+</div>
+{% endif %}
 
 <!-- Create User Modal -->
 <div class="modal-overlay" id="createUserModal" onclick="if(event.target===this)closeModal('createUserModal')">
@@ -190,6 +211,19 @@ function deleteUser(id,username){
         if(res.ok){showToast('Пользователь удалён');setTimeout(()=>location.reload(),600)}
         else showToast('Ошибка: '+(res.error||'неизвестная'))
     }).catch(()=>showToast('Ошибка сети'));
+}
+
+function filterUsers(){
+    var q=document.getElementById('userSearch').value.toLowerCase();
+    var rows=document.querySelectorAll('#userTableBody tr');
+    var visible=0;
+    rows.forEach(function(row){
+        var text=row.textContent.toLowerCase();
+        var show=!q||text.indexOf(q)!==-1;
+        row.style.display=show?'':'none';
+        if(show)visible++;
+    });
+    document.getElementById('userCount').textContent=visible;
 }
 </script>
 {% endblock %}
