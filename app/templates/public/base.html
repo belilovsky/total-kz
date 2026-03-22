@@ -49,7 +49,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=10.8">
+  <link rel="stylesheet" href="/static/css/public.css?v=10.9">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   {% block extra_css %}{% endblock %}
 </head>
@@ -105,12 +105,12 @@
       <div class="strip-right">
         {% for r in get_currency_rates() %}
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
-        <span class="currency-item">{{ r.flag }} {{ r.code }} {{ r.rate }}₸{% if r.direction %} <span class="currency-dir {{ 'up' if r.direction == '↑' else 'down' }}">{{ r.direction }}</span>{% endif %}</span>
+        <span class="currency-item">{{ r.code }} {{ r.rate }}₸{% if r.direction %}<span class="currency-arrow {{ 'up' if r.direction == '↑' else 'down' }}"></span>{% endif %}</span>
         {% endfor %}
         <span class="currency-sep">·</span>
         {% for c in get_commodities() %}
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
-        <span class="currency-item">{{ c.icon }} {{ c.label }} {{ c.value }}{% if c.direction %} <span class="currency-dir {{ 'up' if c.direction == '↑' else 'down' }}">{{ c.direction }}</span>{% endif %}</span>
+        <span class="currency-item">{{ c.label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}</span>
         {% endfor %}
       </div>
     </div>
