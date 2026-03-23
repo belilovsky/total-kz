@@ -1599,59 +1599,107 @@ MONTHS_RU_NOM = {
 }
 
 
+def _get_persons_db_path():
+    return Path(__file__).resolve().parent.parent / "data" / "total.db"
+
 def _get_persons_db():
-    conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    db_path = _get_persons_db_path()
+    logger.info("Opening persons DB: %s (exists=%s)", db_path, db_path.exists())
+    conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     return conn
 
 
+@router.get("/debug/persons")
+async def debug_persons():
+    """Diagnostic endpoint for persons DB."""
+    import json as _json
+    db_path = _get_persons_db_path()
+    info = {"db_path": str(db_path), "exists": db_path.exists(), "size_mb": 0, "tables": [], "persons_count": 0}
+    if db_path.exists():
+        info["size_mb"] = round(db_path.stat().st_size / 1024 / 1024, 1)
+        try:
+            conn = _get_persons_db()
+            info["tables"] = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
+            if "persons" in info["tables"]:
+                info["persons_count"] = conn.execute("SELECT COUNT(*) FROM persons").fetchone()[0]
+            conn.close()
+        except Exception as e:
+            info["error"] = str(e)
+    return Response(content=_json.dumps(info, default=str), media_type="application/json")
+
+
 @router.get("/persons", response_class=HTMLResponse)
 async def persons_catalog(request: Request, type: str = "", letter: str = ""):
-    conn = _get_persons_db()
-    # Get all persons with article counts
-    where_clauses = ["1=1"]
-    params = []
-    if type:
-        where_clauses.append("p.person_type = ?")
-        params.append(type)
-    if letter:
-        where_clauses.append("p.short_name LIKE ?")
-        params.append(f"{letter}%")
+    try:
+        conn = _get_persons_db()
+        # Verify persons table exists
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('persons','article_entities')"
+        ).fetchall()]
+        if "persons" not in tables:
+            conn.close()
+            logger.error("persons table missing from %s", _get_persons_db_path())
+            return templates.TemplateResponse("public/persons.html", {
+                "request": request, "persons": [], "type_counts": {},
+                "letters": [], "current_type": "", "current_letter": "",
+                "total_persons": 0, "nav_sections": NAV_SECTIONS, "nav_categories": NAV_CATEGORIES,
+            })
 
-    where = " AND ".join(where_clauses)
-    persons = conn.execute(f"""
-        SELECT p.*, COUNT(ae.article_id) as article_count
-        FROM persons p
-        LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
-        WHERE {where}
-        GROUP BY p.id
-        ORDER BY article_count DESC
-    """, params).fetchall()
+        # Get all persons with article counts
+        where_clauses = ["1=1"]
+        params = []
+        if type:
+            where_clauses.append("p.person_type = ?")
+            params.append(type)
+        if letter:
+            where_clauses.append("p.short_name LIKE ?")
+            params.append(f"{letter}%")
 
-    # Get type counts for filters
-    type_counts = {}
-    for row in conn.execute("SELECT person_type, COUNT(*) FROM persons GROUP BY person_type"):
-        type_counts[row[0]] = row[1]
+        where = " AND ".join(where_clauses)
 
-    # Get first letters for alphabet filter
-    letters = set()
-    for row in conn.execute("SELECT DISTINCT substr(short_name, 1, 1) FROM persons"):
-        if row[0]:
-            letters.add(row[0])
-    letters = sorted(letters)
+        # Use LEFT JOIN only if article_entities exists
+        if "article_entities" in tables:
+            persons = conn.execute(f"""
+                SELECT p.*, COUNT(ae.article_id) as article_count
+                FROM persons p
+                LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+                WHERE {where}
+                GROUP BY p.id
+                ORDER BY article_count DESC
+            """, params).fetchall()
+        else:
+            persons = conn.execute(f"""
+                SELECT p.*, 0 as article_count FROM persons p WHERE {where} ORDER BY p.short_name
+            """, params).fetchall()
 
-    conn.close()
-    return templates.TemplateResponse("public/persons.html", {
-        "request": request,
-        "persons": persons,
-        "type_counts": type_counts,
-        "letters": letters,
-        "current_type": type,
-        "current_letter": letter,
-        "total_persons": len(persons),
-        "nav_sections": NAV_SECTIONS,
-        "nav_categories": NAV_CATEGORIES,
-    })
+        # Get type counts for filters
+        type_counts = {}
+        for row in conn.execute("SELECT person_type, COUNT(*) FROM persons GROUP BY person_type"):
+            type_counts[row[0]] = row[1]
+
+        # Get first letters for alphabet filter
+        letters = set()
+        for row in conn.execute("SELECT DISTINCT substr(short_name, 1, 1) FROM persons"):
+            if row[0]:
+                letters.add(row[0])
+        letters = sorted(letters)
+
+        conn.close()
+        return templates.TemplateResponse("public/persons.html", {
+            "request": request,
+            "persons": persons,
+            "type_counts": type_counts,
+            "letters": letters,
+            "current_type": type,
+            "current_letter": letter,
+            "total_persons": len(persons),
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+        })
+    except Exception:
+        logger.exception("Error in persons_catalog")
+        return _error_response(request)
 
 
 @router.get("/person/{slug}", response_class=HTMLResponse)
