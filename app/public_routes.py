@@ -13,6 +13,8 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 SITE_DOMAIN = os.getenv("SITE_DOMAIN", "https://total.qdev.run")
+UMAMI_WEBSITE_ID = os.getenv("UMAMI_WEBSITE_ID", "")
+UMAMI_URL = os.getenv("UMAMI_URL", "/umami")  # relative or absolute URL to Umami instance
 
 from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
 
@@ -382,6 +384,8 @@ templates.env.globals["pluralize_materials"] = pluralize_materials
 templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
 templates.env.globals["site_domain"] = SITE_DOMAIN
+templates.env.globals["umami_website_id"] = UMAMI_WEBSITE_ID
+templates.env.globals["umami_url"] = UMAMI_URL
 
 # Currency rates (live from NB RK, cached 1h)
 from app.currency import get_rates as _get_currency_rates, get_commodities as _get_commodities
@@ -921,15 +925,47 @@ async def search_page(
     request: Request,
     q: str = "",
     page: int = Query(1, ge=1),
+    cat: str = "",
+    period: str = "",
+    sort: str = "",
 ):
     """Search results page — uses Meilisearch with SQLite fallback."""
     meili_results = None
+
+    # Build Meilisearch filter string
+    filters = []
+    if cat:
+        # cat can be a nav section slug → expand to subcats
+        section_match = next((s for s in NAV_SECTIONS if s["slug"] == cat), None)
+        if section_match:
+            sub_filters = " OR ".join(f'sub_category = "{sc}"' for sc in section_match["subcats"])
+            filters.append(f"({sub_filters})")
+        else:
+            filters.append(f'sub_category = "{cat}"')
+    if period:
+        from datetime import timedelta
+        now = datetime.now()
+        if period == "day":
+            cutoff = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        elif period == "week":
+            cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+        elif period == "month":
+            cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+        elif period == "year":
+            cutoff = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+        else:
+            cutoff = ""
+        if cutoff:
+            filters.append(f'pub_date > "{cutoff}"')
+
+    filter_str = " AND ".join(filters)
+    sort_list = ["pub_date:desc"] if sort == "date" else []
+
     try:
         if q:
-            # Try Meilisearch first
             try:
                 from . import search_engine as meili
-                meili_results = meili.search(q, page=page, per_page=20)
+                meili_results = meili.search(q, filters=filter_str, page=page, per_page=20, sort=sort_list)
             except Exception:
                 pass
 
@@ -943,7 +979,6 @@ async def search_page(
                     "meili": True,
                 }
             else:
-                # Fallback to SQLite
                 result = db.search_articles(query=q, page=page, per_page=20)
                 if result.get("articles"):
                     result["articles"] = rewrite_articles_images(result["articles"])
@@ -958,6 +993,9 @@ async def search_page(
     return templates.TemplateResponse("public/search.html", {
         "request": request,
         "q": q,
+        "cat": cat,
+        "period": period,
+        "sort": sort,
         "result": result,
         "popular_tags": popular_tags,
         "nav_sections": NAV_SECTIONS,
@@ -1990,3 +2028,84 @@ async def bookmarks_page(request: Request):
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
     })
+
+
+# ══════════════════════════════════════════════
+#  PUBLIC COMMENTS
+# ══════════════════════════════════════════════
+
+def _ensure_public_comments_table():
+    """Create public_comments table if it doesn't exist."""
+    conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    conn.execute("""CREATE TABLE IF NOT EXISTS public_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_id INTEGER NOT NULL,
+        author_name TEXT NOT NULL,
+        text TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        ip_address TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        moderated_at TEXT DEFAULT NULL,
+        moderated_by TEXT DEFAULT NULL
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_pc_article ON public_comments(article_id, status)")
+    conn.commit()
+    conn.close()
+
+_ensure_public_comments_table()
+
+
+@router.get("/api/public/comments/{article_id}")
+async def get_public_comments(article_id: int):
+    """Get approved comments for an article."""
+    conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        "SELECT id, author_name, text, created_at FROM public_comments "
+        "WHERE article_id = ? AND status = 'approved' ORDER BY created_at ASC",
+        (article_id,)
+    ).fetchall()
+    conn.close()
+    return {"comments": [dict(r) for r in rows]}
+
+
+@router.post("/api/public/comments/{article_id}")
+async def post_public_comment(article_id: int, request: Request):
+    """Submit a new comment (goes to moderation queue)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return {"ok": False, "error": "Неверный формат"}
+
+    author_name = (body.get("author_name") or "").strip()[:80]
+    text = (body.get("text") or "").strip()[:2000]
+
+    if not author_name or not text:
+        return {"ok": False, "error": "Заполните имя и комментарий"}
+    if len(text) < 3:
+        return {"ok": False, "error": "Слишком короткий комментарий"}
+
+    # Basic spam check: no links
+    import re as _re
+    if _re.search(r'https?://', text):
+        return {"ok": False, "error": "Ссылки в комментариях запрещены"}
+
+    ip = request.client.host if request.client else ""
+
+    conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    # Rate limit: max 5 comments per IP per hour
+    recent = conn.execute(
+        "SELECT COUNT(*) FROM public_comments WHERE ip_address = ? AND created_at > datetime('now', '-1 hour')",
+        (ip,)
+    ).fetchone()[0]
+    if recent >= 5:
+        conn.close()
+        return {"ok": False, "error": "Слишком много комментариев. Попробуйте позже."}
+
+    conn.execute(
+        "INSERT INTO public_comments (article_id, author_name, text, ip_address) VALUES (?, ?, ?, ?)",
+        (article_id, author_name, text, ip)
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}

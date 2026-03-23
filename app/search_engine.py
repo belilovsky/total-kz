@@ -49,7 +49,7 @@ def delete_article(article_id: int):
         logger.debug("Meilisearch unavailable for deleting article %s", article_id)
 
 
-def search(query: str, filters: str = "", page: int = 1, per_page: int = 30) -> dict:
+def search(query: str, filters: str = "", page: int = 1, per_page: int = 30, sort: list | None = None) -> dict:
     """Search articles via Meilisearch."""
     payload = {
         "q": query,
@@ -61,6 +61,8 @@ def search(query: str, filters: str = "", page: int = 1, per_page: int = 30) -> 
     }
     if filters:
         payload["filter"] = filters
+    if sort:
+        payload["sort"] = sort
     try:
         r = httpx.post(f"{MEILI_URL}/indexes/{INDEX}/search", json=payload, headers=_headers, timeout=5)
         data = r.json()

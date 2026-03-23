@@ -452,6 +452,29 @@
   </section>
   {% endif %}
 
+  {# ── Comments section ── #}
+  <section class="comments-section" id="comments">
+    <h2 class="comments-heading">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Комментарии <span class="comments-count" id="commentsCount"></span>
+    </h2>
+
+    <div id="commentsList" class="comments-list">
+      <p class="comments-loading">Загрузка…</p>
+    </div>
+
+    <form class="comment-form" id="commentForm">
+      <div class="cf-row">
+        <input type="text" name="author_name" placeholder="Ваше имя" required maxlength="80" class="cf-name">
+      </div>
+      <textarea name="text" placeholder="Напишите комментарий…" required maxlength="2000" rows="3" class="cf-text"></textarea>
+      <div class="cf-actions">
+        <span class="cf-hint">Комментарий появится после модерации</span>
+        <button type="submit" class="cf-submit">Отправить</button>
+      </div>
+    </form>
+  </section>
+
   {# ── Print-only footer (hidden on screen) ── #}
   <div class="print-footer" style="display:none">
     Источник: <a href="{{ site_domain }}/news/{{ category }}/{{ slug }}">total.kz/news/{{ category }}/{{ slug }}</a>
@@ -581,6 +604,84 @@ function sharePDF() {
 (function(){
   var aid = {{ article.id }};
   if (aid) fetch('/api/view/' + aid, { method: 'POST' }).catch(function(){});
+})();
+
+// ── Comments system ────────────────────────────────────────────
+(function() {
+  var articleId = {{ article.id }};
+  var list = document.getElementById('commentsList');
+  var countEl = document.getElementById('commentsCount');
+  var form = document.getElementById('commentForm');
+
+  function timeAgo(dateStr) {
+    var d = new Date(dateStr + 'Z');
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60) return 'только что';
+    if (diff < 3600) return Math.floor(diff/60) + ' мин. назад';
+    if (diff < 86400) return Math.floor(diff/3600) + ' ч. назад';
+    return d.toLocaleDateString('ru', {day:'numeric',month:'short',year:'numeric'});
+  }
+
+  function loadComments() {
+    fetch('/api/public/comments/' + articleId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.comments || data.comments.length === 0) {
+          list.innerHTML = '<p class="comments-empty">Пока нет комментариев. Будьте первым!</p>';
+          countEl.textContent = '';
+          return;
+        }
+        countEl.textContent = '(' + data.comments.length + ')';
+        list.innerHTML = data.comments.map(function(c) {
+          return '<div class="comment-item">'
+            + '<div class="comment-header">'
+            + '<span class="comment-author">' + c.author_name.replace(/</g,'&lt;') + '</span>'
+            + '<span class="comment-date">' + timeAgo(c.created_at) + '</span>'
+            + '</div>'
+            + '<p class="comment-text">' + c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</p>'
+            + '</div>';
+        }).join('');
+      })
+      .catch(function() {
+        list.innerHTML = '<p class="comments-empty">Не удалось загрузить комментарии</p>';
+      });
+  }
+
+  loadComments();
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = form.querySelector('.cf-submit');
+    btn.disabled = true;
+    btn.textContent = 'Отправка…';
+    var author = form.querySelector('[name=author_name]').value.trim();
+    var text = form.querySelector('[name=text]').value.trim();
+    fetch('/api/public/comments/' + articleId, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({author_name: author, text: text})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        form.querySelector('[name=text]').value = '';
+        var msg = document.createElement('div');
+        msg.className = 'cf-success';
+        msg.textContent = 'Спасибо! Комментарий отправлен на модерацию.';
+        form.parentNode.insertBefore(msg, form);
+        setTimeout(function() { msg.remove(); }, 5000);
+        localStorage.setItem('comment_name', author);
+      } else {
+        alert(data.error || 'Ошибка отправки');
+      }
+    })
+    .catch(function() { alert('Ошибка сети'); })
+    .finally(function() { btn.disabled = false; btn.textContent = 'Отправить'; });
+  });
+
+  // Restore saved name
+  var savedName = localStorage.getItem('comment_name');
+  if (savedName) form.querySelector('[name=author_name]').value = savedName;
 })();
 
 // ── Bookmark system ──────────────────────────────────────────

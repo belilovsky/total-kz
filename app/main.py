@@ -665,6 +665,69 @@ async def admin_audit_page(
 
 
 # ══════════════════════════════════════════════
+#  ADMIN: COMMENT MODERATION
+# ══════════════════════════════════════════════
+
+def _comments_db():
+    import sqlite3 as _sq
+    c = _sq.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    c.row_factory = _sq.Row
+    return c
+
+
+@app.get("/admin/comments", response_class=HTMLResponse)
+async def admin_comments_page(request: Request, status: str = "pending", page: int = Query(1, ge=1)):
+    """Comment moderation page."""
+    per_page = 50
+    conn = _comments_db()
+    total = conn.execute("SELECT COUNT(*) FROM public_comments WHERE status = ?", (status,)).fetchone()[0]
+    comments = conn.execute(
+        """SELECT pc.*, a.title as article_title, a.sub_category
+           FROM public_comments pc
+           LEFT JOIN articles a ON a.id = pc.article_id
+           WHERE pc.status = ?
+           ORDER BY pc.created_at DESC
+           LIMIT ? OFFSET ?""",
+        (status, per_page, (page - 1) * per_page)
+    ).fetchall()
+
+    pending_count = conn.execute("SELECT COUNT(*) FROM public_comments WHERE status = 'pending'").fetchone()[0]
+    conn.close()
+
+    return templates.TemplateResponse("comments_admin.html", _ctx(request,
+        comments=[dict(c) for c in comments],
+        current_status=status,
+        total=total,
+        page=page,
+        pages=max(1, (total + per_page - 1) // per_page),
+        pending_count=pending_count,
+        format_num=_format_num,
+    ))
+
+
+@app.post("/api/comments/{comment_id}/moderate")
+async def moderate_comment(comment_id: int, request: Request):
+    """Approve or reject a comment."""
+    body = await request.json()
+    action = body.get("action")  # 'approve' or 'reject' or 'delete'
+    user = getattr(request.state, "current_user", None)
+    username = user.get("username", "admin") if user else "admin"
+
+    conn = _comments_db()
+    if action == "delete":
+        conn.execute("DELETE FROM public_comments WHERE id = ?", (comment_id,))
+    elif action in ("approve", "reject"):
+        new_status = "approved" if action == "approve" else "rejected"
+        conn.execute(
+            "UPDATE public_comments SET status = ?, moderated_at = datetime('now'), moderated_by = ? WHERE id = ?",
+            (new_status, username, comment_id)
+        )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+# ══════════════════════════════════════════════
 #  CMS v11: USER API
 # ══════════════════════════════════════════════
 

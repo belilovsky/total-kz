@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Комментарии — Модерация{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Комментарии{% if pending_count > 0 %} <span class="badge badge-warning">{{ pending_count }} на модерации</span>{% endif %}</h1>
+</div>
+
+<div class="mb-3">
+  <div class="btn-group" role="group">
+    <a href="/admin/comments?status=pending" class="btn btn-sm {% if current_status == 'pending' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      На модерации{% if pending_count %} ({{ pending_count }}){% endif %}
+    </a>
+    <a href="/admin/comments?status=approved" class="btn btn-sm {% if current_status == 'approved' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      Одобренные
+    </a>
+    <a href="/admin/comments?status=rejected" class="btn btn-sm {% if current_status == 'rejected' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      Отклонённые
+    </a>
+  </div>
+  <span class="text-muted ms-3">Всего: {{ format_num(total) }}</span>
+</div>
+
+{% if comments %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr>
+        <th style="width:140px">Автор</th>
+        <th>Комментарий</th>
+        <th style="width:200px">Статья</th>
+        <th style="width:130px">Дата</th>
+        <th style="width:160px">Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in comments %}
+      <tr id="row-{{ c.id }}">
+        <td>
+          <strong>{{ c.author_name }}</strong>
+          <br><small class="text-muted">{{ c.ip_address }}</small>
+        </td>
+        <td>{{ c.text[:300] }}{% if c.text|length > 300 %}…{% endif %}</td>
+        <td>
+          {% if c.article_title %}
+          <a href="/admin/article/{{ c.article_id }}" class="text-decoration-none">{{ c.article_title[:50] }}{% if c.article_title|length > 50 %}…{% endif %}</a>
+          {% else %}
+          #{{ c.article_id }}
+          {% endif %}
+        </td>
+        <td>
+          <small>{{ c.created_at[:16] }}</small>
+          {% if c.moderated_by %}
+          <br><small class="text-muted">{{ c.moderated_by }}</small>
+          {% endif %}
+        </td>
+        <td>
+          {% if current_status == 'pending' %}
+          <button onclick="moderate({{ c.id }}, 'approve')" class="btn btn-sm btn-success me-1">✓ Одобрить</button>
+          <button onclick="moderate({{ c.id }}, 'reject')" class="btn btn-sm btn-warning me-1">✗ Отклонить</button>
+          {% endif %}
+          <button onclick="moderate({{ c.id }}, 'delete')" class="btn btn-sm btn-outline-danger">🗑</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pages > 1 %}
+<nav>
+  <ul class="pagination pagination-sm">
+    {% for p in range(1, pages + 1) %}
+    <li class="page-item{% if p == page %} active{% endif %}">
+      <a class="page-link" href="?status={{ current_status }}&page={{ p }}">{{ p }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center text-muted py-5">
+  <p>Нет комментариев в этой категории</p>
+</div>
+{% endif %}
+
+<script>
+function moderate(id, action) {
+  if (action === 'delete' && !confirm('Удалить комментарий?')) return;
+  fetch('/api/comments/' + id + '/moderate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({action: action})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) {
+      document.getElementById('row-' + id).remove();
+    }
+  });
+}
+</script>
+{% endblock %}

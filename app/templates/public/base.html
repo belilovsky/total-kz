@@ -707,8 +707,10 @@
   </script>
 
   <!-- Umami Analytics (self-hosted) -->
-  <!-- TODO: replace UMAMI_WEBSITE_ID with actual website ID after Umami setup -->
-  <!-- <script defer src="http://localhost:3000/script.js" data-website-id="UMAMI_WEBSITE_ID"></script> -->
+  {# Umami analytics — set UMAMI_WEBSITE_ID and UMAMI_URL env vars for tracking #}
+  {% if umami_website_id %}
+  <script defer src="{{ umami_url }}/script.js" data-website-id="{{ umami_website_id }}"></script>
+  {% endif %}
 
   {% block extra_js %}{% endblock %}
 </body>

@@ -12,6 +12,7 @@ services:
     env_file: .env
     environment:
       - SITE_DOMAIN=https://total.qdev.run
+      - UMAMI_WEBSITE_ID=${UMAMI_WEBSITE_ID:-}
     ports:
       - "${APP_PORT:-3847}:8000"
     volumes:

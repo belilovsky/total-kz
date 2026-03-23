@@ -12,12 +12,48 @@
     <h1 style="font-size:var(--text-xl);font-weight:800;margin-bottom:var(--space-6)">
       {% if q.startswith('#') %}Тег: {{ q[1:] }}{% elif q %}Результаты: {{ q }}{% else %}Поиск{% endif %}
     </h1>
-    <form action="/search" method="get">
+    <form action="/search" method="get" id="search-form">
       <div class="search-input-wrap">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
         <input type="text" name="q" placeholder="Введите запрос…" value="{{ q if not q.startswith('#') else '' }}" autofocus>
+      </div>
+
+      {# ── Filter bar ── #}
+      <div class="search-filters">
+        <div class="sf-group">
+          <label class="sf-label">Раздел</label>
+          <select name="cat" class="sf-select" onchange="this.form.submit()">
+            <option value="">Все разделы</option>
+            {% for section in nav_sections %}
+            <option value="{{ section.slug }}"{% if cat == section.slug %} selected{% endif %}>{{ section.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Период</label>
+          <select name="period" class="sf-select" onchange="this.form.submit()">
+            <option value="">Всё время</option>
+            <option value="day"{% if period == 'day' %} selected{% endif %}>За сутки</option>
+            <option value="week"{% if period == 'week' %} selected{% endif %}>За неделю</option>
+            <option value="month"{% if period == 'month' %} selected{% endif %}>За месяц</option>
+            <option value="year"{% if period == 'year' %} selected{% endif %}>За год</option>
+          </select>
+        </div>
+        <div class="sf-group">
+          <label class="sf-label">Сортировка</label>
+          <select name="sort" class="sf-select" onchange="this.form.submit()">
+            <option value="">По релевантности</option>
+            <option value="date"{% if sort == 'date' %} selected{% endif %}>По дате</option>
+          </select>
+        </div>
+        {% if cat or period or sort %}
+        <a href="/search{% if q %}?q={{ q }}{% endif %}" class="sf-reset" title="Сбросить фильтры">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Сбросить
+        </a>
+        {% endif %}
       </div>
     </form>
   </div>
@@ -61,7 +97,7 @@
   {% if result.pages > 1 %}
   <nav class="pagination" aria-label="Страницы">
     {% if result.page > 1 %}
-      <a href="?q={{ q }}&page={{ result.page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
+      <a href="?q={{ q }}&cat={{ cat }}&period={{ period }}&sort={{ sort }}&page={{ result.page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
     {% else %}
       <span class="pg-arrow disabled">&larr;</span>
     {% endif %}
@@ -70,7 +106,7 @@
     {% set end = [result.pages, result.page + 2] | min %}
 
     {% if start > 1 %}
-      <a href="?q={{ q }}&page=1">1</a>
+      <a href="?q={{ q }}&cat={{ cat }}&period={{ period }}&sort={{ sort }}&page=1">1</a>
       {% if start > 2 %}<span class="ellipsis">…</span>{% endif %}
     {% endif %}
 
@@ -78,17 +114,17 @@
       {% if p == result.page %}
         <span class="current">{{ p }}</span>
       {% else %}
-        <a href="?q={{ q }}&page={{ p }}">{{ p }}</a>
+        <a href="?q={{ q }}&cat={{ cat }}&period={{ period }}&sort={{ sort }}&page={{ p }}">{{ p }}</a>
       {% endif %}
     {% endfor %}
 
     {% if end < result.pages %}
       {% if end < result.pages - 1 %}<span class="ellipsis">…</span>{% endif %}
-      <a href="?q={{ q }}&page={{ result.pages }}">{{ result.pages }}</a>
+      <a href="?q={{ q }}&cat={{ cat }}&period={{ period }}&sort={{ sort }}&page={{ result.pages }}">{{ result.pages }}</a>
     {% endif %}
 
     {% if result.page < result.pages %}
-      <a href="?q={{ q }}&page={{ result.page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
+      <a href="?q={{ q }}&cat={{ cat }}&period={{ period }}&sort={{ sort }}&page={{ result.page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
     {% else %}
       <span class="pg-arrow disabled">&rarr;</span>
     {% endif %}
@@ -98,8 +134,8 @@
   {% elif q %}
   <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
     <h2 class="error-title">Ничего не найдено</h2>
-    <p class="error-desc">По запросу «{{ q }}» статей не нашлось.</p>
-    <a href="/" class="btn-primary">На главную</a>
+    <p class="error-desc">По запросу «{{ q }}» статей не нашлось.{% if cat or period %} Попробуйте сбросить фильтры.{% endif %}</p>
+    <a href="/search?q={{ q }}" class="btn-primary">Сбросить фильтры</a>
   </div>
 
   {% else %}
