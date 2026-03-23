@@ -56,6 +56,37 @@
   <!-- ═══ AD: AFTER HERO ═══ -->
   <div class="ad-placeholder ad-leaderboard" aria-hidden="true">Реклама</div>
 
+  <!-- ═══ KEY PERSONS STRIP ═══ -->
+  {% if homepage_persons %}
+  <section class="persons-strip">
+    <div class="section-header">
+      <h2 class="section-title">Ключевые персоны</h2>
+      <a href="/persons" class="section-more">Все →</a>
+    </div>
+    <div class="persons-strip-scroll">
+      {% for p in homepage_persons %}
+      <a href="/person/{{ p.slug }}" class="persons-strip-card">
+        {% if p.photo_url %}
+        <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
+             alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
+        {% else %}
+        <div class="persons-strip-photo persons-strip-photo--ph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        {% endif %}
+        <span class="persons-strip-name">{{ p.short_name }}</span>
+        {% if p.current_position %}
+        <span class="persons-strip-pos">{{ p.current_position }}</span>
+        {% endif %}
+        <span class="persons-strip-count">{{ pluralize_materials(p.article_count) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ═══ CATEGORY HIGHLIGHTS ═══ -->
   {% if category_highlights %}
   <div class="category-highlights">

@@ -473,6 +473,99 @@ templates.env.globals["get_views"] = get_views_func
 
 
 # ══════════════════════════════════════════════
+#  PERSONS INTEGRATION (article sidebar + entity pills)
+# ══════════════════════════════════════════════
+
+_persons_cache = {"data": None, "ts": 0}
+
+def _load_persons_lookup():
+    """Cached dict: entity_id -> {slug, short_name, current_position, photo_url}.
+    Also builds name->slug index for fuzzy matching entity pills.
+    Refreshes every 5 minutes."""
+    import time
+    now = time.time()
+    if _persons_cache["data"] is not None and now - _persons_cache["ts"] < 300:
+        return _persons_cache["data"]
+    try:
+        conn = _get_persons_db()
+        rows = conn.execute(
+            "SELECT id, slug, short_name, full_name, current_position, photo_url, entity_id "
+            "FROM persons"
+        ).fetchall()
+        conn.close()
+        by_entity_id = {}
+        by_name = {}  # normalized name -> person dict
+        for r in rows:
+            pdict = {
+                "id": r["id"], "slug": r["slug"], "short_name": r["short_name"],
+                "full_name": r["full_name"], "current_position": r["current_position"],
+                "photo_url": r["photo_url"],
+            }
+            if r["entity_id"]:
+                by_entity_id[r["entity_id"]] = pdict
+            # Index by normalized name fragments for fuzzy matching
+            for name in (r["short_name"], r["full_name"]):
+                if name:
+                    by_name[name.strip().lower()] = pdict
+                    # Also index last name only
+                    parts = name.strip().split()
+                    if parts:
+                        by_name[parts[0].lower()] = pdict
+        _persons_cache["data"] = {"by_entity_id": by_entity_id, "by_name": by_name}
+        _persons_cache["ts"] = now
+    except Exception:
+        logger.exception("Error loading persons lookup")
+        _persons_cache["data"] = {"by_entity_id": {}, "by_name": {}}
+        _persons_cache["ts"] = now
+    return _persons_cache["data"]
+
+
+def _match_person_for_entity(entity: dict) -> dict | None:
+    """Find matching person for an article entity. Returns person dict or None."""
+    lookup = _load_persons_lookup()
+    # 1. Direct entity_id match
+    eid = entity.get("id")
+    if eid and eid in lookup["by_entity_id"]:
+        return lookup["by_entity_id"][eid]
+    # 2. Name-based fuzzy match
+    name = (entity.get("short_name") or entity.get("name") or "").strip().lower()
+    if name in lookup["by_name"]:
+        return lookup["by_name"][name]
+    # Try last name only
+    parts = name.split()
+    if parts and parts[0] in lookup["by_name"]:
+        return lookup["by_name"][parts[0]]
+    return None
+
+
+def person_url_for_entity(entity: dict) -> str:
+    """Return /person/{slug} if entity is a known person, else /tag/{name}."""
+    if entity.get("entity_type") == "person":
+        p = _match_person_for_entity(entity)
+        if p:
+            return f"/person/{p['slug']}"
+    return f"/tag/{short_entity_name(entity)}"
+
+
+def get_article_persons(entities: list) -> list:
+    """Get list of matched persons for article entities (with photo, position)."""
+    seen = set()
+    result = []
+    for ent in (entities or []):
+        if ent.get("entity_type") != "person":
+            continue
+        p = _match_person_for_entity(ent)
+        if p and p["slug"] not in seen:
+            seen.add(p["slug"])
+            result.append(p)
+    return result[:4]  # max 4 person cards in sidebar
+
+
+templates.env.globals["person_url_for_entity"] = person_url_for_entity
+templates.env.globals["get_article_persons"] = get_article_persons
+
+
+# ══════════════════════════════════════════════
 #  IMAGE PROXY ENDPOINT
 # ══════════════════════════════════════════════
 
@@ -578,6 +671,25 @@ async def homepage(request: Request):
 
     popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)
 
+    # Top persons for homepage strip (most-mentioned, with photos)
+    try:
+        conn = _get_persons_db()
+        homepage_persons = conn.execute("""
+            SELECT p.slug, p.short_name, p.current_position, p.photo_url,
+                   COUNT(ae.article_id) as article_count
+            FROM persons p
+            LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+            WHERE p.photo_url IS NOT NULL AND p.photo_url != ''
+            GROUP BY p.id
+            ORDER BY article_count DESC
+            LIMIT 12
+        """).fetchall()
+        conn.close()
+        homepage_persons = [dict(r) for r in homepage_persons]
+    except Exception:
+        logger.exception("Error loading homepage persons")
+        homepage_persons = []
+
     return templates.TemplateResponse("public/home.html", {
         "request": request,
         "hero_articles": hero_articles,
@@ -587,6 +699,7 @@ async def homepage(request: Request):
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "ticker_articles": hero_articles[:5],
+        "homepage_persons": homepage_persons,
     })
 
 
@@ -768,6 +881,9 @@ async def article_page(request: Request, category: str, slug: str):
     # Ticker: use related articles, fallback to latest
     ticker_articles = related[:5] if related else []
 
+    # Persons mentioned in this article (for sidebar mini-cards)
+    article_persons = get_article_persons(article.get("entities", []))
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
@@ -784,6 +900,7 @@ async def article_page(request: Request, category: str, slug: str):
         "reading_time": estimate_reading_time(article.get("body_text", "")),
         "slug": article_slug,
         "ticker_articles": ticker_articles,
+        "article_persons": article_persons,
     })
 
 
