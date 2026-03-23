@@ -44,84 +44,76 @@
     <span>{{ category_name }}</span>
   </nav>
 
-  <div class="category-header">
-    <h1 class="category-name"><span class="cat-badge" data-cat="{{ category }}"><span class="cat-dot"></span></span>{{ category_name }}</h1>
-    <div class="category-count">{{ pluralize_articles(total) }}</div>
+  <div class="cat-page-header">
+    <h1><span class="cat-badge" data-cat="{{ category }}"><span class="cat-dot"></span></span>{{ category_name }}</h1>
+    <span class="cat-page-count">{{ pluralize_articles(total) }}</span>
   </div>
 
-  <!-- ═══ CATEGORY HERO: 1 main + 2 side ═══ -->
+  <!-- ═══ TOP STORIES: featured grid 2+1+1+1 ═══ -->
   {% if articles|length > 0 %}
-  <div class="cat-hero">
+  <div class="cat-top">
     {% set main = articles[0] %}
-    <a href="{{ article_url(main) }}" class="cat-hero-main">
+    <a href="{{ article_url(main) }}" class="cat-top-lead">
       {% if main.main_image or main.thumbnail %}
         <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager">
       {% endif %}
-      <div class="cat-hero-main-body">
-        <h2 class="cat-hero-main-title">{{ main.title }}</h2>
+      <div class="cat-top-lead-body">
+        <h2 class="cat-top-lead-title">{{ main.title }}</h2>
         {% if main.excerpt %}
-          <p class="cat-hero-main-excerpt">{{ main.excerpt[:160] }}{% if main.excerpt|length > 160 %}…{% endif %}</p>
+          <p class="cat-top-lead-excerpt">{{ main.excerpt[:140] }}{% if main.excerpt|length > 140 %}…{% endif %}</p>
         {% endif %}
-        <span class="cat-hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
+        <span class="cat-top-lead-meta">{{ format_date_short(main.pub_date) }}</span>
       </div>
     </a>
-    {% if articles|length > 2 %}
-    <div class="cat-hero-side">
-      {% for art in articles[1:3] %}
-      <a href="{{ article_url(art) }}" class="cat-hero-side-item">
-        {% if art.main_image or art.thumbnail %}
-        <div class="cat-hero-side-thumb">
-          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager">
-        </div>
-        {% endif %}
-        <div class="cat-hero-side-body">
-          <h3 class="cat-hero-side-title">{{ art.title }}</h3>
-          <span class="cat-hero-side-meta">{{ format_date_short(art.pub_date) }}</span>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
+    {% for art in articles[1:4] %}
+    <a href="{{ article_url(art) }}" class="cat-top-card">
+      {% if art.main_image or art.thumbnail %}
+      <div class="cat-top-card-img">
+        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager">
+      </div>
+      {% else %}
+      <div class="cat-top-card-img cat-top-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+      {% endif %}
+      <div class="cat-top-card-body">
+        <h3 class="cat-top-card-title">{{ art.title }}</h3>
+        <span class="cat-top-card-meta">{{ format_date_short(art.pub_date) }}</span>
+      </div>
+    </a>
+    {% endfor %}
   </div>
   {% endif %}
 
-  <!-- ═══ AD: BETWEEN FEATURED AND FEED ═══ -->
+  <!-- ═══ AD ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="C1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
   <!-- ═══ REMAINING ARTICLES + SIDEBAR ═══ -->
-  {% if articles|length > 3 %}
-  <div class="category-layout">
-    <div class="category-main">
-      <div class="feed-list">
-        {% for art in articles[3:] %}
-        <article class="feed-item">
-          <div class="feed-item-body">
-            <div class="feed-item-meta">
-              <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-                <span class="cat-dot"></span>
-                <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
-              </span>
-              <span class="sep">·</span>
-              <span>{{ format_date_short(art.pub_date) }}</span>
-              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art|fake_views|format_num }}</span>
-            </div>
-            <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-            {% if art.excerpt %}
-              <p class="feed-item-excerpt">{{ art.excerpt[:140] }}{% if art.excerpt|length > 140 %}…{% endif %}</p>
-            {% endif %}
+  {% if articles|length > 4 %}
+  <div class="cat-content">
+    <div class="cat-feed">
+      {% for art in articles[4:] %}
+      <article class="cat-feed-item">
+        {% if art.main_image or art.thumbnail %}
+        <div class="cat-feed-thumb">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 300) }}" alt="{{ art.title }}" loading="lazy">
+        </div>
+        {% else %}
+        <div class="cat-feed-thumb cat-feed-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+        {% endif %}
+        <div class="cat-feed-body">
+          <div class="cat-feed-meta">
+            <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(art.sub_category) }}">
+              <span class="cat-dot"></span>
+              <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+            </span>
+            <span class="meta-sep">·</span>
+            <span>{{ format_date_short(art.pub_date) }}</span>
           </div>
-          {% if art.main_image or art.thumbnail %}
-          <div class="feed-item-thumb">
-            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
-          </div>
-          {% else %}
-          <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
-          {% endif %}
-        </article>
-        {% endfor %}
-      </div>
+          <h3 class="cat-feed-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+        </div>
+      </article>
+      {% endfor %}
     </div>
-    <aside class="category-sidebar">
+    <aside class="cat-sidebar">
       <div class="ad-placeholder ad-sidebar" data-ad-slot="C2" data-ad-size="300x250" aria-hidden="true">Реклама</div>
     </aside>
   </div>
