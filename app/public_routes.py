@@ -3,6 +3,7 @@
 import hashlib
 import httpx
 import logging
+import os
 import re
 import sqlite3
 from datetime import datetime
@@ -10,6 +11,8 @@ from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+
+SITE_DOMAIN = os.getenv("SITE_DOMAIN", "https://total.qdev.run")
 
 from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
 
@@ -378,6 +381,7 @@ templates.env.globals["pluralize_articles"] = pluralize_articles
 templates.env.globals["pluralize_materials"] = pluralize_materials
 templates.env.globals["format_num"] = format_num
 templates.env.globals["short_entity_name"] = short_entity_name
+templates.env.globals["site_domain"] = SITE_DOMAIN
 
 # Currency rates (live from NB RK, cached 1h)
 from app.currency import get_rates as _get_currency_rates, get_commodities as _get_commodities
@@ -1085,8 +1089,8 @@ Allow: /
 User-agent: Amazonbot
 Allow: /
 
-Sitemap: https://total.kz/sitemap.xml
-Sitemap: https://total.kz/sitemap-news.xml
+Sitemap: {SITE_DOMAIN}/sitemap.xml
+Sitemap: {SITE_DOMAIN}/sitemap-news.xml
 """
     return Response(content=content, media_type="text/plain")
 
@@ -1109,11 +1113,11 @@ Total.kz — крупнейший информационный портал Ка
 - [Мир](/news/mir): Международные новости
 
 ## Навигация
-- [Главная](https://total.kz/): Лента последних новостей
-- [Поиск](https://total.kz/search): Полнотекстовый поиск по архиву
-- [Персоны](https://total.kz/persons): Каталог упоминаемых персон
-- [RSS-лента](https://total.kz/rss.xml): RSS 2.0 feed
-- [Карта сайта](https://total.kz/sitemap.xml): XML Sitemap
+- [Главная]({SITE_DOMAIN}/): Лента последних новостей
+- [Поиск]({SITE_DOMAIN}/search): Полнотекстовый поиск по архиву
+- [Персоны]({SITE_DOMAIN}/persons): Каталог упоминаемых персон
+- [RSS-лента]({SITE_DOMAIN}/rss.xml): RSS 2.0 feed
+- [Карта сайта]({SITE_DOMAIN}/sitemap.xml): XML Sitemap
 
 ## Контакты
 - Город: Алматы, Казахстан
@@ -1136,7 +1140,7 @@ async def sitemap_xml():
     xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
 
     # Homepage
-    xml_parts.append("<url><loc>https://total.kz/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>")
+    xml_parts.append(f"<url><loc>{SITE_DOMAIN}/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>")
 
     # Category pages
     seen_cats = set()
@@ -1144,7 +1148,7 @@ async def sitemap_xml():
         cat = u["sub_category"]
         if cat and cat not in seen_cats:
             seen_cats.add(cat)
-            xml_parts.append(f"<url><loc>https://total.kz/news/{cat}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>")
+            xml_parts.append(f"<url><loc>{SITE_DOMAIN}/news/{cat}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>")
 
     # Article pages
     for u in urls:
@@ -1153,7 +1157,7 @@ async def sitemap_xml():
         if len(parts) >= 2:
             new_path = f"/news/{parts[0]}/{parts[1]}"
             lastmod = u["pub_date"][:10] if u.get("pub_date") else ""
-            xml_parts.append(f"<url><loc>https://total.kz{new_path}</loc>")
+            xml_parts.append(f"<url><loc>{SITE_DOMAIN}{new_path}</loc>")
             if lastmod:
                 xml_parts.append(f"<lastmod>{lastmod}</lastmod>")
             xml_parts.append("<changefreq>monthly</changefreq><priority>0.6</priority></url>")
@@ -1180,7 +1184,7 @@ async def sitemap_news_xml():
         url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(url_parts) < 2:
             continue
-        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
         pub_date = (art.get("pub_date") or "")[:19]
         title_escaped = html_mod.escape(art["title"])
 
@@ -1215,9 +1219,9 @@ async def rss_feed():
     for art in articles:
         url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(url_parts) >= 2:
-            link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+            link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
         else:
-            link = f"https://total.kz/"
+            link = f"{SITE_DOMAIN}/"
         cat = cat_label(nav_slug_for(art.get("sub_category", "")))
         pub = art.get("pub_date", "")
         # RFC 822 date
@@ -1233,7 +1237,7 @@ async def rss_feed():
         media_tag = ""
         img = art.get("main_image", "")
         if img:
-            img_url = img if img.startswith("http") else f"https://total.kz{img}"
+            img_url = img if img.startswith("http") else f"{SITE_DOMAIN}{img}"
             media_tag = f'\n      <media:content url="{html_mod.escape(img_url)}" medium="image"/>'
         author_tag = ""
         if art.get("author"):
@@ -1251,10 +1255,10 @@ async def rss_feed():
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>ТÓТАЛ — Новости Казахстана</title>
-    <link>https://total.kz</link>
+    <link>{SITE_DOMAIN}</link>
     <description>Последние новости Казахстана — политика, экономика, общество, спорт</description>
     <language>ru</language>
-    <atom:link href="https://total.kz/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="{SITE_DOMAIN}/rss.xml" rel="self" type="application/rss+xml"/>
     <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
 {chr(10).join(items)}
   </channel>
@@ -1277,7 +1281,7 @@ async def json_feed():
         url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(url_parts) < 2:
             continue
-        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
         item = {
             "id": link,
             "url": link,
@@ -1289,14 +1293,14 @@ async def json_feed():
         }
         img = art.get("main_image", "")
         if img:
-            item["image"] = img if img.startswith("http") else f"https://total.kz{img}"
+            item["image"] = img if img.startswith("http") else f"{SITE_DOMAIN}{img}"
         items.append(item)
 
     feed = {
         "version": "https://jsonfeed.org/version/1.1",
         "title": "ТÓТАЛ — Новости Казахстана",
-        "home_page_url": "https://total.kz",
-        "feed_url": "https://total.kz/feed.json",
+        "home_page_url": SITE_DOMAIN,
+        "feed_url": f"{SITE_DOMAIN}/feed.json",
         "description": "Последние новости Казахстана — политика, экономика, общество, спорт",
         "language": "ru",
         "items": items,
@@ -1558,7 +1562,7 @@ async def web_story_page(category: str, slug: str):
     title = html_mod.escape(article["title"])
     author = html_mod.escape(article.get("author") or "Total.kz")
     img = article.get("main_image", "")
-    image_url = img if img and img.startswith("http") else (f"https://total.kz{img}" if img else "https://total.kz/static/img/og-default.png")
+    image_url = img if img and img.startswith("http") else (f"{SITE_DOMAIN}{img}" if img else f"{SITE_DOMAIN}/static/img/og-default.png")
     pub_date = article.get("pub_date", "")
     updated_at = article.get("updated_at") or pub_date
     category_name = html_mod.escape(cat_label(category))
@@ -1593,7 +1597,7 @@ async def web_story_page(category: str, slug: str):
   <script async src="https://cdn.ampproject.org/v0.js"></script>
   <script async custom-element="amp-story" src="https://cdn.ampproject.org/v0/amp-story-1.0.js"></script>
   <title>{title} – Total.kz</title>
-  <link rel="canonical" href="https://total.kz/stories/{category}/{slug}">
+  <link rel="canonical" href="{SITE_DOMAIN}/stories/{category}/{slug}">
   <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
   <style amp-boilerplate>body{{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}}@-webkit-keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}@-moz-keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}@keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}</style><noscript><style amp-boilerplate>body{{-webkit-animation:none;-moz-animation:none;animation:none}}</style></noscript>
   <script type="application/ld+json">
@@ -1605,7 +1609,7 @@ async def web_story_page(category: str, slug: str):
     "datePublished": "{pub_date}",
     "dateModified": "{updated_at}",
     "author": {{"@type": "Person", "name": "{author}"}},
-    "publisher": {{"@type": "Organization", "name": "Total.kz", "logo": {{"@type": "ImageObject", "url": "https://total.kz/static/img/logotype.png"}}}}
+    "publisher": {{"@type": "Organization", "name": "Total.kz", "logo": {{"@type": "ImageObject", "url": "{SITE_DOMAIN}/static/img/logotype.png"}}}}
   }}
   </script>
   <meta property="og:title" content="{title}">
@@ -1626,7 +1630,7 @@ async def web_story_page(category: str, slug: str):
   <amp-story standalone
     title="{title}"
     publisher="Total.kz"
-    publisher-logo-src="https://total.kz/static/img/logotype.png"
+    publisher-logo-src="{SITE_DOMAIN}/static/img/logotype.png"
     poster-portrait-src="{html_mod.escape(image_url)}">
 
     <amp-story-page id="cover">
@@ -1650,7 +1654,7 @@ async def web_story_page(category: str, slug: str):
         <div style="text-align:center">
           <span class="story-logo">ТÓТАЛ</span>
           <p style="color:#fff;margin:16px 0;font-size:18px;">Читайте полную версию</p>
-          <a href="https://total.kz/news/{category}/{slug}" class="story-cta">Открыть статью &rarr;</a>
+          <a href="{SITE_DOMAIN}/news/{category}/{slug}" class="story-cta">Открыть статью &rarr;</a>
         </div>
       </amp-story-grid-layer>
     </amp-story-page>
@@ -1697,11 +1701,11 @@ async def turbo_rss():
         url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(url_parts) < 2:
             continue
-        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
 
         img_tag = ""
         if art.get("main_image"):
-            img_url = art["main_image"] if art["main_image"].startswith("http") else f"https://total.kz{art['main_image']}"
+            img_url = art["main_image"] if art["main_image"].startswith("http") else f"{SITE_DOMAIN}{art['main_image']}"
             img_tag = f'<figure><img src="{html_mod.escape(img_url)}"/></figure>'
 
         body = art.get("body_html", "") or art.get("excerpt", "")
@@ -1712,8 +1716,8 @@ async def turbo_rss():
           <h1>{html_mod.escape(art['title'])}</h1>
           {img_tag}
           <menu>
-            <a href="https://total.kz/">Главная</a>
-            <a href="https://total.kz/news/{url_parts[0]}">{html_mod.escape(nav_cat)}</a>
+            <a href="{SITE_DOMAIN}/">Главная</a>
+            <a href="{SITE_DOMAIN}/news/{url_parts[0]}">{html_mod.escape(nav_cat)}</a>
           </menu>
         </header>
         {body}"""
@@ -1736,7 +1740,7 @@ async def turbo_rss():
 <rss xmlns:yandex="http://news.yandex.ru" xmlns:media="http://search.yahoo.com/mrss/" xmlns:turbo="http://turbo.yandex.ru" version="2.0">
   <channel>
     <title>ТÓТАЛ — Новости Казахстана</title>
-    <link>https://total.kz</link>
+    <link>{SITE_DOMAIN}</link>
     <description>Последние новости Казахстана</description>
     <language>ru</language>
     <turbo:analytics type="Yandex" id=""></turbo:analytics>

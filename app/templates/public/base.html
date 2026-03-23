@@ -8,14 +8,14 @@
 
   {% block meta %}
   <meta name="description" content="{% block description %}Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.{% endblock %}">
-  <link rel="canonical" href="https://total.kz{% block canonical %}{{ request.url.path }}{% endblock %}">
+  <link rel="canonical" href="{{ site_domain }}{% block canonical %}{{ request.url.path }}{% endblock %}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:title" content="{% block og_title %}Total.kz – Новости Казахстана{% endblock %}">
   <meta property="og:description" content="{% block og_description %}Ведущий новостной портал Казахстана{% endblock %}">
-  <meta property="og:url" content="https://total.kz{{ request.url.path }}">
+  <meta property="og:url" content="{{ site_domain }}{{ request.url.path }}">
   <meta property="og:site_name" content="Total.kz">
   <meta property="og:locale" content="ru_RU">
-  {% block og_image %}<meta property="og:image" content="https://total.kz/static/img/og-default.png">{% endblock %}
+  {% block og_image %}<meta property="og:image" content="{{ site_domain }}/static/img/og-default.png">{% endblock %}
   <meta name="twitter:card" content="summary_large_image">
   {% endblock %}
 
@@ -25,16 +25,16 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Total.kz",
-    "url": "https://total.kz",
+    "url": "{{ site_domain }}",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://total.kz/search?q={search_term_string}",
+      "target": "{{ site_domain }}/search?q={search_term_string}",
       "query-input": "required name=search_term_string"
     },
     "publisher": {
       "@type": "Organization",
       "name": "Total.kz",
-      "url": "https://total.kz"
+      "url": "{{ site_domain }}"
     }
   }
   </script>
@@ -44,8 +44,8 @@
     "@type": "Organization",
     "name": "Total.kz",
     "alternateName": "ТÓТАЛ",
-    "url": "https://total.kz",
-    "logo": "https://total.kz/static/img/logotype.png",
+    "url": "{{ site_domain }}",
+    "logo": "{{ site_domain }}/static/img/logotype.png",
     "sameAs": [
       "https://t.me/totalkz",
       "https://www.facebook.com/total.kz",
