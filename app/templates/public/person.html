@@ -18,7 +18,7 @@
   <header class="person-hero">
     <div class="person-hero-avatar{% if person['photo_url'] %} has-photo{% endif %}">
       {% if person['photo_url'] %}
-      <img src="{{ imgproxy_url(person['photo_url'], 400) }}" alt="{{ person['short_name'] }}">
+      <img src="{% if person['photo_url'].startswith('/') %}{{ person['photo_url'] }}{% else %}{{ imgproxy_url(person['photo_url'], 400) }}{% endif %}" alt="{{ person['short_name'] }}">
       {% else %}
       <span class="person-hero-initials">{{ person['short_name'][:1] }}</span>
       {% endif %}
