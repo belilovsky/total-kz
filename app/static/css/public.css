@@ -2738,3 +2738,120 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .sidebar-persons { padding:8px 0; }
   .sidebar-person-photo { width:32px; height:32px; }
 }
+
+
+/* ===================================================================
+   MOBILE FIXES v13.2
+   =================================================================== */
+
+/* 1. Timeline: dates overlapping titles on mobile — widen date col, stack if needed */
+@media (max-width:639px) {
+  .timeline-item {
+    grid-template-columns:1fr;
+    gap:2px;
+  }
+  .timeline-date {
+    font-size:10px;
+    white-space:nowrap;
+    color:var(--text-muted);
+  }
+  .timeline-title {
+    font-size:var(--text-xs);
+  }
+}
+
+/* 2. Feed items: more compact on mobile */
+@media (max-width:639px) {
+  .feed-item {
+    padding:var(--space-2) var(--space-2);
+    gap:var(--space-2);
+    margin:0 calc(-1 * var(--space-2));
+  }
+  .feed-item-thumb {
+    width:88px;
+    height:64px;
+  }
+  .feed-item-title {
+    font-size:0.82rem;
+    line-height:1.35;
+  }
+  .feed-item-excerpt {
+    font-size:0.72rem;
+    margin-top:2px;
+    -webkit-line-clamp:2;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .feed-item-meta {
+    font-size:10px;
+  }
+}
+
+/* 3. Footer: compact on mobile */
+@media (max-width:639px) {
+  .site-footer {
+    padding:var(--space-5) 0 var(--space-4);
+    margin-top:var(--space-2);
+  }
+  .footer-inner {
+    gap:var(--space-4);
+  }
+  .footer-columns {
+    gap:var(--space-3);
+  }
+  .footer-col-links {
+    gap:var(--space-1);
+  }
+  .footer-col-links a {
+    font-size:var(--text-xs);
+  }
+  .footer-col-title {
+    margin-bottom:var(--space-2);
+    font-size:10px;
+  }
+  .footer-legal {
+    padding-top:var(--space-3);
+    font-size:10px;
+    gap:0;
+    line-height:1.5;
+  }
+}
+
+/* 4. Article body: prevent iOS auto-linking of numbers + explicit link style fix */
+.article-body a[href^="tel:"] {
+  color:inherit;
+  text-decoration:none;
+  pointer-events:none;
+}
+
+/* 5. Blockquote: fix right-side clipping on mobile */
+@media (max-width:639px) {
+  .article-body blockquote {
+    margin-left:0;
+    margin-right:0;
+    padding:var(--space-4) var(--space-3) var(--space-4) var(--space-6);
+    overflow-wrap:break-word;
+    word-break:break-word;
+  }
+  .article-body blockquote::before {
+    font-size:2.2rem;
+    left:var(--space-1);
+    top:var(--space-1);
+  }
+}
+
+/* 6. Currency strip: prevent overlap on mobile */
+@media (max-width:767px) {
+  .strip-left {
+    flex-shrink:0;
+    max-width:40%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-right:var(--space-2);
+  }
+  .strip-right {
+    flex:1;
+    min-width:0;
+  }
+}
