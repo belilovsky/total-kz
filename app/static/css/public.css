@@ -1999,6 +1999,68 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .cat-highlight-item + .cat-highlight-item { border-top:1px solid var(--border); }
 }
 
+/* ── Mobile polish v12.7 ───────────────────── */
+@media (max-width:640px) {
+  /* M-10: feed-section — remove border, keep accent bar */
+  .feed-section { border-top:none; padding-top:var(--space-6); margin-top:var(--space-4); }
+
+  /* M-11: feed-divider — remove border, keep accent bar */
+  .feed-divider { border-top:none; margin-top:var(--space-3); padding:var(--space-4) 0 var(--space-2); }
+
+  /* M-12: section-header — thinner border on mobile */
+  .section-header { border-bottom-width:1px; border-bottom-color:var(--border); padding-bottom:var(--space-2); margin-bottom:var(--space-4); }
+
+  /* M-13: category-header — lighter border on mobile */
+  .category-header { border-bottom:1px solid var(--border); padding:var(--space-4) 0 var(--space-3); margin-bottom:var(--space-4); }
+
+  /* M-14: entity/tag page header — remove border on mobile */
+  .entity-page-header, .tag-page-header { border-bottom:none; padding:var(--space-4) 0 var(--space-2); margin-bottom:var(--space-4); }
+
+  /* M-15: article-entities — remove border on mobile */
+  .article-entities { border-top:none; padding-top:var(--space-3); }
+
+  /* M-16: footer-legal — lighter border */
+  .footer-legal { border-top-color:var(--border-light); padding-top:var(--space-3); margin-top:var(--space-4); }
+
+  /* M-17: hero-side cards — more compact on mobile */
+  .hero-side { gap:var(--space-2); }
+  .hero-side-thumb { aspect-ratio:3/2; }
+  .hero-side-body { padding:var(--space-2) var(--space-2) var(--space-2); }
+  .hero-side-title { font-size:var(--text-xs); -webkit-line-clamp:2; }
+  .hero-side-meta { font-size:10px; }
+
+  /* M-18: pagination — less vertical space */
+  .pagination { padding:var(--space-6) 0; }
+  .pagination a, .pagination span { min-width:32px; height:32px; font-size:var(--text-xs); }
+
+  /* M-19: search-page — reduce top padding */
+  .search-page { padding-top:var(--space-6); padding-bottom:var(--space-8); }
+  .search-page-form { margin-bottom:var(--space-6); }
+  .search-input-wrap { padding:var(--space-2) var(--space-4); }
+  .search-input-wrap input { font-size:var(--text-base); }
+
+  /* M-20: error-page — tighter on mobile */
+  .error-page { padding:var(--space-8) var(--space-4) var(--space-12); min-height:50vh; }
+  .error-title { font-size:var(--text-lg); }
+  .error-desc { font-size:var(--text-sm); }
+
+  /* M-21: cards-grid — reduce gap on mobile */
+  .cards-grid { gap:var(--space-3); }
+
+  /* M-22: category-highlights — reduce gap on mobile */
+  .category-highlights { gap:var(--space-4); margin-bottom:var(--space-6); }
+
+  /* M-23: load-more — less padding on mobile */
+  .load-more-wrap { padding:var(--space-5) 0; }
+  .load-more-btn { padding:var(--space-2) var(--space-6); font-size:var(--text-xs); }
+
+  /* M-24: feed-item border-bottom for lighter feel */
+  .feed-item { border-bottom:none; }
+
+  /* M-25: cat-highlight-item — remove original border-bottom on mobile (use + separator instead) */
+  .cat-highlight-item { border-bottom:none; padding:var(--space-2) var(--space-2); }
+}
+
 /* ═══════════════════════════════════════════════
    NEW FEATURES: Ads, Share, Views, Tabs, Currency,
    Mobile Nav, Ticker
