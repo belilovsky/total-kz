@@ -1271,10 +1271,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Author byline at end of article */
 .article-author-byline {
-  margin-top:var(--space-6); padding-top:var(--space-4);
-  border-top:1px solid var(--border-light);
+  margin-top:var(--space-5); padding-top:var(--space-3);
   font-size:var(--text-sm); font-weight:600; color:var(--text-secondary);
 }
+@media (min-width:640px) { .article-author-byline { margin-top:var(--space-6); padding-top:var(--space-4); border-top:1px solid var(--border-light); } }
 .article-author-byline a {
   color:var(--text-secondary); text-decoration:none;
 }
@@ -1283,10 +1283,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* Article footer zone – tags + entities (mobile only) */
 .article-footer-meta {
   padding:var(--space-4) 0;
-  margin-top:var(--space-6);
-  border-top:1px solid var(--border-light);
+  margin-top:var(--space-5);
 }
-@media (min-width:640px) { .article-footer-meta { padding:var(--space-5) 0; margin-top:var(--space-8); } }
+@media (min-width:640px) { .article-footer-meta { border-top:1px solid var(--border-light); margin-top:var(--space-6); } }
+@media (min-width:640px) { .article-footer-meta { padding:var(--space-5) 0; } }
 @media (min-width:1100px) { .article-footer-meta--mobile { display:none; } }
 
 /* Timeline – contextual navigation */
@@ -1344,9 +1344,9 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 }
 .timeline-date {
   font-size:11px; color:var(--text-muted); line-height:1.5;
-  text-align:right; white-space:nowrap;
+  text-align:left; white-space:nowrap;
 }
-@media (min-width:640px) { .timeline-date { font-size:var(--text-xs); } }
+@media (min-width:640px) { .timeline-date { font-size:var(--text-xs); text-align:right; } }
 .timeline-title {
   font-size:var(--text-xs); font-weight:600; line-height:1.4; color:var(--text);
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
@@ -1452,10 +1452,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Related articles – 6 cards, 3-col desktop grid */
 .related-section {
-  margin-top:var(--space-6); padding-top:var(--space-5);
-  border-top:1px solid var(--border);
+  margin-top:var(--space-5); padding-top:var(--space-4);
 }
-@media (min-width:640px) { .related-section { margin-top:var(--space-6); padding-top:var(--space-6); } }
+@media (min-width:640px) { .related-section { margin-top:var(--space-6); padding-top:var(--space-5); border-top:1px solid var(--border); } }
+@media (min-width:640px) { .related-section { padding-top:var(--space-6); } }
 .related-heading {
   font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
   letter-spacing:0.06em; color:var(--text-secondary); margin-bottom:var(--space-4);
