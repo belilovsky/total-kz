@@ -49,34 +49,39 @@
     <div class="category-count">{{ pluralize_articles(total) }}</div>
   </div>
 
-  <!-- ═══ FEATURED: first 3 as cards ═══ -->
+  <!-- ═══ CATEGORY HERO: 1 main + 2 side ═══ -->
   {% if articles|length > 0 %}
-  <div class="featured-grid">
-    {% for art in articles[:3] %}
-    <article class="featured-card">
-      {% if art.main_image or art.thumbnail %}
-      <div class="card-image">
-        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
-      </div>
-      {% else %}
-      <div class="card-image card-image--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+  <div class="cat-hero">
+    {% set main = articles[0] %}
+    <a href="{{ article_url(main) }}" class="cat-hero-main">
+      {% if main.main_image or main.thumbnail %}
+        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager">
       {% endif %}
-      <div class="card-body">
-        <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-          <span class="cat-dot"></span>
-          <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
-        </span>
-        <h3 class="card-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-        {% if art.excerpt %}
-          <p class="card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
+      <div class="cat-hero-main-body">
+        <h2 class="cat-hero-main-title">{{ main.title }}</h2>
+        {% if main.excerpt %}
+          <p class="cat-hero-main-excerpt">{{ main.excerpt[:160] }}{% if main.excerpt|length > 160 %}…{% endif %}</p>
         {% endif %}
-        <div class="card-meta">
-          <span>{{ format_date_short(art.pub_date) }}</span>
-          <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{{ art|fake_views|format_num }}</span>
-        </div>
+        <span class="cat-hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
       </div>
-    </article>
-    {% endfor %}
+    </a>
+    {% if articles|length > 2 %}
+    <div class="cat-hero-side">
+      {% for art in articles[1:3] %}
+      <a href="{{ article_url(art) }}" class="cat-hero-side-item">
+        {% if art.main_image or art.thumbnail %}
+        <div class="cat-hero-side-thumb">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager">
+        </div>
+        {% endif %}
+        <div class="cat-hero-side-body">
+          <h3 class="cat-hero-side-title">{{ art.title }}</h3>
+          <span class="cat-hero-side-meta">{{ format_date_short(art.pub_date) }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 

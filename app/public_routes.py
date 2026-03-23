@@ -1010,6 +1010,24 @@ async def search_page(
     })
 
 
+@router.get("/tags", response_class=HTMLResponse)
+async def tags_catalog(
+    request: Request,
+    page: int = Query(1, ge=1),
+    q: str = "",
+):
+    """Tags catalog – all topics/tags."""
+    result = db.get_tags_full(q=q, page=page, per_page=60)
+    return templates.TemplateResponse("public/tags.html", {
+        "request": request,
+        "result": result,
+        "page": page,
+        "q": q,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    })
+
+
 @router.get("/tag/{tag_name}", response_class=HTMLResponse)
 async def tag_page(
     request: Request,
