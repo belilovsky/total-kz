@@ -40,12 +40,14 @@
         </div>
         {% endif %}
         <div class="hero-side-body">
-          <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
-            <span class="cat-dot"></span>
-            <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
-          </span>
+          <div class="hero-side-top">
+            <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
+              <span class="cat-dot"></span>
+              <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
+            </span>
+            <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
+          </div>
           <h3 class="hero-side-title">{{ hero.title }}</h3>
-          <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
         </div>
       </a>
       {% endfor %}
