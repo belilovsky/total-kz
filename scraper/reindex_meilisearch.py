@@ -29,7 +29,7 @@ def setup_index():
         "searchableAttributes": ["title", "excerpt", "body_text", "author", "tags"],
         "filterableAttributes": ["sub_category", "status", "author", "pub_date"],
         "sortableAttributes": ["pub_date"],
-        "displayedAttributes": ["id", "title", "excerpt", "author", "sub_category", "pub_date", "tags", "thumbnail", "status"],
+        "displayedAttributes": ["id", "title", "excerpt", "author", "sub_category", "pub_date", "tags", "thumbnail", "main_image", "url", "status"],
     }
     httpx.patch(f"{MEILI_URL}/indexes/{INDEX}/settings", json=settings, headers=_headers, timeout=10)
     print(f"Index '{INDEX}' configured.")
@@ -40,7 +40,7 @@ def reindex_all():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     rows = conn.execute("""
-        SELECT id, title, excerpt, body_text, author, sub_category, pub_date, tags, status, thumbnail, main_image
+        SELECT id, title, excerpt, body_text, author, sub_category, pub_date, tags, status, thumbnail, main_image, url
         FROM articles
     """).fetchall()
     conn.close()
@@ -65,6 +65,8 @@ def reindex_all():
             "tags": tags,
             "status": r["status"] or "published",
             "thumbnail": r["thumbnail"] or r["main_image"] or "",
+            "main_image": r["main_image"] or "",
+            "url": r["url"] or "",
         })
 
     total = len(docs)

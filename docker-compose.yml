@@ -38,12 +38,39 @@ services:
     env_file: .env
     volumes:
       - ./data:/app/data
+    depends_on:
+      meilisearch:
+        condition: service_started
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        echo "Cron started: fetch every 2 hours"
+        echo "=== Cron container started ==="
+        chmod +x /app/scraper/cron_*.sh
+
+        # Initial: reindex Meilisearch + backup
+        /app/scraper/cron_reindex.sh >> /app/data/cron_reindex.log 2>&1
+        /app/scraper/cron_backup.sh >> /app/data/cron_backup.log 2>&1
+
+        COUNTER=0
         while true; do
+          COUNTER=$$((COUNTER + 1))
+
+          # Каждые 2 часа: fetch новых статей
           /app/scraper/cron_fetch.sh >> /app/data/cron_fetch.log 2>&1
+
+          # После fetch: переиндексация Meilisearch
+          /app/scraper/cron_reindex.sh >> /app/data/cron_reindex.log 2>&1
+
+          # Каждые 4 часа (каждый 2-й цикл): обогащение GPT
+          if [ $$((COUNTER % 2)) -eq 0 ]; then
+            /app/scraper/cron_enrich.sh >> /app/data/cron_enrich.log 2>&1
+          fi
+
+          # Каждые 24 часа (каждый 12-й цикл): бэкап БД
+          if [ $$((COUNTER % 12)) -eq 0 ]; then
+            /app/scraper/cron_backup.sh >> /app/data/cron_backup.log 2>&1
+          fi
+
           sleep 7200
         done
     networks:

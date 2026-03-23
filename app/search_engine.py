@@ -81,7 +81,7 @@ def setup_index():
             "searchableAttributes": ["title", "excerpt", "body_text", "author", "tags"],
             "filterableAttributes": ["sub_category", "status", "author", "pub_date"],
             "sortableAttributes": ["pub_date"],
-            "displayedAttributes": ["id", "title", "excerpt", "author", "sub_category", "pub_date", "tags", "thumbnail", "status"],
+            "displayedAttributes": ["id", "title", "excerpt", "author", "sub_category", "pub_date", "tags", "thumbnail", "main_image", "url", "status"],
         }
         httpx.patch(f"{MEILI_URL}/indexes/{INDEX}/settings", json=settings, headers=_headers, timeout=10)
     except Exception:
