@@ -87,6 +87,21 @@
   </section>
   {% endif %}
 
+  {# ── Trending tags cloud ── #}
+  {% if trending_tags %}
+  <section class="trending-tags-strip">
+    <div class="section-header">
+      <h2 class="section-title">Тренды</h2>
+      <a href="/search" class="section-more">Поиск →</a>
+    </div>
+    <div class="trending-tags-cloud">
+      {% for t in trending_tags %}
+      <a href="/tag/{{ t.tag }}" class="trending-tag" style="font-size:{{ [0.72, 0.72 + (t.cnt / trending_tags[0].cnt) * 0.5] | max }}rem">{{ t.tag }}</a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ═══ CATEGORY HIGHLIGHTS ═══ -->
   {% if category_highlights %}
   <div class="category-highlights">

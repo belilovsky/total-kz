@@ -698,6 +698,12 @@ async def homepage(request: Request):
         logger.exception("Error loading homepage persons")
         homepage_persons = []
 
+    # Trending tags for tag cloud
+    try:
+        trending_tags = db.get_trending_tags(limit=30)
+    except Exception:
+        trending_tags = []
+
     return templates.TemplateResponse("public/home.html", {
         "request": request,
         "hero_articles": hero_articles,
@@ -708,6 +714,7 @@ async def homepage(request: Request):
         "nav_categories": NAV_CATEGORIES,
         "ticker_articles": hero_articles[:5],
         "homepage_persons": homepage_persons,
+        "trending_tags": trending_tags,
     })
 
 
@@ -2109,3 +2116,84 @@ async def post_public_comment(article_id: int, request: Request):
     conn.commit()
     conn.close()
     return {"ok": True}
+
+
+# ══════════════════════════════════════════════
+#  NLWeb Protocol — /ask endpoint
+# ══════════════════════════════════════════════
+
+@router.get("/ask")
+@router.post("/ask")
+async def nlweb_ask(request: Request, query: str = "", mode: str = "list"):
+    """NLWeb-compatible /ask endpoint.
+
+    Supports modes: list, summarize.
+    Returns Schema.org-formatted JSON results from Meilisearch.
+    """
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            query = body.get("query", query)
+            mode = body.get("mode", mode)
+        except Exception:
+            pass
+
+    if not query:
+        return {"error": "query parameter required", "protocol": "NLWeb", "version": "1.0"}
+
+    # Search via Meilisearch
+    try:
+        from . import search_engine as meili
+        results = meili.search(query, page=1, per_page=10)
+    except Exception:
+        results = {"hits": [], "total": 0}
+
+    # Format as Schema.org items
+    items = []
+    for hit in results.get("hits", []):
+        slug = (hit.get("url", "") or "").replace("https://total.kz/ru/news/", "").strip("/")
+        subcat = hit.get("sub_category", "")
+        item = {
+            "@type": "NewsArticle",
+            "name": hit.get("title", ""),
+            "description": hit.get("excerpt", ""),
+            "url": f"{SITE_DOMAIN}/news/{subcat}/{slug.split('/')[-1] if '/' in slug else slug}",
+            "datePublished": hit.get("pub_date", ""),
+            "author": hit.get("author", ""),
+            "articleSection": cat_label(subcat),
+        }
+        if hit.get("thumbnail"):
+            item["image"] = hit["thumbnail"] if hit["thumbnail"].startswith("http") else f"{SITE_DOMAIN}{hit['thumbnail']}"
+        items.append(item)
+
+    response = {
+        "@context": "https://schema.org",
+        "protocol": "NLWeb",
+        "version": "1.0",
+        "query": query,
+        "mode": mode,
+        "totalResults": results.get("total", 0),
+        "results": items,
+    }
+
+    if mode == "summarize" and items:
+        # Simple summary from top results
+        titles = [i["name"] for i in items[:5]]
+        response["summary"] = f"По запросу «{query}» найдено {results.get('total', 0)} материалов. Основные: " + "; ".join(titles) + "."
+
+    return response
+
+
+@router.get("/.well-known/nlweb.json")
+async def nlweb_discovery():
+    """NLWeb service discovery endpoint."""
+    return {
+        "nlweb": {
+            "url": f"{SITE_DOMAIN}/ask",
+            "name": "Total.kz — Новости Казахстана",
+            "description": "Казахстанский новостной портал. 66 000+ статей: политика, экономика, общество, спорт, наука.",
+            "languages": ["ru", "kk"],
+            "capabilities": ["list", "summarize"],
+            "schema_types": ["NewsArticle"],
+        }
+    }

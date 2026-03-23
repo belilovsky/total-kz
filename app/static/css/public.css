@@ -2860,6 +2860,30 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .sidebar-person-photo { width:32px; height:32px; }
 }
 
+/* ── Trending tags cloud ─────────────────────────── */
+.trending-tags-strip {
+  margin:24px 0 8px;
+}
+.trending-tags-cloud {
+  display:flex; flex-wrap:wrap; gap:6px 8px;
+  line-height:1.6;
+}
+.trending-tag {
+  display:inline-block;
+  padding:3px 10px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  color:var(--text-2);
+  text-decoration:none;
+  transition:border-color .15s, color .15s, background .15s;
+  white-space:nowrap;
+}
+.trending-tag:hover {
+  border-color:var(--accent);
+  color:var(--accent);
+  background:rgba(216,50,54,.04);
+}
+
 
 /* ===================================================================
    MOBILE FIXES v13.2

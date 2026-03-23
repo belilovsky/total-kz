@@ -38,7 +38,27 @@
   "headline": {{ article.title | tojson }},
   "description": {{ (article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title)) | tojson }},
   "url": {{ _art_url | tojson }},
-  {% if _img_full %}"image": [{{ _img_full | tojson }}],{% endif %}
+  {% if _img_full %}"image": [
+    {
+      "@type": "ImageObject",
+      "url": {{ _img_full | tojson }},
+      "width": 1200,
+      "height": 675,
+      "caption": {{ article.title | tojson }}
+    },
+    {
+      "@type": "ImageObject",
+      "url": "{{ site_domain }}/imgproxy/insecure/resize:fill:1200:900/gravity:sm/plain/{{ _img_full }}@webp",
+      "width": 1200,
+      "height": 900
+    },
+    {
+      "@type": "ImageObject",
+      "url": "{{ site_domain }}/imgproxy/insecure/resize:fill:1200:1200/gravity:sm/plain/{{ _img_full }}@webp",
+      "width": 1200,
+      "height": 1200
+    }
+  ],{% endif %}
   "datePublished": {{ (article.pub_date or '') | tojson }},
   "dateModified": {{ (article.updated_at or article.pub_date or '') | tojson }},
   "author": {

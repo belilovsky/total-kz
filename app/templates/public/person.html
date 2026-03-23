@@ -8,11 +8,19 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Person",
-  "name": {{ person['short_name'] | tojson }},
-  {% if person['full_name'] %}"alternateName": {{ person['full_name'] | tojson }},{% endif %}
-  {% if person['current_position'] %}"description": {{ person['current_position'] | tojson }},{% endif %}
-  {% if person['photo_url'] %}"image": {{ (person['photo_url'] if person['photo_url'].startswith('http') else site_domain + person['photo_url']) | tojson }},{% endif %}
+  "@type": "ProfilePage",
+  "mainEntity": {
+    "@type": "Person",
+    "name": {{ person['short_name'] | tojson }},
+    {% if person['full_name'] %}"alternateName": {{ person['full_name'] | tojson }},{% endif %}
+    {% if person['current_position'] %}"jobTitle": {{ person['current_position'] | tojson }},{% endif %}
+    {% if person['current_org'] %}"worksFor": {"@type": "Organization", "name": {{ person['current_org'] | tojson }}},{% endif %}
+    {% if person['bio_summary'] %}"description": {{ person['bio_summary'] | tojson }},{% endif %}
+    {% if person['birth_date'] %}"birthDate": {{ person['birth_date'] | tojson }},{% endif %}
+    {% if person['birth_place'] %}"birthPlace": {{ person['birth_place'] | tojson }},{% endif %}
+    {% if person['photo_url'] %}"image": {{ (person['photo_url'] if person['photo_url'].startswith('http') else site_domain + person['photo_url']) | tojson }},{% endif %}
+    "url": "{{ site_domain }}/person/{{ person['slug'] }}"
+  },
   "url": "{{ site_domain }}/person/{{ person['slug'] }}"
 }
 </script>
