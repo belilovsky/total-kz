@@ -1,0 +1,19 @@
+{% extends "public/base.html" %}
+{% block title %}Ошибка сервера – Total.kz{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div class="error-code" aria-hidden="true">500</div>
+  <h1 class="error-title">Что-то пошло не так</h1>
+  <p class="error-desc">Произошла внутренняя ошибка сервера. Мы&nbsp;уже работаем над&nbsp;её устранением.</p>
+  <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;justify-content:center">
+    <a href="/" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+      На главную
+    </a>
+    <a href="javascript:location.reload()" class="btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Обновить страницу
+    </a>
+  </div>
+</div>
+{% endblock %}

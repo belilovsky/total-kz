@@ -2197,3 +2197,25 @@ async def nlweb_discovery():
             "schema_types": ["NewsArticle"],
         }
     }
+
+
+#  PWA Manifest
+@router.get("/manifest.json")
+async def pwa_manifest():
+    """Web App Manifest for PWA install support."""
+    return JSONResponse({
+        "name": "ТОТАЛ — Новости Казахстана",
+        "short_name": "ТОТАЛ",
+        "description": "Ведущий новостной портал Казахстана",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#d83236",
+        "lang": "ru",
+        "categories": ["news"],
+        "icons": [
+            {"src": "/static/img/favicon.svg", "sizes": "any", "type": "image/svg+xml"},
+            {"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        ],
+    }, media_type="application/manifest+json")

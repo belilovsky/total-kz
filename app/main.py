@@ -113,6 +113,41 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+# ── Global exception handlers ─────────────────────────────────────
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Custom 404/4xx error pages."""
+    if exc.status_code == 404:
+        nav = db.get_nav_sections()
+        return HTMLResponse(
+            templates.get_template("public/404.html").render(
+                request=request, nav_sections=nav, nav_categories=nav
+            ),
+            status_code=404,
+        )
+    return HTMLResponse(f"Ошибка {exc.status_code}", status_code=exc.status_code)
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Catch-all: show 500.html instead of raw error text."""
+    logging.error(f"Unhandled exception on {request.url}: {exc}", exc_info=True)
+    try:
+        nav = db.get_nav_sections()
+        return HTMLResponse(
+            templates.get_template("public/500.html").render(
+                request=request, nav_sections=nav, nav_categories=nav
+            ),
+            status_code=500,
+        )
+    except Exception:
+        return HTMLResponse(
+            "<h1>500 — Внутренняя ошибка сервера</h1><p><a href='/'>На главную</a></p>",
+            status_code=500,
+        )
+
+
 def _format_num(n) -> str:
     """Format number with non-breaking space as thousands separator."""
     try:
