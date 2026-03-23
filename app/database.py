@@ -912,6 +912,7 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
             SELECT id, url, pub_date, sub_category, title, author, excerpt,
                    thumbnail, main_image, COALESCE(views, 0) as views
             FROM articles
+            WHERE pub_date IS NOT NULL AND pub_date != ''
             ORDER BY pub_date DESC
             LIMIT ? OFFSET ?
         """, (limit, offset)).fetchall()

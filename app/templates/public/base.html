@@ -240,6 +240,21 @@
             <a href="/page/contacts">Контакты</a>
           </nav>
         </div>
+        <div class="footer-col footer-col--desktop">
+          <span class="footer-col-title">Сервисы</span>
+          <nav class="footer-col-links" aria-label="Сервисы">
+            <a href="/persons">Персоны</a>
+            <a href="/tags">Тематики</a>
+          </nav>
+        </div>
+        <div class="footer-col footer-col--desktop">
+          <span class="footer-col-title">Контакты</span>
+          <div class="footer-col-links">
+            <a href="tel:+77009787854">+7 700 978-78-54</a>
+            <span class="footer-col-email">г. Алматы, пр. Жибек жолы</span>
+            <span class="footer-col-email">115/46, оф. 306</span>
+          </div>
+        </div>
       </div>
 
       <!-- Bottom: Legal line -->
@@ -532,12 +547,14 @@
         var headerEl = document.querySelector('.site-header');
         var tickerEl = document.getElementById('news-ticker');
         var bottomBarEl = document.getElementById('mobile-bottom-bar');
+        var backTopEl = document.querySelector('.back-to-top');
         var footerObs = new IntersectionObserver(function(entries) {
           entries.forEach(function(e) {
             var cls = 'footer-visible';
             if (headerEl) headerEl.classList.toggle(cls, e.isIntersecting);
             if (tickerEl) tickerEl.classList.toggle(cls, e.isIntersecting);
             if (bottomBarEl) bottomBarEl.classList.toggle(cls, e.isIntersecting);
+            if (backTopEl) backTopEl.classList.toggle(cls, e.isIntersecting);
           });
         }, { threshold: 0 });
         footerObs.observe(siteFooter);
