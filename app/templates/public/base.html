@@ -87,6 +87,7 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Перейти к содержимому</a>
 
   <!-- ═══ AD: TOP BANNER (A1) ═══ -->
   <div class="ad-placeholder ad-top-banner" data-ad-slot="A1" data-ad-size="970x90" aria-hidden="true">Реклама</div>
@@ -228,7 +229,7 @@
   </div>
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main>
+  <main id="main-content">
     {% block content %}{% endblock %}
   </main>
 

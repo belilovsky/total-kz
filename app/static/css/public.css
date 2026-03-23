@@ -3362,3 +3362,22 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ── Skip-to-content (a11y) ─── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brand);
+  color: #fff;
+  padding: .5rem 1.5rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+  z-index: 10000;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top .2s;
+}
+.skip-link:focus {
+  top: 0;
+}
