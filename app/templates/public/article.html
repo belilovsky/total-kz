@@ -76,6 +76,12 @@
 
 <article class="article-page">
 
+  {# ── Print-only header (hidden on screen, visible on print) ── #}
+  <div class="print-header" style="display:none">
+    <span class="print-header-logo">Total.kz</span>
+    <span class="print-header-url">total.kz/news/{{ category }}/{{ slug }}</span>
+  </div>
+
   {# ── Top bar: breadcrumbs only (badge moved to sidebar) ── #}
   <nav aria-label="Навигация">
     <div class="article-top-bar">
@@ -270,6 +276,9 @@
           <button class="sidebar-action-btn" onclick="window.print()" aria-label="Печать">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           </button>
+          <button class="sidebar-action-btn" onclick="sharePDF()" aria-label="Отправить PDF" title="Отправить как PDF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3-3 3 3"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
+          </button>
         </div>
 
         <!-- ═══ AD: ARTICLE SIDEBAR ═══ -->
@@ -303,6 +312,16 @@
     </div>
   </section>
   {% endif %}
+
+  {# ── Print-only footer (hidden on screen) ── #}
+  <div class="print-footer" style="display:none">
+    Источник: <a href="https://total.kz/news/{{ category }}/{{ slug }}">total.kz/news/{{ category }}/{{ slug }}</a>
+    &nbsp;·&nbsp;
+    {{ format_date_full(article.pub_date) }}
+    {% if article.author %}&nbsp;·&nbsp;{{ article.author }}{% endif %}
+    &nbsp;·&nbsp;
+    © Total.kz
+  </div>
 </article>
 
 <!-- Mobile share bar (below 1100px) -->
@@ -320,6 +339,9 @@
   <button class="share-btn" onclick="copyLink(this)" aria-label="Копировать ссылку">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
   </button>
+  <button class="share-btn" onclick="sharePDF()" aria-label="Отправить PDF">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3-3 3 3"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
+  </button>
 </div>
 {% endblock %}
 
@@ -330,6 +352,22 @@ function copyLink(btn) {
     btn.classList.add('copied');
     setTimeout(function() { btn.classList.remove('copied'); }, 2000);
   });
+}
+function sharePDF() {
+  /* On mobile: use Web Share API with the page URL, prompting native share sheet
+     which lets user share via messenger, email, save as PDF etc.
+     On desktop: just trigger print dialog (user selects "Save as PDF"). */
+  if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+    navigator.share({
+      title: document.title,
+      text: document.querySelector('.article-excerpt') ?
+            document.querySelector('.article-excerpt').textContent.trim() :
+            document.title,
+      url: window.location.href
+    }).catch(function() {});
+  } else {
+    window.print();
+  }
 }
 (function() {
   // ── TOC generation ──────────────────────────────────────────
