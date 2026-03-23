@@ -188,9 +188,7 @@
     </div>
   </header>
 
-  {% if article.excerpt %}
-  <p class="article-excerpt">{{ article.excerpt }}</p>
-  {% endif %}
+  {# excerpt removed — duplicates first paragraph of article body #}
 
   {# ── Hero image / placeholder ── #}
   {% if article.main_image %}
