@@ -184,41 +184,6 @@
       </div>
       {% endif %}
 
-      {# ── Story timeline (GPT-extracted) or entity fallback ── #}
-      {% if timeline and (timeline.prev or timeline.next) %}
-      <section class="article-timeline">
-        <div class="timeline-header">
-          <h2 class="timeline-heading">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}
-          </h2>
-          {% if timeline_topic %}
-          <span class="timeline-topic">{{ timeline_topic }}</span>
-          {% endif %}
-          {% if timeline_total > 1 %}
-          <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
-          {% endif %}
-        </div>
-        <div class="timeline-track">
-          {% for art in timeline.next|reverse %}
-          <a href="{{ article_url(art) }}" class="timeline-item">
-            <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-            <span class="timeline-title">{{ art.title }}</span>
-          </a>
-          {% endfor %}
-          <div class="timeline-item is-current">
-            <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
-            <span class="timeline-title">{{ article.title }}</span>
-          </div>
-          {% for art in timeline.prev %}
-          <a href="{{ article_url(art) }}" class="timeline-item">
-            <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-            <span class="timeline-title">{{ art.title }}</span>
-          </a>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
     </div>
 
     <!-- Sidebar: TOC + Entities/Tags + Share (desktop only) -->
@@ -316,6 +281,42 @@
       </div>
     </aside>
   </div>
+
+  {# ── Story timeline — full width, below article-layout ── #}
+  {% if timeline and (timeline.prev or timeline.next) %}
+  <section class="article-timeline article-timeline--full">
+    <div class="timeline-header">
+      <h2 class="timeline-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}
+      </h2>
+      {% if timeline_topic %}
+      <span class="timeline-topic">{{ timeline_topic }}</span>
+      {% endif %}
+      {% if timeline_total > 1 %}
+      <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
+      {% endif %}
+    </div>
+    <div class="timeline-track">
+      {% for art in timeline.next|reverse %}
+      <a href="{{ article_url(art) }}" class="timeline-item">
+        <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <span class="timeline-title">{{ art.title }}</span>
+      </a>
+      {% endfor %}
+      <div class="timeline-item is-current">
+        <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
+        <span class="timeline-title">{{ article.title }}</span>
+      </div>
+      {% for art in timeline.prev %}
+      <a href="{{ article_url(art) }}" class="timeline-item">
+        <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <span class="timeline-title">{{ art.title }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <!-- ═══ AD: AFTER ARTICLE (R6) ═══ -->
   <div class="ad-placeholder ad-after-article" data-ad-slot="R6" data-ad-size="728x90" aria-hidden="true">Реклама</div>
