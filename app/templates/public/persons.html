@@ -4,6 +4,20 @@
 {% block description %}Каталог ключевых персон в новостях Казахстана — политики, чиновники, международные лидеры{% endblock %}
 {% block canonical %}/persons{% endblock %}
 
+{% block jsonld %}
+{{ super() }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Главная", "item": "{{ site_domain }}/"},
+    {"@type": "ListItem", "position": 2, "name": "Персоны", "item": "{{ site_domain }}/persons"}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="persons-page">
   <nav class="article-top-bar" aria-label="Навигация">

@@ -11,6 +11,30 @@
 {% if page < pages %}<link rel="next" href="/news/{{ category }}?page={{ page + 1 }}">{% endif %}
 {% endblock %}
 
+{% block jsonld %}
+{{ super() }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Главная", "item": "{{ site_domain }}/"},
+    {"@type": "ListItem", "position": 2, "name": "{{ category_name }}", "item": "{{ site_domain }}/news/{{ category }}"}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "{{ category_name }} — Total.kz",
+  "description": "Последние новости раздела {{ category_name }}",
+  "url": "{{ site_domain }}/news/{{ category }}",
+  "isPartOf": {"@type": "WebSite", "name": "Total.kz", "url": "{{ site_domain }}"}
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="wide-layout">
 
