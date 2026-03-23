@@ -38,6 +38,32 @@
     }
   }
   </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Total.kz",
+    "alternateName": "ТÓТАЛ",
+    "url": "https://total.kz",
+    "logo": "https://total.kz/static/img/logotype.png",
+    "sameAs": [
+      "https://t.me/totalkz",
+      "https://www.facebook.com/total.kz",
+      "https://www.instagram.com/total.kz"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+7-700-978-78-54",
+      "contactType": "customer service"
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Алматы",
+      "addressCountry": "KZ",
+      "streetAddress": "пр. Жибек жолы, 115/46, оф. 306"
+    }
+  }
+  </script>
   {% endblock %}
 
   <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
@@ -52,6 +78,7 @@
 
   <link rel="stylesheet" href="/static/css/public.css?v=13.0">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
+  <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   {% block extra_css %}{% endblock %}
 </head>
 <body>

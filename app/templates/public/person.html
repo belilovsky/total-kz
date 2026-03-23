@@ -4,6 +4,20 @@
 {% block description %}{{ person['current_position'] or person['short_name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
 {% block canonical %}/person/{{ person['slug'] }}{% endblock %}
 
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": {{ person['short_name'] | tojson }},
+  {% if person['full_name'] %}"alternateName": {{ person['full_name'] | tojson }},{% endif %}
+  {% if person['current_position'] %}"description": {{ person['current_position'] | tojson }},{% endif %}
+  {% if person['photo_url'] %}"image": {{ (person['photo_url'] if person['photo_url'].startswith('http') else 'https://total.kz' + person['photo_url']) | tojson }},{% endif %}
+  "url": "https://total.kz/person/{{ person['slug'] }}"
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="person-page">
   <nav class="article-top-bar" aria-label="Навигация">

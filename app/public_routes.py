@@ -884,6 +884,13 @@ async def article_page(request: Request, category: str, slug: str):
     # Persons mentioned in this article (for sidebar mini-cards)
     article_persons = get_article_persons(article.get("entities", []))
 
+    # Popular articles for sidebar widget
+    try:
+        popular = rewrite_articles_images(db.get_latest_articles(limit=20))
+        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:5]
+    except Exception:
+        popular = []
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
@@ -901,6 +908,7 @@ async def article_page(request: Request, category: str, slug: str):
         "slug": article_slug,
         "ticker_articles": ticker_articles,
         "article_persons": article_persons,
+        "popular": popular,
     })
 
 
@@ -1062,9 +1070,57 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
 Sitemap: https://total.kz/sitemap.xml
+Sitemap: https://total.kz/sitemap-news.xml
 """
     return Response(content=content, media_type="text/plain")
+
+
+@router.get("/llms.txt", response_class=Response)
+async def llms_txt():
+    content = """# Total.kz
+
+> Ведущий новостной портал Казахстана. Более 66 000 статей о политике, экономике, обществе, науке, спорте и мировых событиях. На русском и казахском языках.
+
+## О сайте
+Total.kz — крупнейший информационный портал Казахстана, основан в 2011 году. Освещает политику, экономику, общество, спорт, науку и международные события. Свидетельство СМИ №16942-ИА.
+
+## Разделы
+- [Политика](/news/politika): Политические новости Казахстана и мира
+- [Экономика](/news/ekonomika): Экономика, финансы, бизнес
+- [Общество](/news/obshchestvo): Социальные новости и события
+- [Наука](/news/nauka): Наука, технологии, образование
+- [Спорт](/news/sport): Спортивные новости Казахстана
+- [Мир](/news/mir): Международные новости
+
+## Навигация
+- [Главная](https://total.kz/): Лента последних новостей
+- [Поиск](https://total.kz/search): Полнотекстовый поиск по архиву
+- [Персоны](https://total.kz/persons): Каталог упоминаемых персон
+- [RSS-лента](https://total.kz/rss.xml): RSS 2.0 feed
+- [Карта сайта](https://total.kz/sitemap.xml): XML Sitemap
+
+## Контакты
+- Город: Алматы, Казахстан
+- Адрес: пр. Жибек жолы, 115/46, оф. 306
+- Телефон: +7 700 978-78-54
+"""
+    return Response(content=content, media_type="text/markdown; charset=utf-8")
 
 
 @router.get("/sitemap.xml", response_class=Response)
@@ -1106,6 +1162,44 @@ async def sitemap_xml():
     return Response(content="\n".join(xml_parts), media_type="application/xml")
 
 
+@router.get("/sitemap-news.xml", response_class=Response)
+async def sitemap_news_xml():
+    """News sitemap — recent articles for Google News."""
+    import html as html_mod
+    try:
+        articles = db.get_latest_articles(limit=200)
+    except Exception:
+        logger.exception("Database error in sitemap_news_xml")
+        return Response(content="Service unavailable", status_code=503)
+
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
+                     ' xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">')
+
+    for art in articles:
+        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+        if len(url_parts) < 2:
+            continue
+        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        pub_date = (art.get("pub_date") or "")[:19]
+        title_escaped = html_mod.escape(art["title"])
+
+        xml_parts.append(f"""  <url>
+    <loc>{link}</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Total.kz</news:name>
+        <news:language>ru</news:language>
+      </news:publication>
+      <news:publication_date>{pub_date}</news:publication_date>
+      <news:title>{title_escaped}</news:title>
+    </news:news>
+  </url>""")
+
+    xml_parts.append("</urlset>")
+    return Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
 @router.get("/rss.xml", response_class=Response)
 @router.get("/feed", response_class=Response)
 async def rss_feed():
@@ -1133,17 +1227,28 @@ async def rss_feed():
         except Exception:
             rfc_date = ""
         desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
+        body_cdata = ""
+        if art.get("body_html"):
+            body_cdata = f"\n      <content:encoded><![CDATA[{art['body_html']}]]></content:encoded>"
+        media_tag = ""
+        img = art.get("main_image", "")
+        if img:
+            img_url = img if img.startswith("http") else f"https://total.kz{img}"
+            media_tag = f'\n      <media:content url="{html_mod.escape(img_url)}" medium="image"/>'
+        author_tag = ""
+        if art.get("author"):
+            author_tag = f"\n      <dc:creator>{html_mod.escape(art['author'])}</dc:creator>"
         items.append(f"""    <item>
       <title>{html_mod.escape(art['title'])}</title>
       <link>{link}</link>
-      <description>{desc}</description>
+      <description>{desc}</description>{body_cdata}{media_tag}{author_tag}
       <category>{html_mod.escape(cat)}</category>
       <pubDate>{rfc_date}</pubDate>
       <guid isPermaLink="true">{link}</guid>
     </item>""")
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>ТÓТАЛ — Новости Казахстана</title>
     <link>https://total.kz</link>
@@ -1155,6 +1260,51 @@ async def rss_feed():
   </channel>
 </rss>"""
     return Response(content=xml, media_type="application/xml; charset=utf-8")
+
+
+@router.get("/feed.json", response_class=Response)
+async def json_feed():
+    """JSON Feed 1.1 — latest 50 articles."""
+    import json as json_mod
+    try:
+        articles = db.get_latest_articles(limit=50)
+    except Exception:
+        logger.exception("Database error in json_feed")
+        return Response(content="{}", status_code=503, media_type="application/json")
+
+    items = []
+    for art in articles:
+        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+        if len(url_parts) < 2:
+            continue
+        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+        item = {
+            "id": link,
+            "url": link,
+            "title": art["title"],
+            "content_text": art.get("excerpt", ""),
+            "date_published": art.get("pub_date", ""),
+            "authors": [{"name": art.get("author") or "Total.kz"}],
+            "tags": [cat_label(nav_slug_for(art.get("sub_category", "")))],
+        }
+        img = art.get("main_image", "")
+        if img:
+            item["image"] = img if img.startswith("http") else f"https://total.kz{img}"
+        items.append(item)
+
+    feed = {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": "ТÓТАЛ — Новости Казахстана",
+        "home_page_url": "https://total.kz",
+        "feed_url": "https://total.kz/feed.json",
+        "description": "Последние новости Казахстана — политика, экономика, общество, спорт",
+        "language": "ru",
+        "items": items,
+    }
+    return Response(
+        content=json_mod.dumps(feed, ensure_ascii=False, indent=2),
+        media_type="application/feed+json; charset=utf-8",
+    )
 
 
 @router.get("/api/suggest")

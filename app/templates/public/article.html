@@ -8,18 +8,43 @@
 {% block og_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
 {% block og_image %}{% if article.main_image %}<meta property="og:image" content="{% if article.main_image.startswith('http') %}{{ article.main_image }}{% else %}https://total.kz{{ article.main_image }}{% endif %}">{% endif %}{% endblock %}
 
+{% block meta %}
+{{ super() }}
+<meta property="article:published_time" content="{{ article.pub_date }}">
+<meta property="article:modified_time" content="{{ article.updated_at or article.pub_date }}">
+{% if article.author %}<meta property="article:author" content="{{ article.author }}">{% endif %}
+<meta property="article:section" content="{{ category_name }}">
+{% if article.enrichment and article.enrichment.keywords %}{% for kw in article.enrichment.keywords[:5] %}
+<meta property="article:tag" content="{{ kw }}">{% endfor %}{% endif %}
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@totalkz">
+<meta name="twitter:title" content="{{ article.title }}">
+<meta name="twitter:description" content="{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}">
+{% if article.main_image %}<meta name="twitter:image" content="{{ article.main_image if article.main_image.startswith('http') else 'https://total.kz' + article.main_image }}">{% endif %}
+{% endblock %}
+
 {% block jsonld %}
+{% set _art_url = "https://total.kz/news/" + category + "/" + article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') %}
+{% set _img_full = article.main_image if article.main_image and article.main_image.startswith('http') else ('https://total.kz' + article.main_image if article.main_image else '') %}
+{% set _author_person = None %}
+{% if article.author and article_persons %}{% for p in article_persons %}{% if p.short_name and article.author and p.short_name in article.author %}{% set _author_person = p %}{% endif %}{% endfor %}{% endif %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
   "headline": {{ article.title | tojson }},
   "description": {{ (article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title)) | tojson }},
-  "url": "https://total.kz/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}",
-  {% if article.main_image %}"image": {{ (article.main_image if article.main_image.startswith('http') else 'https://total.kz' + article.main_image) | tojson }},{% endif %}
+  "url": {{ _art_url | tojson }},
+  {% if _img_full %}"image": [{{ _img_full | tojson }}],{% endif %}
   "datePublished": {{ (article.pub_date or '') | tojson }},
   "dateModified": {{ (article.updated_at or article.pub_date or '') | tojson }},
-  {% if article.author %}"author": {"@type": "Person", "name": {{ article.author | tojson }}},{% endif %}
+  "author": {
+    "@type": "Person",
+    "name": {{ (article.author or 'Total.kz') | tojson }}{% if _author_person %},
+    "url": "https://total.kz/person/{{ _author_person.slug }}"{% endif %}
+  },
   "publisher": {
     "@type": "Organization",
     "name": "Total.kz",
@@ -33,12 +58,17 @@
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://total.kz/news/{{ category }}/{{ article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') }}"
+    "@id": {{ _art_url | tojson }}
   },
-  "creator": {
-    "@type": "SoftwareApplication",
-    "name": "Perplexity Computer",
-    "url": "https://www.perplexity.ai/computer"
+  "articleSection": {{ category_name | tojson }},
+  "inLanguage": "ru",
+  "isAccessibleForFree": true,
+  {% if article.pub_date %}"copyrightYear": {{ article.pub_date[:4] | tojson }},{% endif %}
+  {% if article.body_text %}"wordCount": {{ article.body_text.split()|length }},{% endif %}
+  {% if article.enrichment and article.enrichment.keywords %}"keywords": {{ article.enrichment.keywords | tojson }},{% endif %}
+  "potentialAction": {
+    "@type": "ReadAction",
+    "target": {{ _art_url | tojson }}
   }
 }
 </script>
@@ -96,7 +126,7 @@
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
       <div class="article-header-aside">
-        <span class="header-date">{{ format_date_full(article.pub_date) }}</span>
+        <time class="header-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
         <span class="header-author">{{ article.author }}</span>
         {% endif %}
@@ -104,8 +134,8 @@
     </div>
     {# Mobile-only meta (below title) #}
     <div class="article-meta article-meta--mobile">
-      {% if article.author %}<span class="header-author">{{ article.author }}</span><span class="sep">·</span>{% endif %}
-      <span>{{ format_date(article.pub_date) }}</span>
+      {% if article.author %}<span class="header-author article-meta-author">{{ article.author }}</span><span class="sep">·</span>{% endif %}
+      <time datetime="{{ article.pub_date }}">{{ format_date(article.pub_date) }}</time>
       <span class="sep">·</span>
       <span class="reading-time">{{ reading_time }} мин</span>
     </div>
@@ -132,6 +162,21 @@
 
   <div class="article-layout">
     <div class="article-content">
+      {% if article.enrichment and article.enrichment.summary %}
+      <div class="article-tldr">
+        <div class="tldr-label">Коротко</div>
+        <p>{{ article.enrichment.summary }}</p>
+      </div>
+      {% endif %}
+
+      {% if article.enrichment and article.enrichment.keywords %}
+      <div class="article-keywords">
+        {% for kw in article.enrichment.keywords[:8] %}
+        <a href="/search?q={{ kw }}" class="keyword-chip">{{ kw }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <div class="article-body" id="article-body">
         {% if article.body_html %}
           {{ article.body_html | safe }}
@@ -274,6 +319,19 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3-3 3 3"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
           </button>
         </div>
+
+        {# ── Сейчас читают (popular articles) ── #}
+        {% if popular %}
+        <div class="popular-widget">
+          <h3 class="widget-heading">Сейчас читают</h3>
+          {% for art in popular %}
+          <a href="{{ article_url(art) }}" class="popular-item">
+            <span class="popular-num">{{ loop.index }}</span>
+            <span class="popular-title">{{ art.title }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- ═══ AD: ARTICLE SIDEBAR ═══ -->
         <div class="ad-placeholder ad-sidebar" data-ad-slot="R4" data-ad-size="300x250" aria-hidden="true">Реклама</div>
