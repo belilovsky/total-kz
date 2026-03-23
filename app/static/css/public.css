@@ -1324,12 +1324,12 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 }
 @media (min-width:640px) { .timeline-track::before { left:5px; } }
 .timeline-item {
-  display:grid; grid-template-columns:52px 1fr; gap:var(--space-2);
+  display:grid; grid-template-columns:85px 1fr; gap:var(--space-2);
   position:relative; text-decoration:none; color:inherit;
   padding:6px var(--space-2); border-radius:var(--radius-sm);
   transition:background var(--transition); align-items:baseline;
 }
-@media (min-width:640px) { .timeline-item { grid-template-columns:72px 1fr; gap:var(--space-3); padding:var(--space-2); } }
+@media (min-width:640px) { .timeline-item { grid-template-columns:95px 1fr; gap:var(--space-3); padding:var(--space-2); } }
 @media (min-width:640px) { .timeline-item::before { left:calc(-1 * var(--space-5) + 2px); width:8px; height:8px; } }
 .timeline-item:hover { background:var(--surface-2); }
 .timeline-item::before {
@@ -2744,16 +2744,17 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
    MOBILE FIXES v13.2
    =================================================================== */
 
-/* 1. Timeline: dates overlapping titles on mobile — widen date col, stack if needed */
+/* 1. Timeline: proper 2-column grid on mobile with enough room for date */
 @media (max-width:639px) {
   .timeline-item {
-    grid-template-columns:1fr;
-    gap:2px;
+    grid-template-columns:78px 1fr;
+    gap:var(--space-1);
   }
   .timeline-date {
     font-size:10px;
     white-space:nowrap;
     color:var(--text-muted);
+    text-align:left;
   }
   .timeline-title {
     font-size:var(--text-xs);
@@ -2853,5 +2854,34 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .strip-right {
     flex:1;
     min-width:0;
+  }
+}
+
+/* ===================================================================
+   AUTO-HIDE HEADER / TICKER / BOTTOM-BAR NEAR FOOTER v13.3
+   =================================================================== */
+.site-header {
+  transition:transform 0.35s ease, opacity 0.35s ease;
+}
+.site-header.footer-visible {
+  transform:translateY(-100%);
+  opacity:0;
+  pointer-events:none;
+}
+.news-ticker {
+  transition:transform 0.35s ease, opacity 0.35s ease;
+}
+.news-ticker.footer-visible {
+  transform:translateY(100%);
+  opacity:0;
+  pointer-events:none;
+}
+@media (max-width:767px) {
+  .mobile-bottom-bar {
+    transition:transform 0.3s ease;
+  }
+  .mobile-bottom-bar.footer-visible {
+    transform:translateY(100%);
+    pointer-events:none;
   }
 }

@@ -525,6 +525,25 @@
       });
     }
 
+    // ── Auto-hide header/ticker/bottom-bar when footer is visible ────────
+    if ('IntersectionObserver' in window) {
+      var siteFooter = document.querySelector('.site-footer');
+      if (siteFooter) {
+        var headerEl = document.querySelector('.site-header');
+        var tickerEl = document.getElementById('news-ticker');
+        var bottomBarEl = document.getElementById('mobile-bottom-bar');
+        var footerObs = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            var cls = 'footer-visible';
+            if (headerEl) headerEl.classList.toggle(cls, e.isIntersecting);
+            if (tickerEl) tickerEl.classList.toggle(cls, e.isIntersecting);
+            if (bottomBarEl) bottomBarEl.classList.toggle(cls, e.isIntersecting);
+          });
+        }, { threshold: 0 });
+        footerObs.observe(siteFooter);
+      }
+    }
+
     // ── Feed items entrance ──────────────────────────────────────────────
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(function (entries) {
