@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% set active = "ads" %}
+
+{% block title %}Реклама – Total.kz{% endblock %}
+{% block page_title %}Рекламные позиции{% endblock %}
+
+{% block actions %}
+<a href="/page/reklama" target="_blank" class="btn btn-outline btn-sm" style="margin-right:8px">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    Страница для клиентов
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+    <div class="card" style="padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--text-primary)">{{ stats.total }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Всего позиций</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#22c55e">{{ stats.active }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Активных</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--text-muted)">{{ stats.inactive }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Отключено</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--brand)">{{ stats.booked }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Забронировано</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#3b82f6">{{ stats.available }}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Свободно</div>
+    </div>
+</div>
+
+<!-- Filter by page -->
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+    <a href="/admin/ads" class="btn btn-sm {% if not page_filter %}btn-primary{% else %}btn-outline{% endif %}">Все</a>
+    {% for p in pages %}
+    <a href="/admin/ads?page_filter={{ p }}" class="btn btn-sm {% if page_filter == p %}btn-primary{% else %}btn-outline{% endif %}">
+        {{ {'global':'Глобальные','home':'Главная','article':'Статья','category':'Категория','search':'Поиск','listing':'Листинги','person':'Персона'}[p] or p }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Placements table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table" id="adsTable">
+            <thead>
+                <tr>
+                    <th style="width:50px">Слот</th>
+                    <th>Название</th>
+                    <th>Страница</th>
+                    <th>Расположение</th>
+                    <th>Размер Desktop</th>
+                    <th>Размер Mobile</th>
+                    <th>Клиент</th>
+                    <th>Сроки</th>
+                    <th style="width:70px">Статус</th>
+                    <th style="width:40px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in placements %}
+                <tr data-slot="{{ ad.slot_id }}" id="row-{{ ad.slot_id }}">
+                    <td>
+                        <span style="font-family:var(--font-mono,monospace);font-size:13px;font-weight:600;
+                            padding:2px 8px;border-radius:4px;
+                            background:{% if ad.slot_id.startswith('A') %}#fef3c7{% elif ad.slot_id.startswith('H') %}#dbeafe{% elif ad.slot_id.startswith('R') %}#fce7f3{% elif ad.slot_id.startswith('C') %}#d1fae5{% elif ad.slot_id.startswith('S') %}#e0e7ff{% elif ad.slot_id.startswith('P') %}#f3e8ff{% else %}var(--surface-2){% endif %};
+                            color:{% if ad.slot_id.startswith('A') %}#92400e{% elif ad.slot_id.startswith('H') %}#1e40af{% elif ad.slot_id.startswith('R') %}#9d174d{% elif ad.slot_id.startswith('C') %}#065f46{% elif ad.slot_id.startswith('S') %}#3730a3{% elif ad.slot_id.startswith('P') %}#6b21a8{% else %}var(--text-primary){% endif %}">
+                            {{ ad.slot_id }}
+                        </span>
+                    </td>
+                    <td style="font-weight:500">{{ ad.name }}</td>
+                    <td>
+                        <span style="font-size:12px;color:var(--text-muted)">
+                            {{ {'global':'Глобальные','home':'Главная','article':'Статья','category':'Категория','search':'Поиск','listing':'Листинги','person':'Персона'}[ad.page] or ad.page }}
+                        </span>
+                    </td>
+                    <td style="font-size:12px;color:var(--text-secondary)">{{ ad.position }}</td>
+                    <td style="font-family:var(--font-mono,monospace);font-size:12px">{{ ad.size_desktop }}</td>
+                    <td style="font-family:var(--font-mono,monospace);font-size:12px">{{ ad.size_mobile }}</td>
+                    <td>
+                        {% if ad.client_name %}
+                        <div style="font-size:13px;font-weight:500">{{ ad.client_name }}</div>
+                        {% if ad.client_url %}
+                        <div style="font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ad.client_url }}</div>
+                        {% endif %}
+                        {% else %}
+                        <span style="font-size:12px;color:var(--text-faint)">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted)">
+                        {% if ad.start_date and ad.end_date %}
+                        {{ ad.start_date }} — {{ ad.end_date }}
+                        {% elif ad.start_date %}
+                        с {{ ad.start_date }}
+                        {% else %}
+                        <span style="color:var(--text-faint)">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="toggle-btn {% if ad.is_active %}toggle-on{% endif %}"
+                                onclick="toggleAd('{{ ad.slot_id }}', this)"
+                                title="{{ 'Отключить' if ad.is_active else 'Включить' }}">
+                            <span class="toggle-track">
+                                <span class="toggle-thumb"></span>
+                            </span>
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn-icon" title="Редактировать" onclick="editAd('{{ ad.slot_id }}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editAdModal" class="modal" style="display:none">
+    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-content" style="max-width:520px">
+        <div class="modal-header">
+            <h3 id="editModalTitle">Редактировать позицию</h3>
+            <button class="btn-icon" onclick="closeEditModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editSlotId">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div style="padding:12px;border-radius:8px;background:var(--surface-2)">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Слот</div>
+                    <div id="editSlotLabel" style="font-weight:600;font-family:var(--font-mono,monospace)"></div>
+                </div>
+                <div style="padding:12px;border-radius:8px;background:var(--surface-2)">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Размер</div>
+                    <div id="editSlotSize" style="font-size:13px"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Клиент</label>
+                <input type="text" id="editClientName" class="form-input" placeholder="Название клиента">
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL клиента</label>
+                <input type="url" id="editClientUrl" class="form-input" placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL баннера</label>
+                <input type="url" id="editImageUrl" class="form-input" placeholder="https://cdn.example.com/banner.jpg">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group">
+                    <label class="form-label">Начало</label>
+                    <input type="date" id="editStartDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Окончание</label>
+                    <input type="date" id="editEndDate" class="form-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">CPM (тенге)</label>
+                <input type="number" id="editCpmRate" class="form-input" placeholder="0" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Заметки</label>
+                <textarea id="editNotes" class="form-input" rows="2" placeholder="Внутренние заметки..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeEditModal()">Отмена</button>
+            <button class="btn btn-primary btn-sm" onclick="saveAd()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Toggle switch */
+.toggle-btn{background:none;border:none;cursor:pointer;padding:4px}
+.toggle-track{display:block;width:36px;height:20px;border-radius:10px;background:var(--surface-3);position:relative;transition:background .2s}
+.toggle-thumb{display:block;width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-on .toggle-track{background:#22c55e}
+.toggle-on .toggle-thumb{transform:translateX(16px)}
+/* Modal */
+.modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.modal-content{position:relative;background:var(--surface-1);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:90%;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-header h3{margin:0;font-size:16px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)}
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px}
+.form-input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface-1);color:var(--text-primary);box-sizing:border-box}
+.form-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(216,50,54,.15)}
+textarea.form-input{resize:vertical;font-family:inherit}
+</style>
+
+<script>
+// Data store for placements
+const placements = {{ placements | tojson }};
+const placementsMap = {};
+placements.forEach(p => placementsMap[p.slot_id] = p);
+
+async function toggleAd(slotId, btn) {
+    try {
+        const resp = await fetch(`/api/ads/${slotId}/toggle`, {method:'POST'});
+        const data = await resp.json();
+        if (data.ok) {
+            btn.classList.toggle('toggle-on', data.is_active);
+            btn.title = data.is_active ? 'Отключить' : 'Включить';
+            placementsMap[slotId].is_active = data.is_active ? 1 : 0;
+        }
+    } catch(e) {
+        console.error('Toggle failed:', e);
+    }
+}
+
+function editAd(slotId) {
+    const ad = placementsMap[slotId];
+    if (!ad) return;
+    document.getElementById('editSlotId').value = slotId;
+    document.getElementById('editModalTitle').textContent = `${ad.name} (${slotId})`;
+    document.getElementById('editSlotLabel').textContent = slotId;
+    document.getElementById('editSlotSize').textContent = `${ad.size_desktop} / ${ad.size_mobile}`;
+    document.getElementById('editClientName').value = ad.client_name || '';
+    document.getElementById('editClientUrl').value = ad.client_url || '';
+    document.getElementById('editImageUrl').value = ad.image_url || '';
+    document.getElementById('editStartDate').value = ad.start_date || '';
+    document.getElementById('editEndDate').value = ad.end_date || '';
+    document.getElementById('editCpmRate').value = ad.cpm_rate || '';
+    document.getElementById('editNotes').value = ad.notes || '';
+    document.getElementById('editAdModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('editAdModal').style.display = 'none';
+}
+
+async function saveAd() {
+    const slotId = document.getElementById('editSlotId').value;
+    const data = {
+        client_name: document.getElementById('editClientName').value,
+        client_url: document.getElementById('editClientUrl').value,
+        image_url: document.getElementById('editImageUrl').value,
+        start_date: document.getElementById('editStartDate').value,
+        end_date: document.getElementById('editEndDate').value,
+        cpm_rate: parseFloat(document.getElementById('editCpmRate').value) || 0,
+        notes: document.getElementById('editNotes').value,
+    };
+    try {
+        const resp = await fetch(`/api/ads/${slotId}/update`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data),
+        });
+        const result = await resp.json();
+        if (result.ok) {
+            // Update local data
+            Object.assign(placementsMap[slotId], data);
+            // Update table row
+            const row = document.getElementById(`row-${slotId}`);
+            if (row) {
+                const cells = row.querySelectorAll('td');
+                // Client column (index 6)
+                if (data.client_name) {
+                    cells[6].innerHTML = `<div style="font-size:13px;font-weight:500">${data.client_name}</div>` +
+                        (data.client_url ? `<div style="font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${data.client_url}</div>` : '');
+                } else {
+                    cells[6].innerHTML = '<span style="font-size:12px;color:var(--text-faint)">—</span>';
+                }
+                // Dates column (index 7)
+                if (data.start_date && data.end_date) {
+                    cells[7].innerHTML = `${data.start_date} — ${data.end_date}`;
+                } else if (data.start_date) {
+                    cells[7].innerHTML = `с ${data.start_date}`;
+                } else {
+                    cells[7].innerHTML = '<span style="color:var(--text-faint)">—</span>';
+                }
+            }
+            closeEditModal();
+        }
+    } catch(e) {
+        console.error('Save failed:', e);
+    }
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEditModal();
+});
+</script>
+{% endblock %}

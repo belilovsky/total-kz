@@ -56,6 +56,9 @@
 </head>
 <body>
 
+  <!-- ═══ AD: TOP BANNER (A1) ═══ -->
+  <div class="ad-placeholder ad-top-banner" data-ad-slot="A1" data-ad-size="970x90" aria-hidden="true">Реклама</div>
+
   <!-- ═══ READING PROGRESS BAR ═══ -->
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
 
@@ -119,7 +122,7 @@
   </div>
 
   <!-- ═══ AD: BELOW HEADER (desktop only) ═══ -->
-  <div class="ad-placeholder ad-below-header" aria-hidden="true">Реклама</div>
+  <div class="ad-placeholder ad-below-header" data-ad-slot="A2" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
   <!-- ═══ SEARCH OVERLAY ═══ -->
   <div class="search-overlay" id="search-overlay">
@@ -191,6 +194,9 @@
       <path d="M18 15l-6-6-6 6"/>
     </svg>
   </button>
+
+  <!-- ═══ AD: FOOTER BANNER (A3) ═══ -->
+  <div class="ad-placeholder ad-footer-banner" data-ad-slot="A3" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
   <!-- ═══ FOOTER ═══ -->
   <footer class="site-footer">
@@ -520,16 +526,25 @@
       shareObs.observe(articleBodyEl);
     }
 
-    // ── Ad injection into article body (after 3rd <p>) ──────────────
+    // ── Ad injection into article body (after 3rd and 7th <p>) ────────
     var artBody = document.getElementById('article-body');
     if (artBody) {
       var paras = artBody.querySelectorAll(':scope > p');
       if (paras.length >= 3) {
-        var adDiv = document.createElement('div');
-        adDiv.className = 'ad-placeholder ad-inline';
-        adDiv.setAttribute('aria-hidden', 'true');
-        adDiv.textContent = 'Реклама';
-        paras[2].parentNode.insertBefore(adDiv, paras[2].nextSibling);
+        var ad1 = document.createElement('div');
+        ad1.className = 'ad-placeholder ad-inline';
+        ad1.setAttribute('data-ad-slot', 'R2');
+        ad1.setAttribute('aria-hidden', 'true');
+        ad1.textContent = 'Реклама';
+        paras[2].parentNode.insertBefore(ad1, paras[2].nextSibling);
+      }
+      if (paras.length >= 7) {
+        var ad2 = document.createElement('div');
+        ad2.className = 'ad-placeholder ad-inline';
+        ad2.setAttribute('data-ad-slot', 'R3');
+        ad2.setAttribute('aria-hidden', 'true');
+        ad2.textContent = 'Реклама';
+        paras[6].parentNode.insertBefore(ad2, paras[6].nextSibling);
       }
       // Auto-wrap tables in scrollable container
       artBody.querySelectorAll(':scope > table').forEach(function(t) {

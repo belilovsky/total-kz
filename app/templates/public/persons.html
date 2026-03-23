@@ -17,6 +17,9 @@
     <p class="persons-subtitle">{{ format_num(total_persons) }} {{ 'персона' if total_persons % 10 == 1 and total_persons % 100 != 11 else ('персоны' if 2 <= total_persons % 10 <= 4 and not (12 <= total_persons % 100 <= 14) else 'персон') }} в базе</p>
   </header>
 
+  <!-- ═══ AD: ABOVE PERSONS LIST (P1-PR) ═══ -->
+  <div class="ad-placeholder ad-leaderboard" data-ad-slot="P1-PR" data-ad-size="728x90" aria-hidden="true">Реклама</div>
+
   {# ── Type filters ── #}
   <div class="persons-filters">
     <a href="/persons" class="pf-chip{% if not current_type %} active{% endif %}">Все</a>

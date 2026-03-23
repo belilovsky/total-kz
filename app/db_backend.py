@@ -62,5 +62,7 @@ else:
         add_article_to_story, remove_article_from_story, log_audit,
         get_audit_log, blocks_to_html, blocks_to_text,
         get_db_path, get_db,
+        get_all_ad_placements, get_ad_placement, toggle_ad_placement,
+        update_ad_placement, get_ad_stats,
     )
     _BACKEND = "sqlite"

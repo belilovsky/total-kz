@@ -311,6 +311,63 @@ def init_db():
                     VALUES (?, ?, ?)
                 """, (name, slug, row[1]))
 
+        # ── v14: Ad Placements table ──────────────────────
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS ad_placements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slot_id TEXT UNIQUE NOT NULL,
+                name TEXT NOT NULL,
+                page TEXT NOT NULL,
+                position TEXT NOT NULL,
+                size_desktop TEXT,
+                size_mobile TEXT,
+                css_class TEXT NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                client_name TEXT DEFAULT '',
+                client_url TEXT DEFAULT '',
+                image_url TEXT DEFAULT '',
+                start_date TEXT DEFAULT '',
+                end_date TEXT DEFAULT '',
+                impressions INTEGER DEFAULT 0,
+                clicks INTEGER DEFAULT 0,
+                cpm_rate REAL DEFAULT 0,
+                notes TEXT DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_ad_slot ON ad_placements(slot_id);
+            CREATE INDEX IF NOT EXISTS idx_ad_page ON ad_placements(page);
+        """)
+
+        # Seed ad placements if table is empty
+        ad_count = conn.execute("SELECT COUNT(*) FROM ad_placements").fetchone()[0]
+        if ad_count == 0:
+            _ad_seeds = [
+                ('A1','Топ-баннер','global','Над шапкой','970×90','320×50','ad-top-banner'),
+                ('A2','Под шапкой','global','Под навигацией','728×90','320×100','ad-below-header'),
+                ('A3','Футер-баннер','global','Перед футером','728×90','320×50','ad-footer-banner'),
+                ('H1','После hero','home','Между hero и категориями','728×90','320×100','ad-leaderboard'),
+                ('H2','В ленте #1','home','После 3-й секции','100%×80','100%×80','ad-in-feed'),
+                ('H3','В ленте #2','home','После 6-й секции','100%×80','100%×80','ad-in-feed'),
+                ('R1','Под заголовком','article','Между заголовком и телом','728×90','320×100','ad-article-top'),
+                ('R2','В тексте #1','article','После 3-го параграфа','100%×80','100%×80','ad-inline'),
+                ('R3','В тексте #2','article','После 7-го параграфа','100%×80','100%×80','ad-inline'),
+                ('R4','Сайдбар sticky','article','Sticky в сайдбаре','300×250','скрыт','ad-sidebar'),
+                ('R5','Сайдбар #2','article','Второй блок сайдбара','300×600','скрыт','ad-sidebar-btf'),
+                ('R6','После статьи','article','Между статьёй и "Читайте также"','728×90','320×100','ad-after-article'),
+                ('C1','Над списком','category','После заголовка категории','728×90','320×100','ad-leaderboard'),
+                ('C2','Сайдбар','category','В сайдбаре','300×250','скрыт','ad-sidebar'),
+                ('S1','Над результатами','search','После поисковой формы','728×90','320×100','ad-leaderboard'),
+                ('P1','Над списком','listing','После заголовка','728×90','320×100','ad-leaderboard'),
+                ('PP1','Между секциями','person','Между биографией и статьями','728×90','320×100','ad-person-mid'),
+            ]
+            for seed in _ad_seeds:
+                conn.execute("""
+                    INSERT OR IGNORE INTO ad_placements
+                    (slot_id, name, page, position, size_desktop, size_mobile, css_class)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, seed)
+
 
 def blocks_to_html(blocks_json: str) -> str:
     """Convert Editor.js JSON blocks to HTML string."""
@@ -1949,3 +2006,77 @@ def bulk_delete_articles(article_ids: list) -> int:
                             article_ids)
         conn.commit()
         return cur.rowcount
+
+
+# ══════════════════════════════════════════════
+#  v14: AD PLACEMENTS CRUD
+# ══════════════════════════════════════════════
+
+def get_all_ad_placements(page_filter: str = "") -> list:
+    """Get all ad placements, optionally filtered by page."""
+    with get_db() as conn:
+        if page_filter:
+            rows = conn.execute(
+                "SELECT * FROM ad_placements WHERE page = ? ORDER BY slot_id",
+                (page_filter,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM ad_placements ORDER BY slot_id"
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_ad_placement(slot_id: str) -> dict | None:
+    """Get a single ad placement by slot_id."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM ad_placements WHERE slot_id = ?", (slot_id,)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def toggle_ad_placement(slot_id: str) -> bool:
+    """Toggle is_active for an ad placement. Returns new state."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT is_active FROM ad_placements WHERE slot_id = ?", (slot_id,)
+        ).fetchone()
+        if not row:
+            return False
+        new_state = 0 if row[0] else 1
+        conn.execute(
+            "UPDATE ad_placements SET is_active = ?, updated_at = datetime('now') WHERE slot_id = ?",
+            (new_state, slot_id),
+        )
+        conn.commit()
+        return bool(new_state)
+
+
+def update_ad_placement(slot_id: str, data: dict) -> bool:
+    """Update ad placement fields."""
+    allowed = {
+        'name', 'client_name', 'client_url', 'image_url',
+        'start_date', 'end_date', 'cpm_rate', 'notes', 'is_active',
+    }
+    filtered = {k: v for k, v in data.items() if k in allowed}
+    if not filtered:
+        return False
+    with get_db() as conn:
+        cols = ", ".join(f"{k} = ?" for k in filtered)
+        vals = list(filtered.values()) + [slot_id]
+        conn.execute(
+            f"UPDATE ad_placements SET {cols}, updated_at = datetime('now') WHERE slot_id = ?",
+            vals,
+        )
+        conn.commit()
+        return True
+
+
+def get_ad_stats() -> dict:
+    """Get summary stats for ad placements."""
+    with get_db() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM ad_placements").fetchone()[0]
+        active = conn.execute("SELECT COUNT(*) FROM ad_placements WHERE is_active = 1").fetchone()[0]
+        booked = conn.execute("SELECT COUNT(*) FROM ad_placements WHERE client_name IS NOT NULL AND client_name != ''").fetchone()[0]
+        return {'total': total, 'active': active, 'inactive': total - active, 'booked': booked, 'available': total - booked}

@@ -54,7 +54,7 @@
   {% endif %}
 
   <!-- ═══ AD: AFTER HERO ═══ -->
-  <div class="ad-placeholder ad-leaderboard" aria-hidden="true">Реклама</div>
+  <div class="ad-placeholder ad-leaderboard" data-ad-slot="H1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
   <!-- ═══ KEY PERSONS STRIP ═══ -->
   {% if homepage_persons %}
@@ -157,7 +157,7 @@
       </article>
       {% if loop.index == 10 %}
       <!-- ═══ AD: IN-FEED AFTER 10TH ═══ -->
-      <div class="ad-placeholder ad-in-feed" aria-hidden="true">Реклама</div>
+      <div class="ad-placeholder ad-in-feed" data-ad-slot="H2" data-ad-size="100%x80" aria-hidden="true">Реклама</div>
       {% endif %}
       {% endfor %}
     </div>
@@ -195,7 +195,7 @@
         {% endif %}
       </article>
       {% if loop.index == 10 %}
-      <div class="ad-placeholder ad-in-feed" aria-hidden="true">Реклама</div>
+      <div class="ad-placeholder ad-in-feed" data-ad-slot="H3" data-ad-size="100%x80" aria-hidden="true">Реклама</div>
       {% endif %}
       {% endfor %}
     </div>

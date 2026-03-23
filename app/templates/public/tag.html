@@ -26,6 +26,9 @@
     <p class="tag-count">{{ pluralize_articles(result.total) }}</p>
   </div>
 
+  <!-- ═══ AD: ABOVE TAG LIST (P1) ═══ -->
+  <div class="ad-placeholder ad-leaderboard" data-ad-slot="P1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
+
   {% if result.articles %}
   <div class="feed-list">
     {% for art in result.articles %}

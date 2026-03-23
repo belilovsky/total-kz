@@ -594,6 +594,49 @@ async def admin_stories_page(request: Request, q: str = "", page: int = Query(1,
         result=result, q=q, format_num=_format_num))
 
 
+# ══════════════════════════════════════════════
+#  v14: AD PLACEMENTS ADMIN
+# ══════════════════════════════════════════════
+
+@app.get("/admin/ads", response_class=HTMLResponse)
+async def admin_ads_page(request: Request, page_filter: str = ""):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
+    placements = db.get_all_ad_placements(page_filter=page_filter)
+    stats = db.get_ad_stats()
+    pages = sorted(set(p["page"] for p in placements))
+    return templates.TemplateResponse("ads.html", _ctx(request,
+        placements=placements, stats=stats, pages=pages,
+        page_filter=page_filter, format_num=_format_num))
+
+
+@app.post("/api/ads/{slot_id}/toggle")
+async def api_toggle_ad(request: Request, slot_id: str):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    new_state = db.toggle_ad_placement(slot_id)
+    ip = request.client.host if request.client else ""
+    db.log_audit(user["user_id"], user["username"], "toggle", "ad_placement", 0,
+                  f"{'Включена' if new_state else 'Отключена'} позиция {slot_id}", ip)
+    return {"ok": True, "is_active": new_state}
+
+
+@app.post("/api/ads/{slot_id}/update")
+async def api_update_ad(request: Request, slot_id: str):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    body = await request.json()
+    ok = db.update_ad_placement(slot_id, body)
+    if ok:
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "update", "ad_placement", 0,
+                      f"Обновлена позиция {slot_id}: {json.dumps(body, ensure_ascii=False)}", ip)
+    return {"ok": ok}
+
+
 @app.get("/admin/audit", response_class=HTMLResponse)
 async def admin_audit_page(
     request: Request,

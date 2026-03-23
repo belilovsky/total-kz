@@ -2232,12 +2232,45 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .ad-below-header {
   max-width:728px; height:90px; margin:var(--space-3) auto;
 }
+/* Top banner — full-width above header */
+.ad-top-banner {
+  max-width:100%; height:90px; border-radius:0;
+}
+/* Article top (between hero and body) */
+.ad-article-top {
+  max-width:728px; height:90px; margin:var(--space-4) auto var(--space-6);
+}
+/* After article (before related) */
+.ad-after-article {
+  max-width:728px; height:90px; margin:var(--space-6) auto;
+}
+/* Second sidebar block (tall) */
+.ad-sidebar-btf {
+  width:300px; height:600px; margin:var(--space-4) 0;
+}
+/* Footer banner */
+.ad-footer-banner {
+  max-width:728px; height:90px; margin:var(--space-6) auto;
+}
+/* Person page mid-section */
+.ad-person-mid {
+  max-width:728px; height:90px; margin:var(--space-6) auto;
+}
+/* Label style */
+.ad-label { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-faint); opacity:0.6; }
+
 @media (max-width:1099px) {
   .ad-sidebar { display:none; }
+  .ad-sidebar-btf { display:none; }
   .ad-below-header { display:none; }
 }
 @media (max-width:767px) {
   .ad-leaderboard { max-width:100%; height:60px; }
+  .ad-top-banner { height:50px; }
+  .ad-article-top { max-width:100%; height:80px; margin:var(--space-3) auto var(--space-4); }
+  .ad-after-article { max-width:100%; height:80px; }
+  .ad-footer-banner { max-width:100%; height:50px; margin:var(--space-4) auto; }
+  .ad-person-mid { max-width:100%; height:80px; }
 }
 
 /* ── 2. Floating Share Sidebar ────────────────── */

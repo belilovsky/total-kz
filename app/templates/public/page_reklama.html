@@ -1,108 +1,411 @@
-{% extends "public/static_page.html" %}
+{% extends "public/base.html" %}
 
-{% block page_content %}
+{% block title %}Реклама на Total.kz — медиакит и рекламные возможности{% endblock %}
+{% block description %}Рекламные возможности на Total.kz — 66 800+ статей, 500 000+ просмотров/мес. Баннерная реклама, PR-материалы, спецпроекты.{% endblock %}
 
-<p>Прайс на размещение рекламно-информационных материалов на&nbsp;Total.kz</p>
-<p class="page-note">Действителен с 1 января по 31 декабря 2026&nbsp;г.</p>
+{% block head_extra %}
+<style>
+/* ── Reklama page styles ── */
+.rek-hero {
+  background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color:#fff; padding:var(--space-12) var(--space-6);
+  text-align:center; border-radius:var(--radius-lg);
+  margin-bottom:var(--space-10); position:relative; overflow:hidden;
+}
+.rek-hero::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 30% 50%, rgba(216,50,54,.15) 0%, transparent 60%);
+}
+.rek-hero-title {
+  font-size:clamp(1.75rem, 4vw, 2.75rem); font-weight:900; line-height:1.1;
+  letter-spacing:-0.03em; position:relative;
+}
+.rek-hero-title span { color:var(--accent); }
+.rek-hero-sub {
+  font-size:var(--text-base); color:rgba(255,255,255,.7);
+  max-width:600px; margin:var(--space-4) auto 0; position:relative; line-height:1.6;
+}
 
-<h2>Базовые цены на размещение PR-материалов</h2>
+/* Stats bar */
+.rek-stats {
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-4);
+  margin-bottom:var(--space-10);
+}
+@media (max-width:639px) { .rek-stats { grid-template-columns:1fr; gap:var(--space-3); } }
+.rek-stat {
+  text-align:center; padding:var(--space-6) var(--space-4);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+}
+.rek-stat-num {
+  font-size:clamp(1.5rem, 3vw, 2.25rem); font-weight:900; color:var(--accent);
+  letter-spacing:-0.02em; line-height:1.2;
+}
+.rek-stat-label {
+  font-size:var(--text-sm); color:var(--text-muted); margin-top:var(--space-1);
+}
 
-<table class="price-table">
-  <thead>
-    <tr>
-      <th>Вариант размещения</th>
-      <th>Стоимость, ₸</th>
-      <th>Условия</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr class="price-group"><td colspan="3">Позиция – лента новостей, период размещения – 1&nbsp;час</td></tr>
-    <tr>
-      <td data-label="Вариант">PR-материал</td>
-      <td data-label="Стоимость" class="price-value">124&nbsp;000 ₸</td>
-      <td data-label="Условия">Разделы: Политика / Экономика / Общество. До 2&nbsp;000 знаков и 1&nbsp;фото. Готовый материал заказчика.</td>
-    </tr>
-    <tr>
-      <td data-label="Вариант">PR-материал</td>
-      <td data-label="Стоимость" class="price-value">250&nbsp;000 ₸</td>
-      <td data-label="Условия">Разделы: Политика / Экономика / Общество. До 5&nbsp;000 знаков и 5&nbsp;фото. Готовый материал заказчика.</td>
-    </tr>
+/* Section headings */
+.rek-section { margin-bottom:var(--space-10); }
+.rek-section-title {
+  font-size:var(--text-xl); font-weight:800; letter-spacing:-0.02em;
+  margin-bottom:var(--space-6); padding-bottom:var(--space-3);
+  border-bottom:2px solid var(--accent);
+  display:inline-block;
+}
 
-    <tr class="price-group"><td colspan="3">Эксклюзивные новости с закреплением на главной – 1&nbsp;сутки</td></tr>
-    <tr>
-      <td data-label="Вариант">PR-материал</td>
-      <td data-label="Стоимость" class="price-value">250&nbsp;000 ₸</td>
-      <td data-label="Условия">До 2&nbsp;000 знаков и 1&nbsp;фото. С редактурой редакции.</td>
-    </tr>
-    <tr>
-      <td data-label="Вариант">Фоторепортаж</td>
-      <td data-label="Стоимость" class="price-value">370&nbsp;000 ₸</td>
-      <td data-label="Условия">До 2&nbsp;000 знаков и до 10&nbsp;фото. С редактурой редакции.</td>
-    </tr>
-    <tr>
-      <td data-label="Вариант">PR-материал / Интервью</td>
-      <td data-label="Стоимость" class="price-value">500&nbsp;000 ₸</td>
-      <td data-label="Условия">До 5&nbsp;000 знаков и 5&nbsp;фото. С редактурой редакции.</td>
-    </tr>
-    <tr>
-      <td data-label="Вариант">«Спецпроект» с закреплением на главной</td>
-      <td data-label="Стоимость" class="price-value">Индивидуально</td>
-      <td data-label="Условия">В соответствии с заявкой заказчика: тип контента, формат, эксклюзивность.</td>
-    </tr>
-  </tbody>
-</table>
+/* Inventory grid */
+.rek-inventory {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  gap:var(--space-4);
+}
+@media (max-width:639px) { .rek-inventory { grid-template-columns:1fr; } }
+.rek-slot {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); overflow:hidden;
+  transition:border-color var(--transition), box-shadow var(--transition);
+}
+.rek-slot:hover { border-color:var(--accent); box-shadow:0 4px 20px rgba(216,50,54,.08); }
+.rek-slot-preview {
+  height:80px; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+  position:relative;
+}
+.rek-slot-preview.pos-top { background:linear-gradient(135deg, #1a1a2e, #2d2d44); color:rgba(255,255,255,.5); }
+.rek-slot-preview.pos-header { background:linear-gradient(135deg, #f0f0f0, #e8e8e8); color:#999; }
+.rek-slot-preview.pos-content { background:linear-gradient(135deg, #fafafa, #f0f0f0); color:#aaa; }
+.rek-slot-preview.pos-sidebar { background:linear-gradient(135deg, #f5f0f0, #f0e8e8); color:#c99; }
+.rek-slot-preview.pos-footer { background:linear-gradient(135deg, #2a2a2a, #333); color:rgba(255,255,255,.4); }
+.rek-slot-body { padding:var(--space-4); }
+.rek-slot-name { font-weight:700; font-size:var(--text-sm); margin-bottom:var(--space-1); }
+.rek-slot-page {
+  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;
+  color:var(--accent); margin-bottom:var(--space-2);
+}
+.rek-slot-desc { font-size:var(--text-xs); color:var(--text-muted); line-height:1.5; }
+.rek-slot-sizes {
+  display:flex; gap:var(--space-2); margin-top:var(--space-2); flex-wrap:wrap;
+}
+.rek-slot-size {
+  font-size:10px; font-weight:600; padding:2px 8px;
+  background:var(--surface-2); border-radius:var(--radius-sm);
+  color:var(--text-secondary);
+}
 
-<p>Материалы сопровождаются ссылкой «На правах рекламы». Размещение без этой ссылки – надбавка <strong>15%</strong> от базовой стоимости.</p>
+/* Pricing */
+.rek-price-table {
+  width:100%; border-collapse:collapse; margin-bottom:var(--space-6);
+}
+.rek-price-table th {
+  text-align:left; padding:var(--space-3) var(--space-4);
+  font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
+  letter-spacing:0.05em; color:var(--text-muted);
+  background:var(--surface); border-bottom:2px solid var(--border);
+}
+.rek-price-table td {
+  padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--border);
+  font-size:var(--text-sm); vertical-align:top;
+}
+.rek-price-table .price-group td {
+  font-weight:700; font-size:var(--text-xs); text-transform:uppercase;
+  letter-spacing:0.03em; color:var(--accent); padding-top:var(--space-5);
+  background:var(--surface); border-bottom:1px solid var(--accent);
+}
+.rek-price-value { font-weight:700; white-space:nowrap; color:var(--text); }
+@media (max-width:767px) {
+  .rek-price-table thead { display:none; }
+  .rek-price-table tr { display:block; margin-bottom:var(--space-4); border:1px solid var(--border); border-radius:var(--radius-md); }
+  .rek-price-table td { display:block; padding:var(--space-2) var(--space-3); border-bottom:none; }
+  .rek-price-table td::before { content:attr(data-label) ': '; font-weight:700; color:var(--text-muted); }
+  .rek-price-table .price-group td { border-radius:var(--radius-md) var(--radius-md) 0 0; }
+  .rek-price-table .price-group td::before { display:none; }
+}
 
-<p>Подготовка PR-материала журналистом:<br>
-1) без выезда – <strong>50&nbsp;000&nbsp;₸</strong>;&nbsp;
-2) с выездом на мероприятие – <strong>100&nbsp;000&nbsp;₸</strong>.</p>
+/* Benefits */
+.rek-benefits {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));
+  gap:var(--space-4); margin-bottom:var(--space-10);
+}
+.rek-benefit {
+  padding:var(--space-5); background:var(--surface);
+  border:1px solid var(--border); border-radius:var(--radius-lg);
+}
+.rek-benefit-icon { font-size:1.5rem; margin-bottom:var(--space-3); }
+.rek-benefit-title { font-weight:700; font-size:var(--text-sm); margin-bottom:var(--space-2); }
+.rek-benefit-desc { font-size:var(--text-xs); color:var(--text-muted); line-height:1.5; }
 
-<p>Допускается размещение до 3&nbsp;гиперссылок и 1&nbsp;видеоролика (при условии смысловой связи с текстом).</p>
+/* Contact CTA */
+.rek-cta {
+  background:var(--surface); border:2px solid var(--accent);
+  border-radius:var(--radius-lg); padding:var(--space-8);
+  text-align:center; margin-top:var(--space-6);
+}
+.rek-cta-title { font-size:var(--text-lg); font-weight:800; margin-bottom:var(--space-3); }
+.rek-cta-desc { font-size:var(--text-sm); color:var(--text-muted); margin-bottom:var(--space-5); max-width:500px; margin-left:auto; margin-right:auto; }
+.rek-cta-contacts {
+  display:flex; flex-wrap:wrap; gap:var(--space-3); justify-content:center;
+  margin-bottom:var(--space-5);
+}
+.rek-cta-contact {
+  display:inline-flex; align-items:center; gap:var(--space-2);
+  font-size:var(--text-sm); font-weight:600; color:var(--text);
+  text-decoration:none; padding:var(--space-2) var(--space-4);
+  border:1px solid var(--border); border-radius:var(--radius-md);
+  transition:all var(--transition);
+}
+.rek-cta-contact:hover { border-color:var(--accent); color:var(--accent); }
+.rek-cta-btn {
+  display:inline-flex; align-items:center; gap:var(--space-2);
+  background:var(--accent); color:#fff; font-weight:700; font-size:var(--text-sm);
+  padding:var(--space-3) var(--space-6); border-radius:var(--radius-md);
+  text-decoration:none; transition:opacity var(--transition);
+}
+.rek-cta-btn:hover { opacity:.85; }
+</style>
+{% endblock %}
 
-<h2>Баннерная реклама</h2>
+{% block content %}
+<div style="max-width:var(--content-wide);margin:0 auto;padding:0 var(--space-4)">
 
-<table class="price-table">
-  <thead>
-    <tr>
-      <th>Позиция баннера</th>
-      <th>Размер, px</th>
-      <th>Стоимость CPM, ₸</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td data-label="Позиция">Горизонтальный баннер на главной (над шапкой)</td>
-      <td data-label="Размер">970×90 / 728×90</td>
-      <td data-label="Стоимость CPM" class="price-value">По запросу</td>
-    </tr>
-    <tr>
-      <td data-label="Позиция">Баннер в ленте новостей</td>
-      <td data-label="Размер">580×400</td>
-      <td data-label="Стоимость CPM" class="price-value">По запросу</td>
-    </tr>
-    <tr>
-      <td data-label="Позиция">Баннер в сайдбаре</td>
-      <td data-label="Размер">300×250 / 300×600</td>
-      <td data-label="Стоимость CPM" class="price-value">По запросу</td>
-    </tr>
-  </tbody>
-</table>
+  <!-- Hero -->
+  <div class="rek-hero">
+    <h1 class="rek-hero-title">Реклама на <span>Total.kz</span></h1>
+    <p class="rek-hero-sub">Крупнейшее информационное агентство Казахстана с&nbsp;аудиторией по&nbsp;всей стране. Ваша реклама — перед глазами тех, кто принимает решения.</p>
+  </div>
 
-<p>Минимальная продолжительность размещения баннеров – <strong>1 неделя</strong>.<br>
-Минимальный объём закупки: горизонтальный баннер – 50&nbsp;000 показов/сутки; остальные позиции – 20&nbsp;000 показов/сутки.</p>
+  <!-- Stats -->
+  <div class="rek-stats">
+    <div class="rek-stat">
+      <div class="rek-stat-num">66 800+</div>
+      <div class="rek-stat-label">статей в архиве</div>
+    </div>
+    <div class="rek-stat">
+      <div class="rek-stat-num">500 000+</div>
+      <div class="rek-stat-label">просмотров в месяц</div>
+    </div>
+    <div class="rek-stat">
+      <div class="rek-stat-num">15+ лет</div>
+      <div class="rek-stat-label">на медиарынке</div>
+    </div>
+  </div>
 
-<p><strong>Требования к баннерам:</strong> вес не более 5&nbsp;Мб, форматы GIF, JPG, JPEG, PNG.</p>
+  <!-- Inventory Map -->
+  <section class="rek-section">
+    <h2 class="rek-section-title">Рекламный инвентарь</h2>
+    <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-6);max-width:600px">
+      19 рекламных позиций на&nbsp;всех страницах сайта. Каждая позиция адаптивна&nbsp;— корректно отображается на&nbsp;десктопе, планшете и мобильных устройствах.
+    </p>
 
-<p>Скидки оговариваются индивидуально. ТОО не является плательщиком НДС.</p>
+    <div class="rek-inventory">
+      <!-- Global slots -->
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-top">970 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Все страницы</div>
+          <div class="rek-slot-name">Топ-баннер (A1)</div>
+          <div class="rek-slot-desc">Над шапкой сайта — первое, что видит посетитель. Максимальный охват.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">970×90 десктоп</span><span class="rek-slot-size">320×50 мобайл</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-header">728 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Все страницы</div>
+          <div class="rek-slot-name">Под навигацией (A2)</div>
+          <div class="rek-slot-desc">Горизонтальный баннер между шапкой и контентом. Виден на десктопах.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">728×90 десктоп</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-footer">728 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Все страницы</div>
+          <div class="rek-slot-name">Футер-баннер (A3)</div>
+          <div class="rek-slot-desc">Перед футером — ловит внимание при дочитывании материала.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">728×90 десктоп</span><span class="rek-slot-size">320×50 мобайл</span></div>
+        </div>
+      </div>
 
-<h2>Контакты рекламной службы</h2>
+      <!-- Home slots -->
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-content">728 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Главная</div>
+          <div class="rek-slot-name">После hero-блока (H1)</div>
+          <div class="rek-slot-desc">Между главным материалом и лентой категорий — высокая видимость.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">728×90 десктоп</span><span class="rek-slot-size">320×100 мобайл</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-content">100% × 80</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Главная</div>
+          <div class="rek-slot-name">В ленте новостей (H2, H3)</div>
+          <div class="rek-slot-desc">Нативные блоки между разделами новостей. 2 позиции.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">100%×80</span></div>
+        </div>
+      </div>
 
-<dl class="contact-card">
-  <dt>Телефоны</dt>
-  <dd><a href="tel:+77009787854">+7 (700) 978-78-54</a>,&ensp;<a href="tel:+77072825342">+7 (707) 282-53-42</a></dd>
-  <dt>Email</dt>
-  <dd><a href="mailto:zhibek@total.kz">zhibek@total.kz</a>,&ensp;<a href="mailto:totalkz.kz@gmail.com">totalkz.kz@gmail.com</a></dd>
-</dl>
+      <!-- Article slots -->
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-content">728 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Статья</div>
+          <div class="rek-slot-name">Под заголовком (R1)</div>
+          <div class="rek-slot-desc">Между hero-изображением и текстом — максимальная видимость.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">728×90 десктоп</span><span class="rek-slot-size">320×100 мобайл</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-content">100% × 80</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Статья</div>
+          <div class="rek-slot-name">В тексте статьи (R2, R3)</div>
+          <div class="rek-slot-desc">Нативные блоки после 3-го и 7-го абзацев. 2 позиции.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">100%×80</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-sidebar">300 × 250</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Статья</div>
+          <div class="rek-slot-name">Сайдбар sticky (R4)</div>
+          <div class="rek-slot-desc">Sticky-блок в правой колонке — следует за читателем при скролле.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">300×250 десктоп</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-sidebar">300 × 600</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Статья</div>
+          <div class="rek-slot-name">Сайдбар tall (R5)</div>
+          <div class="rek-slot-desc">Высокий блок в сайдбаре — идеален для брендинговых размещений.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">300×600 десктоп</span></div>
+        </div>
+      </div>
+      <div class="rek-slot">
+        <div class="rek-slot-preview pos-content">728 × 90</div>
+        <div class="rek-slot-body">
+          <div class="rek-slot-page">Статья</div>
+          <div class="rek-slot-name">После статьи (R6)</div>
+          <div class="rek-slot-desc">Перед блоком «Читайте также» — момент выбора нового материала.</div>
+          <div class="rek-slot-sizes"><span class="rek-slot-size">728×90 десктоп</span><span class="rek-slot-size">320×100 мобайл</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
+  <!-- Pricing: PR materials -->
+  <section class="rek-section">
+    <h2 class="rek-section-title">Стоимость размещения</h2>
+
+    <table class="rek-price-table">
+      <thead>
+        <tr>
+          <th>Вариант размещения</th>
+          <th>Стоимость, ₸</th>
+          <th>Условия</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="price-group"><td colspan="3">PR-материал в ленте новостей (1 час)</td></tr>
+        <tr>
+          <td data-label="Вариант">PR-материал (короткий)</td>
+          <td data-label="Стоимость" class="rek-price-value">124 000 ₸</td>
+          <td data-label="Условия">До 2 000 знаков и 1 фото. Готовый материал заказчика.</td>
+        </tr>
+        <tr>
+          <td data-label="Вариант">PR-материал (расширенный)</td>
+          <td data-label="Стоимость" class="rek-price-value">250 000 ₸</td>
+          <td data-label="Условия">До 5 000 знаков и 5 фото. Готовый материал заказчика.</td>
+        </tr>
+
+        <tr class="price-group"><td colspan="3">Эксклюзивные размещения с закреплением на главной (1 сутки)</td></tr>
+        <tr>
+          <td data-label="Вариант">PR-материал</td>
+          <td data-label="Стоимость" class="rek-price-value">250 000 ₸</td>
+          <td data-label="Условия">До 2 000 знаков и 1 фото. С редактурой редакции.</td>
+        </tr>
+        <tr>
+          <td data-label="Вариант">Фоторепортаж</td>
+          <td data-label="Стоимость" class="rek-price-value">370 000 ₸</td>
+          <td data-label="Условия">До 2 000 знаков и до 10 фото. С редактурой редакции.</td>
+        </tr>
+        <tr>
+          <td data-label="Вариант">PR-материал / Интервью</td>
+          <td data-label="Стоимость" class="rek-price-value">500 000 ₸</td>
+          <td data-label="Условия">До 5 000 знаков и 5 фото. С редактурой редакции.</td>
+        </tr>
+        <tr>
+          <td data-label="Вариант">Спецпроект</td>
+          <td data-label="Стоимость" class="rek-price-value">Индивидуально</td>
+          <td data-label="Условия">Любой формат: лонгрид, видео, серия публикаций. По заявке.</td>
+        </tr>
+
+        <tr class="price-group"><td colspan="3">Баннерная реклама</td></tr>
+        <tr>
+          <td data-label="Позиция">Топ-баннер (970×90)</td>
+          <td data-label="Стоимость" class="rek-price-value">По запросу</td>
+          <td data-label="Условия">Мин. 50 000 показов/сутки. Мин. срок — 1 неделя.</td>
+        </tr>
+        <tr>
+          <td data-label="Позиция">Баннер в ленте (580×400)</td>
+          <td data-label="Стоимость" class="rek-price-value">По запросу</td>
+          <td data-label="Условия">Мин. 20 000 показов/сутки. Мин. срок — 1 неделя.</td>
+        </tr>
+        <tr>
+          <td data-label="Позиция">Сайдбар (300×250 / 300×600)</td>
+          <td data-label="Стоимость" class="rek-price-value">По запросу</td>
+          <td data-label="Условия">Sticky-позиция. Мин. 20 000 показов/сутки.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:var(--text-xs);color:var(--text-muted);line-height:1.6">
+      Материалы сопровождаются ссылкой «На правах рекламы». Размещение без этой ссылки — надбавка <strong>15%</strong>.
+      Подготовка материала журналистом: без выезда — <strong>50 000 ₸</strong>, с выездом — <strong>100 000 ₸</strong>.
+      Допускается до 3 гиперссылок и 1 видеоролика. ТОО не является плательщиком НДС.
+    </p>
+  </section>
+
+  <!-- Benefits -->
+  <section class="rek-section">
+    <h2 class="rek-section-title">Почему Total.kz?</h2>
+    <div class="rek-benefits">
+      <div class="rek-benefit">
+        <div class="rek-benefit-icon">📊</div>
+        <div class="rek-benefit-title">Широкий охват</div>
+        <div class="rek-benefit-desc">Более 500 000 просмотров в месяц. Аудитория — бизнес, чиновники, экспертное сообщество Казахстана.</div>
+      </div>
+      <div class="rek-benefit">
+        <div class="rek-benefit-icon">🎯</div>
+        <div class="rek-benefit-title">Точное таргетирование</div>
+        <div class="rek-benefit-desc">Размещение в конкретных разделах: политика, экономика, общество, наука. Ваша ЦА — в нужном контексте.</div>
+      </div>
+      <div class="rek-benefit">
+        <div class="rek-benefit-icon">⚡</div>
+        <div class="rek-benefit-title">Быстрый запуск</div>
+        <div class="rek-benefit-desc">Размещение баннеров — за 1 рабочий день. PR-материалы — в течение 3 часов после согласования.</div>
+      </div>
+      <div class="rek-benefit">
+        <div class="rek-benefit-icon">📈</div>
+        <div class="rek-benefit-title">Отчётность</div>
+        <div class="rek-benefit-desc">Предоставляем статистику показов и кликов. Прозрачная аналитика для каждого размещения.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact CTA -->
+  <div class="rek-cta">
+    <h2 class="rek-cta-title">Начните размещение</h2>
+    <p class="rek-cta-desc">Свяжитесь с рекламной службой — обсудим формат, сроки и стоимость размещения.</p>
+    <div class="rek-cta-contacts">
+      <a href="tel:+77009787854" class="rek-cta-contact">📞 +7 (700) 978-78-54</a>
+      <a href="tel:+77072825342" class="rek-cta-contact">📞 +7 (707) 282-53-42</a>
+      <a href="mailto:zhibek@total.kz" class="rek-cta-contact">✉️ zhibek@total.kz</a>
+    </div>
+    <a href="mailto:zhibek@total.kz?subject=Заявка на рекламу на Total.kz" class="rek-cta-btn">Отправить заявку →</a>
+  </div>
+
+</div>
 {% endblock %}
