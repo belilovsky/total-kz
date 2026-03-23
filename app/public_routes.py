@@ -1265,6 +1265,8 @@ async def persons_catalog(request: Request, type: str = "", letter: str = ""):
         "current_type": type,
         "current_letter": letter,
         "total_persons": len(persons),
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
     })
 
 
@@ -1338,6 +1340,8 @@ async def person_page(request: Request, slug: str):
         "positions": positions,
         "months": months,
         "related": related,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
     })
 
 
