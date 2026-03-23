@@ -1127,22 +1127,139 @@ Total.kz — крупнейший информационный портал Ка
     return Response(content=content, media_type="text/markdown; charset=utf-8")
 
 
+@router.get("/llms-full.txt", response_class=Response)
+async def llms_full_txt():
+    """Extended llms.txt with categories, persons, URL patterns, API endpoints."""
+    # Get article counts per category
+    conn = _get_persons_db()
+    try:
+        cat_counts = conn.execute("""
+            SELECT sub_category, COUNT(*) as cnt
+            FROM articles
+            WHERE sub_category IS NOT NULL AND sub_category != ''
+            GROUP BY sub_category
+            ORDER BY cnt DESC
+        """).fetchall()
+        top_persons = conn.execute("""
+            SELECT p.short_name, p.slug, p.person_type, COUNT(ae.article_id) as cnt
+            FROM persons p
+            LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+            GROUP BY p.id
+            ORDER BY cnt DESC
+            LIMIT 20
+        """).fetchall()
+        total_articles = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+    finally:
+        conn.close()
+
+    sections_text = ""
+    for sec in NAV_SECTIONS:
+        sec_count = sum(r["cnt"] for r in cat_counts if r["sub_category"] in sec["subcats"])
+        sections_text += f"\n### {sec['label']} (`/news/{sec['slug']}`)\n"
+        for subcat in sec["subcats"]:
+            cnt = next((r["cnt"] for r in cat_counts if r["sub_category"] == subcat), 0)
+            sections_text += f"- [{subcat}]({SITE_DOMAIN}/news/{subcat}): {cnt} статей\n"
+        sections_text += f"Всего в разделе: {sec_count}\n"
+
+    persons_text = ""
+    for p in top_persons:
+        persons_text += f"- [{p['short_name']}]({SITE_DOMAIN}/person/{p['slug']}) ({p['person_type'] or 'person'}): {p['cnt']} упоминаний\n"
+
+    content = f"""# Total.kz — Полное описание для AI
+
+> Ведущий новостной портал Казахстана. {total_articles:,} статей о политике, экономике, обществе, науке, спорте и мировых событиях. На русском и казахском языках.
+
+## О сайте
+Total.kz — крупнейший информационный портал Казахстана, основан в 2011 году. Освещает политику, экономику, общество, спорт, науку и международные события. Свидетельство СМИ №16942-ИА. Город: Алматы, Казахстан. Адрес: пр. Жибек жолы, 115/46, оф. 306. Телефон: +7 700 978-78-54.
+
+## Разделы и категории
+{sections_text}
+
+## Топ-20 персон
+{persons_text}
+
+## Шаблоны URL
+
+| Тип | Шаблон | Пример |
+|---|---|---|
+| Главная | `{SITE_DOMAIN}/` | |
+| Раздел | `{SITE_DOMAIN}/news/{{category}}` | {SITE_DOMAIN}/news/politika |
+| Статья | `{SITE_DOMAIN}/news/{{category}}/{{slug}}` | {SITE_DOMAIN}/news/politika/primer_stati |
+| Персона | `{SITE_DOMAIN}/person/{{slug}}` | {SITE_DOMAIN}/person/tokaev_kasym-zhomart |
+| Каталог персон | `{SITE_DOMAIN}/persons` | |
+| Поиск | `{SITE_DOMAIN}/search?q={{query}}` | {SITE_DOMAIN}/search?q=нефть |
+| Web Stories | `{SITE_DOMAIN}/stories` | |
+
+## Фиды и метаданные
+
+| Ресурс | URL | Формат |
+|---|---|---|
+| RSS 2.0 | `{SITE_DOMAIN}/rss.xml` | XML |
+| JSON Feed | `{SITE_DOMAIN}/feed.json` | JSON |
+| Sitemap Index | `{SITE_DOMAIN}/sitemap.xml` | XML |
+| News Sitemap | `{SITE_DOMAIN}/sitemap-news.xml` | XML |
+| Persons Sitemap | `{SITE_DOMAIN}/sitemap-persons.xml` | XML |
+| Turbo Pages RSS | `{SITE_DOMAIN}/turbo-rss.xml` | XML |
+| llms.txt | `{SITE_DOMAIN}/llms.txt` | Markdown |
+| llms-full.txt | `{SITE_DOMAIN}/llms-full.txt` | Markdown |
+
+## API-эндпоинты
+
+| Endpoint | Метод | Описание |
+|---|---|---|
+| `/api/push/subscribe` | POST | Подписка на push-уведомления (VAPID) |
+| `/api/push/unsubscribe` | POST | Отписка от push-уведомлений |
+| `/api/track-view` | POST | Аналитика просмотров статей |
+| `/search` | GET | Полнотекстовый поиск (`?q=...`) |
+
+## Технологии
+- Backend: Python, FastAPI
+- Database: SQLite (66 000+ статей), PostgreSQL
+- AI enrichment: summary, keywords, meta_description, quote на каждую статью
+- Structured data: JSON-LD (NewsArticle, BreadcrumbList, FAQPage, Organization, Person)
+- SEO: robots.txt, sitemap index, news sitemap, image sitemap, llms.txt
+"""
+    return Response(content=content, media_type="text/markdown; charset=utf-8")
+
+
 @router.get("/sitemap.xml", response_class=Response)
-async def sitemap_xml():
-    """Dynamic sitemap from database."""
+async def sitemap_index():
+    """Sitemap index pointing to sub-sitemaps."""
+    import math
     try:
         urls = db.generate_sitemap_urls(limit=50000)
     except Exception:
-        logger.exception("Database error in sitemap_xml")
+        logger.exception("Database error in sitemap_index")
+        return Response(content="Service unavailable", status_code=503)
+
+    total_articles = len(urls)
+    per_page = 1000
+    total_pages = math.ceil(total_articles / per_page) if total_articles else 1
+
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml.append('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    xml.append(f"<sitemap><loc>{SITE_DOMAIN}/sitemap-main.xml</loc></sitemap>")
+    for page in range(1, total_pages + 1):
+        xml.append(f"<sitemap><loc>{SITE_DOMAIN}/sitemap-articles-{page}.xml</loc></sitemap>")
+    xml.append(f"<sitemap><loc>{SITE_DOMAIN}/sitemap-news.xml</loc></sitemap>")
+    xml.append(f"<sitemap><loc>{SITE_DOMAIN}/sitemap-persons.xml</loc></sitemap>")
+    xml.append("</sitemapindex>")
+    return Response(content="\n".join(xml), media_type="application/xml")
+
+
+@router.get("/sitemap-main.xml", response_class=Response)
+async def sitemap_main():
+    """Main sitemap — homepage + category pages."""
+    try:
+        urls = db.generate_sitemap_urls(limit=50000)
+    except Exception:
+        logger.exception("Database error in sitemap_main")
         return Response(content="Service unavailable", status_code=503)
 
     xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-
-    # Homepage
     xml_parts.append(f"<url><loc>{SITE_DOMAIN}/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>")
 
-    # Category pages
     seen_cats = set()
     for u in urls:
         cat = u["sub_category"]
@@ -1150,8 +1267,28 @@ async def sitemap_xml():
             seen_cats.add(cat)
             xml_parts.append(f"<url><loc>{SITE_DOMAIN}/news/{cat}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>")
 
-    # Article pages
-    for u in urls:
+    xml_parts.append("</urlset>")
+    return Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
+@router.get("/sitemap-articles-{page}.xml", response_class=Response)
+async def sitemap_articles(page: int):
+    """Paginated article sitemap with image:image support."""
+    import html as html_mod
+    try:
+        urls = db.generate_sitemap_urls(limit=50000)
+    except Exception:
+        logger.exception("Database error in sitemap_articles")
+        return Response(content="Service unavailable", status_code=503)
+
+    per_page = 1000
+    start = (page - 1) * per_page
+    page_urls = urls[start:start + per_page]
+
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">')
+
+    for u in page_urls:
         old_url = u["url"]
         parts = old_url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(parts) >= 2:
@@ -1160,8 +1297,38 @@ async def sitemap_xml():
             xml_parts.append(f"<url><loc>{SITE_DOMAIN}{new_path}</loc>")
             if lastmod:
                 xml_parts.append(f"<lastmod>{lastmod}</lastmod>")
+            # image:image
+            img = u.get("main_image")
+            if img:
+                if img.startswith("/img/") or img.startswith("/static/"):
+                    img_url = f"{SITE_DOMAIN}{img}"
+                elif img.startswith("http"):
+                    img_url = img
+                else:
+                    img_url = ""
+                if img_url:
+                    title_esc = html_mod.escape(u.get("title", ""), quote=True)
+                    xml_parts.append(f"<image:image><image:loc>{html_mod.escape(img_url)}</image:loc><image:title>{title_esc}</image:title></image:image>")
             xml_parts.append("<changefreq>monthly</changefreq><priority>0.6</priority></url>")
 
+    xml_parts.append("</urlset>")
+    return Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
+@router.get("/sitemap-persons.xml", response_class=Response)
+async def sitemap_persons():
+    """Sitemap for person pages."""
+    conn = _get_persons_db()
+    try:
+        persons = conn.execute("SELECT slug FROM persons ORDER BY id").fetchall()
+    finally:
+        conn.close()
+
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    xml_parts.append(f"<url><loc>{SITE_DOMAIN}/persons</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>")
+    for p in persons:
+        xml_parts.append(f"<url><loc>{SITE_DOMAIN}/person/{p['slug']}</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>")
     xml_parts.append("</urlset>")
     return Response(content="\n".join(xml_parts), media_type="application/xml")
 

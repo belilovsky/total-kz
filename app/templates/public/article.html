@@ -84,6 +84,32 @@
   ]
 }
 </script>
+{% if article.enrichment and article.enrichment.summary and article.enrichment.quote %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "О чём эта статья?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ article.enrichment.summary | tojson }}
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Что говорят эксперты?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ (article.enrichment.quote ~ ((' — ' ~ article.enrichment.quote_author) if article.enrichment.quote_author else '')) | tojson }}
+      }
+    }
+  ]
+}
+</script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
