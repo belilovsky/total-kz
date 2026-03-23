@@ -23,6 +23,7 @@
 <meta name="twitter:title" content="{{ article.title }}">
 <meta name="twitter:description" content="{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}">
 {% if article.main_image %}<meta name="twitter:image" content="{{ article.main_image if article.main_image.startswith('http') else 'https://total.kz' + article.main_image }}">{% endif %}
+<meta property="tg:site_name" content="Total.kz">
 {% endblock %}
 
 {% block jsonld %}
@@ -126,7 +127,7 @@
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
       <div class="article-header-aside">
-        <time class="header-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
+        <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
         <span class="header-author">{{ article.author }}</span>
         {% endif %}
@@ -135,15 +136,19 @@
     {# Mobile-only meta (below title) #}
     <div class="article-meta article-meta--mobile">
       {% if article.author %}<span class="header-author article-meta-author">{{ article.author }}</span><span class="sep">·</span>{% endif %}
-      <time datetime="{{ article.pub_date }}">{{ format_date(article.pub_date) }}</time>
+      <time class="article-meta-date" datetime="{{ article.pub_date }}">{{ format_date(article.pub_date) }}</time>
       <span class="sep">·</span>
       <span class="reading-time">{{ reading_time }} мин</span>
     </div>
   </header>
 
+  {% if article.excerpt %}
+  <p class="article-excerpt">{{ article.excerpt }}</p>
+  {% endif %}
+
   {# ── Hero image / placeholder ── #}
   {% if article.main_image %}
-  <figure class="article-hero-image">
+  <figure class="article-hero-image article-hero">
     <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
          srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
          sizes="(max-width: 768px) 100vw, 800px">
@@ -298,6 +303,22 @@
             {% endfor %}
           </div>
         </div>
+        {% endif %}
+
+        {# ── Bookmark button ── #}
+        <button class="bookmark-btn" id="bookmarkBtn" data-article-id="{{ article.id }}" aria-label="Сохранить">
+          <svg class="bookmark-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path>
+          </svg>
+          <span class="bookmark-label">Сохранить</span>
+        </button>
+
+        {# ── Web Story link ── #}
+        {% if article.main_image %}
+        <a href="/stories/{{ category }}/{{ slug }}" class="story-link-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+          <span>Смотреть как Story</span>
+        </a>
         {% endif %}
 
         {# ── Actions: share + print, compact single row ── #}
@@ -534,6 +555,47 @@ function sharePDF() {
 (function(){
   var aid = {{ article.id }};
   if (aid) fetch('/api/view/' + aid, { method: 'POST' }).catch(function(){});
+})();
+
+// ── Bookmark system ──────────────────────────────────────────
+var BOOKMARKS_KEY = 'total_bookmarks';
+function getBookmarks() {
+  try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function isBookmarked(id) { return getBookmarks().some(function(b) { return b.id === id; }); }
+function toggleBookmark(id, title, url, image, date) {
+  var bookmarks = getBookmarks();
+  var idx = bookmarks.findIndex(function(b) { return b.id === id; });
+  if (idx >= 0) { bookmarks.splice(idx, 1); }
+  else {
+    bookmarks.unshift({ id: id, title: title, url: url, image: image, date: date, saved: Date.now() });
+    if (bookmarks.length > 100) bookmarks = bookmarks.slice(0, 100);
+  }
+  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+  return idx < 0;
+}
+(function() {
+  var btn = document.getElementById('bookmarkBtn');
+  if (!btn) return;
+  var articleId = parseInt(btn.dataset.articleId);
+  if (isBookmarked(articleId)) {
+    btn.classList.add('bookmarked');
+    btn.querySelector('.bookmark-label').textContent = 'Сохранено';
+    btn.querySelector('.bookmark-icon').style.fill = 'var(--accent)';
+  }
+  btn.addEventListener('click', function() {
+    var saved = toggleBookmark(
+      articleId,
+      (document.querySelector('.article-title') || {}).textContent || '',
+      window.location.pathname,
+      (document.querySelector('.article-hero img') || {}).src || '',
+      new Date().toISOString()
+    );
+    this.classList.toggle('bookmarked', saved);
+    this.querySelector('.bookmark-label').textContent = saved ? 'Сохранено' : 'Сохранить';
+    this.querySelector('.bookmark-icon').style.fill = saved ? 'var(--accent)' : 'none';
+  });
 })();
 </script>
 {% endblock %}

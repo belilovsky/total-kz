@@ -1,0 +1,28 @@
+{% extends "public/base.html" %}
+
+{% block title %}Web Stories – Total.kz{% endblock %}
+{% block description %}Новости Казахстана в формате Web Stories{% endblock %}
+
+{% block content %}
+<div class="stories-page">
+  <h1 class="stories-heading">Web Stories</h1>
+  <div class="stories-grid">
+    {% for art in articles %}
+    {% set url_parts = art.url.replace('https://total.kz/ru/news/', '').strip('/').split('/') %}
+    {% if url_parts | length >= 2 %}
+    <a href="/stories/{{ url_parts[0] }}/{{ url_parts[1] }}" class="story-preview">
+      {% if art.main_image %}
+      <img src="{{ imgproxy_url(art.main_image, 400) }}" alt="{{ art.title }}" loading="lazy">
+      {% else %}
+      <div class="story-preview-ph"></div>
+      {% endif %}
+      <div class="story-preview-overlay">
+        <span class="story-preview-cat">{{ cat_label(nav_slug_for(art.sub_category or '')) }}</span>
+        <h3 class="story-preview-title">{{ art.title }}</h3>
+      </div>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

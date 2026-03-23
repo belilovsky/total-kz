@@ -1,0 +1,42 @@
+~version: "2.1"
+
+# Only match article pages under /news/{category}/{slug}
+?path: /news/.+/.+
+
+# Title - grab from the article heading
+title: //h1[has-class("article-title")]
+
+# Subtitle - use excerpt if available
+subtitle: //p[has-class("article-excerpt")]
+
+# Body - the main article content
+body: //div[has-class("article-body")]
+
+# Author
+author: //span[has-class("article-meta-author")]
+
+# Published date
+published_date: //time[has-class("article-meta-date")]/@datetime
+
+# Cover image
+cover: //figure[has-class("article-hero")]//img
+
+# Site name
+site_name: "Total.kz"
+
+# Telegram channel
+channel: "@totalkz"
+
+# Remove clutter
+@remove: //div[has-class("ad-placeholder")]
+@remove: //div[has-class("article-sidebar")]
+@remove: //section[has-class("related-section")]
+@remove: //div[has-class("share-buttons")]
+@remove: //div[has-class("article-tldr")]
+@remove: //div[has-class("article-keywords")]
+@remove: //div[has-class("article-timeline")]
+@remove: //nav
+@remove: //header[has-class("site-header")]
+@remove: //footer
+@remove: //div[has-class("reading-progress")]
+@remove: //div[has-class("ticker")]

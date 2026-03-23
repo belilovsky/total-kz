@@ -1512,3 +1512,310 @@ async def api_track_view(article_id: int):
         return {"ok": True, "views": views}
     except Exception:
         return {"ok": False}
+
+
+# ══════════════════════════════════════════════
+#  WEB STORIES (Google AMP Web Stories)
+# ══════════════════════════════════════════════
+
+def _split_text_chunks(text: str, max_chars: int = 180) -> list:
+    """Split text into sentence-based chunks for Web Stories pages."""
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    chunks = []
+    current = ""
+    for s in sentences:
+        if current and len(current) + len(s) + 1 > max_chars:
+            chunks.append(current.strip())
+            current = s
+        else:
+            current = (current + " " + s).strip() if current else s
+    if current.strip():
+        chunks.append(current.strip())
+    return chunks
+
+
+MONTHS_SHORT = {
+    1: "янв", 2: "фев", 3: "мар", 4: "апр",
+    5: "мая", 6: "июн", 7: "июл", 8: "авг",
+    9: "сен", 10: "окт", 11: "ноя", 12: "дек",
+}
+
+
+@router.get("/stories/{category}/{slug}", response_class=HTMLResponse)
+async def web_story_page(category: str, slug: str):
+    """Generate an AMP Web Story from an article."""
+    import html as html_mod
+    try:
+        article = db.get_article_by_slug(category, slug)
+    except Exception:
+        return HTMLResponse("<h1>Story not found</h1>", status_code=404)
+
+    if not article:
+        return HTMLResponse("<h1>Story not found</h1>", status_code=404)
+
+    rewrite_article_images(article)
+
+    title = html_mod.escape(article["title"])
+    author = html_mod.escape(article.get("author") or "Total.kz")
+    img = article.get("main_image", "")
+    image_url = img if img and img.startswith("http") else (f"https://total.kz{img}" if img else "https://total.kz/static/img/og-default.png")
+    pub_date = article.get("pub_date", "")
+    updated_at = article.get("updated_at") or pub_date
+    category_name = html_mod.escape(cat_label(category))
+
+    formatted_date = ""
+    try:
+        dt = _parse_datetime(pub_date)
+        if dt:
+            formatted_date = f"{dt.day} {MONTHS_SHORT.get(dt.month, '')} {dt.year}"
+    except Exception:
+        formatted_date = pub_date[:10] if pub_date else ""
+
+    body_text = article.get("body_text") or article.get("excerpt") or ""
+    chunks = _split_text_chunks(body_text, 180)[:12]
+
+    text_pages = []
+    for i, chunk in enumerate(chunks):
+        page_id = f"page-{i+1}"
+        text_pages.append(f"""
+    <amp-story-page id="{page_id}">
+      <amp-story-grid-layer template="vertical" class="story-text-page">
+        <p class="story-paragraph">{html_mod.escape(chunk)}</p>
+      </amp-story-grid-layer>
+    </amp-story-page>""")
+
+    text_pages_html = "".join(text_pages)
+
+    story_html = f"""<!doctype html>
+<html amp lang="ru">
+<head>
+  <meta charset="utf-8">
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <script async custom-element="amp-story" src="https://cdn.ampproject.org/v0/amp-story-1.0.js"></script>
+  <title>{title} – Total.kz</title>
+  <link rel="canonical" href="https://total.kz/stories/{category}/{slug}">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+  <style amp-boilerplate>body{{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}}@-webkit-keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}@-moz-keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}@keyframes -amp-start{{from{{visibility:hidden}}to{{visibility:visible}}}}</style><noscript><style amp-boilerplate>body{{-webkit-animation:none;-moz-animation:none;animation:none}}</style></noscript>
+  <script type="application/ld+json">
+  {{
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "{title}",
+    "image": "{html_mod.escape(image_url)}",
+    "datePublished": "{pub_date}",
+    "dateModified": "{updated_at}",
+    "author": {{"@type": "Person", "name": "{author}"}},
+    "publisher": {{"@type": "Organization", "name": "Total.kz", "logo": {{"@type": "ImageObject", "url": "https://total.kz/static/img/logotype.png"}}}}
+  }}
+  </script>
+  <meta property="og:title" content="{title}">
+  <meta property="og:image" content="{html_mod.escape(image_url)}">
+  <meta property="og:type" content="article">
+  <style amp-custom>
+    .story-cover-text {{ background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 24px; }}
+    .story-title {{ color: #fff; font-family: 'Onest', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.3; }}
+    .story-cat {{ color: #d83236; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }}
+    .story-meta {{ color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px; }}
+    .story-text-page {{ background: #fff; padding: 24px; display: flex; flex-direction: column; justify-content: center; }}
+    .story-paragraph {{ font-family: 'Onest', sans-serif; font-size: 18px; line-height: 1.7; color: #1a1a1a; }}
+    .story-logo {{ background: #d83236; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: 800; font-size: 16px; font-family: 'Montserrat', sans-serif; }}
+    .story-cta {{ background: #d83236; color: #fff; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; font-size: 16px; }}
+  </style>
+</head>
+<body>
+  <amp-story standalone
+    title="{title}"
+    publisher="Total.kz"
+    publisher-logo-src="https://total.kz/static/img/logotype.png"
+    poster-portrait-src="{html_mod.escape(image_url)}">
+
+    <amp-story-page id="cover">
+      <amp-story-grid-layer template="fill">
+        <amp-img src="{html_mod.escape(image_url)}" width="720" height="1280" layout="fill" alt="{title}"></amp-img>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="story-cover-text">
+        <div>
+          <p class="story-cat">{category_name}</p>
+          <h1 class="story-title">{title}</h1>
+          <p class="story-meta">{author} &middot; {formatted_date}</p>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+    {text_pages_html}
+    <amp-story-page id="cta">
+      <amp-story-grid-layer template="fill">
+        <amp-img src="{html_mod.escape(image_url)}" width="720" height="1280" layout="fill" alt=""></amp-img>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="story-cover-text">
+        <div style="text-align:center">
+          <span class="story-logo">ТÓТАЛ</span>
+          <p style="color:#fff;margin:16px 0;font-size:18px;">Читайте полную версию</p>
+          <a href="https://total.kz/news/{category}/{slug}" class="story-cta">Открыть статью &rarr;</a>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+  </amp-story>
+</body>
+</html>"""
+    return HTMLResponse(content=story_html)
+
+
+@router.get("/stories", response_class=HTMLResponse)
+async def stories_index(request: Request):
+    """Web Stories index — grid of recent stories."""
+    try:
+        articles = rewrite_articles_images(db.get_latest_articles(limit=20))
+        articles = [a for a in articles if a.get("main_image")]
+    except Exception:
+        articles = []
+
+    return templates.TemplateResponse("public/stories.html", {
+        "request": request,
+        "articles": articles,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    })
+
+
+# ══════════════════════════════════════════════
+#  YANDEX TURBO PAGES RSS
+# ══════════════════════════════════════════════
+
+@router.get("/turbo/rss.xml", response_class=Response)
+async def turbo_rss():
+    """Yandex Turbo Pages RSS feed."""
+    import html as html_mod
+    try:
+        articles = db.get_latest_articles(limit=100)
+    except Exception:
+        logger.exception("Database error in turbo_rss")
+        return Response(content="Service unavailable", status_code=503)
+
+    items = []
+    for art in articles:
+        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+        if len(url_parts) < 2:
+            continue
+        link = f"https://total.kz/news/{url_parts[0]}/{url_parts[1]}"
+
+        img_tag = ""
+        if art.get("main_image"):
+            img_url = art["main_image"] if art["main_image"].startswith("http") else f"https://total.kz{art['main_image']}"
+            img_tag = f'<figure><img src="{html_mod.escape(img_url)}"/></figure>'
+
+        body = art.get("body_html", "") or art.get("excerpt", "")
+        body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL)
+
+        nav_cat = cat_label(nav_slug_for(art.get('sub_category', '')))
+        turbo_content = f"""<header>
+          <h1>{html_mod.escape(art['title'])}</h1>
+          {img_tag}
+          <menu>
+            <a href="https://total.kz/">Главная</a>
+            <a href="https://total.kz/news/{url_parts[0]}">{html_mod.escape(nav_cat)}</a>
+          </menu>
+        </header>
+        {body}"""
+
+        pub_date_rfc = ""
+        try:
+            dt = datetime.strptime(art.get("pub_date", "")[:19].replace('T', ' '), "%Y-%m-%d %H:%M:%S")
+            pub_date_rfc = dt.strftime("%a, %d %b %Y %H:%M:%S +0500")
+        except Exception:
+            pass
+
+        items.append(f"""    <item turbo="true">
+      <title>{html_mod.escape(art['title'])}</title>
+      <link>{link}</link>
+      <pubDate>{pub_date_rfc}</pubDate>
+      <turbo:content><![CDATA[{turbo_content}]]></turbo:content>
+    </item>""")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:yandex="http://news.yandex.ru" xmlns:media="http://search.yahoo.com/mrss/" xmlns:turbo="http://turbo.yandex.ru" version="2.0">
+  <channel>
+    <title>ТÓТАЛ — Новости Казахстана</title>
+    <link>https://total.kz</link>
+    <description>Последние новости Казахстана</description>
+    <language>ru</language>
+    <turbo:analytics type="Yandex" id=""></turbo:analytics>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return Response(content=xml, media_type="application/xml; charset=utf-8")
+
+
+# ══════════════════════════════════════════════
+#  PUSH NOTIFICATIONS API
+# ══════════════════════════════════════════════
+
+def _ensure_push_table():
+    """Create push_subscriptions table if it doesn't exist."""
+    try:
+        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+        conn.execute("""CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            endpoint TEXT UNIQUE NOT NULL,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            categories TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+_ensure_push_table()
+
+
+@router.post("/api/push/subscribe")
+async def push_subscribe(request: Request):
+    """Subscribe to push notifications."""
+    try:
+        data = await request.json()
+        endpoint = data.get("endpoint")
+        keys = data.get("keys", {})
+        categories = data.get("categories", "")
+        if not endpoint or not keys.get("p256dh") or not keys.get("auth"):
+            return {"error": "Missing fields"}
+        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+        conn.execute(
+            "INSERT OR REPLACE INTO push_subscriptions (endpoint, p256dh, auth, categories) VALUES (?, ?, ?, ?)",
+            (endpoint, keys["p256dh"], keys["auth"], categories)
+        )
+        conn.commit()
+        conn.close()
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
+
+
+@router.delete("/api/push/unsubscribe")
+async def push_unsubscribe(request: Request):
+    """Unsubscribe from push notifications."""
+    try:
+        data = await request.json()
+        endpoint = data.get("endpoint", "")
+        conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+        conn.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
+        conn.commit()
+        conn.close()
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
+
+
+# ══════════════════════════════════════════════
+#  BOOKMARKS PAGE
+# ══════════════════════════════════════════════
+
+@router.get("/bookmarks", response_class=HTMLResponse)
+async def bookmarks_page(request: Request):
+    """Bookmarks page — saved articles rendered client-side from localStorage."""
+    return templates.TemplateResponse("public/bookmarks.html", {
+        "request": request,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    })

@@ -1,0 +1,40 @@
+{% extends "public/base.html" %}
+
+{% block title %}Закладки – Total.kz{% endblock %}
+{% block description %}Сохранённые статьи{% endblock %}
+
+{% block content %}
+<div class="bookmarks-page">
+  <h1 class="bookmarks-heading">Закладки</h1>
+  <div id="bookmarksList" class="bookmarks-grid"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var BOOKMARKS_KEY = 'total_bookmarks';
+function getBookmarks() {
+  try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+(function() {
+  var bookmarks = getBookmarks();
+  var container = document.getElementById('bookmarksList');
+  if (!container) return;
+  if (bookmarks.length === 0) {
+    container.innerHTML = '<p class="empty-state">Нет сохранённых статей. Нажмите «Сохранить» на странице статьи, чтобы добавить в закладки.</p>';
+  } else {
+    container.innerHTML = bookmarks.map(function(b) {
+      var imgTag = b.image ? '<div class="bookmark-card-img"><img src="' + b.image + '" alt="" loading="lazy"></div>' : '';
+      var date = new Date(b.saved).toLocaleDateString('ru-RU');
+      return '<a href="' + b.url + '" class="bookmark-card">' +
+        imgTag +
+        '<div class="bookmark-card-body">' +
+        '<h3 class="bookmark-card-title">' + b.title + '</h3>' +
+        '<time class="bookmark-card-date">' + date + '</time>' +
+        '</div></a>';
+    }).join('');
+  }
+})();
+</script>
+{% endblock %}
