@@ -1,0 +1,63 @@
+{% extends "public/base.html" %}
+
+{% block title %}Персоны – Total.kz{% endblock %}
+{% block description %}Каталог ключевых персон в новостях Казахстана — политики, чиновники, международные лидеры{% endblock %}
+{% block canonical %}/persons{% endblock %}
+
+{% block content %}
+<div class="persons-page">
+  <nav class="article-top-bar" aria-label="Навигация">
+    <a href="/">Главная</a>
+    <span class="sep">›</span>
+    <span>Персоны</span>
+  </nav>
+
+  <header class="persons-header">
+    <h1 class="persons-title">Персоны</h1>
+    <p class="persons-subtitle">{{ format_num(total_persons) }} {{ 'персона' if total_persons % 10 == 1 and total_persons % 100 != 11 else ('персоны' if 2 <= total_persons % 10 <= 4 and not (12 <= total_persons % 100 <= 14) else 'персон') }} в базе</p>
+  </header>
+
+  {# ── Type filters ── #}
+  <div class="persons-filters">
+    <a href="/persons" class="pf-chip{% if not current_type %} active{% endif %}">Все</a>
+    <a href="/persons?type=government" class="pf-chip{% if current_type == 'government' %} active{% endif %}">Государство{% if type_counts.get('government') %} <span class="pf-count">{{ type_counts['government'] }}</span>{% endif %}</a>
+    <a href="/persons?type=international" class="pf-chip{% if current_type == 'international' %} active{% endif %}">Международные{% if type_counts.get('international') %} <span class="pf-count">{{ type_counts['international'] }}</span>{% endif %}</a>
+  </div>
+
+  {# ── Alphabet filter ── #}
+  {% if letters %}
+  <div class="persons-alpha">
+    <a href="/persons{% if current_type %}?type={{ current_type }}{% endif %}" class="alpha-letter{% if not current_letter %} active{% endif %}">Все</a>
+    {% for l in letters %}
+    <a href="/persons?letter={{ l }}{% if current_type %}&type={{ current_type }}{% endif %}" class="alpha-letter{% if current_letter == l %} active{% endif %}">{{ l }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Person cards ── #}
+  <div class="persons-grid">
+    {% for p in persons %}
+    <a href="/person/{{ p['slug'] }}" class="person-card">
+      <div class="person-card-avatar{% if p['photo_url'] %} has-photo{% endif %}">
+        {% if p['photo_url'] %}
+        <img src="{{ imgproxy_url(p['photo_url'], 200) }}" alt="{{ p['short_name'] }}" loading="lazy">
+        {% else %}
+        <span class="person-initials">{{ p['short_name'][:1] }}</span>
+        {% endif %}
+      </div>
+      <div class="person-card-info">
+        <span class="person-card-name">{{ p['short_name'] }}</span>
+        {% if p['current_position'] %}
+        <span class="person-card-pos">{{ p['current_position'] }}</span>
+        {% endif %}
+        <span class="person-card-count">{{ pluralize_articles(p['article_count']) }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if not persons %}
+  <p class="persons-empty">Персоны не найдены</p>
+  {% endif %}
+</div>
+{% endblock %}

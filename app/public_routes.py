@@ -1082,6 +1082,148 @@ async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
         return Response(content="[]", media_type="application/json")
 
 
+# ══════════════════════════════════════════════
+#  PERSONS LIBRARY
+# ══════════════════════════════════════════════
+
+MONTHS_RU_GEN = {
+    1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+    5: "мая", 6: "июня", 7: "июля", 8: "августа",
+    9: "сентября", 10: "октября", 11: "ноября", 12: "декабря",
+}
+MONTHS_RU_NOM = {
+    1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
+    5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
+    9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
+}
+
+
+def _get_persons_db():
+    conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+@router.get("/persons", response_class=HTMLResponse)
+async def persons_catalog(request: Request, type: str = "", letter: str = ""):
+    conn = _get_persons_db()
+    # Get all persons with article counts
+    where_clauses = ["1=1"]
+    params = []
+    if type:
+        where_clauses.append("p.person_type = ?")
+        params.append(type)
+    if letter:
+        where_clauses.append("p.short_name LIKE ?")
+        params.append(f"{letter}%")
+
+    where = " AND ".join(where_clauses)
+    persons = conn.execute(f"""
+        SELECT p.*, COUNT(ae.article_id) as article_count
+        FROM persons p
+        LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+        WHERE {where}
+        GROUP BY p.id
+        ORDER BY article_count DESC
+    """, params).fetchall()
+
+    # Get type counts for filters
+    type_counts = {}
+    for row in conn.execute("SELECT person_type, COUNT(*) FROM persons GROUP BY person_type"):
+        type_counts[row[0]] = row[1]
+
+    # Get first letters for alphabet filter
+    letters = set()
+    for row in conn.execute("SELECT DISTINCT substr(short_name, 1, 1) FROM persons"):
+        if row[0]:
+            letters.add(row[0])
+    letters = sorted(letters)
+
+    conn.close()
+    return templates.TemplateResponse("public/persons.html", {
+        "request": request,
+        "persons": persons,
+        "type_counts": type_counts,
+        "letters": letters,
+        "current_type": type,
+        "current_letter": letter,
+        "total_persons": len(persons),
+    })
+
+
+@router.get("/person/{slug}", response_class=HTMLResponse)
+async def person_page(request: Request, slug: str):
+    conn = _get_persons_db()
+
+    person = conn.execute("SELECT * FROM persons WHERE slug = ?", (slug,)).fetchone()
+    if not person:
+        conn.close()
+        return HTMLResponse("<h1>Персона не найдена</h1>", status_code=404)
+
+    # Article count
+    article_count = conn.execute(
+        "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+        (person["entity_id"],)
+    ).fetchone()[0]
+
+    # Career positions
+    positions = conn.execute(
+        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY sort_order, start_date DESC",
+        (person["id"],)
+    ).fetchall()
+
+    # Articles grouped by month (latest first, limit 200)
+    articles_raw = conn.execute("""
+        SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+        FROM articles a
+        JOIN article_entities ae ON a.id = ae.article_id
+        WHERE ae.entity_id = ?
+        AND a.pub_date IS NOT NULL AND a.pub_date != ''
+        ORDER BY a.pub_date DESC
+        LIMIT 200
+    """, (person["entity_id"],)).fetchall()
+
+    # Group by month
+    months = []
+    current_key = None
+    current_group = None
+    for art in articles_raw:
+        try:
+            pd = art["pub_date"][:10]
+            y, m, d = int(pd[:4]), int(pd[5:7]), int(pd[8:10])
+            key = f"{y}-{m:02d}"
+            label = f"{MONTHS_RU_NOM.get(m, '')} {y}"
+        except (ValueError, TypeError):
+            continue
+        if key != current_key:
+            current_key = key
+            current_group = {"key": key, "label": label, "articles": []}
+            months.append(current_group)
+        current_group["articles"].append(dict(art))
+
+    # Related persons (shared articles)
+    related = conn.execute("""
+        SELECT p.slug, p.short_name, p.current_position, COUNT(*) as shared
+        FROM persons p
+        JOIN article_entities ae1 ON p.entity_id = ae1.entity_id
+        JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+        WHERE ae2.entity_id = ? AND p.id != ?
+        GROUP BY p.id
+        ORDER BY shared DESC
+        LIMIT 8
+    """, (person["entity_id"], person["id"])).fetchall()
+
+    conn.close()
+    return templates.TemplateResponse("public/person.html", {
+        "request": request,
+        "person": person,
+        "article_count": article_count,
+        "positions": positions,
+        "months": months,
+        "related": related,
+    })
+
+
 @router.post("/api/view/{article_id}")
 async def api_track_view(article_id: int):
     """Increment view count for an article. Called client-side on page load."""

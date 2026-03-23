@@ -1,0 +1,139 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ person['short_name'] }} – Total.kz{% endblock %}
+{% block description %}{{ person['current_position'] or person['short_name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
+{% block canonical %}/person/{{ person['slug'] }}{% endblock %}
+
+{% block content %}
+<div class="person-page">
+  <nav class="article-top-bar" aria-label="Навигация">
+    <a href="/">Главная</a>
+    <span class="sep">›</span>
+    <a href="/persons">Персоны</a>
+    <span class="sep">›</span>
+    <span>{{ person['short_name'] }}</span>
+  </nav>
+
+  {# ── Person header ── #}
+  <header class="person-hero">
+    <div class="person-hero-avatar{% if person['photo_url'] %} has-photo{% endif %}">
+      {% if person['photo_url'] %}
+      <img src="{{ imgproxy_url(person['photo_url'], 400) }}" alt="{{ person['short_name'] }}">
+      {% else %}
+      <span class="person-hero-initials">{{ person['short_name'][:1] }}</span>
+      {% endif %}
+    </div>
+    <div class="person-hero-info">
+      <h1 class="person-hero-name">{{ person['short_name'] }}</h1>
+      {% if person['full_name'] and person['full_name'] != person['short_name'] %}
+      <div class="person-hero-fullname">{{ person['full_name'] }}</div>
+      {% endif %}
+      {% if person['current_position'] %}
+      <div class="person-hero-position">{{ person['current_position'] }}</div>
+      {% endif %}
+      {% if person['current_org'] %}
+      <div class="person-hero-org">{{ person['current_org'] }}</div>
+      {% endif %}
+      <div class="person-hero-meta">
+        {% if person['birth_date'] %}
+        <span>{{ person['birth_date'][8:10] | int }}.{{ person['birth_date'][5:7] }}.{{ person['birth_date'][:4] }}{% if person['birth_place'] %}, {{ person['birth_place'] }}{% endif %}</span>
+        <span class="sep">·</span>
+        {% endif %}
+        <span>{{ pluralize_articles(article_count) }}</span>
+      </div>
+      {% if person['zakon_doc_id'] %}
+      <a href="https://online.zakon.kz/Document/?doc_id={{ person['zakon_doc_id'] }}" target="_blank" rel="noopener" class="person-zakon-link">
+        Резюме на Zakon.kz ↗
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="person-layout">
+    <div class="person-main">
+
+      {# ── Bio ── #}
+      {% if person['bio_summary'] %}
+      <section class="person-section">
+        <h2 class="person-section-title">О персоне</h2>
+        <p class="person-bio-text">{{ person['bio_summary'] }}</p>
+      </section>
+      {% endif %}
+
+      {# ── Career timeline ── #}
+      {% if positions %}
+      <section class="person-section">
+        <h2 class="person-section-title">Карьера</h2>
+        <div class="person-career">
+          {% for pos in positions %}
+          <div class="career-item{% if not pos['end_date'] %} career-current{% endif %}">
+            <div class="career-dot"></div>
+            <div class="career-body">
+              <span class="career-title">{{ pos['position_title'] }}</span>
+              {% if pos['organization'] %}
+              <span class="career-org">{{ pos['organization'] }}</span>
+              {% endif %}
+              {% if pos['start_date'] %}
+              <span class="career-date">
+                с {{ pos['start_date'] }}{% if pos['end_date'] %} по {{ pos['end_date'] }}{% endif %}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {# ── Article chronology ── #}
+      {% if months %}
+      <section class="person-section">
+        <h2 class="person-section-title">Хронология</h2>
+        <div class="person-timeline">
+          {% for month in months %}
+          <div class="ptl-month">
+            <h3 class="ptl-month-label">{{ month['label'] }}</h3>
+            <div class="ptl-articles">
+              {% for art in month['articles'] %}
+              <a href="{{ article_url(art) }}" class="ptl-article">
+                <span class="ptl-date">{{ art['pub_date'][8:10] | int }}</span>
+                <span class="ptl-title">{{ art['title'] }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
+
+    {# ── Sidebar ── #}
+    <aside class="person-sidebar">
+      {% if related %}
+      <div class="person-sidebar-block">
+        <h3 class="psb-title">Связанные персоны</h3>
+        <div class="psb-list">
+          {% for r in related %}
+          <a href="/person/{{ r['slug'] }}" class="psb-person">
+            <span class="psb-name">{{ r['short_name'] }}</span>
+            {% if r['current_position'] %}
+            <span class="psb-pos">{{ r['current_position'] }}</span>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="person-sidebar-block">
+        <h3 class="psb-title">Тип</h3>
+        <span class="person-type-badge {{ person['person_type'] }}">
+          {% if person['person_type'] == 'government' %}Государство{% elif person['person_type'] == 'international' %}Международные{% else %}Другое{% endif %}
+        </span>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

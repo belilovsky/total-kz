@@ -49,7 +49,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=12.8">
+  <link rel="stylesheet" href="/static/css/public.css?v=13.0">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   {% block extra_css %}{% endblock %}
 </head>
@@ -71,6 +71,7 @@
             <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
           {% endfor %}
         {% endif %}
+        <a href="/persons"{% if request.url.path == '/persons' %} class="active"{% endif %}>Персоны</a>
       </nav>
 
       <div class="header-actions">
@@ -159,6 +160,7 @@
             <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
           {% endfor %}
         {% endif %}
+        <a href="/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>Персоны</a>
       </nav>
 
       <div class="mobile-menu-footer">
@@ -226,6 +228,7 @@
                 <a href="/news/{{ section.slug }}">{{ section.label }}</a>
               {% endfor %}
             {% endif %}
+            <a href="/persons">Персоны</a>
           </nav>
         </div>
         <div class="footer-col">
