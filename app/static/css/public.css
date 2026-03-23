@@ -1036,9 +1036,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   padding-left:var(--space-3); border-left:3px solid var(--accent);
 }
 .article-body ul,
-.article-body ol { padding-left:var(--space-6); margin-bottom:var(--space-5); }
+.article-body ol { padding-left:var(--space-4); margin-bottom:var(--space-5); }
+@media (min-width:640px) { .article-body ul, .article-body ol { padding-left:var(--space-6); } }
 .article-body ul { list-style:none; }
-.article-body ul li { position:relative; padding-left:var(--space-5); }
+.article-body ul li { position:relative; padding-left:var(--space-4); }
+@media (min-width:640px) { .article-body ul li { padding-left:var(--space-5); } }
 .article-body ul li::before {
   content:''; position:absolute; left:0; top:0.65em;
   width:6px; height:6px; border-radius:50%; background:var(--accent);
@@ -2785,11 +2787,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* 1. Timeline: proper 2-column grid on mobile with enough room for date */
 @media (max-width:639px) {
   .timeline-item {
-    grid-template-columns:78px 1fr;
-    gap:var(--space-1);
+    grid-template-columns:100px 1fr;
+    gap:var(--space-2);
   }
   .timeline-date {
-    font-size:10px;
+    font-size:11px;
     white-space:nowrap;
     color:var(--text-muted);
     text-align:left;
