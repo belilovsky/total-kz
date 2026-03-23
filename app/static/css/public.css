@@ -676,7 +676,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* ── Article Page v8.6.1 ───────────────────── */
 
 /* Layout: content + optional sidebar on wide screens */
-.article-page { max-width:var(--content-narrow); margin:0 auto; padding:0 var(--space-4); overflow-x:clip; }
+.article-page { max-width:var(--content-narrow); margin:0 auto; padding:0 var(--space-4); }
 @media (min-width:640px) { .article-page { padding:0 var(--space-6); } }
 @media (min-width:1100px) { .article-page { max-width:920px; } }
 
@@ -1357,30 +1357,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 @media (min-width:640px) { .timeline-title { font-size:var(--text-sm); -webkit-line-clamp:2; } }
 .timeline-item:hover .timeline-title { color:var(--accent); }
 
-/* Full-width timeline — breaks out of article-page container */
-.article-timeline--full {
-  width:100vw;
-  position:relative;
-  left:50%;
-  margin-left:-50vw;
-  padding-left:var(--space-4);
-  padding-right:var(--space-4);
-  background:var(--surface-2);
-  border-top:1px solid var(--border-light);
-  border-bottom:1px solid var(--border-light);
-}
-@media (min-width:640px) {
-  .article-timeline--full {
-    padding-left:var(--space-8);
-    padding-right:var(--space-8);
-  }
-}
-@media (min-width:1100px) {
-  .article-timeline--full {
-    padding-left:calc((100vw - var(--content-wide)) / 2 + var(--space-8));
-    padding-right:calc((100vw - var(--content-wide)) / 2 + var(--space-8));
-  }
-}
+/* Full-width timeline — just a semantic hook, styling inherited from .article-timeline */
 
 /* Share buttons (inline, in article body) */
 .share-buttons { display:none; }
