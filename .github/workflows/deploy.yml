@@ -52,3 +52,5 @@ jobs:
 
             echo "$(date) | $(git log -1 --oneline)" >> /opt/total-kz/data/deploy.log
             echo "=== ✅ Deploy finished at $(date) ==="
+
+# retry after authorized_keys fix
