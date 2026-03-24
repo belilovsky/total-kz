@@ -12,10 +12,11 @@
 
 ## Стек
 
-- **Backend:** FastAPI + Jinja2 + SQLite
-- **Frontend:** HTML/CSS (dark theme), Chart.js
-- **Парсер:** requests + BeautifulSoup (сбор URL) + httpx + selectolax (контент)
-- **Деплой:** Docker Compose
+- **Backend:** FastAPI + Jinja2 + SQLite → PostgreSQL
+- **Frontend:** HTML/CSS (dark/light theme), без фреймворков
+- **Поиск:** Meilisearch
+- **Редактор:** Editor.js (блочный)
+- **Деплой:** Docker Compose + GitHub Actions CI/CD
 
 ## Быстрый старт
 
@@ -23,71 +24,25 @@
 
 ```bash
 docker compose up -d --build
-
-# Импорт данных (если articles.jsonl в data/)
-docker compose exec web python scraper/import_data.py
 ```
 
-### Локально
+### Деплой
+
+Автодеплой настроен через GitHub Actions — каждый push в `main` автоматически деплоится на сервер.
+
+Ручной деплой на VPS:
+```bash
+cd /opt/total-kz && git pull && docker compose up -d --build
+```
+
+### Логи
 
 ```bash
-pip install -r requirements.txt
-python scraper/import_data.py
-uvicorn app.main:app --reload --port 3847
+docker compose logs -f app
 ```
 
-### VPS (Hostinger)
+### Переиндексация поиска
 
 ```bash
-curl -sL https://raw.githubusercontent.com/belilovsky/total-kz/main/setup.sh | bash
+docker compose exec app python -m app.search_engine reindex
 ```
-
-## Парсер
-
-### Сбор новых статей
-
-```bash
-# Собрать URL за последний год (по умолчанию)
-docker compose exec web python scraper/scrape_urls.py
-
-# Собрать URL за последние 30 дней
-docker compose exec web python scraper/scrape_urls.py --days 30
-
-# Собрать URL начиная с конкретной даты
-docker compose exec web python scraper/scrape_urls.py --since 2024-01-01
-```
-
-### Загрузка контента
-
-```bash
-# Скачать контент для всех собранных URL
-docker compose exec web python scraper/download_content.py
-
-# С автоматическим импортом в БД
-docker compose exec web python scraper/download_content.py --import-db
-
-# Больше параллельных запросов (по умолчанию 15)
-docker compose exec web python scraper/download_content.py --workers 20
-```
-
-### Импорт в базу
-
-```bash
-docker compose exec web python scraper/import_data.py
-```
-
-### Полный цикл обновления
-
-```bash
-# 1. Собрать новые URL
-docker compose exec web python scraper/scrape_urls.py --days 7
-
-# 2. Скачать контент и импортировать
-docker compose exec web python scraper/download_content.py --import-db
-```
-
-## API
-
-- `GET /api/stats` — общая статистика
-- `GET /api/articles?q=...&category=...&page=1` — список статей
-- `GET /api/article/{id}` — полная статья
