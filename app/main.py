@@ -4,8 +4,10 @@ import json
 import logging
 import os
 import re
+import time
 import unicodedata
 import uuid
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +38,53 @@ logger = logging.getLogger(__name__)
 MEDIA_DIR = Path(__file__).parent.parent / "data" / "media"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+# ══════════════════════════════════════════════
+#  RATE LIMITING MIDDLEWARE
+#  Защита дорогих эндпоинтов от злоупотреблений
+# ══════════════════════════════════════════════
+
+# Настройки лимитов: путь (prefix) → (max_requests, window_seconds)
+_RATE_LIMITS: dict[str, tuple[int, int]] = {
+    "/search":              (30, 60),   # 30 запросов в минуту
+    "/ask":                 (20, 60),   # 20 запросов в минуту
+    "/api/public/comments": (10, 60),   # 10 запросов в минуту
+    "/api/suggest":         (60, 60),   # 60 запросов в минуту (autocomplete)
+}
+
+_rate_store: dict[str, list[float]] = defaultdict(list)
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Sliding window rate limiter по IP + path prefix.
+    Без внешних зависимостей — хранит timestamps в памяти.
+    При перезапуске контейнера счётчики сбрасываются (приемлемо).
+    """
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() \
+                    or (request.client.host if request.client else "unknown")
+
+        for prefix, (max_req, window) in _RATE_LIMITS.items():
+            if path.startswith(prefix):
+                key = f"{prefix}:{client_ip}"
+                now = time.monotonic()
+                # Оставляем только запросы в пределах окна
+                _rate_store[key] = [
+                    ts for ts in _rate_store[key] if now - ts < window
+                ]
+                if len(_rate_store[key]) >= max_req:
+                    logger.warning("Rate limit hit: %s %s", client_ip, path)
+                    return JSONResponse(
+                        {"error": "Слишком много запросов. Попробуйте через минуту."},
+                        status_code=429,
+                        headers={"Retry-After": str(window)},
+                    )
+                _rate_store[key].append(now)
+                break
+
+        return await call_next(request)
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
@@ -106,6 +155,7 @@ app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
 app.add_middleware(BrotliMiddleware, minimum_size=1000, gzip_fallback=True)
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(AuthMiddleware)
 
 BASE_DIR = Path(__file__).parent
