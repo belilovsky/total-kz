@@ -1064,9 +1064,8 @@ async def search_page(
 async def tags_catalog(
     request: Request,
     q: str = "",
-    letter: str = "",
 ):
-    """Tags catalog – tag cloud + alphabetical browsing."""
+    """Tags catalog – tag cloud of all significant tags."""
     if q:
         # Search mode — keep old behaviour for search
         result = db.get_tags_full(q=q, page=1, per_page=200)
@@ -1074,24 +1073,16 @@ async def tags_catalog(
             "request": request,
             "result": result,
             "popular_tags": [],
-            "alpha_tags": {},
-            "letters": [],
-            "active_letter": "",
             "q": q,
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
         })
-    popular_tags = db.get_popular_tags(limit=40)
-    alpha_tags = db.get_tags_by_letter(min_count=3)
-    letters = sorted(alpha_tags.keys())
-    total_tags = sum(len(v) for v in alpha_tags.values())
+    popular_tags = db.get_popular_tags(limit=1000)
+    total_tags = len(popular_tags)
     return templates.TemplateResponse("public/tags.html", {
         "request": request,
         "result": {"total": total_tags, "items": []},
         "popular_tags": popular_tags,
-        "alpha_tags": alpha_tags,
-        "letters": letters,
-        "active_letter": letter,
         "q": q,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,

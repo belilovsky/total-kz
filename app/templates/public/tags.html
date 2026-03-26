@@ -59,54 +59,28 @@
     {% endif %}
 
   {% else %}
-    {# ── Default mode: cloud + alphabetical ── #}
+    {# ── Default mode: tag cloud ── #}
 
-    {# ── Tag Cloud ── #}
     {% if popular_tags %}
     <section class="tags-cloud-section">
-      <h2 class="tags-section-title">Популярные темы</h2>
-      <div class="tags-cloud">
+      <div class="tags-cloud" id="tagsCloud">
         {% set max_count = popular_tags[0].article_count if popular_tags else 1 %}
         {% set min_count = popular_tags[-1].article_count if popular_tags else 1 %}
         {% for tag in popular_tags %}
           {% if max_count > min_count %}
-            {% set ratio = (tag.article_count - min_count) / (max_count - min_count) %}
+            {% set log_max = max_count|log %}
+            {% set log_min = min_count|log %}
+            {% set log_val = tag.article_count|log %}
+            {% set ratio = (log_val - log_min) / (log_max - log_min) if log_max > log_min else 0.5 %}
           {% else %}
             {% set ratio = 0.5 %}
           {% endif %}
-          {% set font_size = 0.8 + ratio * 1.2 %}
+          {% set font_size = 0.75 + ratio * 1.5 %}
           <a href="/tag/{{ tag.tag|urlencode }}"
-             class="tags-cloud-item{% if loop.index <= 5 %} tags-cloud-top{% endif %}"
+             class="tags-cloud-item{% if loop.index <= 10 %} tags-cloud-top{% endif %}"
              style="font-size:{{ '%.2f'|format(font_size) }}rem"
-             title="{{ tag.article_count }} статей">{{ tag.tag }}</a>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
-
-    {# ── Alphabetical Navigation ── #}
-    {% if letters %}
-    <section class="tags-alpha-section">
-      <h2 class="tags-section-title">По алфавиту</h2>
-      <nav class="tags-alpha-bar" aria-label="Алфавит">
-        {% for l in letters %}
-          <a href="#letter-{{ l }}" class="tags-alpha-letter" data-letter="{{ l }}">{{ l }}</a>
-        {% endfor %}
-      </nav>
-
-      <div class="tags-alpha-groups" id="tagsAlphaGroups">
-        {% for l in letters %}
-        <div class="tags-alpha-group" id="letter-{{ l }}">
-          <h3 class="tags-alpha-heading">{{ l }}</h3>
-          <div class="tags-alpha-list">
-            {% for tag in alpha_tags[l] %}
-            <a href="/tag/{{ tag.tag|urlencode }}" class="tags-alpha-item">
-              <span class="tags-alpha-name">{{ tag.tag }}</span>
-              <span class="tags-alpha-count">{{ tag.article_count }}</span>
-            </a>
-            {% endfor %}
-          </div>
-        </div>
+             title="{{ tag.article_count }} статей"
+             data-tag="{{ tag.tag|lower }}">{{ tag.tag }}</a>
         {% endfor %}
       </div>
     </section>
@@ -118,33 +92,17 @@
 
 <script>
 (function(){
-  // Smooth scroll for letter bar
-  document.querySelectorAll('.tags-alpha-letter').forEach(function(el){
-    el.addEventListener('click', function(e){
-      e.preventDefault();
-      var target = document.getElementById('letter-' + this.dataset.letter);
-      if(target) {
-        target.scrollIntoView({behavior:'smooth', block:'start'});
-        // Highlight active letter
-        document.querySelectorAll('.tags-alpha-letter').forEach(function(a){ a.classList.remove('active'); });
-        this.classList.add('active');
-      }
+  /* Live-filter cloud by search input */
+  var input = document.querySelector('.tags-search-input');
+  var cloud = document.getElementById('tagsCloud');
+  if(!input || !cloud) return;
+  input.addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase();
+    if(!q){ cloud.querySelectorAll('.tags-cloud-item').forEach(function(a){a.style.display='';}); return; }
+    cloud.querySelectorAll('.tags-cloud-item').forEach(function(a){
+      a.style.display = a.dataset.tag.indexOf(q) !== -1 ? '' : 'none';
     });
   });
-
-  // Highlight letter on scroll
-  var observer = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if(entry.isIntersecting){
-        var id = entry.target.id;
-        var letter = id.replace('letter-','');
-        document.querySelectorAll('.tags-alpha-letter').forEach(function(a){
-          a.classList.toggle('active', a.dataset.letter === letter);
-        });
-      }
-    });
-  }, {rootMargin:'-100px 0px -70% 0px'});
-  document.querySelectorAll('.tags-alpha-group').forEach(function(g){ observer.observe(g); });
 })();
 </script>
 {% endblock %}

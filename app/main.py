@@ -225,6 +225,15 @@ def _format_num(n) -> str:
 templates.env.filters["format_num"] = _format_num
 templates.env.globals["format_num"] = _format_num
 
+import math as _math
+def _log_filter(value):
+    """Logarithm filter for Jinja2 (tag cloud sizing)."""
+    try:
+        return _math.log(max(float(value), 1))
+    except (ValueError, TypeError):
+        return 0.0
+templates.env.filters["log"] = _log_filter
+
 # Currency rates (live from NB RK, cached 1h)
 from app.currency import get_rates as _get_currency_rates, get_commodities as _get_commodities
 templates.env.globals["get_currency_rates"] = _get_currency_rates

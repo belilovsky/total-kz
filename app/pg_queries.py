@@ -1434,12 +1434,13 @@ def delete_media(media_id: int) -> dict | None:
 # Tags CRUD
 # ═══════════════════════════════════════════════
 
-def get_popular_tags(limit: int = 40) -> list:
-    """Top N tags by article count (for tag cloud)."""
+def get_popular_tags(limit: int = 1000, min_articles: int = 5) -> list:
+    """Tags by article count (for tag cloud). Only tags with min_articles+ articles."""
     with get_pg_session() as db:
         rows = db.execute(
             select(ArticleTag.tag, func.count().label("article_count"))
             .group_by(ArticleTag.tag)
+            .having(func.count() >= min_articles)
             .order_by(func.count().desc())
             .limit(limit)
         ).all()
