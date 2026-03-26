@@ -1434,6 +1434,34 @@ def delete_media(media_id: int) -> dict | None:
 # Tags CRUD
 # ═══════════════════════════════════════════════
 
+def get_popular_tags(limit: int = 40) -> list:
+    """Top N tags by article count (for tag cloud)."""
+    with get_pg_session() as db:
+        rows = db.execute(
+            select(ArticleTag.tag, func.count().label("article_count"))
+            .group_by(ArticleTag.tag)
+            .order_by(func.count().desc())
+            .limit(limit)
+        ).all()
+        return [{"tag": t, "article_count": n} for t, n in rows]
+
+
+def get_tags_by_letter(min_count: int = 3) -> dict:
+    """All tags with min_count+ articles, grouped by first letter."""
+    with get_pg_session() as db:
+        rows = db.execute(
+            select(ArticleTag.tag, func.count().label("article_count"))
+            .group_by(ArticleTag.tag)
+            .having(func.count() >= min_count)
+            .order_by(ArticleTag.tag)
+        ).all()
+        alpha = {}
+        for t, n in rows:
+            letter = t[0].upper() if t else "#"
+            alpha.setdefault(letter, []).append({"tag": t, "article_count": n})
+        return alpha
+
+
 def get_tags_full(q: str = "", page: int = 1, per_page: int = 50) -> dict:
     with get_pg_session() as db:
         base = select(ArticleTag.tag)

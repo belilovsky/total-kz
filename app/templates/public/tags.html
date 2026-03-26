@@ -40,59 +40,111 @@
     </button>
   </form>
 
-  {% if result['items'] %}
-  <div class="tags-grid">
-    {% for tag in result['items'] %}
-    <a href="/tag/{{ tag.tag|urlencode }}" class="tags-card">
-      <span class="tags-card-name">{{ tag.tag }}</span>
-      <span class="tags-card-count">{{ tag.article_count|format_num }}</span>
-    </a>
-    {% endfor %}
-  </div>
-
-  {% if result['pages'] > 1 %}
-  <nav class="pagination" aria-label="Страницы">
-    {% if page > 1 %}
-      <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
+  {% if q %}
+    {# ── Search results mode ── #}
+    {% if result['items'] %}
+    <div class="tags-grid">
+      {% for tag in result['items'] %}
+      <a href="/tag/{{ tag.tag|urlencode }}" class="tags-card">
+        <span class="tags-card-name">{{ tag.tag }}</span>
+        <span class="tags-card-count">{{ tag.article_count|format_num }}</span>
+      </a>
+      {% endfor %}
+    </div>
     {% else %}
-      <span class="pg-arrow disabled">&larr;</span>
+    <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
+      <h2 class="error-title">Ничего не найдено по «{{ q }}»</h2>
+      <a href="/tags" class="btn-primary">Все тематики</a>
+    </div>
     {% endif %}
-
-    {% set start = [1, page - 2] | max %}
-    {% set end = [result['pages'], page + 2] | min %}
-
-    {% if start > 1 %}
-      <a href="?{% if q %}q={{ q }}&{% endif %}page=1">1</a>
-      {% if start > 2 %}<span class="ellipsis">…</span>{% endif %}
-    {% endif %}
-
-    {% for p in range(start, end + 1) %}
-      {% if p == page %}
-        <span class="current">{{ p }}</span>
-      {% else %}
-        <a href="?{% if q %}q={{ q }}&{% endif %}page={{ p }}">{{ p }}</a>
-      {% endif %}
-    {% endfor %}
-
-    {% if end < result['pages'] %}
-      {% if end < result['pages'] - 1 %}<span class="ellipsis">…</span>{% endif %}
-      <a href="?{% if q %}q={{ q }}&{% endif %}page={{ result['pages'] }}">{{ result['pages'] }}</a>
-    {% endif %}
-
-    {% if page < result['pages'] %}
-      <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
-    {% else %}
-      <span class="pg-arrow disabled">&rarr;</span>
-    {% endif %}
-  </nav>
-  {% endif %}
 
   {% else %}
-  <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
-    <h2 class="error-title">{% if q %}Ничего не найдено по «{{ q }}»{% else %}Тематик пока нет{% endif %}</h2>
-    {% if q %}<a href="/tags" class="btn-primary">Все тематики</a>{% endif %}
-  </div>
+    {# ── Default mode: cloud + alphabetical ── #}
+
+    {# ── Tag Cloud ── #}
+    {% if popular_tags %}
+    <section class="tags-cloud-section">
+      <h2 class="tags-section-title">Популярные темы</h2>
+      <div class="tags-cloud">
+        {% set max_count = popular_tags[0].article_count if popular_tags else 1 %}
+        {% set min_count = popular_tags[-1].article_count if popular_tags else 1 %}
+        {% for tag in popular_tags %}
+          {% if max_count > min_count %}
+            {% set ratio = (tag.article_count - min_count) / (max_count - min_count) %}
+          {% else %}
+            {% set ratio = 0.5 %}
+          {% endif %}
+          {% set font_size = 0.8 + ratio * 1.2 %}
+          <a href="/tag/{{ tag.tag|urlencode }}"
+             class="tags-cloud-item{% if loop.index <= 5 %} tags-cloud-top{% endif %}"
+             style="font-size:{{ '%.2f'|format(font_size) }}rem"
+             title="{{ tag.article_count }} статей">{{ tag.tag }}</a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Alphabetical Navigation ── #}
+    {% if letters %}
+    <section class="tags-alpha-section">
+      <h2 class="tags-section-title">По алфавиту</h2>
+      <nav class="tags-alpha-bar" aria-label="Алфавит">
+        {% for l in letters %}
+          <a href="#letter-{{ l }}" class="tags-alpha-letter" data-letter="{{ l }}">{{ l }}</a>
+        {% endfor %}
+      </nav>
+
+      <div class="tags-alpha-groups" id="tagsAlphaGroups">
+        {% for l in letters %}
+        <div class="tags-alpha-group" id="letter-{{ l }}">
+          <h3 class="tags-alpha-heading">{{ l }}</h3>
+          <div class="tags-alpha-list">
+            {% for tag in alpha_tags[l] %}
+            <a href="/tag/{{ tag.tag|urlencode }}" class="tags-alpha-item">
+              <span class="tags-alpha-name">{{ tag.tag }}</span>
+              <span class="tags-alpha-count">{{ tag.article_count }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
   {% endif %}
 
 </div>
+
+<script>
+(function(){
+  // Smooth scroll for letter bar
+  document.querySelectorAll('.tags-alpha-letter').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      var target = document.getElementById('letter-' + this.dataset.letter);
+      if(target) {
+        target.scrollIntoView({behavior:'smooth', block:'start'});
+        // Highlight active letter
+        document.querySelectorAll('.tags-alpha-letter').forEach(function(a){ a.classList.remove('active'); });
+        this.classList.add('active');
+      }
+    });
+  });
+
+  // Highlight letter on scroll
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        var id = entry.target.id;
+        var letter = id.replace('letter-','');
+        document.querySelectorAll('.tags-alpha-letter').forEach(function(a){
+          a.classList.toggle('active', a.dataset.letter === letter);
+        });
+      }
+    });
+  }, {rootMargin:'-100px 0px -70% 0px'});
+  document.querySelectorAll('.tags-alpha-group').forEach(function(g){ observer.observe(g); });
+})();
+</script>
 {% endblock %}

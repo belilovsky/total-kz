@@ -1063,15 +1063,35 @@ async def search_page(
 @router.get("/tags", response_class=HTMLResponse)
 async def tags_catalog(
     request: Request,
-    page: int = Query(1, ge=1),
     q: str = "",
+    letter: str = "",
 ):
-    """Tags catalog – all topics/tags."""
-    result = db.get_tags_full(q=q, page=page, per_page=60)
+    """Tags catalog – tag cloud + alphabetical browsing."""
+    if q:
+        # Search mode — keep old behaviour for search
+        result = db.get_tags_full(q=q, page=1, per_page=200)
+        return templates.TemplateResponse("public/tags.html", {
+            "request": request,
+            "result": result,
+            "popular_tags": [],
+            "alpha_tags": {},
+            "letters": [],
+            "active_letter": "",
+            "q": q,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+        })
+    popular_tags = db.get_popular_tags(limit=40)
+    alpha_tags = db.get_tags_by_letter(min_count=3)
+    letters = sorted(alpha_tags.keys())
+    total_tags = sum(len(v) for v in alpha_tags.values())
     return templates.TemplateResponse("public/tags.html", {
         "request": request,
-        "result": result,
-        "page": page,
+        "result": {"total": total_tags, "items": []},
+        "popular_tags": popular_tags,
+        "alpha_tags": alpha_tags,
+        "letters": letters,
+        "active_letter": letter,
         "q": q,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
