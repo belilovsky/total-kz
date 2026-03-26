@@ -6,7 +6,10 @@
 {% block og_type %}article{% endblock %}
 {% block og_title %}{{ article.title }}{% endblock %}
 {% block og_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
-{% block og_image %}{% if article.main_image %}<meta property="og:image" content="{% if article.main_image.startswith('http') %}{{ article.main_image }}{% else %}{{ site_domain }}{{ article.main_image }}{% endif %}">{% endif %}{% endblock %}
+{% block og_image %}{% if article.main_image %}<meta property="og:image" content="{% if article.main_image.startswith('http') %}{{ article.main_image }}{% else %}{{ site_domain }}{{ article.main_image }}{% endif %}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">{% endif %}{% endblock %}
+{% block twitter_title %}{{ article.title }}{% endblock %}
+{% block twitter_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
+{% block twitter_image %}{% if article.main_image %}<meta name="twitter:image" content="{{ article.main_image if article.main_image.startswith('http') else site_domain + article.main_image }}">{% endif %}{% endblock %}
 
 {% block meta %}
 {{ super() }}
@@ -17,13 +20,6 @@
 {% set _meta_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
 {% for kw in _meta_tags[:5] %}<meta property="article:tag" content="{{ kw }}">
 {% endfor %}
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@totalkz">
-<meta name="twitter:title" content="{{ article.title }}">
-<meta name="twitter:description" content="{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}">
-{% if article.main_image %}<meta name="twitter:image" content="{{ article.main_image if article.main_image.startswith('http') else site_domain + article.main_image }}">{% endif %}
 <meta property="tg:site_name" content="Total.kz">
 {% endblock %}
 

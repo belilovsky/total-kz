@@ -20,6 +20,10 @@
   <meta property="og:locale" content="ru_RU">
   {% block og_image %}<meta property="og:image" content="{{ site_domain }}/static/img/og-default.png">{% endblock %}
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@totalkz">
+  <meta name="twitter:title" content="{% block twitter_title %}Total.kz – Новости Казахстана{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Ведущий новостной портал Казахстана{% endblock %}">
+  {% block twitter_image %}<meta name="twitter:image" content="{{ site_domain }}/static/img/og-default.png">{% endblock %}
   {% endblock %}
 
   {% block jsonld %}

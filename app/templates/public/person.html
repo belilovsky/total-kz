@@ -3,6 +3,12 @@
 {% block title %}{{ person['short_name'] }} – Total.kz{% endblock %}
 {% block description %}{{ person['current_position'] or person['short_name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
 {% block canonical %}/person/{{ person['slug'] }}{% endblock %}
+{% block og_title %}{{ person['short_name'] }} – Total.kz{% endblock %}
+{% block og_description %}{{ person['current_position'] or person['short_name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
+{% block og_image %}{% if person['photo_url'] %}<meta property="og:image" content="{{ person['photo_url'] if person['photo_url'].startswith('http') else site_domain + person['photo_url'] }}">{% else %}<meta property="og:image" content="{{ site_domain }}/static/img/og-default.png">{% endif %}{% endblock %}
+{% block twitter_title %}{{ person['short_name'] }} – Total.kz{% endblock %}
+{% block twitter_description %}{{ person['current_position'] or person['short_name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
+{% block twitter_image %}{% if person['photo_url'] %}<meta name="twitter:image" content="{{ person['photo_url'] if person['photo_url'].startswith('http') else site_domain + person['photo_url'] }}">{% else %}<meta name="twitter:image" content="{{ site_domain }}/static/img/og-default.png">{% endif %}{% endblock %}
 
 {% block jsonld %}
 <script type="application/ld+json">
