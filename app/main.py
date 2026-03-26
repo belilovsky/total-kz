@@ -150,6 +150,13 @@ async def lifespan(app: FastAPI):
     """Startup/shutdown."""
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     db.init_db()
+    # Preload persons into memory (avoids SQLite query per request)
+    try:
+        from .public_routes import _refresh_persons_cache
+        _refresh_persons_cache()
+        logger.info("Persons preloaded into memory on startup")
+    except Exception:
+        logger.exception("Failed to preload persons on startup")
     # Start scheduled publishing loop
     from .scheduler import scheduler_loop
     task = asyncio.create_task(scheduler_loop())
@@ -158,11 +165,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
-app.add_middleware(BrotliMiddleware, minimum_size=1000, gzip_fallback=True)
+# Middleware execution order is REVERSE of add_middleware order.
+# BrotliMiddleware must be outermost (added LAST) to compress final response.
 app.add_middleware(CacheControlMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(AuthMiddleware)
+app.add_middleware(BrotliMiddleware, minimum_size=500, gzip_fallback=True)
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")

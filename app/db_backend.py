@@ -36,6 +36,7 @@ if settings.use_postgres:
         get_status_counts, add_tag_to_article, get_full_audit,
         suggest_articles, track_view,
         popular_in_category, trending_tags_for_category,
+        get_category_highlights_batch,
     )
 
     # PG mode doesn't have get_db_path / get_db — these are SQLite-only

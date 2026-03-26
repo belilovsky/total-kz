@@ -19,6 +19,7 @@ UMAMI_URL = os.getenv("UMAMI_URL", "/umami")  # relative or absolute URL to Umam
 from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
 
 from . import db_backend as db
+from . import cache
 
 logger = logging.getLogger(__name__)
 
@@ -684,22 +685,105 @@ for _sec in NAV_SECTIONS:
 #  PUBLIC PAGES
 # ══════════════════════════════════════════════
 
+# ── Preloaded persons cache (avoids cross-DB SQLite→PG join per request) ──
+_persons_preloaded: dict = {"all": [], "homepage": [], "ts": 0}
+_PERSONS_REFRESH_INTERVAL = 1800  # 30 minutes
+
+import time as _time_mod
+
+def _refresh_persons_cache():
+    """Load all persons from SQLite into memory. Called on startup and periodically."""
+    try:
+        conn = _get_persons_db()
+        # Check tables exist
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('persons','article_entities')"
+        ).fetchall()]
+        if "persons" not in tables:
+            conn.close()
+            return
+
+        if "article_entities" in tables:
+            all_persons = conn.execute("""
+                SELECT p.*,
+                       COUNT(ae.article_id) as article_count,
+                       SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_count
+                FROM persons p
+                LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+                LEFT JOIN articles a ON ae.article_id = a.id
+                GROUP BY p.id
+                ORDER BY recent_count DESC, article_count DESC
+            """).fetchall()
+        else:
+            all_persons = conn.execute(
+                "SELECT *, 0 as article_count, 0 as recent_count FROM persons ORDER BY short_name"
+            ).fetchall()
+
+        all_list = [dict(r) for r in all_persons]
+
+        # Type counts
+        type_counts = {}
+        for row in conn.execute("SELECT person_type, COUNT(*) FROM persons GROUP BY person_type"):
+            type_counts[row[0]] = row[1]
+
+        # Letters
+        letters = sorted({row[0] for row in conn.execute("SELECT DISTINCT substr(short_name, 1, 1) FROM persons") if row[0]})
+
+        conn.close()
+
+        # Homepage persons: top 12 with photos
+        homepage_list = [
+            p for p in all_list
+            if p.get("photo_url") and p["photo_url"] != ""
+        ][:12]
+
+        _persons_preloaded["all"] = all_list
+        _persons_preloaded["homepage"] = homepage_list
+        _persons_preloaded["type_counts"] = type_counts
+        _persons_preloaded["letters"] = letters
+        _persons_preloaded["ts"] = _time_mod.time()
+        logger.info("Persons cache refreshed: %d total, %d homepage", len(all_list), len(homepage_list))
+    except Exception:
+        logger.exception("Error refreshing persons cache")
+
+
+def _ensure_persons_loaded():
+    """Ensure persons are loaded, refresh if stale."""
+    now = _time_mod.time()
+    if not _persons_preloaded["all"] or (now - _persons_preloaded["ts"]) >= _PERSONS_REFRESH_INTERVAL:
+        _refresh_persons_cache()
+
+
+def _get_homepage_persons() -> list:
+    """Get top 12 persons with photos for homepage strip."""
+    _ensure_persons_loaded()
+    return _persons_preloaded.get("homepage", [])
+
+
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     """Homepage: hero + category highlights + chronological feed."""
-    try:
-        hero_articles = rewrite_articles_images(db.get_latest_articles(limit=5))
-        latest = rewrite_articles_images(db.get_latest_articles(limit=30, offset=5))
+    # Check in-memory cache first
+    cached = cache.get("homepage", ttl=cache.TTL_HOMEPAGE)
+    if cached:
+        return templates.TemplateResponse("public/home.html", {"request": request, **cached})
 
-        # Fetch 3 latest articles per nav section for category highlights
+    try:
+        # Combined hero + feed: one query instead of two
+        all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
+        hero_articles = all_latest[:5]
+        latest = all_latest[5:]
+
+        # One batch query replaces 6 separate category queries
+        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=3)
         category_highlights = []
         for section in NAV_SECTIONS:
-            result = db.get_latest_by_categories(section["subcats"], limit=3, offset=0)
-            if result["articles"]:
+            articles = highlights_map.get(section["slug"], [])
+            if articles:
                 category_highlights.append({
                     "slug": section["slug"],
                     "label": section["label"],
-                    "articles": rewrite_articles_images(result["articles"]),
+                    "articles": rewrite_articles_images(articles),
                 })
     except Exception:
         logger.exception("Database error in homepage")
@@ -707,26 +791,8 @@ async def homepage(request: Request):
 
     popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)
 
-    # Top persons for homepage strip (most-mentioned, with photos)
-    try:
-        conn = _get_persons_db()
-        homepage_persons = conn.execute("""
-            SELECT p.slug, p.short_name, p.current_position, p.photo_url,
-                   COUNT(ae.article_id) as article_count,
-                   SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_count
-            FROM persons p
-            LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
-            LEFT JOIN articles a ON ae.article_id = a.id
-            WHERE p.photo_url IS NOT NULL AND p.photo_url != ''
-            GROUP BY p.id
-            ORDER BY recent_count DESC, article_count DESC
-            LIMIT 12
-        """).fetchall()
-        conn.close()
-        homepage_persons = [dict(r) for r in homepage_persons]
-    except Exception:
-        logger.exception("Error loading homepage persons")
-        homepage_persons = []
+    # Top persons from preloaded cache
+    homepage_persons = _get_homepage_persons()
 
     # Trending tags for tag cloud
     try:
@@ -734,8 +800,7 @@ async def homepage(request: Request):
     except Exception:
         trending_tags = []
 
-    return templates.TemplateResponse("public/home.html", {
-        "request": request,
+    ctx = {
         "hero_articles": hero_articles,
         "latest": latest,
         "popular": popular,
@@ -745,7 +810,9 @@ async def homepage(request: Request):
         "ticker_articles": hero_articles[:5],
         "homepage_persons": homepage_persons,
         "trending_tags": trending_tags,
-    })
+    }
+    cache.set("homepage", ctx)
+    return templates.TemplateResponse("public/home.html", {"request": request, **ctx})
 
 
 @router.get("/api/feed", response_class=HTMLResponse)
@@ -792,6 +859,11 @@ async def category_page(
     page: int = Query(1, ge=1),
 ):
     """Category listing – handles both nav section slugs and legacy sub_category slugs."""
+    cache_key = f"category:{category}:p{page}"
+    cached = cache.get(cache_key, ttl=cache.TTL_CATEGORY)
+    if cached:
+        return templates.TemplateResponse("public/category.html", {"request": request, **cached})
+
     try:
         per_page = 24
         offset = (page - 1) * per_page
@@ -840,8 +912,7 @@ async def category_page(
     except Exception:
         trending_tags = []
 
-    return templates.TemplateResponse("public/category.html", {
-        "request": request,
+    ctx = {
         "articles": articles_list,
         "total": result["total"],
         "pages": result["pages"],
@@ -854,7 +925,9 @@ async def category_page(
         "subcategory_pills": subcategory_pills,
         "popular_articles": popular_articles,
         "trending_tags": trending_tags,
-    })
+    }
+    cache.set(cache_key, ctx)
+    return templates.TemplateResponse("public/category.html", {"request": request, **ctx})
 
 
 @router.get("/news/{category}/{slug}", response_class=HTMLResponse)
@@ -1085,16 +1158,22 @@ async def tags_catalog(
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
         })
+
+    cached = cache.get("tags_catalog", ttl=cache.TTL_TAGS)
+    if cached:
+        return templates.TemplateResponse("public/tags.html", {"request": request, **cached})
+
     popular_tags = db.get_popular_tags(limit=1000)
     total_tags = len(popular_tags)
-    return templates.TemplateResponse("public/tags.html", {
-        "request": request,
+    ctx = {
         "result": {"total": total_tags, "items": []},
         "popular_tags": popular_tags,
         "q": q,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
-    })
+    }
+    cache.set("tags_catalog", ctx)
+    return templates.TemplateResponse("public/tags.html", {"request": request, **ctx})
 
 
 @router.get("/tag/{tag_name}", response_class=HTMLResponse)
@@ -1746,76 +1825,38 @@ async def debug_persons():
 
 @router.get("/persons", response_class=HTMLResponse)
 async def persons_catalog(request: Request, type: str = "", letter: str = ""):
+    """Persons catalog — uses preloaded in-memory persons data."""
     try:
-        conn = _get_persons_db()
-        # Verify persons table exists
-        tables = [r[0] for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('persons','article_entities')"
-        ).fetchall()]
-        if "persons" not in tables:
-            conn.close()
-            logger.error("persons table missing from %s", _get_persons_db_path())
+        _ensure_persons_loaded()
+        all_persons = _persons_preloaded.get("all", [])
+        type_counts = _persons_preloaded.get("type_counts", {})
+        letters_list = _persons_preloaded.get("letters", [])
+
+        if not all_persons:
             return templates.TemplateResponse("public/persons.html", {
                 "request": request, "persons": [], "type_counts": {},
                 "letters": [], "current_type": "", "current_letter": "",
                 "total_persons": 0, "nav_sections": NAV_SECTIONS, "nav_categories": NAV_CATEGORIES,
             })
 
-        # Get all persons with article counts
-        where_clauses = ["1=1"]
-        params = []
+        # Filter in-memory
+        filtered = all_persons
         if type:
-            # "culture_media" combines both culture and media person_types
             if type == "culture_media":
-                where_clauses.append("p.person_type IN ('culture', 'media')")
+                filtered = [p for p in filtered if p.get("person_type") in ("culture", "media")]
             else:
-                where_clauses.append("p.person_type = ?")
-                params.append(type)
+                filtered = [p for p in filtered if p.get("person_type") == type]
         if letter:
-            where_clauses.append("p.short_name LIKE ?")
-            params.append(f"{letter}%")
+            filtered = [p for p in filtered if (p.get("short_name") or "").startswith(letter)]
 
-        where = " AND ".join(where_clauses)
-
-        # Use LEFT JOIN only if article_entities exists
-        if "article_entities" in tables:
-            persons = conn.execute(f"""
-                SELECT p.*,
-                       COUNT(ae.article_id) as article_count,
-                       SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_count
-                FROM persons p
-                LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
-                LEFT JOIN articles a ON ae.article_id = a.id
-                WHERE {where}
-                GROUP BY p.id
-                ORDER BY recent_count DESC, article_count DESC
-            """, params).fetchall()
-        else:
-            persons = conn.execute(f"""
-                SELECT p.*, 0 as article_count, 0 as recent_count FROM persons p WHERE {where} ORDER BY p.short_name
-            """, params).fetchall()
-
-        # Get type counts for filters
-        type_counts = {}
-        for row in conn.execute("SELECT person_type, COUNT(*) FROM persons GROUP BY person_type"):
-            type_counts[row[0]] = row[1]
-
-        # Get first letters for alphabet filter
-        letters = set()
-        for row in conn.execute("SELECT DISTINCT substr(short_name, 1, 1) FROM persons"):
-            if row[0]:
-                letters.add(row[0])
-        letters = sorted(letters)
-
-        conn.close()
         return templates.TemplateResponse("public/persons.html", {
             "request": request,
-            "persons": [dict(p) for p in persons],
+            "persons": filtered,
             "type_counts": type_counts,
-            "letters": letters,
+            "letters": letters_list,
             "current_type": type,
             "current_letter": letter,
-            "total_persons": len(persons),
+            "total_persons": len(filtered),
             "nav_sections": NAV_SECTIONS,
             "nav_categories": NAV_CATEGORIES,
         })

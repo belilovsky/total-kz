@@ -622,6 +622,12 @@ def update_article(article_id: int, updates: dict) -> None:
                     setattr(article, k, v)
                 if tags is not None:
                     article.tags = tags
+    # Invalidate page caches on article change
+    try:
+        from app import cache
+        cache.invalidate_all()
+    except Exception:
+        pass
 
 
 def create_article(data: dict) -> int:
@@ -657,7 +663,14 @@ def create_article(data: dict) -> int:
         )
         db.add(article)
         db.flush()
-        return article.id
+        new_id = article.id
+    # Invalidate page caches on new article
+    try:
+        from app import cache
+        cache.invalidate_all()
+    except Exception:
+        pass
+    return new_id
 
 
 def record_revision(article_id: int, changes: dict, revision_type: str = "edit", changed_by: str = "") -> None:
@@ -1051,6 +1064,51 @@ def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0)
             "total": total,
             "pages": _paginate(total, limit),
         }
+
+
+def get_category_highlights_batch(nav_sections: list, per_section: int = 3) -> dict:
+    """Fetch top N articles per nav section in ONE query using window function.
+
+    Returns: dict mapping section_slug -> list[dict]
+    """
+    # Collect all subcats with section mapping
+    all_subcats = []
+    subcat_to_section = {}
+    for section in nav_sections:
+        for sc in section["subcats"]:
+            all_subcats.append(sc)
+            subcat_to_section[sc] = section["slug"]
+    if not all_subcats:
+        return {}
+
+    with get_pg_session() as db:
+        rows = db.execute(
+            text("""
+                SELECT sub_category, id, url, pub_date, title, author,
+                       excerpt, thumbnail, main_image, COALESCE(views, 0) as views
+                FROM (
+                    SELECT *, ROW_NUMBER() OVER (
+                        PARTITION BY sub_category ORDER BY pub_date DESC
+                    ) as rn
+                    FROM articles
+                    WHERE sub_category = ANY(:subcats)
+                ) t
+                WHERE rn <= :per_section
+                ORDER BY sub_category, pub_date DESC
+            """),
+            {"subcats": all_subcats, "per_section": per_section}
+        ).all()
+
+    keys = ["sub_category", "id", "url", "pub_date", "title", "author",
+            "excerpt", "thumbnail", "main_image", "views"]
+    # Group by nav section
+    result = {}
+    for row in rows:
+        d = dict(zip(keys, row))
+        section_slug = subcat_to_section.get(d["sub_category"])
+        if section_slug:
+            result.setdefault(section_slug, []).append(d)
+    return result
 
 
 def popular_in_category(subcats: list, limit: int = 5) -> list:
