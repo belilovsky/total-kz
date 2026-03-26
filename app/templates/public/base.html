@@ -80,7 +80,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=13.0">
+  <link rel="stylesheet" href="/static/css/public.css?v=13.1">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss.xml">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -270,41 +270,17 @@
         </div>
       </div>
 
-      <!-- Middle: Two-column nav — sections vs utility -->
+      <!-- Footer nav -->
       <div class="footer-columns">
         <div class="footer-col">
-          <span class="footer-col-title">Разделы</span>
-          <nav class="footer-col-links" aria-label="Разделы">
-            {% if nav_sections is defined %}
-              {% for section in nav_sections %}
-                <a href="/news/{{ section.slug }}">{{ section.label }}</a>
-              {% endfor %}
-            {% endif %}
-            <a href="/persons">Персоны</a>
-          </nav>
-        </div>
-        <div class="footer-col">
-          <span class="footer-col-title">Редакция</span>
-          <nav class="footer-col-links" aria-label="О нас">
-            <a href="/page/reklama">Реклама</a>
-            <a href="/page/pravila">Правила</a>
-            <a href="/page/contacts">Контакты</a>
-          </nav>
-        </div>
-        <div class="footer-col footer-col--desktop">
           <span class="footer-col-title">Сервисы</span>
           <nav class="footer-col-links" aria-label="Сервисы">
             <a href="/persons">Персоны</a>
             <a href="/tags">Тематики</a>
+            <a href="/page/reklama">Реклама</a>
+            <a href="/page/pravila">Правила</a>
+            <a href="/page/contacts">Контакты</a>
           </nav>
-        </div>
-        <div class="footer-col footer-col--desktop">
-          <span class="footer-col-title">Контакты</span>
-          <div class="footer-col-links">
-            <a href="tel:+77009787854">+7 700 978-78-54</a>
-            <span class="footer-col-email">г. Алматы, пр. Жибек жолы</span>
-            <span class="footer-col-email">115/46, оф. 306</span>
-          </div>
         </div>
       </div>
 

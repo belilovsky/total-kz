@@ -1818,20 +1818,17 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Two-column navigation */
 .footer-columns {
-  display:grid; grid-template-columns:1fr 1fr; gap:var(--space-6);
+  display:block;
 }
-@media (min-width:640px) { .footer-columns { grid-template-columns:1fr 1fr; gap:var(--space-10); } }
-@media (min-width:1100px) { .footer-columns { grid-template-columns:1fr 1fr 1fr 1fr; gap:var(--space-8); } }
-.footer-col--desktop { display:none; }
-@media (min-width:1100px) { .footer-col--desktop { display:block; } }
+.footer-col-links {
+  display:flex; flex-wrap:wrap; gap:var(--space-2) var(--space-5);
+}
 .footer-col-email { font-size:var(--text-sm); color:var(--text-faint); line-height:1.5; }
 .footer-col-title {
   display:block; font-size:11px; font-weight:700; text-transform:uppercase;
   letter-spacing:0.08em; color:var(--text-muted); margin-bottom:var(--space-3);
 }
-.footer-col-links {
-  display:flex; flex-direction:column; gap:var(--space-2);
-}
+
 .footer-col-links a {
   font-size:var(--text-sm); font-weight:500; color:var(--text-secondary);
   transition:color var(--transition);
