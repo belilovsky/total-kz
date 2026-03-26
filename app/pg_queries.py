@@ -1158,7 +1158,9 @@ def get_category_highlights_batch(nav_sections: list, per_section: int = 3) -> d
                        excerpt, thumbnail, main_image, COALESCE(views, 0) as views
                 FROM (
                     SELECT *, ROW_NUMBER() OVER (
-                        PARTITION BY sub_category ORDER BY pub_date DESC
+                        PARTITION BY sub_category
+                        ORDER BY CASE WHEN main_image IS NOT NULL AND main_image != '' THEN 0 ELSE 1 END,
+                                 pub_date DESC
                     ) as rn
                     FROM articles
                     WHERE sub_category = ANY(:subcats)

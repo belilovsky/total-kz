@@ -355,11 +355,8 @@
     <div class="timeline-header">
       <h2 class="timeline-heading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}
+        {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}{% if timeline_topic %}: <span class="timeline-topic">{{ timeline_topic }}</span>{% endif %}
       </h2>
-      {% if timeline_topic %}
-      <span class="timeline-topic">{{ timeline_topic }}</span>
-      {% endif %}
       {% if timeline_total > 1 %}
       <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
       {% endif %}
