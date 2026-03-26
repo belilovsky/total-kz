@@ -313,7 +313,7 @@
     <div class="editor-save-actions">
         <button class="btn btn-ghost" onclick="if(confirm('Удалить статью?'))archiveArticle()">Удалить</button>
         <button class="btn btn-ghost" onclick="duplicateArticle()" title="Дублировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Дублировать</button>
-        <button class="btn btn-ghost" onclick="openPreview()" title="Превью"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Превью</button>
+        <a href="/admin/preview/{{ article.id }}" target="_blank" class="btn btn-ghost" title="Превью"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Превью</a>
         <button class="btn btn-primary" onclick="saveArticle()" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить</button>
     </div>
 </div>
@@ -684,7 +684,10 @@ function saveArticle(isAutoSave) {
         else { updateSaveIndicator('unsaved'); if (!isAutoSave) showToast('Ошибка: ' + (res.error || 'неизвестная')); }
     }).catch(function() { if (!isAutoSave) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить'; } updateSaveIndicator('unsaved'); if (!isAutoSave) showToast('Ошибка сети'); });
 }
-setInterval(function() { if (isDirty) saveArticle(true); }, 30000);
+setInterval(function() {
+    var st = getSelectedStatus();
+    if (isDirty && st !== 'published' && st !== 'archived') saveArticle(true);
+}, 30000);
 
 function archiveArticle() { fetch('/api/article/'+ARTICLE_ID,{method:'DELETE'}).then(function(r){return r.json();}).then(function(res){if(res.ok){showToast('Статья удалена');setTimeout(function(){window.location.href='/admin/articles';},800);}else showToast('Ошибка: '+(res.error||'неизвестная'));}).catch(function(){showToast('Ошибка сети');}); }
 function duplicateArticle() { fetch('/api/article/'+ARTICLE_ID+'/duplicate',{method:'POST'}).then(function(r){return r.json();}).then(function(res){if(res.ok&&res.id){showToast('Статья дублирована');setTimeout(function(){window.location.href='/admin/article/'+res.id;},600);}else showToast('Ошибка: '+(res.error||'неизвестная'));}).catch(function(){showToast('Ошибка сети');}); }

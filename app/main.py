@@ -548,6 +548,46 @@ async def admin_article_detail(request: Request, article_id: int):
     ))
 
 
+@app.get("/admin/preview/{article_id}", response_class=HTMLResponse)
+async def admin_preview_article(request: Request, article_id: int):
+    """Preview article using the public template with a ПРЕВЬЮ banner."""
+    article = db.get_article(article_id)
+    if not article:
+        return HTMLResponse("Статья не найдена", status_code=404)
+    category = article.get("sub_category") or "other"
+    from .public_routes import (
+        cat_label as _cat_label, nav_slug_for as _nav_slug_for,
+        estimate_reading_time as _estimate_reading_time,
+        get_article_persons as _get_article_persons,
+        rewrite_article_images as _rewrite_article_images,
+        NAV_SECTIONS as _PREVIEW_NAV_SECTIONS,
+        NAV_CATEGORIES as _PREVIEW_NAV_CATEGORIES,
+    )
+    _rewrite_article_images(article)
+    nav_section = _nav_slug_for(category)
+    article_persons = _get_article_persons(article.get("entities", []))
+    return _public_templates.TemplateResponse("public/article.html", {
+        "request": request,
+        "article": article,
+        "related": [],
+        "timeline": {"prev": [], "next": []},
+        "timeline_topic": "",
+        "timeline_total": 0,
+        "category": category,
+        "category_name": _cat_label(category),
+        "nav_section": nav_section,
+        "nav_section_name": _cat_label(nav_section),
+        "nav_sections": _PREVIEW_NAV_SECTIONS,
+        "nav_categories": _PREVIEW_NAV_CATEGORIES,
+        "reading_time": _estimate_reading_time(article.get("body_text", "")),
+        "slug": str(article_id),
+        "ticker_articles": [],
+        "article_persons": article_persons,
+        "popular": [],
+        "is_preview": True,
+    })
+
+
 @app.get("/admin/content", response_class=HTMLResponse)
 async def admin_content_page(request: Request):
     user = getattr(request.state, "current_user", None)
@@ -1009,6 +1049,41 @@ async def api_delete_author(request: Request, author_id: int):
 #  CMS v11: MEDIA API
 # ══════════════════════════════════════════════
 
+def _optimize_image(content: bytes, ext: str) -> tuple[bytes, str]:
+    """Resize to max 1200px, quality 85, strip metadata. Returns (bytes, ext)."""
+    if ext in (".svg", ".gif"):
+        return content, ext
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(content))
+        # Strip EXIF/metadata by creating a clean copy
+        if img.mode in ("RGBA", "P"):
+            clean = Image.new("RGBA", img.size)
+            clean.paste(img)
+        else:
+            clean = Image.new("RGB", img.size)
+            clean.paste(img)
+        # Resize if wider than 1200px
+        max_w = 1200
+        if clean.width > max_w:
+            ratio = max_w / clean.width
+            new_h = int(clean.height * ratio)
+            clean = clean.resize((max_w, new_h), Image.LANCZOS)
+        buf = io.BytesIO()
+        if ext in (".png",):
+            clean.save(buf, format="PNG", optimize=True)
+        else:
+            if clean.mode == "RGBA":
+                clean = clean.convert("RGB")
+            clean.save(buf, format="JPEG", quality=85, optimize=True)
+            ext = ".jpg"
+        return buf.getvalue(), ext
+    except Exception:
+        logger.warning("Image optimization failed, using original", exc_info=True)
+        return content, ext
+
+
 @app.post("/api/media/upload")
 async def api_media_upload(request: Request, file: UploadFile = File(...)):
     ext = Path(file.filename or "").suffix.lower()
@@ -1017,6 +1092,7 @@ async def api_media_upload(request: Request, file: UploadFile = File(...)):
     content = await file.read()
     if len(content) > MAX_UPLOAD_SIZE:
         return JSONResponse({"ok": False, "error": "Файл слишком большой (макс. 10 МБ)"}, status_code=400)
+    content, ext = _optimize_image(content, ext)
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = MEDIA_DIR / filename
     filepath.write_bytes(content)

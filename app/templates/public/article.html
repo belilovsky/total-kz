@@ -131,6 +131,13 @@
 {% endblock %}
 
 {% block content %}
+{% if is_preview %}
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#d83236;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-size:15px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+    ПРЕВЬЮ — не опубликовано
+    <a href="/admin/article/{{ article.id }}" style="color:#fff;margin-left:16px;text-decoration:underline;font-weight:400;font-size:13px">← Вернуться в редактор</a>
+</div>
+<div style="height:44px"></div>
+{% endif %}
 {% set slug = article.url.replace('https://total.kz/ru/news/' + category + '/', '').strip('/') %}
 
 <!-- ═══ FLOATING SHARE SIDEBAR (desktop only) ═══ -->
