@@ -1986,12 +1986,9 @@ async def web_story_page(category: str, slug: str):
     }}
     .story-text-page {{
       padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }}
     .story-text-inner {{
-      padding: 40px 28px;
+      padding: 48px 28px 60px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -2001,18 +1998,20 @@ async def web_story_page(category: str, slug: str):
     }}
     .story-paragraph {{
       font-size: 22px;
-      line-height: 1.55;
+      line-height: 1.6;
       color: #fff;
       margin: 0;
       font-weight: 500;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+      max-width: 90%;
     }}
     .story-page-num {{
       font-size: 11px;
-      color: rgba(255,255,255,0.45);
-      margin-top: 28px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 24px;
       text-align: center;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.15em;
+      font-weight: 600;
     }}
     .story-logo {{
       background: #d83236;
