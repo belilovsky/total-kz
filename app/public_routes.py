@@ -8,7 +8,7 @@ import re
 import sqlite3
 from datetime import datetime
 from fastapi import APIRouter, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
