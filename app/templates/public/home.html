@@ -94,7 +94,7 @@
       {% for p in homepage_persons %}
       <a href="/person/{{ p.slug }}" class="persons-strip-card">
         {% if p.photo_url %}
-        <img src="{% if p.photo_url.startswith(/) %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
+        <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
              alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
         {% else %}
         <div class="persons-strip-photo persons-strip-photo--ph">
