@@ -120,6 +120,10 @@ async def call_openai(
                 log.error("BILLING ERROR: %s — stopping.", r.text[:300])
                 raise BillingError(r.text[:300])
 
+            if r.status_code == 401:
+                log.error("AUTH ERROR (401): Invalid API key. Check OPENAI_API_KEY env var.")
+                raise BillingError("Invalid API key (401)")
+
             if r.status_code != 200:
                 log.error("OpenAI HTTP %d: %s", r.status_code, r.text[:200])
                 if attempt < MAX_RETRIES - 1:
