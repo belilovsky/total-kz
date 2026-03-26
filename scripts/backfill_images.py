@@ -109,15 +109,13 @@ def extract_image_from_html(html: str) -> str | None:
         if m:
             return normalize_image_url(m.group(1))
 
-    # Strategy 3: Any storage/uploads image on the page (before sidebar)
-    sidebar = html.find("article__sidebar")
-    search_area = html[: sidebar] if sidebar > 0 else html[:30000]
+    # Strategy 3: Any /storage/ URL anywhere on the page
     m = re.search(
-        r'<img[^>]+src=["\']([^"\']*(?:/storage/|/application/uploads/)[^"\']+)',
-        search_area,
+        r"/storage/[a-f0-9]{2}/[a-f0-9]+[^'"<>\s]*",
+        html,
     )
     if m:
-        return normalize_image_url(m.group(1))
+        return normalize_image_url(m.group(0))
 
     return None
 
