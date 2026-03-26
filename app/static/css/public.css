@@ -162,6 +162,13 @@ p { text-wrap:pretty; }
   .header-btn { min-width:44px; min-height:44px; }
   .share-btn { min-width:44px; min-height:44px; }
 }
+/* Hide secondary header buttons on mobile — these are in the mobile menu/bottom bar */
+@media (max-width:767px) {
+  .header-actions > a[href="/bookmarks"] { display:none; }
+  .header-actions > .push-bell { display:none; }
+  .header-actions > [data-theme-toggle] { display:none; }
+  .header-inner { padding:0 var(--space-3); gap:var(--space-3); }
+}
 
 /* ── Search Overlay ──────────────────────────── */
 .search-overlay {
@@ -1814,7 +1821,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* ── Footer ─────────────────────────────────── */
 .site-footer {
-  background:var(--surface); border-top:1.5px solid var(--text);
+  background:var(--surface); border-top:none;
   padding:var(--space-8) 0 var(--space-6); margin-top:var(--space-4);
 }
 @media (min-width:640px) { .site-footer { padding:var(--space-10) 0 var(--space-6); margin-top:var(--space-8); } }
