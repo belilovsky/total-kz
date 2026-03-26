@@ -1,0 +1,39 @@
+# total.kz — fail2ban jail configuration
+# Deploy: cp deploy/fail2ban/jail.local /etc/fail2ban/jail.local
+#         cp deploy/fail2ban/filter.d/* /etc/fail2ban/filter.d/
+#         systemctl restart fail2ban
+
+[DEFAULT]
+bantime  = 3600
+findtime = 600
+maxretry = 5
+banaction = ufw
+
+# ── SSH protection ──
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 3
+bantime  = 7200
+
+# ── Nginx admin brute-force ──
+[nginx-admin]
+enabled  = true
+port     = http,https
+filter   = nginx-admin
+logpath  = /var/log/nginx/access.log
+maxretry = 5
+findtime = 300
+bantime  = 3600
+
+# ── Nginx DDoS (high request rate) ──
+[nginx-ddos]
+enabled  = true
+port     = http,https
+filter   = nginx-ddos
+logpath  = /var/log/nginx/access.log
+maxretry = 100
+findtime = 10
+bantime  = 600
