@@ -10,7 +10,8 @@ import unicodedata
 import uuid
 from collections import defaultdict
 from contextlib import asynccontextmanager
-from datetime import datetime
+import calendar as _calendar_mod
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote as _url_quote, unquote as _url_unquote
 from fastapi import FastAPI, Request, Query, UploadFile, File
@@ -857,6 +858,155 @@ async def admin_comments_page(request: Request, status: str = "pending", page: i
         pages=max(1, (total + per_page - 1) // per_page),
         pending_count=pending_count,
         format_num=_format_num,
+    ))
+
+
+# ══════════════════════════════════════════════
+#  CONTENT CALENDAR  /admin/calendar
+# ══════════════════════════════════════════════
+
+@app.get("/admin/calendar", response_class=HTMLResponse)
+async def admin_calendar_page(request: Request, year: int = 0, month: int = 0):
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    today = datetime.now()
+    if not year or not month:
+        year, month = today.year, today.month
+    # Clamp
+    if month < 1: month, year = 12, year - 1
+    if month > 12: month, year = 1, year + 1
+
+    month_start = f"{year:04d}-{month:02d}-01"
+    if month == 12:
+        month_end = f"{year + 1:04d}-01-01"
+    else:
+        month_end = f"{year:04d}-{month + 1:02d}-01"
+
+    # Previous / next month
+    prev_m = month - 1 if month > 1 else 12
+    prev_y = year if month > 1 else year - 1
+    next_m = month + 1 if month < 12 else 1
+    next_y = year if month < 12 else year + 1
+
+    # Query articles for this month
+    if settings.use_postgres:
+        from app.pg_database import SessionLocal
+        from app.models import Article
+        from sqlalchemy import func as sa_func, select as sa_select
+
+        session = SessionLocal()
+        try:
+            rows = session.execute(
+                sa_select(
+                    sa_func.substring(Article.pub_date, 1, 10).label("day"),
+                    Article.status,
+                    sa_func.count().label("cnt"),
+                ).where(
+                    Article.pub_date.isnot(None),
+                    Article.pub_date >= month_start,
+                    Article.pub_date < month_end,
+                ).group_by(
+                    sa_func.substring(Article.pub_date, 1, 10),
+                    Article.status,
+                )
+            ).all()
+            calendar_data = {}
+            for row in rows:
+                day_str = str(row.day)
+                if day_str not in calendar_data:
+                    calendar_data[day_str] = {}
+                calendar_data[day_str][row.status or "published"] = row.cnt
+
+            # Get article details for click-to-view
+            articles_rows = session.execute(
+                sa_select(
+                    Article.id,
+                    Article.title,
+                    Article.status,
+                    Article.pub_date,
+                ).where(
+                    Article.pub_date.isnot(None),
+                    Article.pub_date >= month_start,
+                    Article.pub_date < month_end,
+                ).order_by(Article.pub_date)
+            ).all()
+            articles_by_day = defaultdict(list)
+            for a in articles_rows:
+                day_str = str(a.pub_date)[:10]
+                articles_by_day[day_str].append({
+                    "id": a.id,
+                    "title": a.title or "(без заголовка)",
+                    "status": a.status or "published",
+                    "time": str(a.pub_date)[11:16] if a.pub_date and len(str(a.pub_date)) > 10 else "",
+                })
+        finally:
+            session.close()
+    else:
+        with db.get_db() as conn:
+            rows = conn.execute(
+                "SELECT DATE(pub_date) as day, status, COUNT(*) as cnt "
+                "FROM articles WHERE pub_date >= ? AND pub_date < ? AND pub_date IS NOT NULL "
+                "GROUP BY DATE(pub_date), status ORDER BY day",
+                (month_start, month_end)
+            ).fetchall()
+            calendar_data = {}
+            for row in rows:
+                day_str = row["day"] if isinstance(row, dict) else row[0]
+                status = row["status"] if isinstance(row, dict) else row[1]
+                cnt = row["cnt"] if isinstance(row, dict) else row[2]
+                if day_str not in calendar_data:
+                    calendar_data[day_str] = {}
+                calendar_data[day_str][status or "published"] = cnt
+
+            articles_raw = conn.execute(
+                "SELECT id, title, status, pub_date FROM articles "
+                "WHERE pub_date >= ? AND pub_date < ? AND pub_date IS NOT NULL "
+                "ORDER BY pub_date",
+                (month_start, month_end)
+            ).fetchall()
+            articles_by_day = defaultdict(list)
+            for a in articles_raw:
+                aid = a["id"] if isinstance(a, dict) else a[0]
+                title = a["title"] if isinstance(a, dict) else a[1]
+                status = a["status"] if isinstance(a, dict) else a[2]
+                pub = a["pub_date"] if isinstance(a, dict) else a[3]
+                day_str = str(pub)[:10]
+                articles_by_day[day_str].append({
+                    "id": aid,
+                    "title": title or "(без заголовка)",
+                    "status": status or "published",
+                    "time": str(pub)[11:16] if pub and len(str(pub)) > 10 else "",
+                })
+
+    # Stats
+    total_published = sum(d.get("published", 0) for d in calendar_data.values())
+    total_scheduled = sum(d.get("scheduled", 0) for d in calendar_data.values())
+    total_draft = sum(d.get("draft", 0) for d in calendar_data.values())
+
+    # Build calendar weeks
+    cal = _calendar_mod.Calendar(firstweekday=0)  # Monday first
+    month_days = cal.monthdayscalendar(year, month)
+
+    MONTH_NAMES_RU = [
+        "", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ]
+
+    return templates.TemplateResponse("calendar.html", _ctx(request,
+        year=year,
+        month=month,
+        month_name=MONTH_NAMES_RU[month],
+        prev_y=prev_y, prev_m=prev_m,
+        next_y=next_y, next_m=next_m,
+        calendar_data=json.dumps(calendar_data, ensure_ascii=False),
+        articles_by_day=json.dumps(dict(articles_by_day), ensure_ascii=False),
+        month_days=month_days,
+        today_str=today.strftime("%Y-%m-%d"),
+        total_published=total_published,
+        total_scheduled=total_scheduled,
+        total_draft=total_draft,
     ))
 
 

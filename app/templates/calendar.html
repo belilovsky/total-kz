@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% set active = "calendar" %}
+
+{% block page_title %}Календарь{% endblock %}
+
+{% block content %}
+<div class="calendar-header">
+    <div class="calendar-nav">
+        <a href="/admin/calendar?year={{ prev_y }}&month={{ prev_m }}" class="calendar-nav-btn" title="Предыдущий месяц">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <div class="calendar-month-title">{{ month_name }} {{ year }}</div>
+        <a href="/admin/calendar?year={{ next_y }}&month={{ next_m }}" class="calendar-nav-btn" title="Следующий месяц">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+    </div>
+    <div class="calendar-stats">
+        <div class="calendar-stat">
+            <span class="calendar-stat-dot published"></span>
+            {{ total_published }} опубликовано
+        </div>
+        <div class="calendar-stat">
+            <span class="calendar-stat-dot scheduled"></span>
+            {{ total_scheduled }} запланировано
+        </div>
+        <div class="calendar-stat">
+            <span class="calendar-stat-dot draft"></span>
+            {{ total_draft }} черновиков
+        </div>
+    </div>
+</div>
+
+<div class="calendar-grid" id="calendarGrid">
+    <div class="calendar-weekday">Пн</div>
+    <div class="calendar-weekday">Вт</div>
+    <div class="calendar-weekday">Ср</div>
+    <div class="calendar-weekday">Чт</div>
+    <div class="calendar-weekday">Пт</div>
+    <div class="calendar-weekday">Сб</div>
+    <div class="calendar-weekday">Вс</div>
+
+    {% for week in month_days %}
+    {% for day in week %}
+    {% if day == 0 %}
+    <div class="calendar-day other-month"></div>
+    {% else %}
+    {% set day_str = "%04d-%02d-%02d"|format(year, month, day) %}
+    <div class="calendar-day{% if day_str == today_str %} today{% endif %}"
+         data-date="{{ day_str }}"
+         onclick="showDayDetail('{{ day_str }}')">
+        <div class="calendar-day-num">{{ day }}</div>
+        <div class="calendar-day-dots" id="dots-{{ day_str }}"></div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+</div>
+
+<div class="calendar-day-detail" id="dayDetail">
+    <div class="calendar-day-detail-header">
+        <div class="calendar-day-detail-title" id="dayDetailTitle"></div>
+        <button class="calendar-day-detail-close" onclick="closeDayDetail()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="calendar-day-articles" id="dayDetailArticles"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var calendarData = {{ calendar_data|safe }};
+    var articlesByDay = {{ articles_by_day|safe }};
+
+    var STATUS_COLORS = {
+        published: 'published',
+        draft: 'draft',
+        scheduled: 'scheduled',
+        archived: 'archived',
+        review: 'review',
+        ready: 'ready'
+    };
+
+    // Render dots for each day
+    Object.keys(calendarData).forEach(function(dayStr) {
+        var el = document.getElementById('dots-' + dayStr);
+        if (!el) return;
+        var statuses = calendarData[dayStr];
+        Object.keys(statuses).forEach(function(status) {
+            var count = statuses[status];
+            for (var i = 0; i < Math.min(count, 8); i++) {
+                var dot = document.createElement('div');
+                dot.className = 'calendar-dot ' + (STATUS_COLORS[status] || 'draft');
+                el.appendChild(dot);
+            }
+        });
+    });
+
+    window.showDayDetail = function(dayStr) {
+        var panel = document.getElementById('dayDetail');
+        var titleEl = document.getElementById('dayDetailTitle');
+        var listEl = document.getElementById('dayDetailArticles');
+        var articles = articlesByDay[dayStr] || [];
+
+        var parts = dayStr.split('-');
+        titleEl.textContent = parseInt(parts[2]) + '.' + parts[1] + '.' + parts[0] +
+            ' (' + articles.length + ' ' + pluralize(articles.length, 'статья', 'статьи', 'статей') + ')';
+
+        listEl.innerHTML = '';
+        if (articles.length === 0) {
+            listEl.innerHTML = '<div style="color:var(--text-muted);font-size:14px;padding:12px 0">Нет статей в этот день</div>';
+        } else {
+            articles.forEach(function(a) {
+                var item = document.createElement('a');
+                item.href = '/admin/edit/' + a.id;
+                item.className = 'calendar-article-item';
+                item.innerHTML =
+                    '<div class="calendar-article-status calendar-dot ' + (STATUS_COLORS[a.status] || 'draft') + '"></div>' +
+                    '<div class="calendar-article-title">' + escHtml(a.title) + '</div>' +
+                    (a.time ? '<div class="calendar-article-time">' + a.time + '</div>' : '');
+                listEl.appendChild(item);
+            });
+        }
+
+        panel.classList.add('open');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    window.closeDayDetail = function() {
+        document.getElementById('dayDetail').classList.remove('open');
+    };
+
+    function pluralize(n, one, few, many) {
+        var abs = Math.abs(n) % 100;
+        var n1 = abs % 10;
+        if (abs > 10 && abs < 20) return many;
+        if (n1 > 1 && n1 < 5) return few;
+        if (n1 === 1) return one;
+        return many;
+    }
+
+    function escHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+})();
+</script>
+{% endblock %}
