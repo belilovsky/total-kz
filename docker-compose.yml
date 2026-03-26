@@ -98,7 +98,7 @@ services:
     image: darthsim/imgproxy:v3.27
     container_name: total_kz_imgproxy
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8090:8080"
     expose:
       - "8080"
     environment:
