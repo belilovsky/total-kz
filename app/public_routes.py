@@ -1248,7 +1248,7 @@ Total.kz — крупнейший информационный портал Ка
 - [Главная]({SITE_DOMAIN}/): Лента последних новостей
 - [Поиск]({SITE_DOMAIN}/search): Полнотекстовый поиск по архиву
 - [Персоны]({SITE_DOMAIN}/persons): Каталог упоминаемых персон
-- [RSS-лента]({SITE_DOMAIN}/rss.xml): RSS 2.0 feed
+- [RSS-лента]({SITE_DOMAIN}/rss): RSS 2.0 feed
 - [Карта сайта]({SITE_DOMAIN}/sitemap.xml): XML Sitemap
 
 ## Контакты
@@ -1329,7 +1329,7 @@ Total.kz — крупнейший информационный портал Ка
 
 | Ресурс | URL | Формат |
 |---|---|---|
-| RSS 2.0 | `{SITE_DOMAIN}/rss.xml` | XML |
+| RSS 2.0 | `{SITE_DOMAIN}/rss` | XML |
 | JSON Feed | `{SITE_DOMAIN}/feed.json` | JSON |
 | Sitemap Index | `{SITE_DOMAIN}/sitemap.xml` | XML |
 | News Sitemap | `{SITE_DOMAIN}/sitemap-news.xml` | XML |
@@ -1506,16 +1506,8 @@ async def sitemap_news_xml():
     return Response(content="\n".join(xml_parts), media_type="application/xml")
 
 
-@router.get("/rss.xml", response_class=Response)
-@router.get("/feed", response_class=Response)
-async def rss_feed():
-    """RSS 2.0 feed — latest 50 articles."""
-    try:
-        articles = db.get_latest_articles(limit=50)
-    except Exception:
-        logger.exception("Database error in rss_feed")
-        return Response(content="Service unavailable", status_code=503)
-
+def _build_rss_items(articles: list) -> list[str]:
+    """Build RSS 2.0 <item> elements from a list of article dicts."""
     import html as html_mod
     items = []
     for art in articles:
@@ -1541,6 +1533,8 @@ async def rss_feed():
         if img:
             img_url = img if img.startswith("http") else f"{SITE_DOMAIN}{img}"
             media_tag = f'\n      <media:content url="{html_mod.escape(img_url)}" medium="image"/>'
+            # Also add enclosure for broader RSS reader support
+            media_tag += f'\n      <enclosure url="{html_mod.escape(img_url)}" type="image/jpeg" length="0"/>'
         author_tag = ""
         if art.get("author"):
             author_tag = f"\n      <dc:creator>{html_mod.escape(art['author'])}</dc:creator>"
@@ -1552,20 +1546,69 @@ async def rss_feed():
       <pubDate>{rfc_date}</pubDate>
       <guid isPermaLink="true">{link}</guid>
     </item>""")
+    return items
 
-    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+
+def _build_rss_xml(title: str, description: str, self_url: str, articles: list) -> str:
+    """Build complete RSS 2.0 XML document."""
+    items = _build_rss_items(articles)
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>ТÓТАЛ — Новости Казахстана</title>
+    <title>{title}</title>
     <link>{SITE_DOMAIN}</link>
-    <description>Последние новости Казахстана — политика, экономика, общество, спорт</description>
+    <description>{description}</description>
     <language>ru</language>
-    <atom:link href="{SITE_DOMAIN}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="{self_url}" rel="self" type="application/rss+xml"/>
     <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
 {chr(10).join(items)}
   </channel>
 </rss>"""
-    return Response(content=xml, media_type="application/xml; charset=utf-8")
+
+
+@router.get("/rss.xml", response_class=Response)
+@router.get("/rss", response_class=Response)
+@router.get("/feed", response_class=Response)
+async def rss_feed():
+    """RSS 2.0 feed — latest 50 articles across all categories."""
+    try:
+        articles = db.get_latest_articles(limit=50)
+    except Exception:
+        logger.exception("Database error in rss_feed")
+        return Response(content="Service unavailable", status_code=503)
+
+    xml = _build_rss_xml(
+        title="ТÓТАЛ — Новости Казахстана",
+        description="Последние новости Казахстана — политика, экономика, общество, спорт",
+        self_url=f"{SITE_DOMAIN}/rss",
+        articles=articles,
+    )
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
+
+
+@router.get("/rss/{category}", response_class=Response)
+async def rss_feed_category(category: str):
+    """RSS 2.0 feed — latest 50 articles in a specific nav section."""
+    # Validate category against nav sections
+    subcats = NAV_SLUG_MAP.get(category)
+    if not subcats:
+        return Response(content="Category not found", status_code=404, media_type="text/plain")
+
+    try:
+        result = db.get_latest_by_categories(subcats, limit=50, offset=0)
+        articles = result["articles"]
+    except Exception:
+        logger.exception(f"Database error in rss_feed_category: {category}")
+        return Response(content="Service unavailable", status_code=503)
+
+    label = cat_label(category)
+    xml = _build_rss_xml(
+        title=f"ТÓТАЛ — {label}",
+        description=f"{label} — новости Казахстана",
+        self_url=f"{SITE_DOMAIN}/rss/{category}",
+        articles=articles,
+    )
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
 
 
 @router.get("/feed.json", response_class=Response)
