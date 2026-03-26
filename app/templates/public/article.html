@@ -14,8 +14,9 @@
 <meta property="article:modified_time" content="{{ article.updated_at or article.pub_date }}">
 {% if article.author %}<meta property="article:author" content="{{ article.author }}">{% endif %}
 <meta property="article:section" content="{{ category_name }}">
-{% if article.enrichment and article.enrichment.keywords %}{% for kw in article.enrichment.keywords[:5] %}
-<meta property="article:tag" content="{{ kw }}">{% endfor %}{% endif %}
+{% set _meta_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
+{% for kw in _meta_tags[:5] %}<meta property="article:tag" content="{{ kw }}">
+{% endfor %}
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -86,7 +87,8 @@
   "isAccessibleForFree": true,
   {% if article.pub_date %}"copyrightYear": {{ article.pub_date[:4] | tojson }},{% endif %}
   {% if article.body_text %}"wordCount": {{ article.body_text.split()|length }},{% endif %}
-  {% if article.enrichment and article.enrichment.keywords %}"keywords": {{ article.enrichment.keywords | tojson }},{% endif %}
+  {% set _ld_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
+  {% if _ld_tags %}"keywords": {{ _ld_tags | tojson }},{% endif %}
   "potentialAction": {
     "@type": "ReadAction",
     "target": {{ _art_url | tojson }}
@@ -343,9 +345,10 @@
   </div>
 
   {# ── Tag pills (between article body and timeline) ── #}
-  {% if article.enrichment and article.enrichment.keywords %}
+  {% set _tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
+  {% if _tags %}
   <div class="article-keywords article-keywords--full">
-    {% for kw in article.enrichment.keywords[:8] %}
+    {% for kw in _tags[:8] %}
     <a href="/search?q={{ kw }}" class="keyword-chip">{{ kw }}</a>
     {% endfor %}
   </div>
