@@ -77,6 +77,14 @@ def rewrite_articles_images(articles: list) -> list:
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
+import math as _math
+def _log_filter(value):
+    try:
+        return _math.log(max(float(value), 1))
+    except (ValueError, TypeError):
+        return 0.0
+templates.env.filters["log"] = _log_filter
+
 
 def _error_response(request: Request, status_code: int = 503):
     """Return an error page response for DB or other failures."""
