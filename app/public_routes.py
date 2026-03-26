@@ -1888,23 +1888,36 @@ async def web_story_page(category: str, slug: str):
         formatted_date = pub_date[:10] if pub_date else ""
 
     body_text = article.get("body_text") or article.get("excerpt") or ""
-    # Split into readable chunks, limit to 10 text pages
-    chunks = _split_text_chunks(body_text, 220)[:10]
+    # Split into readable chunks, limit to 8 text pages
+    chunks = _split_text_chunks(body_text, 200)[:8]
 
-    # Build text pages with alternating light/dark backgrounds for variety
+    # Build text pages with dark backgrounds and blurred article image
     text_pages = []
-    bg_colors = ["#ffffff", "#f7f7f8", "#ffffff", "#f7f7f8", "#ffffff",
-                 "#f7f7f8", "#ffffff", "#f7f7f8", "#ffffff", "#f7f7f8"]
+    # Alternate between styles for visual variety
+    accent_colors = [
+        "rgba(216,50,54,0.92)",  # brand red
+        "rgba(20,20,35,0.88)",   # dark navy
+        "rgba(216,50,54,0.92)",
+        "rgba(20,20,35,0.88)",
+        "rgba(216,50,54,0.92)",
+        "rgba(20,20,35,0.88)",
+        "rgba(216,50,54,0.92)",
+        "rgba(20,20,35,0.88)",
+    ]
     for i, chunk in enumerate(chunks):
         page_id = f"page-{i+1}"
-        bg = bg_colors[i % len(bg_colors)]
-        page_num = f'<p class="story-page-num">{i+1}/{len(chunks)}</p>'
+        overlay_color = accent_colors[i % len(accent_colors)]
+        page_num = f'{i+1}/{len(chunks)}'
         text_pages.append(f"""
     <amp-story-page id="{page_id}">
-      <amp-story-grid-layer template="vertical" class="story-text-page" style="background:{bg}">
+      <amp-story-grid-layer template="fill">
+        <amp-img src="{html_mod.escape(image_url)}"
+                 width="720" height="1280" layout="fill" alt=""></amp-img>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="story-text-page" style="background:{overlay_color}">
         <div class="story-text-inner">
           <p class="story-paragraph">{html_mod.escape(chunk)}</p>
-          {page_num}
+          <p class="story-page-num">{page_num}</p>
         </div>
       </amp-story-grid-layer>
     </amp-story-page>""")
@@ -1978,23 +1991,28 @@ async def web_story_page(category: str, slug: str):
       justify-content: center;
     }}
     .story-text-inner {{
-      padding: 32px 24px;
+      padding: 40px 28px;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      align-items: center;
       min-height: 100%;
+      text-align: center;
     }}
     .story-paragraph {{
-      font-size: 19px;
-      line-height: 1.65;
-      color: #1a1a1a;
+      font-size: 22px;
+      line-height: 1.55;
+      color: #fff;
       margin: 0;
+      font-weight: 500;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.3);
     }}
     .story-page-num {{
-      font-size: 12px;
-      color: #999;
-      margin-top: 20px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 28px;
       text-align: center;
+      letter-spacing: 0.1em;
     }}
     .story-logo {{
       background: #d83236;
