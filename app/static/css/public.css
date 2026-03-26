@@ -2693,6 +2693,39 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .persons-title { font-size:2rem; font-weight:800; line-height:1.15; }
 .persons-subtitle { font-size:0.85rem; color:var(--text-2); margin-top:4px; }
 
+.persons-search {
+  position:relative;
+  margin-bottom:16px;
+}
+.persons-search-icon {
+  position:absolute;
+  left:14px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--text-muted);
+  pointer-events:none;
+}
+.persons-search-input {
+  width:100%;
+  padding:10px 16px 10px 42px;
+  font-size:var(--text-sm);
+  font-family:inherit;
+  color:var(--text);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  outline:none;
+  transition:border-color var(--transition), box-shadow var(--transition);
+  box-sizing:border-box;
+}
+.persons-search-input::placeholder {
+  color:var(--text-muted);
+}
+.persons-search-input:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(216,50,54,.12);
+}
+
 .persons-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
 .pf-chip {
   display:inline-flex; align-items:center; gap:4px;

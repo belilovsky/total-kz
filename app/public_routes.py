@@ -1655,8 +1655,12 @@ async def persons_catalog(request: Request, type: str = "", letter: str = ""):
         where_clauses = ["1=1"]
         params = []
         if type:
-            where_clauses.append("p.person_type = ?")
-            params.append(type)
+            # "culture_media" combines both culture and media person_types
+            if type == "culture_media":
+                where_clauses.append("p.person_type IN ('culture', 'media')")
+            else:
+                where_clauses.append("p.person_type = ?")
+                params.append(type)
         if letter:
             where_clauses.append("p.short_name LIKE ?")
             params.append(f"{letter}%")

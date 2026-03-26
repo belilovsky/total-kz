@@ -34,11 +34,22 @@
   <!-- ═══ AD: ABOVE PERSONS LIST (P1-PR) ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="P1-PR" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
+  {# ── Search input ── #}
+  <div class="persons-search">
+    <svg class="persons-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+    <input type="text" id="persons-search-input" class="persons-search-input" placeholder="Поиск по имени..." autocomplete="off">
+  </div>
+
   {# ── Type filters ── #}
   <div class="persons-filters">
     <a href="/persons" class="pf-chip{% if not current_type %} active{% endif %}">Все</a>
     <a href="/persons?type=government" class="pf-chip{% if current_type == 'government' %} active{% endif %}">Государство{% if type_counts.get('government') %} <span class="pf-count">{{ type_counts['government'] }}</span>{% endif %}</a>
     <a href="/persons?type=international" class="pf-chip{% if current_type == 'international' %} active{% endif %}">Международные{% if type_counts.get('international') %} <span class="pf-count">{{ type_counts['international'] }}</span>{% endif %}</a>
+    <a href="/persons?type=business" class="pf-chip{% if current_type == 'business' %} active{% endif %}">Бизнес{% if type_counts.get('business') %} <span class="pf-count">{{ type_counts['business'] }}</span>{% endif %}</a>
+    <a href="/persons?type=sports" class="pf-chip{% if current_type == 'sports' %} active{% endif %}">Спорт{% if type_counts.get('sports') %} <span class="pf-count">{{ type_counts['sports'] }}</span>{% endif %}</a>
+    <a href="/persons?type=culture_media" class="pf-chip{% if current_type == 'culture_media' %} active{% endif %}">Культура и медиа{% if type_counts.get('culture', 0) + type_counts.get('media', 0) > 0 %} <span class="pf-count">{{ type_counts.get('culture', 0) + type_counts.get('media', 0) }}</span>{% endif %}</a>
   </div>
 
   {# ── Alphabet filter ── #}
@@ -76,5 +87,37 @@
   {% if not persons %}
   <p class="persons-empty">Персоны не найдены</p>
   {% endif %}
+
+  <p class="persons-empty" id="persons-no-results" style="display:none">Ничего не найдено</p>
 </div>
+
+<script>
+(function() {
+  var searchInput = document.getElementById('persons-search-input');
+  if (!searchInput) return;
+
+  var cards = document.querySelectorAll('.person-card');
+  var noResults = document.getElementById('persons-no-results');
+
+  searchInput.addEventListener('input', function() {
+    var query = searchInput.value.toLowerCase().trim();
+    var visible = 0;
+
+    for (var i = 0; i < cards.length; i++) {
+      var nameEl = cards[i].querySelector('.person-card-name');
+      var name = nameEl ? nameEl.textContent.toLowerCase() : '';
+      if (!query || name.indexOf(query) !== -1) {
+        cards[i].style.display = '';
+        visible++;
+      } else {
+        cards[i].style.display = 'none';
+      }
+    }
+
+    if (noResults) {
+      noResults.style.display = (query && visible === 0) ? '' : 'none';
+    }
+  });
+})();
+</script>
 {% endblock %}
