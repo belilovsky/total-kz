@@ -4212,13 +4212,6 @@ a.related-item:visited .related-title {
   border-bottom:1px solid var(--border-light);
 }
 .popular-item:last-child { border-bottom:none; }
-.popular-num {
-  font-family:var(--font-display);
-  font-size:0.875rem; font-weight:700;
-  color:var(--accent); line-height:1;
-  min-width:22px; flex-shrink:0;
-  opacity:1;
-}
 .popular-body { flex:1; min-width:0; }
 .popular-title {
   font-size:var(--text-sm); font-weight:600; line-height:1.35;
