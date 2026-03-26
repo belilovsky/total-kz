@@ -106,34 +106,6 @@
   <div class="cat2-layout">
     <div class="cat2-grid">
       {% for art in articles[4:] %}
-        {% set pos = loop.index %}
-        {% if pos % 8 == 0 %}
-        {# ── Featured card (every 8th) ── #}
-        <article class="cat2-card cat2-card--featured">
-          <a href="{{ article_url(art) }}" class="cat2-card-link cat2-card-link--featured">
-            {% if art.main_image or art.thumbnail %}
-            <div class="cat2-card-img cat2-card-img--featured">
-              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 800) }}" alt="{{ art.title }}" loading="lazy">
-            </div>
-            {% endif %}
-            <div class="cat2-card-body cat2-card-body--featured">
-              <div class="cat2-card-meta">
-                <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(art.sub_category) }}">
-                  <span class="cat-dot"></span>
-                  <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
-                </span>
-                <span class="meta-sep">·</span>
-                <span>{{ format_date_short(art.pub_date) }}</span>
-              </div>
-              <h3 class="cat2-card-title cat2-card-title--featured">{{ art.title }}</h3>
-              {% if art.excerpt %}
-                <p class="cat2-card-excerpt cat2-card-excerpt--featured">{{ art.excerpt[:200] }}{% if art.excerpt|length > 200 %}…{% endif %}</p>
-              {% endif %}
-            </div>
-          </a>
-        </article>
-        {% else %}
-        {# ── Regular card ── #}
         <article class="cat2-card">
           <a href="{{ article_url(art) }}" class="cat2-card-link">
             {% if art.main_image or art.thumbnail %}
@@ -159,7 +131,6 @@
             </div>
           </a>
         </article>
-        {% endif %}
       {% endfor %}
     </div>
 

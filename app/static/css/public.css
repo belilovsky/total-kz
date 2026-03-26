@@ -3763,7 +3763,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* ── Card grid ── */
 .cat2-grid {
-  display:grid; grid-template-columns:1fr; gap:20px;
+  display:grid; grid-template-columns:1fr; gap:16px; align-items:stretch;
 }
 @media (min-width:640px) {
   .cat2-grid { grid-template-columns:1fr 1fr; }
@@ -3771,20 +3771,22 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* ── Card ── */
 .cat2-card {
-  border:1px solid var(--border-light); border-radius:var(--radius-md);
+  border:1px solid var(--border-light); border-radius:8px;
   overflow:hidden; background:var(--surface);
   transition:box-shadow 0.2s ease, transform 0.2s ease;
+  display:flex; flex-direction:column;
 }
 .cat2-card:hover {
   box-shadow:var(--shadow-md); transform:translateY(-2px);
 }
 .cat2-card-link {
-  display:flex; flex-direction:column; text-decoration:none; color:inherit; height:100%;
+  display:flex; flex-direction:column; text-decoration:none; color:inherit; height:100%; flex:1;
 }
 
 /* Card image */
 .cat2-card-img {
-  aspect-ratio:16/10; overflow:hidden; background:var(--surface-3); flex-shrink:0;
+  aspect-ratio:16/9; overflow:hidden; background:var(--surface-3); flex-shrink:0;
+  border-radius:8px 8px 0 0;
 }
 .cat2-card-img img {
   width:100%; height:100%; object-fit:cover; transition:transform 400ms ease;
@@ -3799,7 +3801,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Card body */
 .cat2-card-body {
-  padding:var(--space-3) var(--space-4) var(--space-4); display:flex; flex-direction:column; gap:var(--space-2); flex:1;
+  padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px; flex:1;
 }
 
 /* Card meta */
@@ -3824,39 +3826,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
 }
 
-/* ── Featured card (every 8th) — spans full width ── */
-.cat2-card--featured {
-  border:1px solid var(--border-light); border-radius:var(--radius-md);
-}
-@media (min-width:640px) {
-  .cat2-card--featured { grid-column:span 2; }
-}
-.cat2-card-link--featured {
-  display:flex; flex-direction:column; text-decoration:none; color:inherit;
-}
-@media (min-width:640px) {
-  .cat2-card-link--featured { flex-direction:row; }
-}
-.cat2-card-img--featured {
-  aspect-ratio:16/10; overflow:hidden; background:var(--surface-3); flex-shrink:0;
-}
-@media (min-width:640px) {
-  .cat2-card-img--featured { width:50%; aspect-ratio:16/10; }
-}
-.cat2-card-img--featured img {
-  width:100%; height:100%; object-fit:cover; transition:transform 400ms ease;
-}
-.cat2-card:hover .cat2-card-img--featured img { transform:scale(1.04); }
-.cat2-card-body--featured {
-  padding:var(--space-4) var(--space-5); display:flex; flex-direction:column; gap:var(--space-2); justify-content:center; flex:1;
-}
-.cat2-card-title--featured {
-  font-size:var(--text-lg, 1.125rem); font-weight:700; line-height:1.3;
-  -webkit-line-clamp:3;
-}
-.cat2-card-excerpt--featured {
-  -webkit-line-clamp:3;
-}
+/* Featured card styles removed in v14.2 — all cards are uniform */
 
 /* ── Sidebar ── */
 .cat2-sidebar {
