@@ -32,6 +32,7 @@ from . import search_engine as meili
 from . import auth
 from . import workflow as wf
 from .public_routes import router as public_router, NAV_SECTIONS as _NAV_SECTIONS
+from .public_routes import templates as _public_templates
 from .social_routes import router as social_router
 
 logger = logging.getLogger(__name__)
@@ -175,13 +176,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     """Custom 404/4xx error pages."""
     if exc.status_code == 404:
-        nav = _NAV_SECTIONS
-        return HTMLResponse(
-            templates.get_template("public/404.html").render(
-                request=request, nav_sections=nav, nav_categories=nav
-            ),
-            status_code=404,
-        )
+        try:
+            nav = _NAV_SECTIONS
+            return HTMLResponse(
+                _public_templates.get_template("public/404.html").render(
+                    request=request, nav_sections=nav, nav_categories=nav
+                ),
+                status_code=404,
+            )
+        except Exception:
+            return HTMLResponse(
+                "<h1>404 — Страница не найдена</h1><p><a href='/'>На главную</a></p>",
+                status_code=404,
+            )
     return HTMLResponse(f"Ошибка {exc.status_code}", status_code=exc.status_code)
 
 @app.exception_handler(Exception)
@@ -191,7 +198,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     try:
         nav = _NAV_SECTIONS
         return HTMLResponse(
-            templates.get_template("public/500.html").render(
+            _public_templates.get_template("public/500.html").render(
                 request=request, nav_sections=nav, nav_categories=nav
             ),
             status_code=500,
