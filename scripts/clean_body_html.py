@@ -15,13 +15,15 @@ wrapper/junk elements, and keeps only clean content tags.
 Run: python scripts/clean_body_html.py [--dry-run] [--limit N] [--test]
 """
 
-import sqlite3
+import os
 import re
 import sys
 from pathlib import Path
 from bs4 import BeautifulSoup, Comment
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "total.db"
+PG_DATABASE_URL = os.environ.get("PG_DATABASE_URL", "")
+USE_POSTGRES = os.environ.get("USE_POSTGRES", "false").lower() in ("true", "1", "yes")
 
 # Tags we want to keep
 ALLOWED_TAGS = {
@@ -231,6 +233,20 @@ def clean_html(raw_html: str) -> tuple[str, str]:
     return clean, clean_text
 
 
+def _get_connection():
+    """Get database connection — PostgreSQL if configured, else SQLite."""
+    if USE_POSTGRES and PG_DATABASE_URL:
+        import psycopg2
+        import psycopg2.extras
+        conn = psycopg2.connect(PG_DATABASE_URL)
+        return conn, "postgresql"
+    else:
+        import sqlite3
+        conn = sqlite3.connect(str(DB_PATH))
+        conn.row_factory = sqlite3.Row
+        return conn, "sqlite"
+
+
 def main():
     dry_run = "--dry-run" in sys.argv
     limit = None
@@ -238,17 +254,19 @@ def main():
         if arg == "--limit" and i + 1 < len(sys.argv):
             limit = int(sys.argv[i + 1])
 
-    print(f"Database: {DB_PATH}")
+    conn, backend = _get_connection()
+    print(f"Database: {backend} {'('+PG_DATABASE_URL.split('@')[1]+')' if backend == 'postgresql' else str(DB_PATH)}")
     print(f"Mode: {'DRY RUN' if dry_run else 'LIVE'}")
 
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
 
     # Count articles
-    total = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
-    dirty = conn.execute(
+    cur.execute("SELECT COUNT(*) FROM articles")
+    total = cur.fetchone()[0]
+    cur.execute(
         "SELECT COUNT(*) FROM articles WHERE body_html LIKE '%<script%' OR body_html LIKE '%adserver%' OR body_html LIKE '%cs-article%'"
-    ).fetchone()[0]
+    )
+    dirty = cur.fetchone()[0]
     print(f"Total articles: {total}, dirty: {dirty}")
 
     # Fetch articles to clean
@@ -256,40 +274,52 @@ def main():
     if limit:
         query += f" LIMIT {limit}"
 
-    articles = conn.execute(query).fetchall()
+    cur.execute(query)
+    articles = cur.fetchall()
     print(f"Processing {len(articles)} articles...")
 
     updated = 0
     errors = 0
     empty_after = 0
 
+    # Use a separate cursor for updates
+    update_cur = conn.cursor()
+
     for i, art in enumerate(articles):
+        art_id = art[0]
+        art_body = art[1]
         try:
-            clean, text = clean_html(art["body_html"])
+            clean, text = clean_html(art_body)
 
             if not clean or len(clean) < 20:
                 empty_after += 1
                 if i < 5:
-                    print(f"  [{art['id']}] WARNING: empty after cleaning (orig len={len(art['body_html'])})")
+                    print(f"  [{art_id}] WARNING: empty after cleaning (orig len={len(art_body)})")
                 continue
 
             if not dry_run:
-                conn.execute(
-                    "UPDATE articles SET body_html = ?, body_text = ? WHERE id = ?",
-                    (clean, text, art["id"])
-                )
+                if backend == "postgresql":
+                    update_cur.execute(
+                        "UPDATE articles SET body_html = %s, body_text = %s WHERE id = %s",
+                        (clean, text, art_id)
+                    )
+                else:
+                    update_cur.execute(
+                        "UPDATE articles SET body_html = ?, body_text = ? WHERE id = ?",
+                        (clean, text, art_id)
+                    )
             updated += 1
 
             if i < 3 or (i < 20 and i % 5 == 0):
-                orig_len = len(art["body_html"])
+                orig_len = len(art_body)
                 new_len = len(clean)
                 ratio = new_len / orig_len * 100 if orig_len > 0 else 0
-                print(f"  [{art['id']}] {orig_len:,} -> {new_len:,} chars ({ratio:.0f}%)")
+                print(f"  [{art_id}] {orig_len:,} -> {new_len:,} chars ({ratio:.0f}%)")
 
         except Exception as e:
             errors += 1
             if errors <= 5:
-                print(f"  [{art['id']}] ERROR: {e}")
+                print(f"  [{art_id}] ERROR: {e}")
 
         if (i + 1) % 2000 == 0:
             print(f"  ... processed {i + 1}/{len(articles)}")
@@ -299,6 +329,8 @@ def main():
     if not dry_run:
         conn.commit()
 
+    cur.close()
+    update_cur.close()
     conn.close()
 
     print(f"\nDone!")
