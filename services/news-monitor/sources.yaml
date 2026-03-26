@@ -20,7 +20,7 @@ sources:
     rewrite: false
 
   - name: "Kazinform"
-    url: "https://www.inform.kz/ru/rss/all"
+    url: "https://www.inform.kz/ru/rss"
     type: rss
     category: official_kz
     priority: high
@@ -65,7 +65,7 @@ sources:
 
   # ── Foreign top news ─────────────────────────────
   - name: "Reuters World"
-    url: "https://feeds.reuters.com/reuters/worldNews"
+    url: "https://www.reutersagency.com/feed/?best-topics=world&post_type=best"
     type: rss
     category: foreign_top
     priority: low
