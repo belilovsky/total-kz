@@ -16,6 +16,20 @@
 .preview-viewport-toggle { display: flex; gap: 4px; margin-bottom: 0; }
 .preview-viewport-toggle button { padding: 4px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); cursor: pointer; font-size: 12px; }
 .preview-viewport-toggle button.active { background: var(--accent); color: white; border-color: var(--accent); }
+.ai-btn { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; color:var(--text-muted); cursor:pointer; transition:all .15s; background:none; vertical-align:middle; margin-left:6px; }
+.ai-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(216,50,54,.05); }
+.ai-btn.loading { opacity:.6; pointer-events:none; }
+.ai-btn .spinner { display:none; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:ai-spin .6s linear infinite; }
+.ai-btn.loading .spinner { display:inline-block; }
+.ai-btn.loading .ai-icon { display:none; }
+@keyframes ai-spin { to { transform:rotate(360deg); } }
+.ai-titles-list { margin-top:8px; display:flex; flex-direction:column; gap:4px; }
+.ai-title-option { padding:8px 12px; border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:14px; transition:all .15s; background:var(--bg-card); }
+.ai-title-option:hover { border-color:var(--accent); color:var(--accent); background:rgba(216,50,54,.04); }
+.seo-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:600; margin-left:8px; }
+.seo-badge.seo-green { background:rgba(22,163,74,.12); color:#16a34a; }
+.seo-badge.seo-yellow { background:rgba(234,179,8,.12); color:#a16207; }
+.seo-badge.seo-red { background:rgba(216,50,54,.12); color:#d83236; }
 </style>
 {% endblock %}
 
@@ -33,14 +47,27 @@
 <div class="editor-page">
     <!-- Title -->
     <div class="editor-section">
-        <label class="editor-label">Заголовок</label>
+        <label class="editor-label">Заголовок <span class="seo-badge" id="seoBadge"></span>
+            <button type="button" class="ai-btn" onclick="aiSuggestTitles()" id="aiTitlesBtn"><span class="ai-icon">✨</span><span class="spinner"></span> Предложить заголовки</button>
+        </label>
         <textarea class="editor-title-input auto-resize" id="editTitle" rows="1" placeholder="Заголовок статьи">{{ article.title }}</textarea>
+        <div class="ai-titles-list" id="aiTitlesList" style="display:none"></div>
     </div>
 
     <!-- Excerpt -->
     <div class="editor-section">
-        <label class="editor-label">Лид <span class="char-counter" id="excerptCounter">{{ (article.excerpt or '')|length }}/300</span></label>
+        <label class="editor-label">Лид <span class="char-counter" id="excerptCounter">{{ (article.excerpt or '')|length }}/300</span>
+            <button type="button" class="ai-btn" onclick="aiGenerate('excerpt')" id="aiExcerptBtn"><span class="ai-icon">✨</span><span class="spinner"></span> AI</button>
+        </label>
         <textarea class="editor-textarea auto-resize" id="editExcerpt" rows="2" maxlength="300" placeholder="Краткое описание статьи (до 300 символов)">{{ article.excerpt or '' }}</textarea>
+    </div>
+
+    <!-- Meta Description -->
+    <div class="editor-section">
+        <label class="editor-label">Meta Description <span class="char-counter" id="metaDescCounter">0/155</span>
+            <button type="button" class="ai-btn" onclick="aiGenerate('meta_description')" id="aiMetaDescBtn"><span class="ai-icon">✨</span><span class="spinner"></span> AI</button>
+        </label>
+        <textarea class="editor-textarea auto-resize" id="editMetaDesc" rows="2" maxlength="200" placeholder="SEO описание для поисковиков (120-155 символов)"></textarea>
     </div>
 
     <!-- Main Image with focal point -->
@@ -87,7 +114,9 @@
 
     <!-- Tags -->
     <div class="editor-section">
-        <label class="editor-label">Теги</label>
+        <label class="editor-label">Теги
+            <button type="button" class="ai-btn" onclick="aiGenerate('tags')" id="aiTagsBtn"><span class="ai-icon">✨</span><span class="spinner"></span> AI</button>
+        </label>
         <div class="tags-editor" id="tagsEditor" style="position:relative">
             {% for tag in (article.tags or []) %}
             <span class="tag-chip" data-tag="{{ tag }}">
@@ -695,6 +724,114 @@ document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); saveArticle(false); }
     if (e.key==='Escape') { var m=document.getElementById('previewModal'); if(m.style.display!=='none') closePreview(); }
 });
+
+// ═══ AI Assistant functions ═══
+function getArticleText() {
+    var title = document.getElementById('editTitle').value.trim();
+    var body = document.getElementById('editExcerpt').value.trim();
+    return { title: title, body: body };
+}
+
+function aiGenerate(field) {
+    var btnMap = { excerpt: 'aiExcerptBtn', meta_description: 'aiMetaDescBtn', tags: 'aiTagsBtn' };
+    var btn = document.getElementById(btnMap[field]);
+    if (!btn) return;
+    btn.classList.add('loading');
+    var info = getArticleText();
+    fetch('/api/admin/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: info.title, body: info.body, fields: [field] })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        btn.classList.remove('loading');
+        if (data.error) { showToast('Ошибка: ' + data.error); return; }
+        if (field === 'excerpt' && data.excerpt) {
+            document.getElementById('editExcerpt').value = data.excerpt;
+            document.getElementById('editExcerpt').dispatchEvent(new Event('input'));
+            showToast('Лид сгенерирован');
+        } else if (field === 'meta_description' && data.meta_description) {
+            document.getElementById('editMetaDesc').value = data.meta_description;
+            document.getElementById('editMetaDesc').dispatchEvent(new Event('input'));
+            showToast('Meta description сгенерирован');
+        } else if (field === 'tags' && data.tags) {
+            data.tags.forEach(function(t) { addTag(t); });
+            showToast('Теги добавлены');
+        }
+        updateSeoScore();
+        markDirty();
+    }).catch(function() { btn.classList.remove('loading'); showToast('Ошибка сети'); });
+}
+
+function aiSuggestTitles() {
+    var btn = document.getElementById('aiTitlesBtn');
+    btn.classList.add('loading');
+    var info = getArticleText();
+    fetch('/api/admin/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: info.title, body: info.body, fields: ['titles'] })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        btn.classList.remove('loading');
+        if (data.error) { showToast('Ошибка: ' + data.error); return; }
+        if (data.titles && data.titles.length) {
+            var list = document.getElementById('aiTitlesList');
+            list.innerHTML = '';
+            data.titles.forEach(function(t) {
+                var opt = document.createElement('div');
+                opt.className = 'ai-title-option';
+                opt.textContent = t;
+                opt.addEventListener('click', function() {
+                    document.getElementById('editTitle').value = t;
+                    document.getElementById('editTitle').dispatchEvent(new Event('input'));
+                    list.style.display = 'none';
+                    markDirty();
+                    updateSeoScore();
+                });
+                list.appendChild(opt);
+            });
+            list.style.display = 'flex';
+        }
+    }).catch(function() { btn.classList.remove('loading'); showToast('Ошибка сети'); });
+}
+
+// ═══ SEO Score Badge ═══
+function updateSeoScore() {
+    var score = 0, max = 5;
+    var title = document.getElementById('editTitle').value.trim();
+    var metaDesc = (document.getElementById('editMetaDesc') || {}).value || '';
+    var excerpt = document.getElementById('editExcerpt').value.trim();
+    var image = document.getElementById('editImage').value.trim();
+    var tags = collectTags();
+    if (title.length >= 40 && title.length <= 70) score++;
+    else if (title.length > 0) score += 0.5;
+    if (metaDesc.length >= 100 && metaDesc.length <= 160) score++;
+    else if (metaDesc.length > 0) score += 0.5;
+    if (excerpt.length > 20) score++;
+    if (image) score++;
+    if (tags.length >= 3) score++;
+    else if (tags.length > 0) score += 0.5;
+    var pct = score / max;
+    var badge = document.getElementById('seoBadge');
+    if (pct >= 0.8) { badge.className = 'seo-badge seo-green'; badge.textContent = 'SEO: отлично'; }
+    else if (pct >= 0.5) { badge.className = 'seo-badge seo-yellow'; badge.textContent = 'SEO: нормально'; }
+    else { badge.className = 'seo-badge seo-red'; badge.textContent = 'SEO: доработать'; }
+}
+
+var metaDescEl = document.getElementById('editMetaDesc');
+var metaDescCounter = document.getElementById('metaDescCounter');
+if (metaDescEl && metaDescCounter) {
+    metaDescEl.addEventListener('input', function() {
+        var l = this.value.length;
+        metaDescCounter.textContent = l + '/155';
+        metaDescCounter.classList.toggle('over-limit', l > 155);
+        updateSeoScore();
+    });
+}
+['editTitle', 'editExcerpt', 'editImage'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() { updateSeoScore(); });
+});
+setTimeout(updateSeoScore, 500);
 
 function toggleRevisions(){revisionsVisible=!revisionsVisible;var l=document.getElementById('revisionList'),a=document.getElementById('revisionArrow');l.style.display=revisionsVisible?'block':'none';a.style.transform=revisionsVisible?'rotate(180deg)':'';if(revisionsVisible&&!revisionsLoaded)loadRevisions();}
 function loadRevisions(){fetch('/api/article/'+ARTICLE_ID+'/revisions').then(function(r){return r.json();}).then(function(res){revisionsLoaded=true;var list=document.getElementById('revisionList');if(!res.ok||!res.revisions||res.revisions.length===0){list.innerHTML='<div class="revision-empty">Нет записей об изменениях</div>';return;}var html='';res.revisions.forEach(function(rev){var badge='';if(rev.revision_type==='auto_save')badge='<span class="revision-badge revision-badge-auto">авто</span>';else if(rev.revision_type==='status_change')badge='<span class="revision-badge revision-badge-status">статус</span>';else badge='<span class="revision-badge revision-badge-edit">правка</span>';var cH='';var changes=rev.changes||{};var keys=Object.keys(changes);if(keys.length>0){var summary=keys.map(function(k){var labels={title:'заголовок',excerpt:'лид',sub_category:'категория',author:'автор',main_image:'изображение',status:'статус',editor_note:'заметка',tags:'теги',body_html:'текст'};return labels[k]||k;}).join(', ');cH='<div class="revision-summary">Изменено: '+summary+'</div>';var dH='<div class="revision-details" style="display:none">';keys.forEach(function(k){var c=changes[k];var label={title:'Заголовок',excerpt:'Лид',sub_category:'Категория',author:'Автор',main_image:'Изображение',status:'Статус',editor_note:'Заметка',tags:'Теги',body_html:'Текст'}[k]||k;var oV=typeof c.old==='object'?JSON.stringify(c.old):(c.old||'(пусто)');var nV=typeof c.new==='object'?JSON.stringify(c.new):(c.new||'(пусто)');if(k==='body_html'){oV='(текст изменён)';nV='(текст изменён)';}dH+='<div class="revision-detail"><strong>'+label+':</strong> <span class="revision-old">'+oV+'</span> → <span class="revision-new">'+nV+'</span></div>';});dH+='</div>';cH+=dH;}var ds=rev.changed_at?rev.changed_at.replace('T',' ').substring(0,16):'';html+='<div class="revision-item" onclick="this.querySelector(\'.revision-details\')&&(this.querySelector(\'.revision-details\').style.display=this.querySelector(\'.revision-details\').style.display===\'none\'?\'block\':\'none\')"><div class="revision-header"><span class="revision-time">'+ds+'</span>'+badge+'</div>'+cH+'</div>';});list.innerHTML=html;}).catch(function(){document.getElementById('revisionList').innerHTML='<div class="revision-empty">Ошибка загрузки</div>';});}

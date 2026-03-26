@@ -1663,6 +1663,75 @@ async def api_seo_duplicates(limit: int = 30):
 
 
 # ══════════════════════════════════════════════
+#  ADMIN AI ASSISTANT (GPT-4o-mini)
+# ══════════════════════════════════════════════
+
+_OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
+
+@app.post("/api/admin/ai-generate")
+async def api_admin_ai_generate(request: Request):
+    """AI-generate excerpt, meta_description, tags, or title suggestions."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    if not _OPENAI_KEY:
+        return JSONResponse({"error": "OPENAI_API_KEY not configured"}, status_code=500)
+
+    body = await request.json()
+    title = (body.get("title") or "").strip()
+    text = (body.get("body") or "")[:2000].strip()
+    fields = body.get("fields", [])
+
+    if not title and not text:
+        return JSONResponse({"error": "Нужен заголовок или текст"}, status_code=400)
+
+    results = {}
+    import httpx as _httpx
+
+    for field in fields:
+        if field == "excerpt":
+            prompt = f"Напиши краткий лид (до 200 символов) для новостной статьи.\nЗаголовок: {title}\nТекст: {text}\n\nОтвет — только текст лида, без кавычек."
+        elif field == "meta_description":
+            prompt = f"Напиши SEO meta description (120-155 символов) для новостной статьи.\nЗаголовок: {title}\nТекст: {text}\n\nОтвет — только текст описания."
+        elif field == "tags":
+            prompt = f"Предложи 5-7 тегов для новостной статьи (через запятую, без #).\nЗаголовок: {title}\nТекст: {text}\n\nОтвет — только теги через запятую."
+        elif field == "titles":
+            prompt = f"Предложи 3 альтернативных заголовка для новостной статьи.\nТекущий заголовок: {title}\nТекст: {text}\n\nОтвет — 3 заголовка, каждый на новой строке, без нумерации."
+        else:
+            continue
+
+        try:
+            async with _httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {_OPENAI_KEY}"},
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": [
+                            {"role": "system", "content": "Ты — AI-ассистент для казахстанского новостного портала Total.kz. Пиши на русском языке."},
+                            {"role": "user", "content": prompt},
+                        ],
+                        "max_tokens": 300,
+                        "temperature": 0.7,
+                    },
+                )
+                data = resp.json()
+                content = data["choices"][0]["message"]["content"].strip()
+
+                if field == "tags":
+                    results[field] = [t.strip() for t in content.split(",") if t.strip()]
+                elif field == "titles":
+                    results[field] = [t.strip().lstrip("0123456789.-) ") for t in content.split("\n") if t.strip()][:3]
+                else:
+                    results[field] = content
+        except Exception as e:
+            logger.exception("AI generate error for field %s", field)
+            results[field] = f"Ошибка: {str(e)[:100]}"
+
+    return JSONResponse({"ok": True, **results})
+
+
+# ══════════════════════════════════════════════
 #  MEILISEARCH SEARCH API
 # ══════════════════════════════════════════════
 

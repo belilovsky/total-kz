@@ -775,7 +775,7 @@ async def homepage(request: Request):
         latest = all_latest[5:]
 
         # One batch query replaces 6 separate category queries
-        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=3)
+        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
         category_highlights = []
         for section in NAV_SECTIONS:
             articles = highlights_map.get(section["slug"], [])
@@ -789,14 +789,14 @@ async def homepage(request: Request):
         logger.exception("Database error in homepage")
         return _error_response(request)
 
-    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)
+    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:5]
 
     # Top persons from preloaded cache
     homepage_persons = _get_homepage_persons()
 
     # Trending tags for tag cloud
     try:
-        trending_tags = db.get_trending_tags(limit=30)
+        trending_tags = db.get_trending_tags(limit=15)
     except Exception:
         trending_tags = []
 
