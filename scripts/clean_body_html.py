@@ -2,15 +2,17 @@
 """
 Clean body_html in articles table.
 
-Two formats exist:
-1. Old (cs-article): Full page HTML from total.kz with <article class="cs-article">,
-   ads, scripts, duplicated title/meta. Content is inside <section class="article__post post">.
-2. New (article__post__body): Cleaner but still has ad comments, scripts.
-   Content is inside <div class="article__post__body">.
+Multiple body_html formats exist in the database:
+1. Full page HTML from total.kz wrapped in <article class="cs-article">,
+   with nested divs, ads, scripts, share buttons, metadata.
+   Actual article text is inside <div class="article__post__body">.
+2. Older format with <section class="article__post post"> containing the content.
+3. Already-clean HTML (just <p>, <blockquote> etc.) — left as-is.
 
-This script extracts clean content paragraphs and rebuilds body_html and body_text.
+The script finds the content root using prioritized selectors, strips all
+wrapper/junk elements, and keeps only clean content tags.
 
-Run: python scripts/clean_body_html.py [--dry-run] [--limit N]
+Run: python scripts/clean_body_html.py [--dry-run] [--limit N] [--test]
 """
 
 import sqlite3
@@ -69,18 +71,35 @@ def clean_html(raw_html: str) -> tuple[str, str]:
     # Determine format and find content root
     content_root = None
 
-    # Format 1: cs-article — find the post section
-    post_section = soup.select_one("section.article__post, section.post, .article__post.post")
-    if post_section:
-        content_root = post_section
+    # Priority 1: Find .article__post__body directly (class-only selector)
+    # This is where the actual article text lives in total.kz HTML
+    body_div = soup.select_one(".article__post__body")
+    if body_div:
+        content_root = body_div
     else:
-        # Format 2: article__post__body
-        body_div = soup.select_one("div.article__post__body, .article__post__body")
-        if body_div:
-            content_root = body_div
+        # Priority 2: Look inside article.cs-article for .article__post__body
+        cs_article = soup.select_one("article.cs-article")
+        if cs_article:
+            body_div = cs_article.select_one(".article__post__body")
+            if body_div:
+                content_root = body_div
+            else:
+                # cs-article exists but no .article__post__body inside —
+                # use the cs-article itself as root
+                content_root = cs_article
         else:
-            # Fallback: use the whole thing
-            content_root = soup
+            # Priority 3: Older format with section.article__post
+            post_section = soup.select_one("section.article__post, .article__post.post")
+            if post_section:
+                content_root = post_section
+            else:
+                # Priority 4: Look inside .cs-flex-container
+                flex_container = soup.select_one(".cs-flex-container")
+                if flex_container:
+                    content_root = flex_container
+                else:
+                    # Fallback: use the whole thing
+                    content_root = soup
 
     # Remove all scripts, styles, and ad elements
     for tag in content_root.find_all(REMOVE_TAGS):
@@ -290,5 +309,89 @@ def main():
         print("  (DRY RUN — no changes written)")
 
 
+def test_clean_html():
+    """Verify cleaning works on a sample of dirty HTML from the production server."""
+    dirty_html = """
+    <article class="cs-article">
+      <div class="container">
+        <h1 class="article__title">Заголовок статьи <span class="icon-list">icon</span></h1>
+        <div class="article__meta iv_date">
+          <span class="gray-text meta__date">01.01.2025</span>
+          <span class="gray-text">Автор</span>
+          <div class="flex-right article__stats gray-text">
+            <div class="custom-share-style">
+              <span class="gray-text">Поделиться</span>
+              <div class="sharethis-inline-share-buttons right">share</div>
+            </div>
+          </div>
+        </div>
+        <div class="cs-flex-container">
+          <div class="post__image"><img src="photo.jpg"></div>
+          <div class="adserver_1 adserver">
+            <script>var adConfig = {};</script>
+            <!-- Площадка: total.kz -->
+          </div>
+          <div class="article__post__body">
+            <p>Первый параграф статьи с текстом.</p>
+            <p>Второй параграф с <strong>жирным</strong> и <em>курсивом</em>.</p>
+            <blockquote>Цитата из источника.</blockquote>
+            <p>Третий параграф с <a href="https://example.com">ссылкой</a>.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+    """
+
+    clean, text = clean_html(dirty_html)
+
+    # Verify no junk remains
+    assert "cs-article" not in clean, f"cs-article wrapper not removed: {clean[:200]}"
+    assert "adserver" not in clean, f"Ad element not removed: {clean[:200]}"
+    assert "article__meta" not in clean, f"Meta not removed: {clean[:200]}"
+    assert "article__title" not in clean, f"Title not removed: {clean[:200]}"
+    assert "sharethis" not in clean, f"Share buttons not removed: {clean[:200]}"
+    assert "<script" not in clean, f"Script not removed: {clean[:200]}"
+    assert "icon-list" not in clean, f"Icon list not removed: {clean[:200]}"
+    assert "post__image" not in clean, f"Post image not removed: {clean[:200]}"
+    assert "<h1" not in clean, f"H1 not removed: {clean[:200]}"
+
+    # Verify content IS preserved
+    assert "Первый параграф" in clean, f"First paragraph missing: {clean[:200]}"
+    assert "Второй параграф" in clean, f"Second paragraph missing: {clean[:200]}"
+    assert "<strong>жирным</strong>" in clean, f"Strong tag missing: {clean[:200]}"
+    assert "<em>курсивом</em>" in clean, f"Em tag missing: {clean[:200]}"
+    assert "<blockquote>" in clean, f"Blockquote missing: {clean[:200]}"
+    assert 'href="https://example.com"' in clean, f"Link missing: {clean[:200]}"
+    assert "Третий параграф" in clean, f"Third paragraph missing: {clean[:200]}"
+
+    # Verify significant size reduction
+    ratio = len(clean) / len(dirty_html)
+    assert ratio < 0.5, f"Insufficient cleaning: ratio={ratio:.2f}, clean_len={len(clean)}, orig_len={len(dirty_html)}"
+
+    # Verify plain text
+    assert "Первый параграф" in text, f"First paragraph missing from text: {text[:200]}"
+    assert "<" not in text, f"HTML tags in plain text: {text[:200]}"
+
+    # Test idempotency: cleaning already-clean HTML should not break it
+    clean2, text2 = clean_html(clean)
+    assert "Первый параграф" in clean2, f"Idempotency failed — content lost after second clean: {clean2[:200]}"
+    assert "Второй параграф" in clean2, f"Idempotency failed — content lost: {clean2[:200]}"
+
+    # Test already-clean HTML (Format C)
+    already_clean = "<p>Simple article text.</p><p>Second paragraph.</p>"
+    clean3, text3 = clean_html(already_clean)
+    assert "Simple article text" in clean3, f"Already-clean HTML broken: {clean3[:200]}"
+    assert "Second paragraph" in clean3, f"Already-clean HTML lost content: {clean3[:200]}"
+
+    print("All tests passed!")
+    print(f"  Dirty HTML: {len(dirty_html):,} chars")
+    print(f"  Clean HTML: {len(clean):,} chars ({ratio:.0%} of original)")
+    print(f"  Clean text: {len(text):,} chars")
+    print(f"  Clean HTML output:\n{clean}")
+
+
 if __name__ == "__main__":
-    main()
+    if "--test" in sys.argv:
+        test_clean_html()
+    else:
+        main()
