@@ -1769,16 +1769,27 @@ async def person_page(request: Request, slug: str):
             months.append(current_group)
         current_group["articles"].append(dict(art))
 
-    # Related persons (shared articles)
+    # First/last mention date range
+    date_range = conn.execute("""
+        SELECT MIN(a.pub_date), MAX(a.pub_date)
+        FROM articles a
+        JOIN article_entities ae ON a.id = ae.article_id
+        WHERE ae.entity_id = ?
+        AND a.pub_date IS NOT NULL AND a.pub_date != ''
+    """, (person["entity_id"],)).fetchone()
+    first_mention = date_range[0][:10] if date_range and date_range[0] else None
+    last_mention = date_range[1][:10] if date_range and date_range[1] else None
+
+    # Related persons (shared articles) — with photo_url
     related = conn.execute("""
-        SELECT p.slug, p.short_name, p.current_position, COUNT(*) as shared
+        SELECT p.slug, p.short_name, p.current_position, p.photo_url, COUNT(*) as shared
         FROM persons p
         JOIN article_entities ae1 ON p.entity_id = ae1.entity_id
         JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
         WHERE ae2.entity_id = ? AND p.id != ?
         GROUP BY p.id
         ORDER BY shared DESC
-        LIMIT 8
+        LIMIT 6
     """, (person["entity_id"], person["id"])).fetchall()
 
     conn.close()
@@ -1789,6 +1800,8 @@ async def person_page(request: Request, slug: str):
         "positions": positions,
         "months": months,
         "related": related,
+        "first_mention": first_mention,
+        "last_mention": last_mention,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
     })

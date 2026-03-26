@@ -36,7 +36,7 @@
     <span>{{ person['short_name'] }}</span>
   </nav>
 
-  {# ── Person header ── #}
+  {# ── Hero Block ── #}
   <header class="person-hero">
     <div class="person-hero-avatar{% if person['photo_url'] %} has-photo{% endif %}">
       {% if person['photo_url'] %}
@@ -51,18 +51,35 @@
       <div class="person-hero-fullname">{{ person['full_name'] }}</div>
       {% endif %}
       {% if person['current_position'] %}
-      <div class="person-hero-position">{{ person['current_position'] }}</div>
+      <div class="person-hero-position">{{ person['current_position'] }}{% if person['current_org'] %} · {{ person['current_org'] }}{% endif %}</div>
       {% endif %}
-      {% if person['current_org'] %}
-      <div class="person-hero-org">{{ person['current_org'] }}</div>
-      {% endif %}
-      <div class="person-hero-meta">
-        {% if person['birth_date'] %}
-        <span>{{ person['birth_date'][8:10] | int }}.{{ person['birth_date'][5:7] }}.{{ person['birth_date'][:4] }}{% if person['birth_place'] %}, {{ person['birth_place'] }}{% endif %}</span>
-        <span class="sep">·</span>
+
+      {# Key stats row #}
+      <div class="person-hero-stats">
+        <span class="person-stat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+          {{ pluralize_articles(article_count) }}
+        </span>
+        {% if first_mention %}
+        <span class="person-stat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          {% set fm_month = first_mention[5:7]|int %}
+          {% set months_gen = {1:'января',2:'февраля',3:'марта',4:'апреля',5:'мая',6:'июня',7:'июля',8:'августа',9:'сентября',10:'октября',11:'ноября',12:'декабря'} %}
+          с {{ months_gen[fm_month] }} {{ first_mention[:4] }}
+        </span>
         {% endif %}
-        <span>{{ pluralize_articles(article_count) }}</span>
+        <span class="person-type-badge {{ person['person_type'] }}">
+          {% if person['person_type'] == 'government' %}Государство{% elif person['person_type'] == 'international' %}Международные{% else %}Другое{% endif %}
+        </span>
       </div>
+
+      {% if person['birth_date'] %}
+      <div class="person-hero-birth">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        {{ person['birth_date'][8:10] | int }}.{{ person['birth_date'][5:7] }}.{{ person['birth_date'][:4] }}{% if person['birth_place'] %}, {{ person['birth_place'] }}{% endif %}
+      </div>
+      {% endif %}
+
       {% if person['zakon_doc_id'] %}
       <a href="https://online.zakon.kz/Document/?doc_id={{ person['zakon_doc_id'] }}" target="_blank" rel="noopener" class="person-zakon-link">
         Резюме на Zakon.kz ↗
@@ -74,91 +91,244 @@
   <div class="person-layout">
     <div class="person-main">
 
-      {# ── Bio ── #}
-      {% if person['bio_summary'] %}
-      <section class="person-section">
-        <h2 class="person-section-title">О персоне</h2>
-        <p class="person-bio-text">{{ person['bio_summary'] }}</p>
-      </section>
-      {% endif %}
+      {# ── Tab Navigation ── #}
+      <div class="person-tabs">
+        <button class="person-tab active" data-tab="timeline">Хронология</button>
+        {% if person['bio_summary'] %}
+        <button class="person-tab" data-tab="about">О персоне</button>
+        {% endif %}
+        {% if positions %}
+        <button class="person-tab" data-tab="career">Карьера</button>
+        {% endif %}
+      </div>
 
-      {# ── Career timeline ── #}
-      {% if positions %}
-      <section class="person-section">
-        <h2 class="person-section-title">Карьера</h2>
-        <div class="person-career">
-          {% for pos in positions %}
-          <div class="career-item{% if not pos['end_date'] %} career-current{% endif %}">
-            <div class="career-dot"></div>
-            <div class="career-body">
-              <span class="career-title">{{ pos['position_title'] }}</span>
-              {% if pos['organization'] %}
-              <span class="career-org">{{ pos['organization'] }}</span>
-              {% endif %}
-              {% if pos['start_date'] %}
-              <span class="career-date">
-                с {{ pos['start_date'] }}{% if pos['end_date'] %} по {{ pos['end_date'] }}{% endif %}
-              </span>
-              {% endif %}
+      <div class="person-tab-panels">
+
+        {# ── Tab: Chronology ── #}
+        <div class="person-tab-panel active" id="tab-timeline">
+          {% if months %}
+          <div class="person-timeline">
+            {% for month in months %}
+            <div class="ptl-month{% if loop.index > 3 %} ptl-month--collapsed{% endif %}" data-month-index="{{ loop.index }}">
+              <button class="ptl-month-header" type="button" aria-expanded="{% if loop.index <= 3 %}true{% else %}false{% endif %}">
+                <span class="ptl-month-label">{{ month['label'] }}</span>
+                <span class="ptl-month-count">{{ month['articles'] | length }}
+                  {% set ac = month['articles'] | length %}
+                  {% if ac % 10 == 1 and ac % 100 != 11 %}статья{% elif ac % 10 in [2,3,4] and ac % 100 not in [12,13,14] %}статьи{% else %}статей{% endif %}
+                </span>
+                <svg class="ptl-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="ptl-articles"{% if loop.index > 3 %} style="display:none"{% endif %}>
+                {% for art in month['articles'] %}
+                <a href="{{ article_url(art) }}" class="ptl-article{% if loop.index > 5 %} ptl-article--hidden{% endif %}">
+                  <span class="ptl-date">{{ art['pub_date'][8:10] | int }}</span>
+                  <span class="ptl-title">{{ art['title'] }}</span>
+                  {% if art.get('sub_category') %}
+                  <span class="ptl-cat">{{ art['sub_category'] }}</span>
+                  {% endif %}
+                </a>
+                {% endfor %}
+                {% if month['articles'] | length > 5 %}
+                <button class="ptl-show-more" type="button" data-total="{{ month['articles'] | length }}">
+                  ещё {{ month['articles'] | length - 5 }}
+                  {% set rem = month['articles'] | length - 5 %}
+                  {% if rem % 10 == 1 and rem % 100 != 11 %}статья{% elif rem % 10 in [2,3,4] and rem % 100 not in [12,13,14] %}статьи{% else %}статей{% endif %}
+                </button>
+                {% endif %}
+              </div>
             </div>
+            {% endfor %}
           </div>
-          {% endfor %}
+          {% if months | length > 3 %}
+          <button class="ptl-expand-all" type="button" id="expandAllMonths">Показать все месяцы</button>
+          {% endif %}
+          {% else %}
+          <p class="person-empty">Статьи не найдены</p>
+          {% endif %}
         </div>
-      </section>
-      {% endif %}
+
+        {# ── Tab: About ── #}
+        {% if person['bio_summary'] %}
+        <div class="person-tab-panel" id="tab-about">
+          <div class="person-about">
+            {% if person['bio_summary'] %}
+            <div class="person-about-section">
+              <h3 class="person-about-heading">Биография</h3>
+              <p class="person-bio-text">{{ person['bio_summary'] }}</p>
+            </div>
+            {% endif %}
+            {% if person.get('education') %}
+            <div class="person-about-section">
+              <h3 class="person-about-heading">Образование</h3>
+              <p class="person-about-value">{{ person['education'] }}</p>
+            </div>
+            {% endif %}
+            {% if person.get('languages') %}
+            <div class="person-about-section">
+              <h3 class="person-about-heading">Языки</h3>
+              <p class="person-about-value">{{ person['languages'] }}</p>
+            </div>
+            {% endif %}
+            {% if person.get('awards') %}
+            <div class="person-about-section">
+              <h3 class="person-about-heading">Награды</h3>
+              <p class="person-about-value">{{ person['awards'] }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Tab: Career ── #}
+        {% if positions %}
+        <div class="person-tab-panel" id="tab-career">
+          <div class="person-career">
+            {% for pos in positions %}
+            <div class="career-item{% if not pos['end_date'] %} career-current{% endif %}">
+              <div class="career-dot"></div>
+              <div class="career-body">
+                {% if not pos['end_date'] %}
+                <span class="career-current-badge">Текущая должность</span>
+                {% endif %}
+                <span class="career-title">{{ pos['position_title'] }}</span>
+                {% if pos['organization'] %}
+                <span class="career-org">{{ pos['organization'] }}</span>
+                {% endif %}
+                {% if pos['start_date'] %}
+                <span class="career-date">
+                  с {{ pos['start_date'] }}{% if pos['end_date'] %} по {{ pos['end_date'] }}{% endif %}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>{# /tab-panels #}
 
       <!-- ═══ AD: PERSON MID-SECTION (PP1) ═══ -->
       <div class="ad-placeholder ad-person-mid" data-ad-slot="PP1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-      {# ── Article chronology ── #}
-      {% if months %}
-      <section class="person-section">
-        <h2 class="person-section-title">Хронология</h2>
-        <div class="person-timeline">
-          {% for month in months %}
-          <div class="ptl-month">
-            <h3 class="ptl-month-label">{{ month['label'] }}</h3>
-            <div class="ptl-articles">
-              {% for art in month['articles'] %}
-              <a href="{{ article_url(art) }}" class="ptl-article">
-                <span class="ptl-date">{{ art['pub_date'][8:10] | int }}</span>
-                <span class="ptl-title">{{ art['title'] }}</span>
-              </a>
-              {% endfor %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
-    </div>
+    </div>{# /person-main #}
 
     {# ── Sidebar ── #}
     <aside class="person-sidebar">
+      {# Infobox #}
+      <div class="person-sidebar-block person-infobox">
+        <h3 class="psb-title">Краткая справка</h3>
+        <table class="person-infobox-table">
+          {% if person['current_position'] %}
+          <tr><td class="infobox-label">Должность</td><td class="infobox-value">{{ person['current_position'] }}</td></tr>
+          {% endif %}
+          {% if person['current_org'] %}
+          <tr><td class="infobox-label">Организация</td><td class="infobox-value">{{ person['current_org'] }}</td></tr>
+          {% endif %}
+          {% if person['birth_date'] %}
+          <tr><td class="infobox-label">Дата рождения</td><td class="infobox-value">{{ person['birth_date'][8:10] | int }}.{{ person['birth_date'][5:7] }}.{{ person['birth_date'][:4] }}</td></tr>
+          {% endif %}
+          {% if person['birth_place'] %}
+          <tr><td class="infobox-label">Место рождения</td><td class="infobox-value">{{ person['birth_place'] }}</td></tr>
+          {% endif %}
+          <tr>
+            <td class="infobox-label">Тип</td>
+            <td class="infobox-value">
+              <span class="person-type-badge {{ person['person_type'] }}">
+                {% if person['person_type'] == 'government' %}Государство{% elif person['person_type'] == 'international' %}Международные{% else %}Другое{% endif %}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
       {% if related %}
       <div class="person-sidebar-block">
         <h3 class="psb-title">Связанные персоны</h3>
         <div class="psb-list">
           {% for r in related %}
           <a href="/person/{{ r['slug'] }}" class="psb-person">
-            <span class="psb-name">{{ r['short_name'] }}</span>
-            {% if r['current_position'] %}
-            <span class="psb-pos">{{ r['current_position'] }}</span>
-            {% endif %}
+            <div class="psb-person-avatar">
+              {% if r['photo_url'] %}
+              <img src="{% if r['photo_url'].startswith('/') %}{{ r['photo_url'] }}{% else %}{{ imgproxy_url(r['photo_url'], 100) }}{% endif %}" alt="{{ r['short_name'] }}">
+              {% else %}
+              <span class="psb-person-initials">{{ r['short_name'][:1] }}</span>
+              {% endif %}
+            </div>
+            <div class="psb-person-info">
+              <span class="psb-name">{{ r['short_name'] }}</span>
+              {% if r['current_position'] %}
+              <span class="psb-pos">{{ r['current_position'] }}</span>
+              {% endif %}
+            </div>
           </a>
           {% endfor %}
         </div>
       </div>
       {% endif %}
-
-      <div class="person-sidebar-block">
-        <h3 class="psb-title">Тип</h3>
-        <span class="person-type-badge {{ person['person_type'] }}">
-          {% if person['person_type'] == 'government' %}Государство{% elif person['person_type'] == 'international' %}Международные{% else %}Другое{% endif %}
-        </span>
-      </div>
     </aside>
   </div>
 </div>
+
+{# ── Client-side JS: Tabs + Accordion ── #}
+<script>
+(function(){
+  /* Tabs */
+  var tabs = document.querySelectorAll('.person-tab');
+  var panels = document.querySelectorAll('.person-tab-panel');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      panels.forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var target = document.getElementById('tab-' + tab.getAttribute('data-tab'));
+      if(target) target.classList.add('active');
+    });
+  });
+
+  /* Month accordion */
+  document.querySelectorAll('.ptl-month-header').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var month = btn.closest('.ptl-month');
+      var articles = month.querySelector('.ptl-articles');
+      var isCollapsed = month.classList.contains('ptl-month--collapsed');
+      if(isCollapsed){
+        month.classList.remove('ptl-month--collapsed');
+        articles.style.display = '';
+        btn.setAttribute('aria-expanded', 'true');
+      } else {
+        month.classList.add('ptl-month--collapsed');
+        articles.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+
+  /* Expand all months */
+  var expandAll = document.getElementById('expandAllMonths');
+  if(expandAll){
+    expandAll.addEventListener('click', function(){
+      document.querySelectorAll('.ptl-month--collapsed').forEach(function(m){
+        m.classList.remove('ptl-month--collapsed');
+        var a = m.querySelector('.ptl-articles');
+        if(a) a.style.display = '';
+        var h = m.querySelector('.ptl-month-header');
+        if(h) h.setAttribute('aria-expanded', 'true');
+      });
+      expandAll.style.display = 'none';
+    });
+  }
+
+  /* Show more articles within a month */
+  document.querySelectorAll('.ptl-show-more').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var articles = btn.closest('.ptl-articles');
+      articles.querySelectorAll('.ptl-article--hidden').forEach(function(a){
+        a.classList.remove('ptl-article--hidden');
+      });
+      btn.style.display = 'none';
+    });
+  });
+})();
+</script>
 {% endblock %}
