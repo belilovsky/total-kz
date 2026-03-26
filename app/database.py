@@ -874,6 +874,11 @@ def get_revisions(article_id: int, limit: int = 20) -> list:
         return result
 
 
+def restore_revision(article_id: int, revision_id: int) -> bool:
+    """Restore an article to a previous revision (stub for SQLite backend)."""
+    return False
+
+
 def duplicate_article(article_id: int) -> int | None:
     """Duplicate an article. Returns new article ID or None."""
     with get_db() as conn:
@@ -1609,7 +1614,7 @@ def delete_author_managed(author_id: int) -> None:
 
 # ── Media Library ────────────────────────────
 
-def get_all_media(q: str = "", page: int = 1, per_page: int = 30) -> dict:
+def get_all_media(q: str = "", page: int = 1, per_page: int = 30, sort: str = "newest", media_type: str = "") -> dict:
     with get_db() as conn:
         conditions = []
         params = []

@@ -723,10 +723,10 @@ async def admin_authors_page(request: Request, q: str = ""):
 
 
 @app.get("/admin/media", response_class=HTMLResponse)
-async def admin_media_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
-    result = db.get_all_media(q=q, page=page)
+async def admin_media_page(request: Request, q: str = "", page: int = Query(1, ge=1), sort: str = "newest", media_type: str = ""):
+    result = db.get_all_media(q=q, page=page, sort=sort, media_type=media_type)
     return templates.TemplateResponse("media.html", _ctx(request,
-        result=result, q=q, format_num=_format_num))
+        result=result, q=q, sort=sort, media_type=media_type, format_num=_format_num))
 
 
 @app.get("/admin/tags", response_class=HTMLResponse)
@@ -1724,11 +1724,14 @@ async def api_update_article(article_id: int, request: Request):
     except Exception:
         changes = {}
 
+    user = getattr(request.state, "current_user", None)
+    changed_by = user.get("username", "") if user else ""
+
     try:
         db.update_article(article_id, updates)
         # Record revision
         try:
-            db.record_revision(article_id, changes, revision_type=revision_type)
+            db.record_revision(article_id, changes, revision_type=revision_type, changed_by=changed_by)
         except Exception:
             pass
         # Index in Meilisearch (fire-and-forget)
@@ -1830,6 +1833,32 @@ async def api_article_revisions(article_id: int):
         return {"ok": True, "revisions": revisions}
     except Exception as e:
         return {"ok": False, "error": str(e), "revisions": []}
+
+
+@app.post("/api/admin/article/{article_id}/restore/{revision_id}")
+async def api_restore_revision(request: Request, article_id: int, revision_id: int):
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Не авторизован"}, status_code=401)
+    try:
+        ok = db.restore_revision(article_id, revision_id)
+        if not ok:
+            return JSONResponse({"ok": False, "error": "Ревизия не найдена или без полного состояния"}, status_code=404)
+        # Record a restore revision
+        db.record_revision(article_id, {"restored_from": revision_id}, revision_type="restore", changed_by=user.get("username", ""))
+        # Re-index in Meilisearch
+        try:
+            article_data = db.get_article(article_id)
+            if article_data:
+                meili.index_article(article_data)
+        except Exception:
+            pass
+        ip = request.client.host if request.client else ""
+        db.log_audit(user["user_id"], user["username"], "restore", "article", article_id,
+                      f"Восстановлено из ревизии #{revision_id}", ip)
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
 @app.post("/api/upload")

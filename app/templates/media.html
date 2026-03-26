@@ -9,11 +9,11 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Загрузить
 </button>
-<input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="uploadFiles(this.files)">
+<input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="uploadFiles(this.files)">
 {% endblock %}
 
 {% block content %}
-<!-- Search bar -->
+<!-- Search & Filters bar -->
 <div class="filters-bar" style="margin-bottom:16px">
     <form method="get" action="/admin/media" class="filters-form">
         <div class="filter-group grow">
@@ -22,8 +22,18 @@
                 <input type="text" name="q" value="{{ q }}" placeholder="Поиск по имени файла...">
             </div>
         </div>
+        <select name="sort" class="filter-input" style="width:auto;min-width:140px" onchange="this.form.submit()">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Сначала новые</option>
+            <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Сначала старые</option>
+            <option value="largest" {% if sort == 'largest' %}selected{% endif %}>По размеру</option>
+        </select>
+        <select name="media_type" class="filter-input" style="width:auto;min-width:120px" onchange="this.form.submit()">
+            <option value="" {% if not media_type %}selected{% endif %}>Все типы</option>
+            <option value="images" {% if media_type == 'images' %}selected{% endif %}>Изображения</option>
+            <option value="documents" {% if media_type == 'documents' %}selected{% endif %}>Документы</option>
+        </select>
         <button type="submit" class="btn btn-primary">Найти</button>
-        {% if q %}<a href="/admin/media" class="btn btn-ghost">Сброс</a>{% endif %}
+        {% if q or sort != 'newest' or media_type %}<a href="/admin/media" class="btn btn-ghost">Сброс</a>{% endif %}
     </form>
 </div>
 
@@ -34,11 +44,8 @@
     <p style="font-size:12px;color:var(--text-muted)">JPG, PNG, GIF, WebP, SVG — до 10 МБ</p>
 </div>
 
-<!-- Upload progress -->
-<div class="upload-progress" id="uploadProgress" style="display:none">
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <span id="uploadStatus">Загрузка...</span>
-</div>
+<!-- Upload progress (per-file) -->
+<div class="upload-progress-list" id="uploadProgressList" style="display:none"></div>
 
 <!-- Media Gallery -->
 <div class="results-info">
@@ -48,13 +55,19 @@
 
 <div class="media-gallery">
     {% for item in result['items'] %}
-    <div class="media-item" onclick="showMediaDetail({{ item.id }}, '{{ item.filename }}', '{{ item.original_name|e }}', '{{ item.mime_type }}', {{ item.file_size }}, '{{ item.alt_text|default("", true)|e }}', '{{ item.credit|default("", true)|e }}', '{{ item.url }}')">
+    <div class="media-item" data-item='{{ item | tojson }}' onclick="showMediaDetail(JSON.parse(this.dataset.item))">
         <div class="media-thumb">
+            {% if item.mime_type and item.mime_type.startswith('image/') %}
             <img src="{{ item.url }}" alt="{{ item.alt_text or item.original_name }}" loading="lazy">
+            {% else %}
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            {% endif %}
         </div>
         <div class="media-item-info">
             <span class="media-item-name" title="{{ item.original_name }}">{{ item.original_name[:30] }}{% if item.original_name|length > 30 %}...{% endif %}</span>
-            <span class="media-item-size">{{ (item.file_size / 1024)|int }}&nbsp;КБ</span>
+            <span class="media-item-meta">{{ (item.file_size / 1024)|int }}&nbsp;КБ{% if item.uploaded_at %} · {{ item.uploaded_at[:10] }}{% endif %}</span>
         </div>
     </div>
     {% endfor %}
@@ -70,7 +83,7 @@
 
 {% if result['pages'] > 1 %}
 <div class="pagination">
-    {% set base_url = "/admin/media?q=" + q|urlencode %}
+    {% set base_url = "/admin/media?q=" + q|urlencode + "&sort=" + sort + "&media_type=" + media_type %}
     {% if result['page'] > 1 %}
     <a href="{{ base_url }}&page={{ result['page'] - 1 }}" class="page-link">&larr; Назад</a>
     {% endif %}
@@ -108,9 +121,18 @@
                 <div class="form-group"><label>Имя файла</label><div id="mediaDetailFilename" style="font-size:13px;color:var(--text-secondary)"></div></div>
                 <div class="form-group"><label>Тип</label><div id="mediaDetailType" style="font-size:13px;color:var(--text-secondary)"></div></div>
                 <div class="form-group"><label>Размер</label><div id="mediaDetailSize" style="font-size:13px;color:var(--text-secondary)"></div></div>
+                <div class="form-group" id="mediaDetailDimensionsGroup" style="display:none"><label>Размеры</label><div id="mediaDetailDimensions" style="font-size:13px;color:var(--text-secondary)"></div></div>
+                <div class="form-group"><label>Загружено</label><div id="mediaDetailDate" style="font-size:13px;color:var(--text-secondary)"></div></div>
                 <div class="form-group"><label>Alt текст</label><input type="text" id="mediaDetailAlt" class="filter-input" style="width:100%"></div>
                 <div class="form-group"><label>Автор/Кредит</label><input type="text" id="mediaDetailCredit" class="filter-input" style="width:100%"></div>
-                <div class="form-group"><label>URL</label><input type="text" id="mediaDetailUrl" class="filter-input" style="width:100%;font-size:12px" readonly onclick="this.select()"></div>
+                <div class="form-group"><label>URL</label>
+                    <div style="display:flex;gap:6px">
+                        <input type="text" id="mediaDetailUrl" class="filter-input" style="flex:1;font-size:12px" readonly onclick="this.select()">
+                        <button class="btn btn-ghost btn-sm" onclick="copyMediaUrl()" title="Копировать URL">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="modal-footer">
@@ -122,23 +144,48 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.media-item-meta { display:block; font-size:11px; color:var(--text-muted); }
+.upload-progress-list { margin-bottom:16px; display:flex; flex-direction:column; gap:6px; }
+.upload-file-progress { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius-sm); font-size:13px; }
+.upload-file-progress .file-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.upload-file-progress .progress-bar { flex:0 0 120px; height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden; }
+.upload-file-progress .progress-fill { height:100%; background:var(--accent); border-radius:3px; width:0; transition:width 0.3s ease; }
+.upload-file-progress .file-status { font-size:12px; color:var(--text-muted); min-width:60px; text-align:right; }
+.upload-file-progress.done .progress-fill { background:#16a34a; }
+.upload-file-progress.error .progress-fill { background:var(--red); }
+</style>
 <script>
 var currentMediaId=null;
-function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
 function openModal(id){document.getElementById(id).classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 
-function showMediaDetail(id,filename,origName,mime,size,alt,credit,url){
-    currentMediaId=id;
-    document.getElementById('mediaDetailTitle').textContent=origName;
-    document.getElementById('mediaDetailImg').src=url;
-    document.getElementById('mediaDetailFilename').textContent=origName;
-    document.getElementById('mediaDetailType').textContent=mime;
-    document.getElementById('mediaDetailSize').textContent=Math.round(size/1024)+' КБ';
-    document.getElementById('mediaDetailAlt').value=alt;
-    document.getElementById('mediaDetailCredit').value=credit;
-    document.getElementById('mediaDetailUrl').value=location.origin+url;
+function showMediaDetail(item){
+    currentMediaId=item.id;
+    document.getElementById('mediaDetailTitle').textContent=item.original_name||item.filename;
+    document.getElementById('mediaDetailImg').src=item.url;
+    document.getElementById('mediaDetailFilename').textContent=item.original_name||item.filename;
+    document.getElementById('mediaDetailType').textContent=item.mime_type||'';
+    document.getElementById('mediaDetailSize').textContent=Math.round((item.file_size||0)/1024)+' КБ';
+    document.getElementById('mediaDetailDate').textContent=(item.uploaded_at||'').replace('T',' ').substring(0,16);
+    if(item.width&&item.height){
+        document.getElementById('mediaDetailDimensions').textContent=item.width+'×'+item.height+' px';
+        document.getElementById('mediaDetailDimensionsGroup').style.display='';
+    }else{
+        document.getElementById('mediaDetailDimensionsGroup').style.display='none';
+    }
+    document.getElementById('mediaDetailAlt').value=item.alt_text||'';
+    document.getElementById('mediaDetailCredit').value=item.credit||'';
+    document.getElementById('mediaDetailUrl').value=location.origin+(item.url||'');
     openModal('mediaDetailModal');
+}
+
+function copyMediaUrl(){
+    var inp=document.getElementById('mediaDetailUrl');
+    inp.select();
+    document.execCommand('copy');
+    showToast('URL скопирован');
 }
 
 function saveMediaMeta(){
@@ -146,36 +193,67 @@ function saveMediaMeta(){
     fetch('/api/media/'+currentMediaId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         alt_text:document.getElementById('mediaDetailAlt').value,
         credit:document.getElementById('mediaDetailCredit').value
-    })}).then(r=>r.json()).then(res=>{
+    })}).then(function(r){return r.json()}).then(function(res){
         if(res.ok)showToast('Сохранено');else showToast('Ошибка');
         closeModal('mediaDetailModal');
-    }).catch(()=>showToast('Ошибка сети'));
+    }).catch(function(){showToast('Ошибка сети')});
 }
 
 function deleteMedia(){
     if(!currentMediaId||!confirm('Удалить файл?'))return;
-    fetch('/api/media/'+currentMediaId,{method:'DELETE'}).then(r=>r.json()).then(res=>{
-        if(res.ok){showToast('Удалено');closeModal('mediaDetailModal');setTimeout(()=>location.reload(),600)}
+    fetch('/api/media/'+currentMediaId,{method:'DELETE'}).then(function(r){return r.json()}).then(function(res){
+        if(res.ok){showToast('Удалено');closeModal('mediaDetailModal');setTimeout(function(){location.reload()},600)}
         else showToast('Ошибка');
-    }).catch(()=>showToast('Ошибка сети'));
+    }).catch(function(){showToast('Ошибка сети')});
 }
 
 function uploadFiles(files){
     if(!files.length)return;
-    var prog=document.getElementById('uploadProgress');
-    var fill=document.getElementById('progressFill');
-    var status=document.getElementById('uploadStatus');
-    prog.style.display='';
+    var list=document.getElementById('uploadProgressList');
+    list.style.display='';
+    list.innerHTML='';
     var done=0,total=files.length;
-    Array.from(files).forEach(function(file){
-        if(file.size>10*1024*1024){showToast('Файл '+file.name+' слишком большой (макс. 10 МБ)');done++;return}
-        var fd=new FormData();fd.append('file',file);
-        fetch('/api/media/upload',{method:'POST',body:fd}).then(r=>r.json()).then(function(res){
+    Array.from(files).forEach(function(file,idx){
+        // Create per-file progress row
+        var row=document.createElement('div');
+        row.className='upload-file-progress';
+        row.innerHTML='<span class="file-name">'+file.name+'</span><div class="progress-bar"><div class="progress-fill" id="pf_'+idx+'"></div></div><span class="file-status" id="ps_'+idx+'">0%</span>';
+        list.appendChild(row);
+
+        if(file.size>10*1024*1024){
+            row.classList.add('error');
+            document.getElementById('ps_'+idx).textContent='Слишком большой';
+            document.getElementById('pf_'+idx).style.width='100%';
             done++;
-            fill.style.width=Math.round(done/total*100)+'%';
-            status.textContent='Загружено '+done+' из '+total;
-            if(done===total){showToast('Загрузка завершена');setTimeout(()=>location.reload(),800)}
-        }).catch(function(){done++;status.textContent='Ошибка при загрузке '+file.name});
+            if(done===total)setTimeout(function(){location.reload()},1200);
+            return;
+        }
+        var fd=new FormData();fd.append('file',file);
+
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','/api/media/upload');
+        xhr.upload.addEventListener('progress',function(e){
+            if(e.lengthComputable){
+                var pct=Math.round(e.loaded/e.total*100);
+                document.getElementById('pf_'+idx).style.width=pct+'%';
+                document.getElementById('ps_'+idx).textContent=pct+'%';
+            }
+        });
+        xhr.addEventListener('load',function(){
+            done++;
+            row.classList.add('done');
+            document.getElementById('pf_'+idx).style.width='100%';
+            document.getElementById('ps_'+idx).textContent='Готово';
+            if(done===total){showToast('Загрузка завершена');setTimeout(function(){location.reload()},800)}
+        });
+        xhr.addEventListener('error',function(){
+            done++;
+            row.classList.add('error');
+            document.getElementById('pf_'+idx).style.width='100%';
+            document.getElementById('ps_'+idx).textContent='Ошибка';
+            if(done===total)setTimeout(function(){location.reload()},1200);
+        });
+        xhr.send(fd);
     });
 }
 

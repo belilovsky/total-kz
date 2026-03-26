@@ -674,15 +674,44 @@ def create_article(data: dict) -> int:
 
 
 def record_revision(article_id: int, changes: dict, revision_type: str = "edit", changed_by: str = "") -> None:
-    """Record a revision for an article."""
+    """Record a revision for an article, storing full article state as JSON."""
     with get_pg_session() as db:
+        # Get current full article state before saving
+        article = db.get(Article, article_id)
+        full_state = {}
+        if article:
+            for field in ("title", "excerpt", "sub_category", "author", "main_image",
+                          "body_html", "body_text", "status", "editor_note",
+                          "body_blocks", "scheduled_at", "focal_x", "focal_y",
+                          "image_credit", "assigned_to"):
+                val = getattr(article, field, None)
+                full_state[field] = val
+            full_state["tags"] = article.tags
+        revision_data = {"changes": changes, "full_state": full_state}
         rev = ArticleRevision(
             article_id=article_id,
             changed_by=changed_by,
-            changes_json=json.dumps(changes, ensure_ascii=False),
+            changes_json=json.dumps(revision_data, ensure_ascii=False),
             revision_type=revision_type,
         )
         db.add(rev)
+        db.flush()
+        # Limit to 20 revisions per article – delete oldest
+        count = db.scalar(
+            select(func.count()).select_from(ArticleRevision)
+            .where(ArticleRevision.article_id == article_id)
+        )
+        if count > 20:
+            oldest = db.execute(
+                select(ArticleRevision.id)
+                .where(ArticleRevision.article_id == article_id)
+                .order_by(ArticleRevision.changed_at.asc())
+                .limit(count - 20)
+            ).scalars().all()
+            if oldest:
+                db.execute(
+                    sa_delete(ArticleRevision).where(ArticleRevision.id.in_(oldest))
+                )
 
 
 def get_revisions(article_id: int, limit: int = 20) -> list:
@@ -696,14 +725,55 @@ def get_revisions(article_id: int, limit: int = 20) -> list:
         ).scalars().all()
         result = []
         for r in rows:
+            raw = json.loads(r.changes_json or "{}")
+            # Support both old format (flat changes) and new format (changes + full_state)
+            if "full_state" in raw:
+                changes = raw.get("changes", {})
+                has_full_state = True
+            else:
+                changes = raw
+                has_full_state = False
             d = {
                 "id": r.id, "article_id": r.article_id,
                 "changed_at": r.changed_at, "changed_by": r.changed_by,
                 "revision_type": r.revision_type,
-                "changes": json.loads(r.changes_json or "{}"),
+                "changes": changes,
+                "has_full_state": has_full_state,
             }
             result.append(d)
         return result
+
+
+def restore_revision(article_id: int, revision_id: int) -> bool:
+    """Restore an article to a previous revision's full state."""
+    with get_pg_session() as db:
+        rev = db.get(ArticleRevision, revision_id)
+        if not rev or rev.article_id != article_id:
+            return False
+        raw = json.loads(rev.changes_json or "{}")
+        full_state = raw.get("full_state")
+        if not full_state:
+            return False
+        article = db.get(Article, article_id)
+        if not article:
+            return False
+        allowed = {"title", "excerpt", "sub_category", "author", "main_image",
+                   "body_html", "body_text", "status", "editor_note",
+                   "body_blocks", "scheduled_at", "focal_x", "focal_y",
+                   "image_credit", "assigned_to"}
+        for field in allowed:
+            if field in full_state:
+                setattr(article, field, full_state[field])
+        if "tags" in full_state:
+            article.tags = full_state["tags"]
+        article.updated_at = datetime.now().isoformat(timespec="seconds")
+    # Invalidate caches
+    try:
+        from app import cache
+        cache.invalidate_all()
+    except Exception:
+        pass
+    return True
 
 
 def duplicate_article(article_id: int) -> int | None:
@@ -1429,7 +1499,7 @@ def _media_to_dict(m: Media) -> dict:
     }
 
 
-def get_all_media(q: str = "", page: int = 1, per_page: int = 30) -> dict:
+def get_all_media(q: str = "", page: int = 1, per_page: int = 30, sort: str = "newest", media_type: str = "") -> dict:
     with get_pg_session() as db:
         stmt = select(Media)
         count_q = select(func.count()).select_from(Media)
@@ -1440,10 +1510,24 @@ def get_all_media(q: str = "", page: int = 1, per_page: int = 30) -> dict:
             )
             stmt = stmt.where(cond)
             count_q = count_q.where(cond)
+        if media_type == "images":
+            img_cond = Media.mime_type.ilike("image/%")
+            stmt = stmt.where(img_cond)
+            count_q = count_q.where(img_cond)
+        elif media_type == "documents":
+            doc_cond = ~Media.mime_type.ilike("image/%")
+            stmt = stmt.where(doc_cond)
+            count_q = count_q.where(doc_cond)
         total = db.scalar(count_q)
+        if sort == "oldest":
+            order = Media.uploaded_at.asc()
+        elif sort == "largest":
+            order = Media.file_size.desc()
+        else:
+            order = Media.uploaded_at.desc()
         offset = (page - 1) * per_page
         rows = db.execute(
-            stmt.order_by(Media.uploaded_at.desc()).limit(per_page).offset(offset)
+            stmt.order_by(order).limit(per_page).offset(offset)
         ).scalars().all()
         return {
             "items": [_media_to_dict(m) for m in rows],
