@@ -689,12 +689,14 @@ async def homepage(request: Request):
         conn = _get_persons_db()
         homepage_persons = conn.execute("""
             SELECT p.slug, p.short_name, p.current_position, p.photo_url,
-                   COUNT(ae.article_id) as article_count
+                   COUNT(ae.article_id) as article_count,
+                   SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_count
             FROM persons p
             LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+            LEFT JOIN articles a ON ae.article_id = a.id
             WHERE p.photo_url IS NOT NULL AND p.photo_url != ''
             GROUP BY p.id
-            ORDER BY article_count DESC
+            ORDER BY recent_count DESC, article_count DESC
             LIMIT 12
         """).fetchall()
         conn.close()
@@ -1209,11 +1211,14 @@ async def llms_full_txt():
             ORDER BY cnt DESC
         """).fetchall()
         top_persons = conn.execute("""
-            SELECT p.short_name, p.slug, p.person_type, COUNT(ae.article_id) as cnt
+            SELECT p.short_name, p.slug, p.person_type,
+                   COUNT(ae.article_id) as cnt,
+                   SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_cnt
             FROM persons p
             LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+            LEFT JOIN articles a ON ae.article_id = a.id
             GROUP BY p.id
-            ORDER BY cnt DESC
+            ORDER BY recent_cnt DESC, cnt DESC
             LIMIT 20
         """).fetchall()
         total_articles = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
@@ -1670,16 +1675,19 @@ async def persons_catalog(request: Request, type: str = "", letter: str = ""):
         # Use LEFT JOIN only if article_entities exists
         if "article_entities" in tables:
             persons = conn.execute(f"""
-                SELECT p.*, COUNT(ae.article_id) as article_count
+                SELECT p.*,
+                       COUNT(ae.article_id) as article_count,
+                       SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_count
                 FROM persons p
                 LEFT JOIN article_entities ae ON p.entity_id = ae.entity_id
+                LEFT JOIN articles a ON ae.article_id = a.id
                 WHERE {where}
                 GROUP BY p.id
-                ORDER BY article_count DESC
+                ORDER BY recent_count DESC, article_count DESC
             """, params).fetchall()
         else:
             persons = conn.execute(f"""
-                SELECT p.*, 0 as article_count FROM persons p WHERE {where} ORDER BY p.short_name
+                SELECT p.*, 0 as article_count, 0 as recent_count FROM persons p WHERE {where} ORDER BY p.short_name
             """, params).fetchall()
 
         # Get type counts for filters

@@ -135,19 +135,22 @@ def main():
         CREATE INDEX IF NOT EXISTS idx_pp_person ON person_positions(person_id);
     """)
 
-    # Get top 150 persons by article count
+    # Get top 150 persons by recent mentions (last 90 days), then total
     top = conn.execute("""
-        SELECT e.id, e.name, e.short_name, COUNT(ae.article_id) as cnt
+        SELECT e.id, e.name, e.short_name,
+               COUNT(ae.article_id) as cnt,
+               SUM(CASE WHEN a.pub_date >= date('now', '-90 days') THEN 1 ELSE 0 END) as recent_cnt
         FROM entities e
         JOIN article_entities ae ON e.id = ae.entity_id
+        JOIN articles a ON ae.article_id = a.id
         WHERE e.entity_type = 'person'
         GROUP BY e.id
-        ORDER BY cnt DESC
+        ORDER BY recent_cnt DESC, cnt DESC
         LIMIT 150
     """).fetchall()
 
     inserted = 0
-    for eid, name, short, cnt in top:
+    for eid, name, short, cnt, recent_cnt in top:
         slug = make_slug(short or name)
         # Skip if already exists
         exists = conn.execute("SELECT id FROM persons WHERE entity_id = ?", (eid,)).fetchone()
@@ -184,7 +187,7 @@ def main():
                 VALUES (?, ?, ?, 0)
             """, (pid, info['pos'], info.get('org', '')))
 
-        print(f"  {cnt:4d} | {short or name} [{ptype}]")
+        print(f"  {cnt:4d} (recent:{recent_cnt:3d}) | {short or name} [{ptype}]")
 
     conn.commit()
 
