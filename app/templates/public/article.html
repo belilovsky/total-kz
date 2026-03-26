@@ -260,13 +260,7 @@
           </a>
         </div>
 
-        {# ── Reading time ── #}
-        {% if reading_time %}
-        <div class="sidebar-reading-time">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>{{ reading_time }} мин чтения</span>
-        </div>
-        {% endif %}
+
 
         {# ── TOC: most useful for navigation ── #}
         <nav class="article-toc" id="article-toc" aria-label="Оглавление">
@@ -320,9 +314,7 @@
             <svg class="bookmark-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>
           </button>
         </div>
-        {% if article.main_image %}
-        <a href="/stories/{{ category }}/{{ slug }}" class="sidebar-story-link">Story →</a>
-        {% endif %}
+
 
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
