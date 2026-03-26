@@ -785,7 +785,7 @@ async def category_page(
 ):
     """Category listing – handles both nav section slugs and legacy sub_category slugs."""
     try:
-        per_page = 20
+        per_page = 24
         offset = (page - 1) * per_page
 
         # Check if this is a grouped nav section
@@ -794,6 +794,7 @@ async def category_page(
             result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
         else:
             # Legacy: direct sub_category slug
+            subcats = [category]
             result = db.get_latest_by_category(category, limit=per_page, offset=offset)
     except Exception:
         logger.exception("Database error in category_page for %s", category)
@@ -807,6 +808,30 @@ async def category_page(
         }, status_code=404)
 
     articles_list = rewrite_articles_images(result["articles"])
+
+    # --- Subcategory pills (only for sections with >1 subcat) ---
+    subcategory_pills = []
+    current_section = None
+    for sec in NAV_SECTIONS:
+        if sec["slug"] == category:
+            current_section = sec
+            break
+    if current_section and len(current_section["subcats"]) > 1:
+        subcategory_pills = [
+            {"slug": sc, "label": cat_label(sc)}
+            for sc in current_section["subcats"]
+        ]
+
+    # --- Sidebar: popular articles & trending tags ---
+    try:
+        popular_articles = rewrite_articles_images(db.popular_in_category(subcats, limit=5))
+    except Exception:
+        popular_articles = []
+    try:
+        trending_tags = db.trending_tags_for_category(subcats, limit=15)
+    except Exception:
+        trending_tags = []
+
     return templates.TemplateResponse("public/category.html", {
         "request": request,
         "articles": articles_list,
@@ -818,6 +843,9 @@ async def category_page(
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         "ticker_articles": articles_list[:5],
+        "subcategory_pills": subcategory_pills,
+        "popular_articles": popular_articles,
+        "trending_tags": trending_tags,
     })
 
 

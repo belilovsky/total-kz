@@ -1050,6 +1050,46 @@ def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0)
         }
 
 
+def popular_in_category(subcats: list, limit: int = 5) -> list:
+    """Top articles by views in the given sub_categories."""
+    if not subcats:
+        return []
+    with get_pg_session() as db:
+        rows = db.execute(
+            select(
+                Article.id, Article.url, Article.title,
+                Article.pub_date, func.coalesce(Article.views, 0).label("views"),
+            )
+            .where(Article.sub_category.in_(subcats))
+            .order_by(func.coalesce(Article.views, 0).desc(), Article.pub_date.desc())
+            .limit(limit)
+        ).all()
+        keys = ["id", "url", "title", "pub_date", "views"]
+        return [_row_to_dict(r, keys) for r in rows]
+
+
+def trending_tags_for_category(subcats: list, limit: int = 15) -> list:
+    """Top tags from article_enrichments for articles in given sub_categories."""
+    if not subcats:
+        return []
+    with get_pg_session() as db:
+        rows = db.execute(
+            text("""
+                SELECT tag, COUNT(*) as cnt
+                FROM article_enrichments ae
+                JOIN articles a ON a.id = ae.article_id
+                CROSS JOIN LATERAL jsonb_array_elements_text(ae.keywords) AS tag
+                WHERE a.sub_category = ANY(:subcats)
+                  AND ae.keywords IS NOT NULL
+                GROUP BY tag
+                ORDER BY cnt DESC
+                LIMIT :lim
+            """),
+            {"subcats": subcats, "lim": limit}
+        ).all()
+        return [{"tag": r[0], "count": r[1]} for r in rows]
+
+
 def get_entity(entity_id: int) -> dict | None:
     """Get entity by ID."""
     with get_pg_session() as db:

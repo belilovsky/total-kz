@@ -49,7 +49,17 @@
     <span class="cat-page-count">{{ pluralize_articles(total) }}</span>
   </div>
 
-  <!-- ═══ TOP STORIES: featured grid 2+1+1+1 ═══ -->
+  {# ═══ SUBCATEGORY PILLS ═══ #}
+  {% if subcategory_pills %}
+  <nav class="cat2-pills" aria-label="Подкатегории">
+    <a href="/news/{{ category }}" class="cat2-pill cat2-pill--active">Все</a>
+    {% for pill in subcategory_pills %}
+    <a href="/news/{{ pill.slug }}" class="cat2-pill">{{ pill.label }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  {# ═══ TOP STORIES: featured grid 1 big + 3 small ═══ #}
   {% if articles|length > 0 %}
   <div class="cat-top">
     {% set main = articles[0] %}
@@ -76,6 +86,9 @@
       {% endif %}
       <div class="cat-top-card-body">
         <h3 class="cat-top-card-title">{{ art.title }}</h3>
+        {% if art.excerpt %}
+          <p class="cat2-top-excerpt">{{ art.excerpt[:100] }}{% if art.excerpt|length > 100 %}…{% endif %}</p>
+        {% endif %}
         <span class="cat-top-card-meta">{{ format_date_short(art.pub_date) }}</span>
       </div>
     </a>
@@ -83,37 +96,98 @@
   </div>
   {% endif %}
 
-  <!-- ═══ AD ═══ -->
+  {# ═══ AD ═══ #}
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="C1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  <!-- ═══ REMAINING ARTICLES + SIDEBAR ═══ -->
+  {# ═══ CARD GRID + SIDEBAR ═══ #}
   {% if articles|length > 4 %}
-  <div class="cat-content">
-    <div class="cat-feed">
+  <div class="cat2-layout">
+    <div class="cat2-grid">
       {% for art in articles[4:] %}
-      <article class="cat-feed-item">
-        {% if art.main_image or art.thumbnail %}
-        <div class="cat-feed-thumb">
-          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 300) }}" alt="{{ art.title }}" loading="lazy">
-        </div>
+        {% set pos = loop.index %}
+        {% if pos % 8 == 0 %}
+        {# ── Featured card (every 8th) ── #}
+        <article class="cat2-card cat2-card--featured">
+          <a href="{{ article_url(art) }}" class="cat2-card-link cat2-card-link--featured">
+            {% if art.main_image or art.thumbnail %}
+            <div class="cat2-card-img cat2-card-img--featured">
+              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 800) }}" alt="{{ art.title }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="cat2-card-body cat2-card-body--featured">
+              <div class="cat2-card-meta">
+                <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(art.sub_category) }}">
+                  <span class="cat-dot"></span>
+                  <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+                </span>
+                <span class="meta-sep">·</span>
+                <span>{{ format_date_short(art.pub_date) }}</span>
+              </div>
+              <h3 class="cat2-card-title cat2-card-title--featured">{{ art.title }}</h3>
+              {% if art.excerpt %}
+                <p class="cat2-card-excerpt cat2-card-excerpt--featured">{{ art.excerpt[:200] }}{% if art.excerpt|length > 200 %}…{% endif %}</p>
+              {% endif %}
+            </div>
+          </a>
+        </article>
         {% else %}
-        <div class="cat-feed-thumb cat-feed-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+        {# ── Regular card ── #}
+        <article class="cat2-card">
+          <a href="{{ article_url(art) }}" class="cat2-card-link">
+            {% if art.main_image or art.thumbnail %}
+            <div class="cat2-card-img">
+              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 480) }}" alt="{{ art.title }}" loading="lazy">
+            </div>
+            {% else %}
+            <div class="cat2-card-img cat2-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+            {% endif %}
+            <div class="cat2-card-body">
+              <div class="cat2-card-meta">
+                <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(art.sub_category) }}">
+                  <span class="cat-dot"></span>
+                  <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
+                </span>
+                <span class="meta-sep">·</span>
+                <span>{{ format_date_short(art.pub_date) }}</span>
+              </div>
+              <h3 class="cat2-card-title">{{ art.title }}</h3>
+              {% if art.excerpt %}
+                <p class="cat2-card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
+              {% endif %}
+            </div>
+          </a>
+        </article>
         {% endif %}
-        <div class="cat-feed-body">
-          <div class="cat-feed-meta">
-            <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(art.sub_category) }}">
-              <span class="cat-dot"></span>
-              <span class="cat-name">{{ cat_label(art.sub_category) }}</span>
-            </span>
-            <span class="meta-sep">·</span>
-            <span>{{ format_date_short(art.pub_date) }}</span>
-          </div>
-          <h3 class="cat-feed-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
-        </div>
-      </article>
       {% endfor %}
     </div>
-    <aside class="cat-sidebar">
+
+    {# ═══ SIDEBAR ═══ #}
+    <aside class="cat2-sidebar">
+      {% if popular_articles %}
+      <div class="cat2-sb-block">
+        <h4 class="cat2-sb-title">Популярное в разделе</h4>
+        <ol class="cat2-sb-popular">
+          {% for pa in popular_articles %}
+          <li class="cat2-sb-popular-item">
+            <span class="cat2-sb-num">{{ loop.index }}</span>
+            <a href="{{ article_url(pa) }}" class="cat2-sb-popular-link">{{ pa.title }}</a>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+
+      {% if trending_tags %}
+      <div class="cat2-sb-block">
+        <h4 class="cat2-sb-title">Теги</h4>
+        <div class="cat2-sb-tags">
+          {% for t in trending_tags %}
+          <a href="/tag/{{ t.tag|urlencode }}" class="tag-pill">{{ t.tag }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <div class="ad-placeholder ad-sidebar" data-ad-slot="C2" data-ad-size="300x250" aria-hidden="true">Реклама</div>
     </aside>
   </div>
