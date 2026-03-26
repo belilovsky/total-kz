@@ -9,7 +9,6 @@
   <!-- ═══ HERO GRID ═══ -->
   {% if hero_articles %}
   <div class="hero-grid">
-    {# Main story — first article #}
     {% set main = hero_articles[0] %}
     <a href="{{ article_url(main) }}" class="hero-main">
       {% if main.main_image or main.thumbnail %}
@@ -29,8 +28,6 @@
         <span class="hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
       </div>
     </a>
-
-    {# Side stories — articles 2-5 #}
     <div class="hero-side">
       {% for hero in hero_articles[1:5] %}
       <a href="{{ article_url(hero) }}" class="hero-side-item">
@@ -58,52 +55,6 @@
   <!-- ═══ AD: AFTER HERO ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="H1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  <!-- ═══ KEY PERSONS STRIP ═══ -->
-  {% if homepage_persons %}
-  <section class="persons-strip">
-    <div class="section-header">
-      <h2 class="section-title">Ключевые персоны</h2>
-      <a href="/persons" class="section-more">Все →</a>
-    </div>
-    <div class="persons-strip-scroll">
-      {% for p in homepage_persons %}
-      <a href="/person/{{ p.slug }}" class="persons-strip-card">
-        {% if p.photo_url %}
-        <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
-             alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
-        {% else %}
-        <div class="persons-strip-photo persons-strip-photo--ph">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        {% endif %}
-        <span class="persons-strip-name">{{ p.short_name }}</span>
-        {% if p.current_position %}
-        <span class="persons-strip-pos">{{ p.current_position }}</span>
-        {% endif %}
-        <span class="persons-strip-count">{{ pluralize_materials(p.article_count) }}</span>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {# ── Trending tags — single horizontal row ── #}
-  {% if trending_tags %}
-  <section class="trending-tags-strip">
-    <div class="section-header">
-      <h2 class="section-title">Тренды</h2>
-      <a href="/search" class="section-more">Поиск →</a>
-    </div>
-    <div class="trending-tags-row">
-      {% for t in trending_tags[:15] %}
-      <a href="/tag/{{ t.tag }}" class="trending-pill">{{ t.tag }}</a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
   <!-- ═══ CATEGORY SHELVES (top 3 categories) ═══ -->
   {% if category_highlights %}
   <div class="category-shelves">
@@ -130,6 +81,37 @@
     </section>
     {% endfor %}
   </div>
+  {% endif %}
+
+  <!-- ═══ KEY PERSONS STRIP ═══ -->
+  {% if homepage_persons %}
+  <section class="persons-strip">
+    <div class="section-header">
+      <h2 class="section-title">Ключевые персоны</h2>
+      <a href="/persons" class="section-more">Все →</a>
+    </div>
+    <div class="persons-strip-scroll">
+      {% for p in homepage_persons %}
+      <a href="/person/{{ p.slug }}" class="persons-strip-card">
+        {% if p.photo_url %}
+        <img src="{% if p.photo_url.startswith(/) %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
+             alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
+        {% else %}
+        <div class="persons-strip-photo persons-strip-photo--ph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        {% endif %}
+        <span class="persons-strip-name">{{ p.short_name }}</span>
+        {% if p.current_position %}
+        <span class="persons-strip-pos">{{ p.current_position }}</span>
+        {% endif %}
+        <span class="persons-strip-count">{{ pluralize_materials(p.article_count) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
   {% endif %}
 
   <!-- ═══ FEED: LATEST + POPULAR SIDEBAR ═══ -->
@@ -184,6 +166,15 @@
         {% endfor %}
       </ol>
     </aside>
+  </div>
+  {% endif %}
+
+  <!-- ═══ TRENDING TAGS (no header, no border) ═══ -->
+  {% if trending_tags %}
+  <div class="trending-tags-row" style="padding:var(--space-6) 0 var(--space-8);">
+    {% for t in trending_tags[:15] %}
+    <a href="/tag/{{ t.tag }}" class="trending-pill">{{ t.tag }}</a>
+    {% endfor %}
   </div>
   {% endif %}
 
