@@ -51,12 +51,14 @@
 
   {# ═══ SUBCATEGORY PILLS ═══ #}
   {% if subcategory_pills %}
+  <div class="cat2-pills-wrap">
   <nav class="cat2-pills" aria-label="Подкатегории">
     <a href="/news/{{ category }}" class="cat2-pill cat2-pill--active">Все</a>
     {% for pill in subcategory_pills %}
     <a href="/news/{{ pill.slug }}" class="cat2-pill">{{ pill.label }}</a>
     {% endfor %}
   </nav>
+  </div>
   {% endif %}
 
   {# ═══ TOP STORIES: featured grid 1 big + 3 small ═══ #}

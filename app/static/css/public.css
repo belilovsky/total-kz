@@ -3905,3 +3905,130 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   :root:not([data-theme]) .cat2-sb-block { background:var(--surface-1); border-color:var(--border); }
   :root:not([data-theme]) .cat2-pill { background:var(--surface-1); border-color:var(--border); }
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE FIXES v14.0
+   ═══════════════════════════════════════════════ */
+
+/* ── FIX 1: Share bar overlapping article text on mobile ── */
+@media (max-width:768px) {
+  .floating-share { display:none !important; }
+  .mobile-share-bar {
+    position:fixed; bottom:56px; left:0; right:0; z-index:90;
+    padding:var(--space-2) var(--space-3);
+  }
+  .share-buttons {
+    position:static !important;
+    display:flex; align-items:center; gap:var(--space-2);
+    justify-content:center; flex-wrap:wrap;
+    padding:var(--space-3) 0;
+    border-top:1px solid var(--border-light);
+    border-bottom:1px solid var(--border-light);
+    margin:var(--space-4) 0;
+  }
+}
+
+/* ── FIX 2: Related articles ("ЧИТАЙТЕ ТАКЖЕ") visibility ── */
+/* Ensure related items are not stuck at opacity:0 */
+.related-item.will-animate {
+  animation: related-fallback-show 0s 1.5s forwards;
+}
+@keyframes related-fallback-show {
+  to { opacity:1; transform:translateY(0); }
+}
+.related-item.visible { animation:none; }
+/* Ensure related content renders */
+.related-thumb--ph {
+  display:flex; align-items:center; justify-content:center;
+  background:var(--surface-3); color:var(--text-faint);
+  font-size:var(--text-xs); text-transform:uppercase;
+}
+
+/* ── FIX 3: Collapse empty ad placeholders ── */
+@media (max-width:768px) {
+  .ad-placeholder {
+    display:none !important;
+    height:0 !important; min-height:0 !important;
+    margin:0 !important; padding:0 !important;
+  }
+}
+.ad-placeholder:not(.ad-loaded) {
+  display:none !important;
+}
+
+/* ── FIX 4: Back-to-top button too large on mobile ── */
+@media (max-width:768px) {
+  .back-to-top {
+    width:36px; height:36px;
+    bottom:70px; right:12px;
+  }
+  .back-to-top svg {
+    width:14px; height:14px;
+  }
+}
+
+/* ── FIX 5: Currency ticker scroll affordance ── */
+@media (max-width:767px) {
+  .currency-strip {
+    position:relative;
+  }
+  .currency-strip::after {
+    content:'';
+    position:absolute; top:0; right:0; bottom:0;
+    width:32px;
+    background:linear-gradient(to left, var(--surface) 30%, transparent);
+    pointer-events:none;
+    z-index:2;
+  }
+}
+
+/* ── FIX 6: Subcategory pills scroll affordance ── */
+.cat2-pills {
+  position:relative;
+}
+@media (max-width:768px) {
+  .cat2-pills-wrap {
+    position:relative;
+  }
+  .cat2-pills-wrap::after {
+    content:'';
+    position:absolute; top:0; right:0; bottom:0;
+    width:40px;
+    background:linear-gradient(to left, var(--surface) 30%, transparent);
+    pointer-events:none;
+    z-index:2;
+  }
+}
+
+/* ── FIX 7: Persons carousel text — allow wrapping ── */
+@media (max-width:640px) {
+  .persons-strip-name {
+    font-size:0.7rem;
+    -webkit-line-clamp:2;
+    word-break:break-word;
+  }
+  .persons-strip-pos {
+    font-size:0.6rem;
+    -webkit-line-clamp:2;
+    word-break:break-word;
+  }
+  .persons-strip-count {
+    font-size:0.6rem;
+  }
+  .persons-strip-card {
+    min-width:85px; max-width:90px;
+  }
+}
+
+/* ── FIX 8: Related article card color consistency ── */
+.related-item .related-title,
+.related-item:visited .related-title,
+.related-item:link .related-title {
+  color:var(--text);
+}
+.related-item:hover .related-title {
+  color:var(--accent);
+}
+a.related-item:visited .related-title {
+  color:var(--text);
+}
