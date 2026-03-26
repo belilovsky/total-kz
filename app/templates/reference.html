@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% set active = "reference" %}
+
+{% block title %}Справочники – Total.kz{% endblock %}
+{% block page_title %}Справочники{% endblock %}
+
+{% block content %}
+<!-- Tab navigation -->
+<div class="ref-tabs">
+    <a href="/admin/reference?tab=categories" class="ref-tab {% if tab == 'categories' %}active{% endif %}">Категории <span class="ref-tab-count">{{ categories|length }}</span></a>
+    <a href="/admin/reference?tab=authors" class="ref-tab {% if tab == 'authors' %}active{% endif %}">Авторы <span class="ref-tab-count">{{ authors|length }}</span></a>
+    <a href="/admin/reference?tab=tags" class="ref-tab {% if tab == 'tags' %}active{% endif %}">Теги <span class="ref-tab-count">{{ tags_result['total']|format_num }}</span></a>
+    <a href="/admin/reference?tab=entities" class="ref-tab {% if tab == 'entities' %}active{% endif %}">Сущности <span class="ref-tab-count">{{ entities_result['total']|format_num }}</span></a>
+</div>
+
+<!-- ===== CATEGORIES TAB ===== -->
+{% if tab == 'categories' %}
+<div class="ref-toolbar">
+    <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="catSearch" placeholder="Поиск категорий..." oninput="filterTable('catSearch','catTableBody','catCount')">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('createCatModal')">+ Добавить</button>
+</div>
+<div class="results-info" style="margin-bottom:8px">Найдено: <strong id="catCount">{{ categories|length }}</strong></div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead><tr><th style="width:40px">#</th><th>Название</th><th>Slug</th><th>Родитель</th><th>Статей</th><th>Статус</th><th></th></tr></thead>
+            <tbody id="catTableBody">
+                {% for cat in categories %}
+                <tr data-id="{{ cat.id }}">
+                    <td style="color:var(--text-muted)">{{ cat.sort_order }}</td>
+                    <td><span class="editable-text" data-field="name_ru" data-id="{{ cat.id }}" onclick="startCatInlineEdit(this)">{{ cat.name_ru }}</span></td>
+                    <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">{{ cat.slug }}</td>
+                    <td>{% if cat.parent_id %}{% for p in categories if p.id == cat.parent_id %}{{ p.name_ru }}{% endfor %}{% else %}—{% endif %}</td>
+                    <td><a href="/admin/articles?category={{ cat.slug }}" class="link-subtle">{{ format_num(cat.live_count) }}</a></td>
+                    <td>{% if cat.is_active %}<span class="status-badge status-published">Активна</span>{% else %}<span class="status-badge status-archived">Скрыта</span>{% endif %}</td>
+                    <td><div class="row-actions">
+                        <button class="btn-icon" onclick="editCat({{ cat.id }},'{{ cat.slug }}','{{ cat.name_ru }}','{{ cat.name_kz or '' }}',{{ cat.parent_id or 'null' }},{{ cat.sort_order }},{{ cat.is_active }})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="btn-icon btn-icon-danger" onclick="deleteCat({{ cat.id }},'{{ cat.name_ru }}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                    </div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Category Modal -->
+<div class="modal-overlay" id="createCatModal" onclick="if(event.target===this)closeModal('createCatModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новая категория</h3><button class="btn-icon" onclick="closeModal('createCatModal')">&times;</button></div>
+        <form onsubmit="return createCat(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Название (рус)</label><input type="text" id="newCatName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="newCatSlug" required pattern="[a-z0-9_-]+"></div>
+                <div class="form-group"><label>Название (каз)</label><input type="text" id="newCatNameKz"></div>
+                <div class="form-group"><label>Родительская</label><select id="newCatParent" class="filter-select"><option value="">— Нет —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name_ru }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Порядок</label><input type="number" id="newCatSort" value="0"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('createCatModal')">Отмена</button><button type="submit" class="btn btn-primary">Создать</button></div>
+        </form>
+    </div>
+</div>
+<!-- Edit Category Modal -->
+<div class="modal-overlay" id="editCatModal" onclick="if(event.target===this)closeModal('editCatModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Редактировать категорию</h3><button class="btn-icon" onclick="closeModal('editCatModal')">&times;</button></div>
+        <form onsubmit="return saveCat(event)">
+            <input type="hidden" id="editCatId">
+            <div class="modal-body">
+                <div class="form-group"><label>Название (рус)</label><input type="text" id="editCatName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="editCatSlug" required pattern="[a-z0-9_-]+"></div>
+                <div class="form-group"><label>Название (каз)</label><input type="text" id="editCatNameKz"></div>
+                <div class="form-group"><label>Родительская</label><select id="editCatParent" class="filter-select"><option value="">— Нет —</option>{% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name_ru }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Порядок</label><input type="number" id="editCatSort" value="0"></div>
+                <div class="form-group"><label><input type="checkbox" id="editCatActive"> Активна</label></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('editCatModal')">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== AUTHORS TAB ===== -->
+{% if tab == 'authors' %}
+<div class="ref-toolbar">
+    <form method="get" action="/admin/reference" class="filters-form" style="flex:1;display:flex;gap:8px;align-items:center">
+        <input type="hidden" name="tab" value="authors">
+        <div class="search-box" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="q" value="{{ q }}" placeholder="Поиск авторов...">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+        {% if q %}<a href="/admin/reference?tab=authors" class="btn btn-ghost btn-sm">Сброс</a>{% endif %}
+    </form>
+    <button class="btn btn-primary btn-sm" onclick="openModal('createAuthorModal')">+ Добавить</button>
+</div>
+<div class="results-info" style="margin-bottom:8px">Авторов: <strong>{{ authors|length }}</strong></div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead><tr><th>Автор</th><th>Статей</th><th>Последняя</th><th></th></tr></thead>
+            <tbody>
+                {% for a in authors %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="author-avatar-sm">{% if a.avatar_url %}<img src="{{ a.avatar_url }}" alt="">{% else %}{{ a.name[0]|upper }}{% endif %}</div>
+                            <div>
+                                <strong>{{ a.name }}</strong>
+                                {% if a.bio %}<div style="font-size:12px;color:var(--text-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.bio[:60] }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td><a href="/admin/articles?author={{ a.name|urlencode }}" class="link-subtle">{{ format_num(a.live_count) }}</a></td>
+                    <td style="color:var(--text-muted);font-size:13px">{{ a.last_published[:10] if a.last_published else '—' }}</td>
+                    <td><div class="row-actions">
+                        <button class="btn-icon" onclick="editAuthor({{ a.id }},'{{ a.name|e }}','{{ a.slug }}','{{ a.bio|e }}','{{ a.avatar_url|e }}','{{ a.email|e }}',{{ a.is_active }})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="btn-icon btn-icon-danger" onclick="deleteAuthor({{ a.id }},'{{ a.name|e }}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                    </div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if not authors %}
+<div class="empty-state"><h3>Авторов не найдено</h3></div>
+{% endif %}
+
+<!-- Create Author Modal -->
+<div class="modal-overlay" id="createAuthorModal" onclick="if(event.target===this)closeModal('createAuthorModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новый автор</h3><button class="btn-icon" onclick="closeModal('createAuthorModal')">&times;</button></div>
+        <form onsubmit="return createAuthor(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="newAuthorName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="newAuthorSlug" required></div>
+                <div class="form-group"><label>Био</label><textarea id="newAuthorBio" rows="2" class="filter-input" style="width:100%"></textarea></div>
+                <div class="form-group"><label>Email</label><input type="email" id="newAuthorEmail"></div>
+                <div class="form-group"><label>URL аватара</label><input type="text" id="newAuthorAvatar"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('createAuthorModal')">Отмена</button><button type="submit" class="btn btn-primary">Создать</button></div>
+        </form>
+    </div>
+</div>
+<!-- Edit Author Modal -->
+<div class="modal-overlay" id="editAuthorModal" onclick="if(event.target===this)closeModal('editAuthorModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Редактировать автора</h3><button class="btn-icon" onclick="closeModal('editAuthorModal')">&times;</button></div>
+        <form onsubmit="return saveAuthor(event)">
+            <input type="hidden" id="editAuthorId">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="editAuthorName" required></div>
+                <div class="form-group"><label>Slug</label><input type="text" id="editAuthorSlug" required></div>
+                <div class="form-group"><label>Био</label><textarea id="editAuthorBio" rows="2" class="filter-input" style="width:100%"></textarea></div>
+                <div class="form-group"><label>Email</label><input type="email" id="editAuthorEmail"></div>
+                <div class="form-group"><label>URL аватара</label><input type="text" id="editAuthorAvatar"></div>
+                <div class="form-group"><label><input type="checkbox" id="editAuthorActive"> Активен</label></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('editAuthorModal')">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== TAGS TAB ===== -->
+{% if tab == 'tags' %}
+<div class="ref-toolbar">
+    <form method="get" action="/admin/reference" class="filters-form" style="flex:1;display:flex;gap:8px;align-items:center">
+        <input type="hidden" name="tab" value="tags">
+        <div class="search-box" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="q" value="{{ q }}" placeholder="Поиск тегов...">
+        </div>
+        <select name="min_articles" class="filter-select" style="width:auto">
+            <option value="50" {% if min_articles == 50 %}selected{% endif %}>50+ статей</option>
+            <option value="10" {% if min_articles == 10 %}selected{% endif %}>10+ статей</option>
+            <option value="100" {% if min_articles == 100 %}selected{% endif %}>100+ статей</option>
+            <option value="500" {% if min_articles == 500 %}selected{% endif %}>500+ статей</option>
+            <option value="0" {% if min_articles == 0 %}selected{% endif %}>Все теги</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+        {% if q or min_articles != 50 %}<a href="/admin/reference?tab=tags" class="btn btn-ghost btn-sm">Сброс</a>{% endif %}
+    </form>
+    <button class="btn btn-primary btn-sm" onclick="openModal('createTagModal')">+ Добавить</button>
+</div>
+<div class="results-info" style="margin-bottom:8px">
+    Тегов: <strong>{{ format_num(tags_result['total']) }}</strong>
+    {% if tags_result['pages'] > 1 %} · Страница {{ tags_result['page'] }} из {{ tags_result['pages'] }}{% endif %}
+</div>
+
+<div class="bulk-bar" id="bulkBar" style="display:none">
+    <span id="bulkCount">Выбрано: 0</span>
+    <button class="btn btn-sm btn-ghost" onclick="mergeSelectedTags()">Объединить</button>
+    <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="deleteSelectedTags()">Удалить</button>
+    <button class="btn btn-sm btn-ghost" onclick="clearTagSelection()">Отмена</button>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead><tr><th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAllTags(this)"></th><th>Тег</th><th>Статей</th><th></th></tr></thead>
+            <tbody>
+                {% for tag in tags_result['items'] %}
+                <tr>
+                    <td><input type="checkbox" class="tag-checkbox" value="{{ tag.tag }}" onchange="updateTagBulkBar()"></td>
+                    <td><span class="editable-text" data-tag="{{ tag.tag }}" onclick="startTagEdit(this)">{{ tag.tag }}</span></td>
+                    <td><a href="/admin/articles?tag={{ tag.tag|urlencode }}" class="link-subtle">{{ format_num(tag.article_count) }}</a></td>
+                    <td><div class="row-actions"><button class="btn-icon btn-icon-danger" onclick="deleteTag('{{ tag.tag|e }}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if tags_result['pages'] > 1 %}
+<div class="pagination">
+    {% set base_url = "/admin/reference?tab=tags&q=" + q|urlencode + "&min_articles=" + min_articles|string %}
+    {% if tags_result['page'] > 1 %}<a href="{{ base_url }}&page={{ tags_result['page'] - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
+    {% set start_page = [1, tags_result['page'] - 3]|max %}
+    {% set end_page = [tags_result['pages'], tags_result['page'] + 3]|min %}
+    {% if start_page > 1 %}<a href="{{ base_url }}&page=1" class="page-link">1</a>{% if start_page > 2 %}<span class="page-dots">...</span>{% endif %}{% endif %}
+    {% for p in range(start_page, end_page + 1) %}<a href="{{ base_url }}&page={{ p }}" class="page-link {% if p == tags_result['page'] %}active{% endif %}">{{ p }}</a>{% endfor %}
+    {% if end_page < tags_result['pages'] %}{% if end_page < tags_result['pages'] - 1 %}<span class="page-dots">...</span>{% endif %}<a href="{{ base_url }}&page={{ tags_result['pages'] }}" class="page-link">{{ tags_result['pages'] }}</a>{% endif %}
+    {% if tags_result['page'] < tags_result['pages'] %}<a href="{{ base_url }}&page={{ tags_result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
+</div>
+{% endif %}
+
+<!-- Create Tag Modal -->
+<div class="modal-overlay" id="createTagModal" onclick="if(event.target===this)closeModal('createTagModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новый тег</h3><button class="btn-icon" onclick="closeModal('createTagModal')">&times;</button></div>
+        <form onsubmit="return createTag(event)">
+            <div class="modal-body"><div class="form-group"><label>Название</label><input type="text" id="newTagName" required placeholder="Введите название тега"></div></div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('createTagModal')">Отмена</button><button type="submit" class="btn btn-primary">Создать</button></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== ENTITIES TAB ===== -->
+{% if tab == 'entities' %}
+<div class="ref-toolbar">
+    <form method="get" action="/admin/reference" class="filters-form" style="flex:1;display:flex;gap:8px;align-items:center">
+        <input type="hidden" name="tab" value="entities">
+        <div class="search-box" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="q" value="{{ q }}" placeholder="Поиск сущностей...">
+        </div>
+        <select name="entity_type" class="filter-select" style="width:auto">
+            <option value="">Все типы</option>
+            <option value="person" {% if entity_type == 'person' %}selected{% endif %}>Персоны</option>
+            <option value="org" {% if entity_type == 'org' %}selected{% endif %}>Организации</option>
+            <option value="location" {% if entity_type == 'location' %}selected{% endif %}>Локации</option>
+            <option value="event" {% if entity_type == 'event' %}selected{% endif %}>События</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Найти</button>
+        {% if q or entity_type %}<a href="/admin/reference?tab=entities" class="btn btn-ghost btn-sm">Сброс</a>{% endif %}
+    </form>
+    <button class="btn btn-primary btn-sm" onclick="openModal('createEntityModal')">+ Добавить</button>
+</div>
+<div class="results-info" style="margin-bottom:8px">
+    Сущностей: <strong>{{ format_num(entities_result['total']) }}</strong>
+    {% if entities_result['pages'] > 1 %} · Страница {{ entities_result['page'] }} из {{ entities_result['pages'] }}{% endif %}
+</div>
+
+<div class="bulk-bar" id="entBulkBar" style="display:none">
+    <span id="entBulkCount">Выбрано: 0</span>
+    <button class="btn btn-sm btn-ghost" onclick="mergeSelectedEntities()">Объединить</button>
+    <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="deleteSelectedEntities()">Удалить</button>
+    <button class="btn btn-sm btn-ghost" onclick="clearEntSelection()">Отмена</button>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead><tr><th style="width:40px"><input type="checkbox" id="entSelectAll" onchange="toggleSelectAllEnts(this)"></th><th>Имя</th><th>Тип</th><th>Статей</th><th></th></tr></thead>
+            <tbody>
+                {% for ent in entities_result['items'] %}
+                <tr>
+                    <td><input type="checkbox" class="ent-checkbox" value="{{ ent.id }}" onchange="updateEntBulkBar()"></td>
+                    <td><strong>{{ ent.name }}</strong>{% if ent.short_name %}<span style="color:var(--text-muted);font-size:12px"> ({{ ent.short_name }})</span>{% endif %}</td>
+                    <td><span class="badge badge-entity-{{ ent.entity_type }}">{% if ent.entity_type == 'person' %}Персона{% elif ent.entity_type == 'org' %}Организация{% elif ent.entity_type == 'location' %}Локация{% elif ent.entity_type == 'event' %}Событие{% else %}{{ ent.entity_type }}{% endif %}</span></td>
+                    <td><a href="/admin/articles?entity_id={{ ent.id }}" class="link-subtle">{{ format_num(ent.article_count) }}</a></td>
+                    <td><div class="row-actions">
+                        <button class="btn-icon" onclick="editEntity({{ ent.id }},'{{ ent.name|e }}','{{ ent.short_name|default('',true)|e }}','{{ ent.entity_type }}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button class="btn-icon btn-icon-danger" onclick="deleteEntity({{ ent.id }},'{{ ent.name|e }}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                    </div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if entities_result['pages'] > 1 %}
+<div class="pagination">
+    {% set base = "/admin/reference?tab=entities&q=" + q|urlencode + "&entity_type=" + entity_type %}
+    {% if entities_result['page'] > 1 %}<a href="{{ base }}&page={{ entities_result['page'] - 1 }}" class="page-link">&larr; Назад</a>{% endif %}
+    {% set start_page = [1, entities_result['page'] - 3]|max %}
+    {% set end_page = [entities_result['pages'], entities_result['page'] + 3]|min %}
+    {% if start_page > 1 %}<a href="{{ base }}&page=1" class="page-link">1</a>{% if start_page > 2 %}<span class="page-dots">...</span>{% endif %}{% endif %}
+    {% for p in range(start_page, end_page + 1) %}<a href="{{ base }}&page={{ p }}" class="page-link {% if p == entities_result['page'] %}active{% endif %}">{{ p }}</a>{% endfor %}
+    {% if end_page < entities_result['pages'] %}{% if end_page < entities_result['pages'] - 1 %}<span class="page-dots">...</span>{% endif %}<a href="{{ base }}&page={{ entities_result['pages'] }}" class="page-link">{{ entities_result['pages'] }}</a>{% endif %}
+    {% if entities_result['page'] < entities_result['pages'] %}<a href="{{ base }}&page={{ entities_result['page'] + 1 }}" class="page-link">Вперёд &rarr;</a>{% endif %}
+</div>
+{% endif %}
+
+<!-- Create Entity Modal -->
+<div class="modal-overlay" id="createEntityModal" onclick="if(event.target===this)closeModal('createEntityModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Новая сущность</h3><button class="btn-icon" onclick="closeModal('createEntityModal')">&times;</button></div>
+        <form onsubmit="return createEntity(event)">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="newEntName" required></div>
+                <div class="form-group"><label>Краткое имя</label><input type="text" id="newEntShort"></div>
+                <div class="form-group"><label>Тип</label><select id="newEntType" class="filter-select" required><option value="person">Персона</option><option value="org">Организация</option><option value="location">Локация</option><option value="event">Событие</option></select></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('createEntityModal')">Отмена</button><button type="submit" class="btn btn-primary">Создать</button></div>
+        </form>
+    </div>
+</div>
+<!-- Edit Entity Modal -->
+<div class="modal-overlay" id="editEntityModal" onclick="if(event.target===this)closeModal('editEntityModal')">
+    <div class="modal">
+        <div class="modal-header"><h3>Редактировать сущность</h3><button class="btn-icon" onclick="closeModal('editEntityModal')">&times;</button></div>
+        <form onsubmit="return saveEntity(event)">
+            <input type="hidden" id="editEntId">
+            <div class="modal-body">
+                <div class="form-group"><label>Имя</label><input type="text" id="editEntName" required></div>
+                <div class="form-group"><label>Краткое имя</label><input type="text" id="editEntShort"></div>
+                <div class="form-group"><label>Тип</label><select id="editEntType" class="filter-select" required><option value="person">Персона</option><option value="org">Организация</option><option value="location">Локация</option><option value="event">Событие</option></select></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('editEntityModal')">Отмена</button><button type="submit" class="btn btn-primary">Сохранить</button></div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function filterTable(searchId,bodyId,countId){
+    var q=document.getElementById(searchId).value.toLowerCase();
+    var rows=document.querySelectorAll('#'+bodyId+' tr');
+    var v=0;rows.forEach(function(r){var s=!q||r.textContent.toLowerCase().indexOf(q)!==-1;r.style.display=s?'':'none';if(s)v++});
+    document.getElementById(countId).textContent=v;
+}
+
+/* --- Categories --- */
+function startCatInlineEdit(el){
+    var old=el.textContent.trim();var inp=document.createElement('input');inp.type='text';inp.value=old;inp.className='inline-edit-input';
+    inp.onblur=function(){if(inp.value.trim()&&inp.value.trim()!==old){var id=el.dataset.id;fetch('/api/category/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name_ru:inp.value.trim()})}).then(r=>r.json()).then(res=>{if(res.ok){el.textContent=inp.value.trim();showToast('Сохранено')}else{el.textContent=old;showToast('Ошибка')}})}else el.textContent=old;el.style.display=''};
+    inp.onkeydown=function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=old;inp.blur()}};
+    el.style.display='none';el.parentNode.insertBefore(inp,el.nextSibling);inp.focus();inp.select();
+}
+function createCat(e){e.preventDefault();var p=document.getElementById('newCatParent').value;fetch('/api/category',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name_ru:document.getElementById('newCatName').value,slug:document.getElementById('newCatSlug').value,name_kz:document.getElementById('newCatNameKz').value,parent_id:p?parseInt(p):null,sort_order:parseInt(document.getElementById('newCatSort').value)||0})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Создано');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function editCat(id,slug,name,nameKz,parentId,sortOrder,isActive){document.getElementById('editCatId').value=id;document.getElementById('editCatName').value=name;document.getElementById('editCatSlug').value=slug;document.getElementById('editCatNameKz').value=nameKz;document.getElementById('editCatParent').value=parentId||'';document.getElementById('editCatSort').value=sortOrder;document.getElementById('editCatActive').checked=!!isActive;openModal('editCatModal')}
+function saveCat(e){e.preventDefault();var id=document.getElementById('editCatId').value;var p=document.getElementById('editCatParent').value;fetch('/api/category/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name_ru:document.getElementById('editCatName').value,slug:document.getElementById('editCatSlug').value,name_kz:document.getElementById('editCatNameKz').value,parent_id:p?parseInt(p):null,sort_order:parseInt(document.getElementById('editCatSort').value)||0,is_active:document.getElementById('editCatActive').checked?1:0})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function deleteCat(id,name){if(!confirm('Удалить категорию «'+name+'»?'))return;fetch('/api/category/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+
+/* --- Authors --- */
+function createAuthor(e){e.preventDefault();fetch('/api/author',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('newAuthorName').value,slug:document.getElementById('newAuthorSlug').value,bio:document.getElementById('newAuthorBio').value,email:document.getElementById('newAuthorEmail').value,avatar_url:document.getElementById('newAuthorAvatar').value})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Создан');setTimeout(()=>location.reload(),600)}else showToast('Ошибка: '+(res.error||''))}).catch(()=>showToast('Ошибка сети'));return false}
+function editAuthor(id,name,slug,bio,avatar,email,isActive){document.getElementById('editAuthorId').value=id;document.getElementById('editAuthorName').value=name;document.getElementById('editAuthorSlug').value=slug;document.getElementById('editAuthorBio').value=bio;document.getElementById('editAuthorEmail').value=email;document.getElementById('editAuthorAvatar').value=avatar;document.getElementById('editAuthorActive').checked=!!isActive;openModal('editAuthorModal')}
+function saveAuthor(e){e.preventDefault();var id=document.getElementById('editAuthorId').value;fetch('/api/author/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('editAuthorName').value,slug:document.getElementById('editAuthorSlug').value,bio:document.getElementById('editAuthorBio').value,email:document.getElementById('editAuthorEmail').value,avatar_url:document.getElementById('editAuthorAvatar').value,is_active:document.getElementById('editAuthorActive').checked?1:0})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function deleteAuthor(id,name){if(!confirm('Удалить автора «'+name+'»?'))return;fetch('/api/author/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+
+/* --- Tags --- */
+function createTag(e){e.preventDefault();var tag=document.getElementById('newTagName').value.trim();if(!tag)return false;fetch('/api/tag',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tag:tag})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Создан');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function startTagEdit(el){var oldTag=el.textContent.trim();var inp=document.createElement('input');inp.type='text';inp.value=oldTag;inp.className='inline-edit-input';inp.onblur=function(){var newTag=inp.value.trim();if(newTag&&newTag!==oldTag){fetch('/api/tag/'+encodeURIComponent(oldTag),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({new_tag:newTag})}).then(r=>r.json()).then(res=>{if(res.ok){el.textContent=newTag;el.dataset.tag=newTag;showToast('Переименовано')}else{el.textContent=oldTag;showToast('Ошибка')}})}else el.textContent=oldTag;el.style.display=''};inp.onkeydown=function(e){if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=oldTag;inp.blur()}};el.style.display='none';el.parentNode.insertBefore(inp,el.nextSibling);inp.focus();inp.select()}
+function deleteTag(tag){if(!confirm('Удалить тег «'+tag+'»?'))return;fetch('/api/tag/'+encodeURIComponent(tag),{method:'DELETE'}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+function getSelectedTags(){return Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(c=>c.value)}
+function updateTagBulkBar(){var s=getSelectedTags();document.getElementById('bulkBar').style.display=s.length?'':'none';document.getElementById('bulkCount').textContent='Выбрано: '+s.length}
+function toggleSelectAllTags(el){document.querySelectorAll('.tag-checkbox').forEach(c=>{c.checked=el.checked});updateTagBulkBar()}
+function clearTagSelection(){document.querySelectorAll('.tag-checkbox').forEach(c=>{c.checked=false});document.getElementById('selectAll').checked=false;updateTagBulkBar()}
+function mergeSelectedTags(){var sel=getSelectedTags();if(sel.length<2){showToast('Выберите минимум 2');return}var target=prompt('Объединить в:',sel[0]);if(!target)return;fetch('/api/tags/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tags:sel,target:target})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Объединено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+function deleteSelectedTags(){var sel=getSelectedTags();if(!sel.length||!confirm('Удалить '+sel.length+' тегов?'))return;Promise.all(sel.map(t=>fetch('/api/tag/'+encodeURIComponent(t),{method:'DELETE'}).then(r=>r.json()))).then(()=>{showToast('Удалено');setTimeout(()=>location.reload(),600)})}
+
+/* --- Entities --- */
+function createEntity(e){e.preventDefault();fetch('/api/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('newEntName').value,short_name:document.getElementById('newEntShort').value,entity_type:document.getElementById('newEntType').value})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Создано');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function editEntity(id,name,short,type){document.getElementById('editEntId').value=id;document.getElementById('editEntName').value=name;document.getElementById('editEntShort').value=short;document.getElementById('editEntType').value=type;openModal('editEntityModal')}
+function saveEntity(e){e.preventDefault();var id=document.getElementById('editEntId').value;fetch('/api/entity/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('editEntName').value,short_name:document.getElementById('editEntShort').value,entity_type:document.getElementById('editEntType').value})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Сохранено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')}).catch(()=>showToast('Ошибка сети'));return false}
+function deleteEntity(id,name){if(!confirm('Удалить «'+name+'»?'))return;fetch('/api/entity/'+id,{method:'DELETE'}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Удалено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+function getSelectedEnts(){return Array.from(document.querySelectorAll('.ent-checkbox:checked')).map(c=>parseInt(c.value))}
+function updateEntBulkBar(){var s=getSelectedEnts();document.getElementById('entBulkBar').style.display=s.length?'':'none';document.getElementById('entBulkCount').textContent='Выбрано: '+s.length}
+function toggleSelectAllEnts(el){document.querySelectorAll('.ent-checkbox').forEach(c=>{c.checked=el.checked});updateEntBulkBar()}
+function clearEntSelection(){document.querySelectorAll('.ent-checkbox').forEach(c=>{c.checked=false});document.getElementById('entSelectAll').checked=false;updateEntBulkBar()}
+function mergeSelectedEntities(){var sel=getSelectedEnts();if(sel.length<2){showToast('Выберите минимум 2');return}var t=prompt('ID целевой сущности:',sel[0]);if(!t)return;fetch('/api/entities/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({entity_ids:sel,target_id:parseInt(t)})}).then(r=>r.json()).then(res=>{if(res.ok){showToast('Объединено');setTimeout(()=>location.reload(),600)}else showToast('Ошибка')})}
+function deleteSelectedEntities(){var sel=getSelectedEnts();if(!sel.length||!confirm('Удалить '+sel.length+' сущностей?'))return;Promise.all(sel.map(id=>fetch('/api/entity/'+id,{method:'DELETE'}).then(r=>r.json()))).then(()=>{showToast('Удалено');setTimeout(()=>location.reload(),600)})}
+</script>
+{% endblock %}

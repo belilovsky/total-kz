@@ -5,425 +5,109 @@
 {% block page_title %}Дашборд{% endblock %}
 
 {% block content %}
-<!-- ===== QUICK ACTION WIDGETS ===== -->
-<div class="quick-actions-grid">
-    <a href="/admin/articles?status=review" class="quick-action-card">
-        <div class="quick-action-icon qa-review">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </div>
-        <div class="quick-action-count">{{ qa_counts.review|default(0) }}</div>
-        <div class="quick-action-label">На рецензии</div>
-    </a>
-    <a href="/admin/articles?status=ready" class="quick-action-card">
-        <div class="quick-action-icon qa-scheduled">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="quick-action-count">{{ qa_counts.scheduled|default(0) }}</div>
-        <div class="quick-action-label">Запланированные</div>
-    </a>
-    <a href="/admin/articles?has_image=0" class="quick-action-card">
-        <div class="quick-action-icon qa-no-image">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
-        <div class="quick-action-count">{{ qa_counts.no_image|default(0) }}</div>
-        <div class="quick-action-label">Без изображений</div>
-    </a>
-    <a href="/admin/articles?has_tags=0" class="quick-action-card">
-        <div class="quick-action-icon qa-no-tags">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        </div>
-        <div class="quick-action-count">{{ qa_counts.no_tags|default(0) }}</div>
-        <div class="quick-action-label">Без тегов</div>
-    </a>
-</div>
-
-<!-- ===== KPI CARDS ===== -->
-<div class="kpi-grid">
-    <div class="kpi-card">
-        <div class="kpi-header">
-            <span class="kpi-label">Всего статей</span>
-            <div class="kpi-icon blue">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </div>
-        </div>
-        <div class="kpi-value">{{ stats.total|format_num }}</div>
-        <div class="kpi-footer">
-            <canvas id="sparkTotal" class="kpi-spark" width="100" height="28"></canvas>
-            <span class="kpi-range">{{ stats.date_from[:4] if stats.date_from else '–' }}–{{ stats.date_to[:4] if stats.date_to else '–' }}</span>
-        </div>
+<!-- ===== COMPACT KPI ROW ===== -->
+<div class="dash-kpi-row">
+    <div class="dash-kpi">
+        <span class="dash-kpi-value">{{ stats.total|format_num }}</span>
+        <span class="dash-kpi-label">статей</span>
     </div>
-
-    <div class="kpi-card">
-        <div class="kpi-header">
-            <span class="kpi-label">В этом месяце</span>
-            <div class="kpi-icon green">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            </div>
-        </div>
-        <div class="kpi-value">{{ stats.this_month|format_num }}</div>
-        <div class="kpi-footer">
-            <canvas id="sparkMonth" class="kpi-spark" width="100" height="28"></canvas>
+    <div class="dash-kpi-sep"></div>
+    <div class="dash-kpi">
+        <span class="dash-kpi-value">{{ stats.this_month|format_num }}</span>
+        <span class="dash-kpi-label">в этом месяце</span>
+        {% if stats.last_month > 0 %}
             {% set delta = stats.this_month - stats.last_month %}
-            {% if stats.last_month > 0 %}
-                {% set pct = ((delta / stats.last_month) * 100)|round(1) %}
-                <span class="kpi-delta {{ 'up' if delta >= 0 else 'down' }}">
-                    <svg viewBox="0 0 12 12" width="12" height="12"><path d="{{ 'M6 2l4 5H2z' if delta >= 0 else 'M6 10L2 5h8z' }}" fill="currentColor"/></svg>
-                    {{ pct|abs }}%
-                </span>
-            {% endif %}
-            <span class="kpi-range">vs прошлый мес.</span>
-        </div>
+            {% set pct = ((delta / stats.last_month) * 100)|round(0)|int %}
+            <span class="dash-kpi-delta {{ 'up' if delta >= 0 else 'down' }}">{{ '+' if delta >= 0 }}{{ pct }}%</span>
+        {% endif %}
     </div>
+    <div class="dash-kpi-sep"></div>
+    <a href="/admin/articles?status=review" class="dash-kpi dash-kpi-action">
+        <span class="dash-kpi-value">{{ qa_counts.review|default(0) }}</span>
+        <span class="dash-kpi-label">на рецензии <span class="dash-kpi-badge review">⚡</span></span>
+    </a>
+    <div class="dash-kpi-sep"></div>
+    <a href="/admin/articles?has_image=0" class="dash-kpi dash-kpi-action">
+        <span class="dash-kpi-value">{{ qa_counts.no_image|default(0) }}</span>
+        <span class="dash-kpi-label">без фото <span class="dash-kpi-badge warning">⚠</span></span>
+    </a>
+</div>
 
-    <div class="kpi-card">
-        <div class="kpi-header">
-            <span class="kpi-label">Ср. в месяц (12м)</span>
-            <div class="kpi-icon orange">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+<!-- ===== TWO COLUMNS ===== -->
+<div class="dash-columns">
+    <!-- Left: Latest articles -->
+    <div class="dash-col-main">
+        <div class="card">
+            <div class="card-header-simple">
+                <h3>Последние статьи</h3>
+                <a href="/admin/articles" class="chart-link">Все статьи →</a>
             </div>
-        </div>
-        <div class="kpi-value">{{ stats.avg_recent|format_num }}</div>
-        <div class="kpi-footer">
-            <canvas id="sparkAvg" class="kpi-spark" width="100" height="28"></canvas>
-            {% if stats.avg_prev > 0 %}
-                {% set avg_delta = ((stats.avg_recent - stats.avg_prev) / stats.avg_prev * 100)|round(1) %}
-                <span class="kpi-delta {{ 'up' if avg_delta >= 0 else 'down' }}">
-                    <svg viewBox="0 0 12 12" width="12" height="12"><path d="{{ 'M6 2l4 5H2z' if avg_delta >= 0 else 'M6 10L2 5h8z' }}" fill="currentColor"/></svg>
-                    {{ avg_delta|abs }}%
-                </span>
-            {% endif %}
-            <span class="kpi-range">vs предыдущие 12м</span>
-        </div>
-    </div>
-
-    <div class="kpi-card">
-        <div class="kpi-header">
-            <span class="kpi-label">Категорий / Авторов</span>
-            <div class="kpi-icon purple">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </div>
-        </div>
-        <div class="kpi-value">{{ stats.categories|length }} <span class="kpi-slash">/</span> {{ stats.authors|length }}</div>
-        <div class="kpi-footer">
-            <canvas id="sparkCats" class="kpi-spark" width="100" height="28"></canvas>
-            <span class="kpi-range">активных разделов и авторов</span>
-        </div>
-    </div>
-</div>
-
-<!-- ===== MAIN TIMELINE ===== -->
-<div class="chart-card full-width">
-    <div class="chart-header">
-        <h3 class="chart-title">Динамика публикаций</h3>
-        <div class="chart-controls">
-            <button class="chart-btn active" data-range="all">Все</button>
-            <button class="chart-btn" data-range="5y">5 лет</button>
-            <button class="chart-btn" data-range="3y">3 года</button>
-            <button class="chart-btn" data-range="1y">1 год</button>
-        </div>
-    </div>
-    <div class="chart-body chart-body-lg">
-        <canvas id="timelineChart"></canvas>
-    </div>
-</div>
-
-<!-- ===== CATEGORIES + YEAR VOLUMES ===== -->
-<div class="charts-grid-2">
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">Объём по категориям</h3>
-        </div>
-        <div class="chart-body chart-body-tall">
-            <canvas id="catsChart"></canvas>
-        </div>
-    </div>
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">Публикации по годам</h3>
-        </div>
-        <div class="chart-body">
-            <canvas id="yearsChart"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- ===== CATEGORY × YEAR HEATMAP ===== -->
-<div class="chart-card full-width" style="margin-bottom:24px">
-    <div class="chart-header">
-        <h3 class="chart-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-            Категории × Годы
-        </h3>
-    </div>
-    <div class="heatmap-scroll">
-        <div id="heatmapContainer" class="heatmap-container"></div>
-    </div>
-</div>
-
-<!-- ===== COMPACT ENTITIES (top 6 each) ===== -->
-<div class="entity-section-grid">
-    {% if persons %}
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Топ персоны
-            </h3>
-            <a href="/admin/content" class="chart-link">Все →</a>
-        </div>
-        <div class="entity-bars">
-            {% for p in persons[:6] %}
-            <a href="/admin/articles?entity_id={{ p.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ p.name }}</span>
-                <div class="entity-bar-track"><div class="entity-bar-fill person" style="width:{{ (p.article_count / persons[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ p.article_count|format_num }}</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if orgs %}
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Топ организации
-            </h3>
-            <a href="/admin/content" class="chart-link">Все →</a>
-        </div>
-        <div class="entity-bars">
-            {% for o in orgs[:6] %}
-            <a href="/admin/articles?entity_id={{ o.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ o.name }}</span>
-                <div class="entity-bar-track"><div class="entity-bar-fill org" style="width:{{ (o.article_count / orgs[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ o.article_count|format_num }}</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if locations %}
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                Топ локации
-            </h3>
-            <a href="/admin/content" class="chart-link">Все →</a>
-        </div>
-        <div class="entity-bars">
-            {% for l in locations[:6] %}
-            <a href="/admin/articles?entity_id={{ l.id }}" class="entity-bar-row">
-                <span class="entity-bar-name">{{ l.name }}</span>
-                <div class="entity-bar-track"><div class="entity-bar-fill location" style="width:{{ (l.article_count / locations[0].article_count * 100)|round(1) }}%"></div></div>
-                <span class="entity-bar-value">{{ l.article_count|format_num }}</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- ===== LAST 3 SCRAPE RUNS ===== -->
-{% if stats.runs %}
-<div class="chart-card full-width">
-    <div class="chart-header">
-        <h3 class="chart-title">Последние запуски</h3>
-    </div>
-    <div class="data-table-wrap">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Фаза</th>
-                <th>Начало</th>
-                <th>Конец</th>
-                <th>Статус</th>
-                <th class="num">Найдено</th>
-                <th class="num">Загружено</th>
-                <th class="num">Ошибки</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in stats.runs[:3] %}
-            <tr>
-                <td class="num mono">{{ r.id }}</td>
-                <td><span class="badge badge-phase">{{ r.phase }}</span></td>
-                <td class="mono">{{ r.started_at[:16] if r.started_at else '–' }}</td>
-                <td class="mono">{{ r.finished_at[:16] if r.finished_at else '–' }}</td>
-                <td>
-                    <span class="badge badge-{{ r.status }}">
-                        {% if r.status == 'completed' %}Завершён
-                        {% elif r.status == 'running' %}Работает
-                        {% elif r.status == 'failed' %}Ошибка
-                        {% else %}{{ r.status }}{% endif %}
+            <div class="dash-articles-list">
+                {% for a in recent_articles[:10] %}
+                <a href="/admin/article/{{ a.id }}" class="dash-article-row">
+                    <div class="dash-article-info">
+                        <span class="dash-article-title">{{ a.title[:80] }}{% if a.title|length > 80 %}…{% endif %}</span>
+                        <span class="dash-article-meta">
+                            {{ a.author[:20] if a.author else '—' }} · {{ a.pub_date[:10] if a.pub_date else '—' }}
+                            {% if a.sub_category %}<span class="dash-article-cat">{{ a.sub_category }}</span>{% endif %}
+                        </span>
+                    </div>
+                    {% if a.status and a.status != 'published' %}
+                    <span class="status-badge status-{{ a.status }}">
+                        {% if a.status == 'draft' %}Черновик{% elif a.status == 'review' %}Рецензия{% elif a.status == 'ready' %}Готова{% elif a.status == 'archived' %}Архив{% else %}{{ a.status }}{% endif %}
                     </span>
-                </td>
-                <td class="num">{{ (r.articles_found or 0)|format_num }}</td>
-                <td class="num">{{ (r.articles_downloaded or 0)|format_num }}</td>
-                <td class="num {% if r.errors and r.errors > 0 %}text-error{% endif %}">{{ r.errors or 0 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% endif %}
+                </a>
+                {% endfor %}
+                {% if not recent_articles %}
+                <div class="dash-empty">Нет статей</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Needs attention -->
+    <div class="dash-col-side">
+        <div class="card">
+            <div class="card-header-simple">
+                <h3>Требует внимания</h3>
+            </div>
+            <div class="dash-attention-list">
+                {% if qa_counts.review|default(0) > 0 %}
+                <a href="/admin/articles?status=review" class="dash-attention-item">
+                    <span class="dash-attention-icon review">⚡</span>
+                    <span class="dash-attention-text">{{ qa_counts.review }} {{ 'статья' if qa_counts.review == 1 else 'статей' }} на рецензии</span>
+                </a>
+                {% endif %}
+                {% if qa_counts.no_image|default(0) > 0 %}
+                <a href="/admin/articles?has_image=0" class="dash-attention-item">
+                    <span class="dash-attention-icon warning">⚠</span>
+                    <span class="dash-attention-text">{{ qa_counts.no_image }} без изображений</span>
+                </a>
+                {% endif %}
+                {% if qa_counts.no_tags|default(0) > 0 %}
+                <a href="/admin/articles?has_tags=0" class="dash-attention-item">
+                    <span class="dash-attention-icon info">🏷</span>
+                    <span class="dash-attention-text">{{ qa_counts.no_tags }} без тегов</span>
+                </a>
+                {% endif %}
+                {% if qa_counts.scheduled|default(0) > 0 %}
+                <a href="/admin/articles?status=ready" class="dash-attention-item">
+                    <span class="dash-attention-icon scheduled">📅</span>
+                    <span class="dash-attention-text">{{ qa_counts.scheduled }} запланировано</span>
+                </a>
+                {% endif %}
+                {% for a in attention_articles[:5] %}
+                <a href="/admin/article/{{ a.id }}" class="dash-attention-item">
+                    <span class="dash-attention-icon review">📝</span>
+                    <span class="dash-attention-text">{{ a.title[:50] }}{% if a.title|length > 50 %}…{% endif %}</span>
+                </a>
+                {% endfor %}
+                {% if not qa_counts.review and not qa_counts.no_image and not qa_counts.no_tags and not qa_counts.scheduled and not attention_articles %}
+                <div class="dash-empty" style="padding:24px;text-align:center;color:var(--text-muted)">Всё в порядке 👍</div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
-{% endif %}
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var months = {{ chart_months|safe }};
-    var counts = {{ chart_counts|safe }};
-    var cats = {{ chart_cats|safe }};
-    var catCounts = {{ chart_cat_counts|safe }};
-    var years = {{ chart_years|safe }};
-    var yearCounts = {{ chart_year_counts|safe }};
-
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-    var textColor = isDark ? '#9ca3af' : '#6b7280';
-    var tooltipBg = isDark ? '#2a2d36' : '#1a1d26';
-    var tooltipText = isDark ? '#e8eaed' : '#ffffff';
-
-    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
-    Chart.defaults.color = textColor;
-    Chart.defaults.font.size = 11;
-
-    function createSparkline(canvasId, data, labels, color, fillColor) {
-        var ctx = document.getElementById(canvasId);
-        if (!ctx || !data.length) return;
-        new Chart(ctx, {
-            type: 'line',
-            data: { labels: labels, datasets: [{ data: data, borderColor: color, borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: fillColor, tension: 0.35 }] },
-            options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, animation: { duration: 800 } }
-        });
-    }
-
-    createSparkline('sparkTotal', yearCounts, years, '#2563eb', 'rgba(37,99,235,0.08)');
-    createSparkline('sparkMonth', counts.slice(-12), months.slice(-12), isDark ? '#10b981' : '#059669', isDark ? 'rgba(16,185,129,0.1)' : 'rgba(5,150,105,0.08)');
-    createSparkline('sparkAvg', counts.slice(-24), months.slice(-24), isDark ? '#f59e0b' : '#d97706', isDark ? 'rgba(245,158,11,0.1)' : 'rgba(217,119,6,0.08)');
-    createSparkline('sparkCats', yearCounts, years, isDark ? '#8b5cf6' : '#7c3aed', isDark ? 'rgba(139,92,246,0.1)' : 'rgba(124,58,237,0.08)');
-
-    var crosshairPlugin = {
-        id: 'crosshair',
-        afterDraw: function(chart) {
-            if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
-                var x = chart.tooltip._active[0].element.x;
-                var yAxis = chart.scales.y;
-                var ctx = chart.ctx;
-                ctx.save(); ctx.beginPath(); ctx.moveTo(x, yAxis.top); ctx.lineTo(x, yAxis.bottom);
-                ctx.lineWidth = 1; ctx.strokeStyle = isDark ? 'rgba(59,130,246,0.3)' : 'rgba(37,99,235,0.25)';
-                ctx.setLineDash([4, 4]); ctx.stroke(); ctx.restore();
-            }
-        }
-    };
-
-    var timelineChart = new Chart(document.getElementById('timelineChart'), {
-        type: 'line', plugins: [crosshairPlugin],
-        data: { labels: months, datasets: [{ label: 'Статей', data: counts, borderColor: isDark ? '#3b82f6' : '#2563eb', borderWidth: 1.5, backgroundColor: isDark ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.07)', fill: true, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: isDark ? '#3b82f6' : '#2563eb', pointHoverBorderColor: isDark ? '#1a1d26' : '#ffffff', pointHoverBorderWidth: 2, tension: 0.3 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, titleFont: { size: 12, weight: '600' }, bodyFont: { size: 13, weight: '500' }, padding: 12, cornerRadius: 8, displayColors: false,
-                callbacks: { title: function(items) { var m=items[0].label; var p=m.split('-'); var mn=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек']; return mn[parseInt(p[1])-1]+' '+p[0]; }, label: function(ctx) { return ctx.parsed.y.toLocaleString('ru-RU')+' статей'; } } } },
-            scales: { y: { beginAtZero: true, grid: { color: gridColor, drawBorder: false }, ticks: { font: { size: 11 }, color: textColor, callback: function(v) { return v >= 1000 ? (v/1000).toFixed(0)+'k' : v; } } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 18, callback: function(val) { var l=this.getLabelForValue(val); if(l&&l.endsWith('-01')) return l.substring(0,4); return ''; } } } }
-        }
-    });
-
-    document.querySelectorAll('.chart-btn[data-range]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.chart-btn[data-range]').forEach(function(b){b.classList.remove('active');});
-            this.classList.add('active');
-            var range=this.dataset.range; var startIdx=0;
-            if(range!=='all'&&months.length){var yb=parseInt(range);var now=new Date();var cut=(now.getFullYear()-yb)+'-'+String(now.getMonth()+1).padStart(2,'0');startIdx=months.findIndex(function(m){return m>=cut;});if(startIdx<0) startIdx=0;}
-            timelineChart.data.labels=months.slice(startIdx);timelineChart.data.datasets[0].data=counts.slice(startIdx);timelineChart.update('active');
-        });
-    });
-
-    // ── Heatmap ──
-    (function() {
-        var raw = {{ heatmap_data|safe }};
-        var catLabels = {{ cat_labels_json|safe }};
-        if (!raw || !raw.length) return;
-
-        // Build matrix
-        var catSet = new Set();
-        var yearSet = new Set();
-        raw.forEach(function(r) { if (r.sub_category) catSet.add(r.sub_category); yearSet.add(r.year); });
-        var categories = Array.from(catSet);
-        var allYears = Array.from(yearSet).sort();
-
-        // Compute totals per category, sort desc
-        var catTotals = {};
-        raw.forEach(function(r) { if (r.sub_category) catTotals[r.sub_category] = (catTotals[r.sub_category] || 0) + r.cnt; });
-        categories.sort(function(a, b) { return (catTotals[b] || 0) - (catTotals[a] || 0); });
-
-        // Take top 15 categories for readability
-        categories = categories.slice(0, 15);
-
-        var matrix = {};
-        raw.forEach(function(r) { matrix[r.sub_category + '|' + r.year] = r.cnt; });
-
-        var maxVal = 0;
-        categories.forEach(function(cat) {
-            allYears.forEach(function(yr) {
-                var v = matrix[cat + '|' + yr] || 0;
-                if (v > maxVal) maxVal = v;
-            });
-        });
-
-        // Build HTML table
-        var html = '<table class="heatmap-table"><thead><tr><th class="heatmap-cat-col"></th>';
-        allYears.forEach(function(yr) { html += '<th class="heatmap-year">' + yr + '</th>'; });
-        html += '<th class="heatmap-total">Итого</th></tr></thead><tbody>';
-
-        categories.forEach(function(cat) {
-            var label = catLabels[cat] || cat;
-            var total = catTotals[cat] || 0;
-            html += '<tr><td class="heatmap-cat-label" title="' + label + '">' + label + '</td>';
-            allYears.forEach(function(yr) {
-                var v = matrix[cat + '|' + yr] || 0;
-                var intensity = maxVal > 0 ? v / maxVal : 0;
-                var bg, fg;
-                if (v === 0) {
-                    bg = isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
-                    fg = isDark ? '#4b5563' : '#9ca3af';
-                } else {
-                    var alpha = 0.12 + intensity * 0.75;
-                    bg = isDark ? 'rgba(59,130,246,' + alpha + ')' : 'rgba(37,99,235,' + alpha + ')';
-                    fg = intensity > 0.4 ? '#fff' : (isDark ? '#e8eaed' : '#374151');
-                }
-                html += '<td class="heatmap-cell" style="background:' + bg + ';color:' + fg + '" title="' + label + ' ' + yr + ': ' + v.toLocaleString('ru-RU') + '">';
-                html += v > 0 ? v.toLocaleString('ru-RU') : '–';
-                html += '</td>';
-            });
-            html += '<td class="heatmap-total-cell">' + total.toLocaleString('ru-RU') + '</td>';
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        document.getElementById('heatmapContainer').innerHTML = html;
-    })();
-
-    var catPalette = ['#2563eb','#0891b2','#059669','#65a30d','#d97706','#ea580c','#dc2626','#db2777','#7c3aed','#4f46e5','#0d9488','#ca8a04','#e11d48','#9333ea','#6366f1','#14b8a6','#f59e0b','#ef4444','#ec4899','#8b5cf6'];
-
-    new Chart(document.getElementById('catsChart'), {
-        type: 'bar',
-        data: { labels: cats, datasets: [{ data: catCounts, backgroundColor: function(ctx){return catPalette[ctx.dataIndex%catPalette.length];}, borderRadius: 4, borderSkipped: false, barThickness: 18 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, padding: 10, cornerRadius: 8, displayColors: true, boxWidth: 8, boxHeight: 8, callbacks: { label: function(ctx){var t=catCounts.reduce(function(a,b){return a+b;},0);return ' '+ctx.parsed.x.toLocaleString('ru-RU')+' ('+(ctx.parsed.x/t*100).toFixed(1)+'%)';} } } },
-            scales: { x: { grid: { color: gridColor }, ticks: { font: { size: 10 }, color: textColor, callback: function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;} } }, y: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: textColor } } }
-        }
-    });
-
-    new Chart(document.getElementById('yearsChart'), {
-        type: 'bar',
-        data: { labels: years, datasets: [{ label: 'Статей', data: yearCounts, backgroundColor: function(ctx){var max=Math.max.apply(null,yearCounts);var r=yearCounts[ctx.dataIndex]/max;var a=0.35+r*0.55;return isDark?'rgba(59,130,246,'+a+')':'rgba(37,99,235,'+a+')';}, hoverBackgroundColor: isDark?'#60a5fa':'#2563eb', borderRadius: 5, borderSkipped: false }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, padding: 10, cornerRadius: 8, displayColors: false, callbacks: { label: function(ctx){return ctx.parsed.y.toLocaleString('ru-RU')+' статей';} } } },
-            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor, callback: function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;} } }, x: { grid: { display: false }, ticks: { font: { size: 11 }, color: textColor } } }
-        }
-    });
-});
-</script>
 {% endblock %}

@@ -1673,7 +1673,7 @@ def delete_media(media_id: int) -> dict | None:
 
 # ── Tags CRUD ────────────────────────────────
 
-def get_tags_full(q: str = "", page: int = 1, per_page: int = 50) -> dict:
+def get_tags_full(q: str = "", page: int = 1, per_page: int = 50, min_articles: int = 0) -> dict:
     with get_db() as conn:
         conditions = []
         params = []
@@ -1681,14 +1681,20 @@ def get_tags_full(q: str = "", page: int = 1, per_page: int = 50) -> dict:
             conditions.append("at.tag LIKE ?")
             params.append(f"%{q}%")
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        having = f"HAVING article_count >= {int(min_articles)}" if min_articles > 0 else ""
         total = conn.execute(f"""
-            SELECT COUNT(DISTINCT at.tag) FROM article_tags at {where}
+            SELECT COUNT(*) FROM (
+                SELECT at.tag, COUNT(*) as article_count
+                FROM article_tags at {where}
+                GROUP BY at.tag {having}
+            )
         """, params).fetchone()[0]
         offset = (page - 1) * per_page
         rows = conn.execute(f"""
             SELECT at.tag, COUNT(*) as article_count
             FROM article_tags at {where}
-            GROUP BY at.tag ORDER BY article_count DESC
+            GROUP BY at.tag {having}
+            ORDER BY article_count DESC
             LIMIT ? OFFSET ?
         """, params + [per_page, offset]).fetchall()
         return {

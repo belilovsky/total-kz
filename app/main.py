@@ -441,26 +441,14 @@ if not settings.use_postgres:
 @app.get("/admin/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
     user = getattr(request.state, "current_user", None)
-    if not user or user.get("role") != "admin":
+    if not user:
         return RedirectResponse(url="/admin/articles", status_code=302)
     stats = db.get_stats()
-    persons = db.get_entities(entity_type="person", limit=15)
-    orgs = db.get_entities(entity_type="org", limit=15)
-    locations = db.get_entities(entity_type="location", limit=15)
-
-    chart_months = json.dumps([m["month"] for m in stats["months"]])
-    chart_counts = json.dumps([m["cnt"] for m in stats["months"]])
-    chart_cats = json.dumps([cat_label(c["sub_category"]) for c in stats["categories"]])
-    chart_cat_counts = json.dumps([c["cnt"] for c in stats["categories"]])
-    chart_cat_slugs = json.dumps([c["sub_category"] for c in stats["categories"]])
-    chart_years = json.dumps([y["year"] for y in stats["years"]])
-    chart_year_counts = json.dumps([y["cnt"] for y in stats["years"]])
-
-    heatmap_data = json.dumps(stats.get("cat_by_year", []), ensure_ascii=False)
-    cat_labels_json = json.dumps(CATEGORY_LABELS, ensure_ascii=False)
 
     # Quick action widget counts
     qa_counts = {"review": 0, "scheduled": 0, "no_image": 0, "no_tags": 0}
+    recent_articles = []
+    attention_articles = []
     try:
         if settings.use_postgres:
             from app.pg_queries import get_pg_session, Article, ArticleTag
@@ -493,23 +481,28 @@ async def admin_dashboard(request: Request):
     except Exception:
         pass
 
+    # Recent articles for dashboard
+    try:
+        with db.get_db() as conn:
+            rows = conn.execute("""
+                SELECT id, title, author, pub_date, sub_category, status
+                FROM articles ORDER BY pub_date DESC LIMIT 10
+            """).fetchall()
+            recent_articles = [dict(r) for r in rows]
+            # Articles needing review
+            rows2 = conn.execute("""
+                SELECT id, title FROM articles WHERE status='review'
+                ORDER BY pub_date DESC LIMIT 5
+            """).fetchall()
+            attention_articles = [dict(r) for r in rows2]
+    except Exception:
+        pass
+
     return templates.TemplateResponse("dashboard.html", _ctx(request,
         stats=stats,
-        persons=persons,
-        orgs=orgs,
-        locations=locations,
-        chart_months=chart_months,
-        chart_counts=chart_counts,
-        chart_cats=chart_cats,
-        chart_cat_counts=chart_cat_counts,
-        chart_cat_slugs=chart_cat_slugs,
-        chart_years=chart_years,
-        chart_year_counts=chart_year_counts,
-        heatmap_data=heatmap_data,
-        cat_labels_json=cat_labels_json,
-        cat_label=cat_label,
-        entity_type_label=entity_type_label,
         qa_counts=qa_counts,
+        recent_articles=recent_articles,
+        attention_articles=attention_articles,
     ))
 
 
@@ -897,16 +890,12 @@ async def admin_users_page(request: Request):
 
 @app.get("/admin/categories", response_class=HTMLResponse)
 async def admin_categories_page(request: Request):
-    categories = db.get_all_categories()
-    return templates.TemplateResponse("categories.html", _ctx(request,
-        categories=categories, format_num=_format_num))
+    return RedirectResponse(url="/admin/reference?tab=categories", status_code=302)
 
 
 @app.get("/admin/authors", response_class=HTMLResponse)
 async def admin_authors_page(request: Request, q: str = ""):
-    authors = db.get_all_authors_managed(q=q)
-    return templates.TemplateResponse("authors_managed.html", _ctx(request,
-        authors=authors, q=q, format_num=_format_num))
+    return RedirectResponse(url="/admin/reference?tab=authors" + (f"&q={q}" if q else ""), status_code=302)
 
 
 @app.get("/admin/media", response_class=HTMLResponse)
@@ -918,16 +907,67 @@ async def admin_media_page(request: Request, q: str = "", page: int = Query(1, g
 
 @app.get("/admin/tags", response_class=HTMLResponse)
 async def admin_tags_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
-    result = db.get_tags_full(q=q, page=page)
-    return templates.TemplateResponse("tags.html", _ctx(request,
-        result=result, q=q, format_num=_format_num))
+    return RedirectResponse(url="/admin/reference?tab=tags" + (f"&q={q}" if q else "") + (f"&page={page}" if page > 1 else ""), status_code=302)
 
 
 @app.get("/admin/entities", response_class=HTMLResponse)
 async def admin_entities_page(request: Request, q: str = "", entity_type: str = "", page: int = Query(1, ge=1)):
-    result = db.get_entities_full(q=q, entity_type=entity_type, page=page)
-    return templates.TemplateResponse("entities_manage.html", _ctx(request,
-        result=result, q=q, entity_type=entity_type, format_num=_format_num))
+    return RedirectResponse(url="/admin/reference?tab=entities" + (f"&q={q}" if q else "") + (f"&entity_type={entity_type}" if entity_type else "") + (f"&page={page}" if page > 1 else ""), status_code=302)
+
+
+@app.get("/admin/reference", response_class=HTMLResponse)
+async def admin_reference_page(
+    request: Request,
+    tab: str = "categories",
+    q: str = "",
+    page: int = Query(1, ge=1),
+    min_articles: int = 50,
+    entity_type: str = "",
+):
+    categories = db.get_all_categories()
+    authors = db.get_all_authors_managed(q=q) if tab == "authors" else []
+    tags_result = db.get_tags_full(q=q, page=page, min_articles=min_articles) if tab == "tags" else {"items": [], "total": 0, "page": 1, "pages": 1}
+    entities_result = db.get_entities_full(q=q, entity_type=entity_type, page=page) if tab == "entities" else {"items": [], "total": 0, "page": 1, "pages": 1}
+
+    # Get totals for tab counters
+    if tab != "tags":
+        try:
+            with db.get_db() as conn:
+                tags_total = conn.execute("SELECT COUNT(DISTINCT tag) FROM article_tags").fetchone()[0]
+                tags_result["total"] = tags_total
+        except Exception:
+            pass
+    if tab != "entities":
+        try:
+            with db.get_db() as conn:
+                ent_total = conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+                entities_result["total"] = ent_total
+        except Exception:
+            pass
+    if tab != "authors":
+        authors_for_count = db.get_all_authors_managed(q="")
+    else:
+        authors_for_count = authors
+
+    return templates.TemplateResponse("reference.html", _ctx(request,
+        tab=tab,
+        q=q,
+        min_articles=min_articles,
+        entity_type=entity_type,
+        categories=categories,
+        authors=authors if tab == "authors" else authors_for_count,
+        tags_result=tags_result,
+        entities_result=entities_result,
+        format_num=_format_num,
+    ))
+
+
+@app.get("/admin/settings", response_class=HTMLResponse)
+async def admin_settings_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
+    return templates.TemplateResponse("settings.html", _ctx(request))
 
 
 @app.get("/admin/stories", response_class=HTMLResponse)
