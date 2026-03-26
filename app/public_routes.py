@@ -446,8 +446,13 @@ def dedup_entities(entities: list, max_count: int = 5) -> list:
 
 def imgproxy_url(source_url: str, width: int = 800) -> str:
     """Generate imgproxy URL for an image."""
-    if not source_url or not source_url.startswith("http"):
-        return source_url or ""
+    if not source_url:
+        return ""
+    # Convert local /img/ paths back to origin URLs for imgproxy
+    if source_url.startswith("/img/"):
+        source_url = f"https://total.kz/storage/{source_url[5:]}"
+    if not source_url.startswith("http"):
+        return source_url
     return f"/imgproxy/insecure/resize:fit:{width}:0/plain/{source_url}@webp"
 
 
@@ -1132,7 +1137,7 @@ async def static_page(request: Request, page_slug: str):
 
 @router.get("/robots.txt", response_class=Response)
 async def robots_txt():
-    content = """User-agent: *
+    content = f"""User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
@@ -1160,7 +1165,7 @@ Sitemap: {SITE_DOMAIN}/sitemap-news.xml
 
 @router.get("/llms.txt", response_class=Response)
 async def llms_txt():
-    content = """# Total.kz
+    content = f"""# Total.kz
 
 > Ведущий новостной портал Казахстана. Более 66 000 статей о политике, экономике, обществе, науке, спорте и мировых событиях. На русском и казахском языках.
 
@@ -1262,7 +1267,7 @@ Total.kz — крупнейший информационный портал Ка
 | Sitemap Index | `{SITE_DOMAIN}/sitemap.xml` | XML |
 | News Sitemap | `{SITE_DOMAIN}/sitemap-news.xml` | XML |
 | Persons Sitemap | `{SITE_DOMAIN}/sitemap-persons.xml` | XML |
-| Turbo Pages RSS | `{SITE_DOMAIN}/turbo-rss.xml` | XML |
+| Turbo Pages RSS | `{SITE_DOMAIN}/turbo/rss.xml` | XML |
 | llms.txt | `{SITE_DOMAIN}/llms.txt` | Markdown |
 | llms-full.txt | `{SITE_DOMAIN}/llms-full.txt` | Markdown |
 

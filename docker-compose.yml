@@ -97,7 +97,8 @@ services:
   imgproxy:
     image: darthsim/imgproxy:v3.27
     container_name: total_kz_imgproxy
-    # No host port needed — app connects via internal Docker network
+    ports:
+      - "127.0.0.1:8080:8080"
     expose:
       - "8080"
     environment:

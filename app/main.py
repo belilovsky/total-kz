@@ -1,5 +1,6 @@
 """FastAPI application – Total.kz v11.0 (public frontend + CMS admin)."""
 
+import asyncio
 import json
 import logging
 import os
@@ -148,7 +149,11 @@ async def lifespan(app: FastAPI):
     """Startup/shutdown."""
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     db.init_db()
+    # Start scheduled publishing loop
+    from .scheduler import scheduler_loop
+    task = asyncio.create_task(scheduler_loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
