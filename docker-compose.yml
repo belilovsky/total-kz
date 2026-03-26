@@ -73,6 +73,19 @@ services:
     networks:
       - app_net
 
+  news-monitor:
+    build: ./services/news-monitor
+    container_name: total_kz_monitor
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_net
+
   meilisearch:
     image: getmeili/meilisearch:v1.12
     container_name: total_kz_meilisearch

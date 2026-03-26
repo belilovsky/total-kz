@@ -1,0 +1,95 @@
+# News sources for Total.kz monitor
+# priority: high (3 min), medium (10 min), low (15 min)
+
+sources:
+  # ── Official Kazakhstan ──────────────────────────
+  - name: "Акорда (Президент РК)"
+    url: "https://www.akorda.kz/ru/press_center/news?rss"
+    type: rss
+    category: official_kz
+    priority: high
+    language: ru
+    rewrite: false  # already in Russian, just adapt style
+
+  - name: "Премьер-Министр РК"
+    url: "https://primeminister.kz/ru/news/rss"
+    type: rss
+    category: official_kz
+    priority: high
+    language: ru
+    rewrite: false
+
+  - name: "Kazinform"
+    url: "https://www.inform.kz/ru/rss/all"
+    type: rss
+    category: official_kz
+    priority: high
+    language: ru
+    rewrite: false
+
+  - name: "Правительство РК"
+    url: "https://www.gov.kz/memleket/entities/government/press/news/rss?lang=ru"
+    type: rss
+    category: official_kz
+    priority: high
+    language: ru
+    rewrite: false
+
+  # ── World mentions of Kazakhstan ─────────────────
+  - name: "Google News — Kazakhstan"
+    url: "https://news.google.com/rss/search?q=Kazakhstan&hl=en&gl=US&ceid=US:en"
+    type: rss
+    category: world_mentions
+    priority: medium
+    language: en
+    rewrite: true
+    keywords:
+      - Kazakhstan
+      - Kazakh
+      - Astana
+      - Almaty
+      - Tokayev
+
+  - name: "ТАСС — Казахстан"
+    url: "https://tass.ru/rss/v2.xml"
+    type: rss
+    category: world_mentions
+    priority: medium
+    language: ru
+    rewrite: false
+    keywords:
+      - Казахстан
+      - казахстан
+      - Астана
+      - Токаев
+
+  # ── Foreign top news ─────────────────────────────
+  - name: "Reuters World"
+    url: "https://feeds.reuters.com/reuters/worldNews"
+    type: rss
+    category: foreign_top
+    priority: low
+    language: en
+    rewrite: true
+
+  - name: "BBC World"
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml"
+    type: rss
+    category: foreign_top
+    priority: low
+    language: en
+    rewrite: true
+
+  - name: "Al Jazeera"
+    url: "https://www.aljazeera.com/xml/rss/all.xml"
+    type: rss
+    category: foreign_top
+    priority: low
+    language: en
+    rewrite: true
+
+# Interval settings (seconds)
+intervals:
+  high: 180      # 3 minutes
+  medium: 600    # 10 minutes
+  low: 900       # 15 minutes
