@@ -176,7 +176,7 @@ def phase2_clean_titles(conn):
     # 2c. Remove "total.kz" / "Total.kz" / "| total.kz" / "- total.kz" from titles
     cur.execute("""
         UPDATE articles
-        SET title = btrim(regexp_replace(title, '[\s\-–|]*[Tt]otal\.kz\s*$', '', 'g'))
+        SET title = btrim(regexp_replace(title, '[\\s\\-–|]*[Tt]otal\\.kz\\s*$', '', 'g'))
         WHERE title ~* 'total\.kz'
     """)
     results["total_kz_removed"] = cur.rowcount
