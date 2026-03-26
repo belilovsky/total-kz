@@ -1007,7 +1007,7 @@ def get_related_by_entities(article_id: int, entity_ids: list, category: str, li
 def get_trending_tags(limit: int = 20) -> list:
     """Get trending tags (most used recently)."""
     with get_pg_session() as db:
-        _30d = text("CURRENT_DATE - INTERVAL '30 days'")
+        _30d = text("to_char(CURRENT_DATE - INTERVAL '30 days', 'YYYY-MM-DD')")
         rows = db.execute(
             select(ArticleTag.tag, func.count().label("cnt"))
             .join(Article, Article.id == ArticleTag.article_id)

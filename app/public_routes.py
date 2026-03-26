@@ -1810,7 +1810,7 @@ async def persons_catalog(request: Request, type: str = "", letter: str = ""):
         conn.close()
         return templates.TemplateResponse("public/persons.html", {
             "request": request,
-            "persons": persons,
+            "persons": [dict(p) for p in persons],
             "type_counts": type_counts,
             "letters": letters,
             "current_type": type,
@@ -1900,11 +1900,11 @@ async def person_page(request: Request, slug: str):
     conn.close()
     return templates.TemplateResponse("public/person.html", {
         "request": request,
-        "person": person,
+        "person": dict(person),
         "article_count": article_count,
-        "positions": positions,
+        "positions": [dict(p) for p in positions],
         "months": months,
-        "related": related,
+        "related": [dict(r) for r in related],
         "first_mention": first_mention,
         "last_mention": last_mention,
         "nav_sections": NAV_SECTIONS,
