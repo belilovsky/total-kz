@@ -453,7 +453,7 @@ async def admin_articles_list(
     # Get status counts for tabs
     if settings.use_postgres:
         status_counts = db.get_status_counts(
-            user_id=user.get("user_id") if user else None
+            username=user.get("username") if user else None
         )
         if "my" not in status_counts:
             status_counts["my"] = 0

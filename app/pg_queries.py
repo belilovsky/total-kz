@@ -1885,7 +1885,7 @@ def get_audit_log(user_id: int = 0, action: str = "", entity_type: str = "",
 # Extra helpers (replace raw SQL in main.py)
 # ═══════════════════════════════════════════════
 
-def get_status_counts(user_id: int | None = None) -> dict:
+def get_status_counts(user_id: int | None = None, username: str | None = None) -> dict:
     """Article counts grouped by status + optional user assignment count."""
     with get_pg_session() as db:
         counts: dict[str, int] = {}
@@ -1896,9 +1896,11 @@ def get_status_counts(user_id: int | None = None) -> dict:
         counts["all"] = db.execute(
             select(func.count()).select_from(Article)
         ).scalar() or 0
-        if user_id:
+        # assigned_to stores username (text), not user_id
+        assigned_val = username or (str(user_id) if user_id else None)
+        if assigned_val:
             counts["my"] = db.execute(
-                select(func.count()).select_from(Article).where(Article.assigned_to == user_id)
+                select(func.count()).select_from(Article).where(Article.assigned_to == assigned_val)
             ).scalar() or 0
         return counts
 
