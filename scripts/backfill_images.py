@@ -111,7 +111,7 @@ def extract_image_from_html(html: str) -> str | None:
 
     # Strategy 3: Any /storage/ URL anywhere on the page
     m = re.search(
-        r"/storage/[a-f0-9]{2}/[a-f0-9]+[^'"<>\s]*",
+        r'/storage/[a-f0-9]{2}/[a-f0-9]+[^"<>\s]*',
         html,
     )
     if m:
