@@ -31,7 +31,7 @@ from . import search_analytics as search
 from . import search_engine as meili
 from . import auth
 from . import workflow as wf
-from .public_routes import router as public_router
+from .public_routes import router as public_router, NAV_SECTIONS as _NAV_SECTIONS
 from .social_routes import router as social_router
 
 logger = logging.getLogger(__name__)
@@ -175,7 +175,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     """Custom 404/4xx error pages."""
     if exc.status_code == 404:
-        nav = db.get_nav_sections()
+        nav = _NAV_SECTIONS
         return HTMLResponse(
             templates.get_template("public/404.html").render(
                 request=request, nav_sections=nav, nav_categories=nav
@@ -189,7 +189,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     """Catch-all: show 500.html instead of raw error text."""
     logging.error(f"Unhandled exception on {request.url}: {exc}", exc_info=True)
     try:
-        nav = db.get_nav_sections()
+        nav = _NAV_SECTIONS
         return HTMLResponse(
             templates.get_template("public/500.html").render(
                 request=request, nav_sections=nav, nav_categories=nav

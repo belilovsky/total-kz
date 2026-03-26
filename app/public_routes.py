@@ -658,6 +658,21 @@ async def redirect_old_root():
 
 
 # ══════════════════════════════════════════════
+#  SHORT CATEGORY URL REDIRECTS  (/politika → /news/politika etc.)
+# ══════════════════════════════════════════════
+
+def _make_redirect(slug: str):
+    """Factory to create a redirect handler for a given section slug."""
+    async def _redirect():
+        return RedirectResponse(url=f"/news/{slug}", status_code=301)
+    _redirect.__name__ = f"redirect_short_{slug}"
+    return _redirect
+
+for _sec in NAV_SECTIONS:
+    router.get(f"/{_sec['slug']}", response_class=RedirectResponse, include_in_schema=False)(_make_redirect(_sec["slug"]))
+
+
+# ══════════════════════════════════════════════
 #  PUBLIC PAGES
 # ══════════════════════════════════════════════
 
