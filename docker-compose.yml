@@ -42,6 +42,8 @@ services:
     volumes:
       - ./data:/app/data
     depends_on:
+      db:
+        condition: service_healthy
       meilisearch:
         condition: service_started
     entrypoint: ["/bin/sh", "-c"]
@@ -58,18 +60,10 @@ services:
         while true; do
           COUNTER=$$((COUNTER + 1))
 
-          # Каждые 2 часа: fetch новых статей
-          /app/scraper/cron_fetch.sh >> /app/data/cron_fetch.log 2>&1
+          # Every 2 hours: full pipeline (fetch → enrich → NER → tags → reindex)
+          /app/scraper/cron_pipeline.sh >> /app/data/cron_pipeline.log 2>&1
 
-          # После fetch: переиндексация Meilisearch
-          /app/scraper/cron_reindex.sh >> /app/data/cron_reindex.log 2>&1
-
-          # Каждые 4 часа (каждый 2-й цикл): обогащение GPT
-          if [ $$((COUNTER % 2)) -eq 0 ]; then
-            /app/scraper/cron_enrich.sh >> /app/data/cron_enrich.log 2>&1
-          fi
-
-          # Каждые 24 часа (каждый 12-й цикл): бэкап БД
+          # Every 24 hours (every 12th cycle): backup DB
           if [ $$((COUNTER % 12)) -eq 0 ]; then
             /app/scraper/cron_backup.sh >> /app/data/cron_backup.log 2>&1
           fi
