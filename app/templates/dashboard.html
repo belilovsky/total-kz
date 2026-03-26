@@ -5,6 +5,38 @@
 {% block page_title %}Дашборд{% endblock %}
 
 {% block content %}
+<!-- ===== QUICK ACTION WIDGETS ===== -->
+<div class="quick-actions-grid">
+    <a href="/admin/articles?status=review" class="quick-action-card">
+        <div class="quick-action-icon qa-review">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="quick-action-count">{{ qa_counts.review|default(0) }}</div>
+        <div class="quick-action-label">На рецензии</div>
+    </a>
+    <a href="/admin/articles?status=ready" class="quick-action-card">
+        <div class="quick-action-icon qa-scheduled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="quick-action-count">{{ qa_counts.scheduled|default(0) }}</div>
+        <div class="quick-action-label">Запланированные</div>
+    </a>
+    <a href="/admin/articles?has_image=0" class="quick-action-card">
+        <div class="quick-action-icon qa-no-image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="quick-action-count">{{ qa_counts.no_image|default(0) }}</div>
+        <div class="quick-action-label">Без изображений</div>
+    </a>
+    <a href="/admin/articles?has_tags=0" class="quick-action-card">
+        <div class="quick-action-icon qa-no-tags">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div class="quick-action-count">{{ qa_counts.no_tags|default(0) }}</div>
+        <div class="quick-action-label">Без тегов</div>
+    </a>
+</div>
+
 <!-- ===== KPI CARDS ===== -->
 <div class="kpi-grid">
     <div class="kpi-card">

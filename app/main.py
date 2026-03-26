@@ -256,7 +256,80 @@ templates.env.globals["get_weather"] = _get_weather
 
 def _ctx(request: Request, **kwargs) -> dict:
     """Build template context with current_user always available."""
-    ctx = {"request": request, "current_user": getattr(request.state, "current_user", None)}
+    user = getattr(request.state, "current_user", None)
+    ctx = {"request": request, "current_user": user}
+
+    # Build notifications for admin header (review articles + recent comments)
+    notifications = []
+    notification_count = 0
+    if user and str(request.url.path).startswith("/admin"):
+        try:
+            if settings.use_postgres:
+                from app.pg_queries import get_pg_session, Article, ArticleComment
+                from sqlalchemy import select, func, desc
+                with get_pg_session() as sess:
+                    # Articles needing review
+                    review_rows = sess.execute(
+                        select(Article.id, Article.title, Article.updated_at)
+                        .where(Article.status == "review")
+                        .order_by(Article.updated_at.desc())
+                        .limit(8)
+                    ).all()
+                    for r in review_rows:
+                        title = (r.title or "Без заголовка")[:60]
+                        notifications.append({
+                            "url": f"/admin/article/{r.id}",
+                            "title": f"На рецензии: {title}",
+                            "time": str(r.updated_at)[:16] if r.updated_at else "",
+                            "icon": "📝",
+                            "icon_class": "notif-icon-review",
+                        })
+                    # Recent comments (last 5)
+                    comment_rows = sess.execute(
+                        select(ArticleComment.article_id, ArticleComment.username,
+                               ArticleComment.comment, ArticleComment.created_at)
+                        .order_by(ArticleComment.created_at.desc())
+                        .limit(5)
+                    ).all()
+                    for c in comment_rows:
+                        notifications.append({
+                            "url": f"/admin/article/{c.article_id}",
+                            "title": f"{c.username}: {(c.comment or '')[:50]}",
+                            "time": str(c.created_at)[:16] if c.created_at else "",
+                            "icon": "💬",
+                            "icon_class": "notif-icon-comment",
+                        })
+            else:
+                with db.get_db() as conn:
+                    review_rows = conn.execute(
+                        "SELECT id, title, updated_at FROM articles WHERE status='review' ORDER BY updated_at DESC LIMIT 8"
+                    ).fetchall()
+                    for r in review_rows:
+                        title = (r["title"] or "Без заголовка")[:60]
+                        notifications.append({
+                            "url": f"/admin/article/{r['id']}",
+                            "title": f"На рецензии: {title}",
+                            "time": str(r["updated_at"])[:16] if r["updated_at"] else "",
+                            "icon": "📝",
+                            "icon_class": "notif-icon-review",
+                        })
+                    comment_rows = conn.execute(
+                        "SELECT article_id, username, comment, created_at FROM article_comments ORDER BY created_at DESC LIMIT 5"
+                    ).fetchall()
+                    for c in comment_rows:
+                        notifications.append({
+                            "url": f"/admin/article/{c['article_id']}",
+                            "title": f"{c['username']}: {(c['comment'] or '')[:50]}",
+                            "time": str(c["created_at"])[:16] if c["created_at"] else "",
+                            "icon": "💬",
+                            "icon_class": "notif-icon-comment",
+                        })
+            notification_count = len(notifications)
+        except Exception:
+            pass  # Don't break page rendering for notification errors
+
+    ctx["notifications"] = notifications
+    ctx["notification_count"] = notification_count
     ctx.update(kwargs)
     return ctx
 
@@ -386,6 +459,40 @@ async def admin_dashboard(request: Request):
     heatmap_data = json.dumps(stats.get("cat_by_year", []), ensure_ascii=False)
     cat_labels_json = json.dumps(CATEGORY_LABELS, ensure_ascii=False)
 
+    # Quick action widget counts
+    qa_counts = {"review": 0, "scheduled": 0, "no_image": 0, "no_tags": 0}
+    try:
+        if settings.use_postgres:
+            from app.pg_queries import get_pg_session, Article, ArticleTag
+            from sqlalchemy import select, func, or_, and_
+            with get_pg_session() as sess:
+                qa_counts["review"] = sess.execute(
+                    select(func.count()).select_from(Article).where(Article.status == "review")
+                ).scalar() or 0
+                qa_counts["scheduled"] = sess.execute(
+                    select(func.count()).select_from(Article).where(
+                        and_(Article.scheduled_at.isnot(None), Article.scheduled_at != "")
+                    )
+                ).scalar() or 0
+                qa_counts["no_image"] = sess.execute(
+                    select(func.count()).select_from(Article).where(
+                        or_(Article.main_image.is_(None), Article.main_image == "")
+                    ).where(Article.status != "archived")
+                ).scalar() or 0
+                qa_counts["no_tags"] = sess.execute(
+                    select(func.count()).select_from(Article).where(
+                        or_(Article.tags.is_(None), Article.tags == "", Article.tags == "[]")
+                    ).where(Article.status != "archived")
+                ).scalar() or 0
+        else:
+            with db.get_db() as conn:
+                qa_counts["review"] = conn.execute("SELECT COUNT(*) FROM articles WHERE status='review'").fetchone()[0]
+                qa_counts["scheduled"] = conn.execute("SELECT COUNT(*) FROM articles WHERE scheduled_at IS NOT NULL AND scheduled_at != ''").fetchone()[0]
+                qa_counts["no_image"] = conn.execute("SELECT COUNT(*) FROM articles WHERE (main_image IS NULL OR main_image = '') AND status != 'archived'").fetchone()[0]
+                qa_counts["no_tags"] = conn.execute("SELECT COUNT(*) FROM articles WHERE (tags IS NULL OR tags = '' OR tags = '[]') AND status != 'archived'").fetchone()[0]
+    except Exception:
+        pass
+
     return templates.TemplateResponse("dashboard.html", _ctx(request,
         stats=stats,
         persons=persons,
@@ -402,6 +509,7 @@ async def admin_dashboard(request: Request):
         cat_labels_json=cat_labels_json,
         cat_label=cat_label,
         entity_type_label=entity_type_label,
+        qa_counts=qa_counts,
     ))
 
 
@@ -418,6 +526,9 @@ async def admin_articles_list(
     status: str = "",
     assigned_to: str = "",
     my: str = "",
+    has_image: str = "",
+    has_tags: str = "",
+    has_enrichment: str = "",
     page: int = Query(1, ge=1),
 ):
     user = getattr(request.state, "current_user", None)
@@ -448,9 +559,77 @@ async def admin_articles_list(
         tag=tag, entity_id=entity_id, status=status,
         assigned_to=effective_assigned, page=page,
     )
+
+    # Post-filter for has_image / has_tags / has_enrichment
+    # These filters work on the full result set via extra SQL queries
+    if has_image or has_tags or has_enrichment:
+        try:
+            if settings.use_postgres:
+                from app.pg_queries import get_pg_session, Article, ArticleTag, ArticleEntity
+                from sqlalchemy import select, func, or_, and_, distinct
+                with get_pg_session() as sess:
+                    base = select(Article.id, Article.url, Article.pub_date, Article.sub_category,
+                                  Article.category_label, Article.title, Article.author,
+                                  Article.excerpt, Article.thumbnail, Article.main_image,
+                                  Article.status, Article.updated_at, Article.assigned_to)
+                    conditions = []
+                    if q:
+                        conditions.append(or_(Article.title.ilike(f"%{q}%"), Article.body_text.ilike(f"%{q}%")))
+                    if category:
+                        conditions.append(Article.sub_category == category)
+                    if status:
+                        conditions.append(Article.status == status)
+                    if author:
+                        conditions.append(Article.author == author)
+                    if effective_assigned:
+                        conditions.append(Article.assigned_to == effective_assigned)
+                    if date_from:
+                        conditions.append(Article.pub_date >= date_from)
+                    if date_to:
+                        conditions.append(Article.pub_date <= date_to + " 23:59:59")
+
+                    if has_image == "1":
+                        conditions.append(and_(Article.main_image.isnot(None), Article.main_image != ""))
+                    elif has_image == "0":
+                        conditions.append(or_(Article.main_image.is_(None), Article.main_image == ""))
+
+                    if has_tags == "1":
+                        conditions.append(and_(Article.tags.isnot(None), Article.tags != "", Article.tags != "[]"))
+                    elif has_tags == "0":
+                        conditions.append(or_(Article.tags.is_(None), Article.tags == "", Article.tags == "[]"))
+
+                    if has_enrichment == "1":
+                        sub = select(distinct(ArticleEntity.article_id))
+                        conditions.append(Article.id.in_(sub))
+                    elif has_enrichment == "0":
+                        sub = select(distinct(ArticleEntity.article_id))
+                        conditions.append(~Article.id.in_(sub))
+
+                    if conditions:
+                        base = base.where(*conditions)
+                    total = sess.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+                    per_page = 30
+                    offset = (page - 1) * per_page
+                    rows = sess.execute(
+                        base.distinct().order_by(Article.pub_date.desc()).limit(per_page).offset(offset)
+                    ).all()
+                    keys = ["id", "url", "pub_date", "sub_category", "category_label",
+                            "title", "author", "excerpt", "thumbnail", "main_image",
+                            "status", "updated_at", "assigned_to"]
+                    articles = []
+                    for r in rows:
+                        d = {}
+                        for i, k in enumerate(keys):
+                            d[k] = r[i]
+                        articles.append(d)
+                    pages = max(1, -(-total // per_page))
+                    result = {"articles": articles, "total": total, "page": page, "per_page": per_page, "pages": pages}
+        except Exception:
+            pass  # Fall back to unfiltered result
+
     stats = db.get_stats()
-    authors = db.get_authors()
-    tags = db.get_tags(limit=60)
+    authors_list = db.get_authors()
+    tags_list = db.get_tags(limit=60)
 
     entity_name = ""
     entity_type = ""
@@ -482,6 +661,10 @@ async def admin_articles_list(
             else:
                 status_counts["my"] = 0
 
+    # Get users for bulk assign dropdown
+    all_users = db.get_all_users()
+    assignable_users = [u for u in all_users if u.get("is_active")]
+
     return templates.TemplateResponse("articles.html", _ctx(request,
         result=result,
         q=q,
@@ -496,10 +679,14 @@ async def admin_articles_list(
         status=status,
         assigned_to=assigned_to,
         my=my,
+        has_image=has_image,
+        has_tags=has_tags,
+        has_enrichment=has_enrichment,
         status_counts=status_counts,
         categories=stats["categories"],
-        authors=authors,
-        tags=tags,
+        authors=authors_list,
+        tags=tags_list,
+        assignable_users=assignable_users,
         cat_label=cat_label,
         entity_type_label=entity_type_label,
         format_num=_format_num,

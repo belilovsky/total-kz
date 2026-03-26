@@ -6,7 +6,7 @@
     <title>{% block title %}Total.kz Dashboard{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=11.0">
+    <link rel="stylesheet" href="/static/css/style.css?v=12.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         (function() {
@@ -121,7 +121,7 @@
             </div>
             {% endif %}
             <a href="/" class="version-badge" style="text-decoration:none;color:inherit">← На сайт</a>
-            <div class="version-badge">v11.0 – Total.kz Admin</div>
+            <div class="version-badge">v12.0 – Total.kz Admin</div>
         </div>
     </aside>
 
@@ -133,6 +133,34 @@
             <h1 class="page-title">{% block page_title %}Дашборд{% endblock %}</h1>
             <div class="top-bar-actions">
                 {% block actions %}{% endblock %}
+                <!-- Notifications Bell -->
+                <div class="notif-bell-wrap" style="position:relative">
+                    <button class="notif-bell" id="notifBell" title="Уведомления" onclick="toggleNotifPanel()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span class="notif-badge" id="notifBadge" data-count="{{ notification_count|default(0) }}">{{ notification_count if notification_count|default(0) > 0 else '' }}</span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <span class="notif-header-title">Уведомления</span>
+                            <button class="notif-mark-read" onclick="markAllRead()">Прочитать все</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            {% if notifications|default([]) %}
+                                {% for n in notifications|default([]) %}
+                                <a href="{{ n.url }}" class="notif-item unread" onclick="markRead(this)">
+                                    <div class="notif-item-icon {{ n.icon_class }}">{{ n.icon }}</div>
+                                    <div class="notif-item-body">
+                                        <div class="notif-item-title">{{ n.title }}</div>
+                                        <div class="notif-item-time">{{ n.time }}</div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="notif-empty">Нет новых уведомлений</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
                 <button class="theme-toggle" id="themeToggle" title="Переключить тему">
                     <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                     <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -244,8 +272,25 @@
 
     <!-- Toast notifications -->
     <div id="toast" class="toast"></div>
+    <div class="toast-container" id="toastContainer"></div>
 
-    <script src="/static/js/app.js?v=11.0"></script>
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="shortcuts-modal-overlay" id="shortcutsModal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="shortcuts-modal">
+            <h3>Горячие клавиши</h3>
+            <div class="shortcuts-list">
+                <div class="shortcut-row"><span class="shortcut-label">Сохранить</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">S</span></div></div>
+                <div class="shortcut-row"><span class="shortcut-label">Предпросмотр</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">P</span></div></div>
+                <div class="shortcut-row"><span class="shortcut-label">Опубликовать</span><div class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">P</span></div></div>
+                <div class="shortcut-row"><span class="shortcut-label">Поиск</span><div class="shortcut-keys"><span class="shortcut-key">/</span></div></div>
+                <div class="shortcut-row"><span class="shortcut-label">Закрыть модальное окно</span><div class="shortcut-keys"><span class="shortcut-key">Esc</span></div></div>
+                <div class="shortcut-row"><span class="shortcut-label">Показать эту справку</span><div class="shortcut-keys"><span class="shortcut-key">?</span></div></div>
+            </div>
+            <div style="margin-top:16px;text-align:right"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('shortcutsModal').classList.remove('open')">Закрыть</button></div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=12.0"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

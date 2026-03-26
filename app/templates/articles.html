@@ -51,7 +51,7 @@
 <!-- Mobile filter button -->
 <button class="mobile-filter-btn" onclick="document.getElementById('filterSheet').classList.add('open');document.getElementById('sheetOverlay').classList.add('open')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    Фильтры{% if q or category or author or date_from or date_to or tag or entity_id %} •{% endif %}
+    Фильтры{% if q or category or author or date_from or date_to or tag or entity_id or has_image or has_tags or has_enrichment %} •{% endif %}
 </button>
 
 <!-- Mobile bottom sheet for filters -->
@@ -144,6 +144,30 @@
             <label class="filter-label">Дата до</label>
             <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
         </div>
+        <div class="filter-group">
+            <label class="filter-label">Изображение</label>
+            <select name="has_image" class="filter-select">
+                <option value="">Все</option>
+                <option value="1" {% if has_image == '1' %}selected{% endif %}>С изображением</option>
+                <option value="0" {% if has_image == '0' %}selected{% endif %}>Без изображения</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Теги</label>
+            <select name="has_tags" class="filter-select">
+                <option value="">Все</option>
+                <option value="1" {% if has_tags == '1' %}selected{% endif %}>С тегами</option>
+                <option value="0" {% if has_tags == '0' %}selected{% endif %}>Без тегов</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Обогащение</label>
+            <select name="has_enrichment" class="filter-select">
+                <option value="">Все</option>
+                <option value="1" {% if has_enrichment == '1' %}selected{% endif %}>Обогащено</option>
+                <option value="0" {% if has_enrichment == '0' %}selected{% endif %}>Не обогащено</option>
+            </select>
+        </div>
         {% if entity_id %}
         <input type="hidden" name="entity_id" value="{{ entity_id }}">
         {% endif %}
@@ -152,14 +176,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Найти
             </button>
-            {% if q or category or author or date_from or date_to or tag or entity_id %}
+            {% if q or category or author or date_from or date_to or tag or entity_id or has_image or has_tags or has_enrichment %}
             <a href="/admin/articles{% if status %}?status={{ status }}{% endif %}" class="btn btn-ghost">Сбросить</a>
             {% endif %}
         </div>
     </form>
 </div>
 
-{% if q or category or author or date_from or date_to or tag or entity_id %}
+{% if q or category or author or date_from or date_to or tag or entity_id or has_image or has_tags or has_enrichment %}
 <div class="active-filters">
     {% if q %}
     <span class="active-filter-tag">
@@ -203,6 +227,24 @@
         <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}" class="remove">&times;</a>
     </span>
     {% endif %}
+    {% if has_image %}
+    <span class="active-filter-tag">
+        {{ 'С изображением' if has_image == '1' else 'Без изображения' }}
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}&has_tags={{ has_tags }}&has_enrichment={{ has_enrichment }}" class="remove">&times;</a>
+    </span>
+    {% endif %}
+    {% if has_tags %}
+    <span class="active-filter-tag">
+        {{ 'С тегами' if has_tags == '1' else 'Без тегов' }}
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}&has_image={{ has_image }}&has_enrichment={{ has_enrichment }}" class="remove">&times;</a>
+    </span>
+    {% endif %}
+    {% if has_enrichment %}
+    <span class="active-filter-tag">
+        {{ 'Обогащено' if has_enrichment == '1' else 'Не обогащено' }}
+        <a href="/admin/articles?{{ 'status=' + status + '&' if status }}q={{ q|urlencode }}&category={{ category|urlencode }}&author={{ author|urlencode }}&date_from={{ date_from }}&date_to={{ date_to }}&tag={{ tag|urlencode }}&entity_id={{ entity_id }}&has_image={{ has_image }}&has_tags={{ has_tags }}" class="remove">&times;</a>
+    </span>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -224,6 +266,13 @@
             <option value="archived">В архив</option>
         </select>
         <button class="btn btn-sm btn-ghost" onclick="applyBulkStatus()">Применить</button>
+        <select id="bulkAssignSelect" class="filter-select" style="min-width:140px">
+            <option value="">Назначить автора</option>
+            {% for u in assignable_users|default([]) %}
+            <option value="{{ u.username }}">{{ u.display_name|default(u.username) }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-ghost" onclick="applyBulkAssign()">Назначить</button>
         <button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="bulkDelete()">Удалить</button>
         <button class="btn btn-sm btn-ghost" onclick="clearBulkSelection()">Отмена</button>
     </div>
@@ -515,9 +564,24 @@ function bulkDelete(){
     if(!confirm('Архивировать '+ids.length+' статей?'))return;
     fetch('/api/articles/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({article_ids:ids,action:'delete'})})
     .then(function(r){return r.json()}).then(function(res){
-        if(res.ok){showToast('Архивировано: '+res.updated);setTimeout(function(){location.reload()},600)}
-        else showToast('Ошибка')
-    }).catch(function(){showToast('Ошибка сети')});
+        if(res.ok){showToast('Архивировано: '+res.updated,'success');setTimeout(function(){location.reload()},600)}
+        else showToast('Ошибка','error')
+    }).catch(function(){showToast('Ошибка сети','error')});
+}
+function applyBulkAssign(){
+    var ids=getSelectedIds();
+    var assignTo=document.getElementById('bulkAssignSelect').value;
+    if(!ids.length||!assignTo)return;
+    if(!confirm('Назначить '+assignTo+' для '+ids.length+' статей?'))return;
+    // Assign each article individually
+    var done=0,total=ids.length;
+    ids.forEach(function(id){
+        fetch('/api/article/'+id+'/assign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_to:assignTo})})
+        .then(function(r){return r.json()}).then(function(res){
+            done++;
+            if(done===total){showToast('Назначено: '+total+' статей','success');setTimeout(function(){location.reload()},600);}
+        }).catch(function(){done++;});
+    });
 }
 
 // View toggle (existing functionality)
