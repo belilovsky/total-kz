@@ -168,23 +168,19 @@
     </div>
   </nav>
 
-  {# ── Header: title left, meta info right (under badge) ── #}
+  {# ── Header: full-width title, meta below ── #}
   <header class="article-page-header">
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
       <div class="article-header-aside">
         <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
+        <span class="sep">·</span>
         <span class="header-author">{{ article.author }}</span>
         {% endif %}
+        <span class="sep">·</span>
+        <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} мин</span>
       </div>
-    </div>
-    {# Mobile-only meta (below title) #}
-    <div class="article-meta article-meta--mobile">
-      {% if article.author %}<span class="header-author article-meta-author">{{ article.author }}</span><span class="sep">·</span>{% endif %}
-      <time class="article-meta-date" datetime="{{ article.pub_date }}">{{ format_date(article.pub_date) }}</time>
-      <span class="sep">·</span>
-      <span class="reading-time">{{ reading_time }} мин</span>
     </div>
   </header>
 
@@ -211,21 +207,6 @@
 
   <div class="article-layout">
     <div class="article-content">
-      {% if article.enrichment and article.enrichment.summary %}
-      <div class="article-tldr">
-        <div class="tldr-label">Коротко</div>
-        <p>{{ article.enrichment.summary }}</p>
-      </div>
-      {% endif %}
-
-      {% if article.enrichment and article.enrichment.keywords %}
-      <div class="article-keywords">
-        {% for kw in article.enrichment.keywords[:8] %}
-        <a href="/search?q={{ kw }}" class="keyword-chip">{{ kw }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-
       <div class="article-body" id="article-body">
         {% if article.body_html %}
           {{ article.body_html | safe }}
@@ -261,22 +242,7 @@
         </button>
       </div>
 
-      {# ── Темы (mobile only, hidden >=1100px) ── #}
-      {# Приоритет: GPT keywords → ручные теги → entity (person/org) #}
-      {% set _tags_m = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-      {% set _ent_m = dedup_entities(article.entities or []) if not _tags_m else [] %}
-      {% if _tags_m or _ent_m %}
-      <div class="article-footer-meta article-footer-meta--mobile">
-        <div class="sidebar-pills">
-          {% for tag in _tags_m[:8] %}
-            <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
-          {% endfor %}
-          {% for ent in _ent_m %}
-            <a href="/tag/{{ short_entity_name(ent) }}" class="s-pill s-pill--tag">{{ short_entity_name(ent) }}</a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+      {# Tags moved to full-width section between body and timeline #}
 
     </div>
 
@@ -333,57 +299,28 @@
         </div>
         {% endif %}
 
-        {# ── Темы: GPT keywords → ручные теги → entity (person/org) ── #}
-        {% set display_tags = article.enrichment.keywords if article.enrichment and article.enrichment.keywords else (article.tags or []) %}
-        {% set display_ent = dedup_entities(article.entities or []) if not display_tags else [] %}
-        {% if display_tags or display_ent %}
-        <div class="sidebar-topics">
-          <div class="sidebar-pills" id="sidebar-pills">
-            {% for tag in display_tags[:8] %}
-              <a href="/tag/{{ tag }}" class="s-pill s-pill--tag">{{ tag }}</a>
-            {% endfor %}
-            {% for ent in display_ent %}
-              <a href="{{ person_url_for_entity(ent) }}" class="s-pill s-pill--tag{% if person_url_for_entity(ent).startswith('/person/') %} s-pill--person{% endif %}">{{ short_entity_name(ent) }}</a>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        {# ── Bookmark + Story — compact row ── #}
-        <div class="sidebar-quick-actions">
-          <button class="bookmark-btn" id="bookmarkBtn" data-article-id="{{ article.id }}" aria-label="Сохранить">
-            <svg class="bookmark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path>
-            </svg>
-            <span class="bookmark-label">Сохранить</span>
-          </button>
-          {% if article.main_image %}
-          <a href="/stories/{{ category }}/{{ slug }}" class="story-link-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
-            <span>Story</span>
-          </a>
-          {% endif %}
-        </div>
-
-        {# ── Actions: share + print, compact single row ── #}
+        {# ── Action bar: share + bookmark + print in one compact row ── #}
         <div class="sidebar-actions">
-          <a href="https://t.me/share/url?url={{ site_domain }}/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="sidebar-action-btn" aria-label="Telegram">
+          <a href="https://t.me/share/url?url={{ site_domain }}/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="sidebar-action-btn" aria-label="Telegram" title="Telegram">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           </a>
-          <a href="https://api.whatsapp.com/send?text={{ article.title | urlencode }}%20{{ site_domain }}/news/{{ category }}/{{ slug }}" target="_blank" rel="noopener" class="sidebar-action-btn" aria-label="WhatsApp">
+          <a href="https://api.whatsapp.com/send?text={{ article.title | urlencode }}%20{{ site_domain }}/news/{{ category }}/{{ slug }}" target="_blank" rel="noopener" class="sidebar-action-btn" aria-label="WhatsApp" title="WhatsApp">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </a>
-          <button class="sidebar-action-btn" onclick="copyLink(this)" aria-label="Копировать ссылку">
+          <button class="sidebar-action-btn" onclick="copyLink(this)" aria-label="Копировать ссылку" title="Копировать ссылку">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           </button>
-          <span class="sidebar-actions-divider"></span>
-          <button class="sidebar-action-btn" onclick="window.print()" aria-label="Печать">
+          <button class="sidebar-action-btn" onclick="window.print()" aria-label="Печать" title="Печать">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           </button>
-          <button class="sidebar-action-btn" onclick="sharePDF()" aria-label="Отправить PDF" title="Отправить как PDF">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3-3 3 3"/><line x1="12" y1="12" x2="12" y2="18"/></svg>
+          <span class="sidebar-actions-divider"></span>
+          <button class="sidebar-action-btn sidebar-action-btn--bookmark" id="bookmarkBtn" data-article-id="{{ article.id }}" aria-label="Сохранить" title="Сохранить">
+            <svg class="bookmark-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>
           </button>
         </div>
+        {% if article.main_image %}
+        <a href="/stories/{{ category }}/{{ slug }}" class="sidebar-story-link">Story →</a>
+        {% endif %}
 
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
@@ -405,6 +342,15 @@
     </aside>
   </div>
 
+  {# ── Tag pills (between article body and timeline) ── #}
+  {% if article.enrichment and article.enrichment.keywords %}
+  <div class="article-keywords article-keywords--full">
+    {% for kw in article.enrichment.keywords[:8] %}
+    <a href="/search?q={{ kw }}" class="keyword-chip">{{ kw }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {# ── Story timeline — full width, below article-layout ── #}
   {% if timeline and (timeline.prev or timeline.next) %}
   <section class="article-timeline article-timeline--full">
@@ -424,16 +370,19 @@
       {% for art in timeline.next|reverse %}
       <a href="{{ article_url(art) }}" class="timeline-item">
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <span class="timeline-dot"></span>
         <span class="timeline-title">{{ art.title }}</span>
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
         <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
+        <span class="timeline-dot"></span>
         <span class="timeline-title">{{ article.title }}</span>
       </div>
       {% for art in timeline.prev %}
       <a href="{{ article_url(art) }}" class="timeline-item">
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <span class="timeline-dot"></span>
         <span class="timeline-title">{{ art.title }}</span>
       </a>
       {% endfor %}
@@ -768,8 +717,8 @@ function toggleBookmark(id, title, url, image, date) {
   var articleId = parseInt(btn.dataset.articleId);
   if (isBookmarked(articleId)) {
     btn.classList.add('bookmarked');
-    btn.querySelector('.bookmark-label').textContent = 'Сохранено';
-    btn.querySelector('.bookmark-icon').style.fill = 'var(--accent)';
+    var ic = btn.querySelector('.bookmark-icon');
+    if (ic) ic.style.fill = 'var(--accent)';
   }
   btn.addEventListener('click', function() {
     var saved = toggleBookmark(
@@ -780,8 +729,8 @@ function toggleBookmark(id, title, url, image, date) {
       new Date().toISOString()
     );
     this.classList.toggle('bookmarked', saved);
-    this.querySelector('.bookmark-label').textContent = saved ? 'Сохранено' : 'Сохранить';
-    this.querySelector('.bookmark-icon').style.fill = saved ? 'var(--accent)' : 'none';
+    var ic = this.querySelector('.bookmark-icon');
+    if (ic) ic.style.fill = saved ? 'var(--accent)' : 'none';
   });
 })();
 </script>

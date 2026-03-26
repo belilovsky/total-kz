@@ -309,22 +309,22 @@ def format_date_short(date_str: str | None) -> str:
 
 
 def format_date_day(date_str: str | None) -> str:
-    """Date-only format for timelines — no time, no year if current.
-    Current year:  21 мар
-    Past years:    12 мар, 2024
+    """Date-only format for timelines.
+    Current year:  26 марта   (day + full genitive month)
+    Past years:    25.03.2025  (DD.MM.YYYY)
     """
     if not date_str:
         return ""
-    months = ["янв", "фев", "мар", "апр", "мая", "июн",
-              "июл", "авг", "сен", "окт", "ноя", "дек"]
+    months_gen = ["января", "февраля", "марта", "апреля", "мая", "июня",
+                  "июля", "августа", "сентября", "октября", "ноября", "декабря"]
     dt = _parse_datetime(date_str)
     if dt is None:
         return date_str[:10] if len(date_str) >= 10 else date_str
     now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
     if dt.year == now.year:
-        return f"{dt.day} {months[dt.month - 1]}"
+        return f"{dt.day} {months_gen[dt.month - 1]}"
     else:
-        return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
+        return f"{dt.day:02d}.{dt.month:02d}.{dt.year}"
 
 
 def format_date_full(date_str: str | None) -> str:
@@ -1871,32 +1871,47 @@ async def web_story_page(category: str, slug: str):
     author = html_mod.escape(article.get("author") or "Total.kz")
     img = article.get("main_image", "")
     image_url = img if img and img.startswith("http") else (f"{SITE_DOMAIN}{img}" if img else f"{SITE_DOMAIN}/static/img/og-default.png")
+    # Build a proper poster URL via imgproxy for consistent sizing
+    poster_url = f"{SITE_DOMAIN}/imgproxy/insecure/resize:fill:720:1280/gravity:sm/plain/{image_url}@webp" if image_url else f"{SITE_DOMAIN}/static/img/og-default.png"
     pub_date = article.get("pub_date", "")
     updated_at = article.get("updated_at") or pub_date
     category_name = html_mod.escape(cat_label(category))
 
+    months_gen = ["января", "февраля", "марта", "апреля", "мая", "июня",
+                  "июля", "августа", "сентября", "октября", "ноября", "декабря"]
     formatted_date = ""
     try:
         dt = _parse_datetime(pub_date)
         if dt:
-            formatted_date = f"{dt.day} {MONTHS_SHORT.get(dt.month, '')} {dt.year}"
+            formatted_date = f"{dt.day} {months_gen[dt.month - 1]} {dt.year}"
     except Exception:
         formatted_date = pub_date[:10] if pub_date else ""
 
     body_text = article.get("body_text") or article.get("excerpt") or ""
-    chunks = _split_text_chunks(body_text, 180)[:12]
+    # Split into readable chunks, limit to 10 text pages
+    chunks = _split_text_chunks(body_text, 220)[:10]
 
+    # Build text pages with alternating light/dark backgrounds for variety
     text_pages = []
+    bg_colors = ["#ffffff", "#f7f7f8", "#ffffff", "#f7f7f8", "#ffffff",
+                 "#f7f7f8", "#ffffff", "#f7f7f8", "#ffffff", "#f7f7f8"]
     for i, chunk in enumerate(chunks):
         page_id = f"page-{i+1}"
+        bg = bg_colors[i % len(bg_colors)]
+        page_num = f'<p class="story-page-num">{i+1}/{len(chunks)}</p>'
         text_pages.append(f"""
     <amp-story-page id="{page_id}">
-      <amp-story-grid-layer template="vertical" class="story-text-page">
-        <p class="story-paragraph">{html_mod.escape(chunk)}</p>
+      <amp-story-grid-layer template="vertical" class="story-text-page" style="background:{bg}">
+        <div class="story-text-inner">
+          <p class="story-paragraph">{html_mod.escape(chunk)}</p>
+          {page_num}
+        </div>
       </amp-story-grid-layer>
     </amp-story-page>""")
 
     text_pages_html = "".join(text_pages)
+    article_url = f"{SITE_DOMAIN}/news/{category}/{slug}"
+    logo_url = f"{SITE_DOMAIN}/static/img/logotype.png"
 
     story_html = f"""<!doctype html>
 <html amp lang="ru">
@@ -1917,56 +1932,151 @@ async def web_story_page(category: str, slug: str):
     "datePublished": "{pub_date}",
     "dateModified": "{updated_at}",
     "author": {{"@type": "Person", "name": "{author}"}},
-    "publisher": {{"@type": "Organization", "name": "Total.kz", "logo": {{"@type": "ImageObject", "url": "{SITE_DOMAIN}/static/img/logotype.png"}}}}
+    "publisher": {{"@type": "Organization", "name": "Total.kz", "logo": {{"@type": "ImageObject", "url": "{logo_url}", "width": 200, "height": 60}}}}
   }}
   </script>
   <meta property="og:title" content="{title}">
   <meta property="og:image" content="{html_mod.escape(image_url)}">
   <meta property="og:type" content="article">
+  <meta property="og:url" content="{SITE_DOMAIN}/stories/{category}/{slug}">
+  <meta name="twitter:card" content="summary_large_image">
   <style amp-custom>
-    .story-cover-text {{ background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 24px; }}
-    .story-title {{ color: #fff; font-family: 'Onest', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.3; }}
-    .story-cat {{ color: #d83236; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }}
-    .story-meta {{ color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px; }}
-    .story-text-page {{ background: #fff; padding: 24px; display: flex; flex-direction: column; justify-content: center; }}
-    .story-paragraph {{ font-family: 'Onest', sans-serif; font-size: 18px; line-height: 1.7; color: #1a1a1a; }}
-    .story-logo {{ background: #d83236; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: 800; font-size: 16px; font-family: 'Montserrat', sans-serif; }}
-    .story-cta {{ background: #d83236; color: #fff; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; font-size: 16px; }}
+    * {{ box-sizing: border-box; }}
+    amp-story {{ font-family: 'Onest', -apple-system, BlinkMacSystemFont, sans-serif; }}
+    .story-cover-overlay {{
+      background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+      padding: 32px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }}
+    .story-cat {{
+      color: #d83236;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }}
+    .story-title {{
+      color: #fff;
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin: 0;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }}
+    .story-meta {{
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      margin-top: 12px;
+    }}
+    .story-text-page {{
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .story-text-inner {{
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100%;
+    }}
+    .story-paragraph {{
+      font-size: 19px;
+      line-height: 1.65;
+      color: #1a1a1a;
+      margin: 0;
+    }}
+    .story-page-num {{
+      font-size: 12px;
+      color: #999;
+      margin-top: 20px;
+      text-align: center;
+    }}
+    .story-logo {{
+      background: #d83236;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 18px;
+      display: inline-block;
+    }}
+    .story-end-overlay {{
+      background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }}
+    .story-cta {{
+      background: #d83236;
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin-top: 20px;
+    }}
+    .story-end-hint {{
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      margin-top: 16px;
+    }}
+    .story-swipe-hint {{
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 24px;
+    }}
   </style>
 </head>
 <body>
   <amp-story standalone
     title="{title}"
     publisher="Total.kz"
-    publisher-logo-src="{SITE_DOMAIN}/static/img/logotype.png"
-    poster-portrait-src="{html_mod.escape(image_url)}">
+    publisher-logo-src="{logo_url}"
+    poster-portrait-src="{html_mod.escape(poster_url)}">
 
+    <!-- Cover page with article image -->
     <amp-story-page id="cover">
       <amp-story-grid-layer template="fill">
-        <amp-img src="{html_mod.escape(image_url)}" width="720" height="1280" layout="fill" alt="{title}"></amp-img>
+        <amp-img src="{html_mod.escape(image_url)}"
+                 width="720" height="1280" layout="fill"
+                 alt="{title}"></amp-img>
       </amp-story-grid-layer>
-      <amp-story-grid-layer template="vertical" class="story-cover-text">
-        <div>
-          <p class="story-cat">{category_name}</p>
-          <h1 class="story-title">{title}</h1>
-          <p class="story-meta">{author} &middot; {formatted_date}</p>
-        </div>
-      </amp-story-grid-layer>
-    </amp-story-page>
-    {text_pages_html}
-    <amp-story-page id="cta">
-      <amp-story-grid-layer template="fill">
-        <amp-img src="{html_mod.escape(image_url)}" width="720" height="1280" layout="fill" alt=""></amp-img>
-      </amp-story-grid-layer>
-      <amp-story-grid-layer template="vertical" class="story-cover-text">
-        <div style="text-align:center">
-          <span class="story-logo">ТÓТАЛ</span>
-          <p style="color:#fff;margin:16px 0;font-size:18px;">Читайте полную версию</p>
-          <a href="{SITE_DOMAIN}/news/{category}/{slug}" class="story-cta">Открыть статью &rarr;</a>
-        </div>
+      <amp-story-grid-layer template="vertical" class="story-cover-overlay">
+        <p class="story-cat">{category_name}</p>
+        <h1 class="story-title">{title}</h1>
+        <p class="story-meta">{author} &middot; {formatted_date}</p>
+        <p class="story-swipe-hint">Листайте →</p>
       </amp-story-grid-layer>
     </amp-story-page>
 
+    <!-- Text pages -->
+    {text_pages_html}
+
+    <!-- End page with CTA -->
+    <amp-story-page id="cta">
+      <amp-story-grid-layer template="fill">
+        <amp-img src="{html_mod.escape(image_url)}"
+                 width="720" height="1280" layout="fill" alt=""></amp-img>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="story-end-overlay">
+        <span class="story-logo">ТÓТАЛ</span>
+        <p style="color:#fff;margin:16px 0 0;font-size:17px;line-height:1.4;">{title}</p>
+        <a href="{article_url}" class="story-cta">Читать полностью &rarr;</a>
+        <p class="story-end-hint">total.kz</p>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+    <amp-story-bookend src="data:application/json;base64,e30=" layout="nodisplay"></amp-story-bookend>
   </amp-story>
 </body>
 </html>"""
