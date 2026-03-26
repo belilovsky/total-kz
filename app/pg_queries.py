@@ -14,8 +14,9 @@ import string
 from contextlib import contextmanager
 from datetime import datetime
 
-from sqlalchemy import delete as sa_delete
+from sqlalchemy import cast, delete as sa_delete
 from sqlalchemy import distinct, func, or_, select, text, update as sa_update
+from sqlalchemy import DateTime as SA_DateTime
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -381,13 +382,15 @@ def get_stats() -> dict:
         ).scalars().all()
 
         # Avg recent 12 months vs previous 12
+        # pub_date is text, so cast to timestamp for comparison
+        _pub_ts = cast(Article.pub_date, SA_DateTime)
         _12m = text("CURRENT_DATE - INTERVAL '12 months'")
         _24m = text("CURRENT_DATE - INTERVAL '24 months'")
 
         avg_recent = db.scalar(
             select(func.round(func.avg(text("cnt")))).select_from(
                 select(func.count().label("cnt"))
-                .where(Article.pub_date >= _12m)
+                .where(Article.pub_date.isnot(None), _pub_ts >= _12m)
                 .group_by(func.substring(Article.pub_date, 1, 7))
                 .subquery()
             )
@@ -396,7 +399,7 @@ def get_stats() -> dict:
         avg_prev = db.scalar(
             select(func.round(func.avg(text("cnt")))).select_from(
                 select(func.count().label("cnt"))
-                .where(Article.pub_date >= _24m, Article.pub_date < _12m)
+                .where(Article.pub_date.isnot(None), _pub_ts >= _24m, _pub_ts < _12m)
                 .group_by(func.substring(Article.pub_date, 1, 7))
                 .subquery()
             )
