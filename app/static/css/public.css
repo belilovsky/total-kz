@@ -3943,20 +3943,12 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
    ═══════════════════════════════════════════════ */
 
 /* ── FIX 1: Share bar overlapping article text on mobile ── */
+/* Duplicate share blocks hidden on mobile — see FIX M3a below.
+   Only .mobile-share-bar remains visible. */
 @media (max-width:768px) {
-  .floating-share { display:none !important; }
   .mobile-share-bar {
     position:fixed; bottom:56px; left:0; right:0; z-index:90;
     padding:var(--space-2) var(--space-3);
-  }
-  .share-buttons {
-    position:static !important;
-    display:flex; align-items:center; gap:var(--space-2);
-    justify-content:center; flex-wrap:wrap;
-    padding:var(--space-3) 0;
-    border-top:1px solid var(--border-light);
-    border-bottom:1px solid var(--border-light);
-    margin:var(--space-4) 0;
   }
 }
 
@@ -4250,4 +4242,178 @@ a.related-item:visited .related-title {
   .feed-card-body {
   display:flex; flex-direction:column; padding:var(--space-2) var(--space-3); }
   .feed-card-title { font-size:var(--text-xs); }
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE FIXES v15.4
+   ═══════════════════════════════════════════════ */
+
+/* ── FIX M1: Currency ticker – scrollable, fade hint, weather spacing ── */
+@media (max-width:767px) {
+  .currency-strip-inner {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    justify-content:flex-start;
+    gap:var(--space-2);
+  }
+  .currency-strip-inner::-webkit-scrollbar { display:none; }
+  .strip-left {
+    margin-right:var(--space-3);
+    padding-right:var(--space-3);
+    border-right:1px solid var(--border-light);
+  }
+  .strip-right {
+    flex-shrink:0;
+    animation:none;
+    mask-image:none;
+  }
+  .currency-strip::after {
+    content:'';
+    position:absolute; top:0; right:0; bottom:0;
+    width:36px;
+    background:linear-gradient(to left, var(--surface) 20%, transparent);
+    pointer-events:none;
+    z-index:2;
+  }
+}
+
+/* ── FIX M2a: Mobile menu close button – inside drawer ── */
+.mobile-menu-close {
+  flex-shrink:0;
+}
+
+/* ── FIX M2b: Mobile menu backdrop – already set at .65 opacity (M-06 line) ── */
+
+/* ── FIX M3a: Article page – hide duplicate share blocks on mobile ── */
+@media (max-width:767px) {
+  .floating-share { display:none !important; }
+  .share-buttons { display:none !important; }
+}
+
+/* ── FIX M3b: "Сейчас читают" – show below article on mobile ── */
+@media (max-width:1099px) {
+  .article-sidebar .popular-widget {
+    display:none;
+  }
+}
+.popular-widget-mobile {
+  display:none;
+}
+@media (max-width:1099px) {
+  .popular-widget-mobile {
+    display:block;
+    margin:var(--space-6) 0;
+    padding:var(--space-4);
+    background:var(--surface);
+    border:1px solid var(--border-light);
+    border-radius:var(--radius-lg);
+  }
+  .popular-widget-mobile .widget-heading {
+    font-size:var(--text-xs);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-muted);
+    margin:0 0 var(--space-3) 0;
+  }
+  .popular-widget-mobile .popular-item {
+    display:flex;
+    gap:8px;
+    align-items:baseline;
+    padding:6px 0;
+    text-decoration:none;
+    color:var(--text);
+    border-bottom:1px solid var(--border-light);
+  }
+  .popular-widget-mobile .popular-item:last-child { border-bottom:none; }
+  .popular-widget-mobile .popular-item:hover { color:var(--accent); }
+  .popular-widget-mobile .popular-num {
+    flex-shrink:0; width:18px; height:18px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%; background:var(--surface-2);
+    color:var(--text-muted); font-size:10px; font-weight:700;
+  }
+  .popular-widget-mobile .popular-item:first-child .popular-num {
+    background:var(--accent); color:#fff;
+  }
+  .popular-widget-mobile .popular-title {
+    font-size:0.8125rem; line-height:1.35;
+    display:-webkit-box; -webkit-line-clamp:3;
+    -webkit-box-orient:vertical; overflow:hidden;
+  }
+}
+
+/* ── FIX M3c: "Упоминаются" – horizontal scroll on mobile ── */
+@media (max-width:767px) {
+  .sidebar-persons {
+    display:flex;
+    flex-direction:column;
+  }
+  .sidebar-persons .sidebar-person-card {
+    flex-shrink:0;
+  }
+}
+@media (max-width:1099px) {
+  .article-sidebar .sidebar-persons { display:none; }
+}
+.persons-mobile-strip {
+  display:none;
+}
+@media (max-width:1099px) {
+  .persons-mobile-strip {
+    display:block;
+    margin:var(--space-4) 0;
+  }
+  .persons-mobile-strip .sidebar-persons-title {
+    font-size:var(--text-xs); font-weight:700;
+    text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--text-muted); margin-bottom:8px;
+  }
+  .persons-mobile-strip-inner {
+    display:flex; gap:12px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding-bottom:var(--space-2);
+  }
+  .persons-mobile-strip-inner::-webkit-scrollbar { display:none; }
+  .persons-mobile-strip .sidebar-person-card {
+    flex-shrink:0;
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px;
+    background:var(--surface);
+    border:1px solid var(--border-light);
+    border-radius:var(--radius-lg);
+    text-decoration:none; color:var(--text);
+    min-width:160px;
+    transition:border-color var(--transition);
+  }
+  .persons-mobile-strip .sidebar-person-card:hover {
+    border-color:var(--accent);
+  }
+}
+
+/* ── FIX M4: Bottom bar covering content + back-to-top spacing ── */
+@media (max-width:767px) {
+  body {
+    padding-bottom:70px;
+  }
+  .back-to-top {
+    bottom:80px;
+  }
+}
+
+/* ── FIX M5a: Subcategory pills – padding for last pill visibility ── */
+@media (max-width:767px) {
+  .cat2-pills {
+    padding-right:var(--space-8);
+  }
+}
+
+/* ── FIX M5b: Article body text – left-align on mobile ── */
+@media (max-width:767px) {
+  .article-body p {
+    text-align:left;
+  }
 }

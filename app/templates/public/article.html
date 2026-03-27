@@ -336,6 +336,48 @@
     </aside>
   </div>
 
+  {# ── Mobile: "Упоминаются" horizontal strip (hidden on desktop) ── #}
+  {% if article_persons %}
+  <div class="persons-mobile-strip">
+    <div class="sidebar-persons-title">Упоминаются</div>
+    <div class="persons-mobile-strip-inner">
+      {% for p in article_persons %}
+      <a href="/person/{{ p.slug }}" class="sidebar-person-card">
+        {% if p.photo_url %}
+        <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 80) }}{% endif %}"
+             alt="{{ p.short_name }}" class="sidebar-person-photo" loading="lazy">
+        {% else %}
+        <div class="sidebar-person-photo sidebar-person-photo--ph">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        {% endif %}
+        <div class="sidebar-person-info">
+          <span class="sidebar-person-name">{{ p.short_name }}</span>
+          {% if p.current_position %}
+          <span class="sidebar-person-pos">{{ p.current_position }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Mobile: "Сейчас читают" popular articles (hidden on desktop) ── #}
+  {% if popular %}
+  <div class="popular-widget-mobile">
+    <h3 class="widget-heading">Сейчас читают</h3>
+    {% for art in popular %}
+    <a href="{{ article_url(art) }}" class="popular-item">
+      <span class="popular-num">{{ loop.index }}</span>
+      <span class="popular-title">{{ art.title }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {# ── Tag pills (between article body and timeline) ── #}
   {% set _tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
   {% if _tags %}
