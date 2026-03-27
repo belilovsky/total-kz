@@ -547,14 +547,25 @@ def extract_ner(batch_limit=None, num_workers=4):
     conn = get_conn()
     cur = conn.cursor()
 
-    # Fetch unprocessed articles
+    # Create tracking table for articles processed with zero entities
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS ner_processed (
+            article_id INTEGER PRIMARY KEY,
+            processed_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    conn.commit()
+
+    # Fetch unprocessed articles (exclude both article_entities and ner_processed)
     query = """
         SELECT a.id, a.title, a.body_text
         FROM articles a
         LEFT JOIN (
             SELECT DISTINCT article_id FROM article_entities
         ) ae ON a.id = ae.article_id
+        LEFT JOIN ner_processed np ON a.id = np.article_id
         WHERE ae.article_id IS NULL
+          AND np.article_id IS NULL
           AND a.body_text IS NOT NULL
           AND a.body_text != ''
         ORDER BY a.id
@@ -600,9 +611,14 @@ def extract_ner(batch_limit=None, num_workers=4):
             cur = conn.cursor()
 
             try:
+                zero_entity_ids = []
                 for art_id, entities in results:
                     if entities is None:
                         errors += 1
+                        continue
+
+                    if len(entities) == 0:
+                        zero_entity_ids.append((art_id,))
                         continue
 
                     for display_name, norm, etype, mention_count in entities:
@@ -631,6 +647,15 @@ def extract_ner(batch_limit=None, num_workers=4):
                             DO UPDATE SET mention_count = article_entities.mention_count + EXCLUDED.mention_count
                         """, (art_id, eid, mention_count))
                         total_links += 1
+
+                # Track articles that produced zero entities
+                if zero_entity_ids:
+                    psycopg2.extras.execute_values(
+                        cur,
+                        "INSERT INTO ner_processed (article_id) VALUES %s ON CONFLICT DO NOTHING",
+                        zero_entity_ids,
+                        template="(%s)",
+                    )
 
                 conn.commit()
             except Exception as e:

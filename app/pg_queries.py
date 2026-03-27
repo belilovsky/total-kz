@@ -1494,11 +1494,13 @@ def delete_author_managed(author_id: int) -> None:
 
 def _media_to_dict(m: Media) -> dict:
     return {
-        "id": m.id, "filename": m.filename, "original_name": m.original_name,
-        "mime_type": m.mime_type, "file_size": m.file_size, "url": m.url,
+        "id": m.id, "filename": m.filename,
+        "original_name": m.original_name or m.filename,
+        "mime_type": m.mime_type, "file_size": m.file_size or 0,
+        "url": m.url,
         "uploaded_at": m.uploaded_at, "uploaded_by": m.uploaded_by,
         "width": m.width, "height": m.height,
-        "alt_text": m.alt_text, "credit": m.credit,
+        "alt_text": m.alt_text or "", "credit": m.credit or "",
     }
 
 
