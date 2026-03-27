@@ -305,15 +305,15 @@ def format_date(date_str: str | None) -> str:
 
 
 def format_date_short(date_str: str | None) -> str:
-    """Short date format for cards (abbreviated months).
-    Today:           12 мар, 14:14
-    Yesterday+/year: 12 мар
-    Past years:      12 мар, 2024
+    """Short date format for cards (full month names, genitive case).
+    Today:           12 марта, 14:14
+    Yesterday+/year: 12 марта
+    Past years:      12 марта, 2024
     """
     if not date_str:
         return ""
-    months = ["янв", "фев", "мар", "апр", "мая", "июн",
-              "июл", "авг", "сен", "окт", "ноя", "дек"]
+    months = ["января", "февраля", "марта", "апреля", "мая", "июня",
+              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
     dt = _parse_datetime(date_str)
     if dt is None:
         return date_str[:10] if len(date_str) >= 10 else date_str
@@ -880,7 +880,7 @@ async def homepage(request: Request):
         logger.exception("Database error in homepage")
         return _error_response(request)
 
-    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:5]
+    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
 
     # Top persons from preloaded cache
     homepage_persons = _get_homepage_persons()
@@ -1125,7 +1125,7 @@ async def article_page(request: Request, category: str, slug: str):
     try:
         popular = rewrite_articles_images(db.get_latest_articles(limit=20))
         popular = [a for a in popular if a.get("id") != article["id"]]
-        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:5]
+        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:10]
     except Exception:
         popular = []
 
