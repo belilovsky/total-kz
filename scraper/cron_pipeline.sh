@@ -11,11 +11,11 @@ cd /app && python scraper/fetch_latest.py 2>&1
 
 # Step 2: Enrich new articles via GPT (PostgreSQL version)
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [2/5] Enriching articles (batch 200)..."
-cd /app && python scraper/enrich_articles_pg.py --batch 200 2>&1
+cd /app && python scraper/enrich_articles_pg.py --batch 50 2>&1
 
 # Step 3: NER extraction on unprocessed articles
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [3/5] NER extraction (batch 500, 2 workers)..."
-cd /app && python scripts/extract_entities_pg.py --batch 500 --workers 2 2>&1
+cd /app && python scripts/extract_entities_pg.py --batch 100 --workers 2 2>&1
 
 # Step 4: Denormalize tags from enrichments
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [4/5] Denormalizing tags..."
