@@ -81,6 +81,8 @@ def translate_article(article: dict, model: str) -> dict | None:
     excerpt = article["excerpt"] or ""
     body_html = (article["body_html"] or "")[:12000]  # Limit for token budget
 
+    # Escape problematic characters in body_html for JSON safety
+    body_html = body_html.replace('\x00', '')
     user_msg = f"Заголовок: {title}\nЛид: {excerpt}\nТекст: {body_html}"
 
     try:
