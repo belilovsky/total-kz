@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" fill="none">
+  <rect width="480" height="320" fill="#e5e7eb"/>
+  <g transform="translate(200, 120)" stroke="#9ca3af" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="76" height="56" rx="4"/>
+    <circle cx="22" cy="22" r="6"/>
+    <path d="M78 58L54 34L14 58"/>
+    <path d="M78 58L66 46L54 58"/>
+  </g>
+  <text x="240" y="210" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" fill="#9ca3af">Нет изображения</text>
+</svg>

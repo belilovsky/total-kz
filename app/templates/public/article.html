@@ -196,7 +196,8 @@
   <figure class="article-hero-image article-hero">
     <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
          srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
-         sizes="(max-width: 768px) 100vw, 800px">
+         sizes="(max-width: 768px) 100vw, 800px"
+         onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
     {% if article.image_credit %}
       <figcaption>{{ article.image_credit }}</figcaption>
     {% endif %}
@@ -436,7 +437,8 @@
       <a href="{{ article_url(art) }}" class="related-item">
         {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
-          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
         </div>
         {% else %}
         <div class="related-thumb related-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}">

@@ -67,7 +67,8 @@
     {% set main = articles[0] %}
     <a href="{{ article_url(main) }}" class="cat-top-lead">
       {% if main.main_image or main.thumbnail %}
-        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager">
+        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager"
+             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
       {% endif %}
       <div class="cat-top-lead-body">
         <h2 class="cat-top-lead-title">{{ main.title }}</h2>
@@ -81,7 +82,8 @@
     <a href="{{ article_url(art) }}" class="cat-top-card">
       {% if art.main_image or art.thumbnail %}
       <div class="cat-top-card-img">
-        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager">
+        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager"
+             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
       </div>
       {% else %}
       <div class="cat-top-card-img cat-top-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
@@ -110,7 +112,8 @@
           <a href="{{ article_url(art) }}" class="cat2-card-link">
             {% if art.main_image or art.thumbnail %}
             <div class="cat2-card-img">
-              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 480) }}" alt="{{ art.title }}" loading="lazy">
+              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 480) }}" alt="{{ art.title }}" loading="lazy"
+                   onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
             </div>
             {% else %}
             <div class="cat2-card-img cat2-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>

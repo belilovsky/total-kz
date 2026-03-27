@@ -46,7 +46,8 @@
       </div>
       {% if art.main_image or art.thumbnail %}
       <div class="feed-item-thumb">
-        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy">
+        <img src="{{ art.main_image or art.thumbnail }}" alt="{{ art.title }}" loading="lazy"
+             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
       </div>
       {% else %}
       <div class="feed-item-thumb feed-item-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>

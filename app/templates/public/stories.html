@@ -12,7 +12,8 @@
     {% if url_parts | length >= 2 %}
     <a href="/stories/{{ url_parts[0] }}/{{ url_parts[1] }}" class="story-preview">
       {% if art.main_image %}
-      <img src="{{ imgproxy_url(art.main_image, 400) }}" alt="{{ art.title }}" loading="lazy">
+      <img src="{{ imgproxy_url(art.main_image, 400) }}" alt="{{ art.title }}" loading="lazy"
+           onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
       {% else %}
       <div class="story-preview-ph"></div>
       {% endif %}

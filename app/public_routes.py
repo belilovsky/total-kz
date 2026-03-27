@@ -926,7 +926,7 @@ async def api_feed_more(request: Request, offset: int = Query(30, ge=0), limit: 
         excerpt = (art.get("excerpt") or "")[:140]
         if len(art.get("excerpt") or "") > 140:
             excerpt += "\u2026"
-        thumb_html = f'<div class="feed-item-thumb"><img src="{img}" alt="" loading="lazy"></div>' if img else '<div class="feed-item-thumb feed-item-thumb--ph"></div>'
+        thumb_html = f'<div class="feed-item-thumb"><img src="{img}" alt="" loading="lazy" onerror="this.src=\'/static/img/placeholder.svg\';this.onerror=null;"></div>' if img else '<div class="feed-item-thumb feed-item-thumb--ph"></div>'
         html_parts.append(f'''
         <article class="feed-item">
           <div class="feed-item-body">
