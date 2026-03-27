@@ -2197,7 +2197,7 @@ async def api_admin_ai_generate(request: Request):
 
     body = await request.json()
     title = (body.get("title") or "").strip()
-    text = (body.get("body") or "")[:2000].strip()
+    text = (body.get("body") or "")[:4000].strip()
     fields = body.get("fields", [])
 
     if not title and not text:
@@ -2215,6 +2215,8 @@ async def api_admin_ai_generate(request: Request):
             prompt = f"Предложи 5-7 тегов для новостной статьи (через запятую, без #).\nЗаголовок: {title}\nТекст: {text}\n\nОтвет — только теги через запятую."
         elif field == "titles":
             prompt = f"Предложи 3 альтернативных заголовка для новостной статьи.\nТекущий заголовок: {title}\nТекст: {text}\n\nОтвет — 3 заголовка, каждый на новой строке, без нумерации."
+        elif field == "rewrite":
+            prompt = f"Перепиши текст статьи, улучшив стиль и читаемость. Сохрани все факты, даты, имена и цифры без изменений. Текст должен быть на русском языке, в стиле качественного новостного портала.\n\nЗаголовок: {title}\nТекст для улучшения:\n{text}\n\nОтвет — только улучшенный текст, без пояснений."
         else:
             continue
 
@@ -2229,7 +2231,7 @@ async def api_admin_ai_generate(request: Request):
                             {"role": "system", "content": "Ты — AI-ассистент для казахстанского новостного портала Total.kz. Пиши на русском языке."},
                             {"role": "user", "content": prompt},
                         ],
-                        "max_tokens": 300,
+                        "max_tokens": 1500 if field == "rewrite" else 300,
                         "temperature": 0.7,
                     },
                 )
@@ -2247,6 +2249,84 @@ async def api_admin_ai_generate(request: Request):
             results[field] = f"Ошибка: {str(e)[:100]}"
 
     return JSONResponse({"ok": True, **results})
+
+
+@app.post("/api/admin/ai-from-url")
+async def api_admin_ai_from_url(request: Request):
+    """Fetch URL content and extract article data using AI."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    if not _OPENAI_KEY:
+        return JSONResponse({"error": "OPENAI_API_KEY not configured"}, status_code=500)
+
+    body = await request.json()
+    url = (body.get("url") or "").strip()
+    if not url:
+        return JSONResponse({"error": "URL обязателен"}, status_code=400)
+
+    import httpx as _httpx
+    try:
+        async with _httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; TotalKZ-Bot/1.0)"})
+            resp.raise_for_status()
+            html = resp.text[:15000]
+    except Exception as e:
+        return JSONResponse({"error": f"Не удалось загрузить URL: {str(e)[:100]}"}, status_code=400)
+
+    # Strip tags for a cleaner text extraction
+    import re
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()[:5000]
+
+    prompt = (
+        "Из текста веб-страницы извлеки данные для новостной статьи. "
+        "Ответь строго в формате JSON (без markdown-блока):\n"
+        '{"title": "заголовок", "excerpt": "краткий лид до 200 символов", '
+        '"body": "основной текст статьи, переписанный качественным журналистским стилем", '
+        '"tags": ["тег1", "тег2", ...]}\n\n'
+        f"Текст страницы:\n{text}"
+    )
+
+    try:
+        async with _httpx.AsyncClient(timeout=45) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {_OPENAI_KEY}"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": "Ты — AI-ассистент для казахстанского новостного портала Total.kz. Пиши на русском языке. Отвечай только валидным JSON."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "max_tokens": 2000,
+                    "temperature": 0.5,
+                },
+            )
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"].strip()
+            # Parse JSON from response
+            import json as _json
+            if content.startswith("```"):
+                content = re.sub(r'^```\w*\n?', '', content)
+                content = re.sub(r'\n?```$', '', content)
+            result = _json.loads(content)
+            return JSONResponse({"ok": True, **result})
+    except Exception as e:
+        logger.exception("AI from URL error")
+        return JSONResponse({"error": f"Ошибка AI: {str(e)[:100]}"}, status_code=500)
+
+
+@app.get("/api/admin/media/search")
+async def api_media_search(request: Request, q: str = "", page: int = 1, per_page: int = 30):
+    """Search media library for the image picker."""
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    result = db.get_all_media(q=q, page=page, per_page=per_page)
+    return JSONResponse({"ok": True, **result})
 
 
 # ══════════════════════════════════════════════

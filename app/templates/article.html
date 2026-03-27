@@ -45,6 +45,15 @@
 
 {% block content %}
 <div class="editor-page">
+    <!-- AI From URL -->
+    <div class="editor-section" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="ai-btn" onclick="aiFromUrl()" style="margin-left:0"><span class="ai-icon">🔗</span> Заполнить из URL</button>
+        <div id="aiFromUrlPanel" style="display:none;align-items:center;gap:8px;flex:1;min-width:250px">
+            <input type="url" id="aiFromUrlInput" class="editor-input" placeholder="https://example.com/article" style="flex:1;margin:0">
+            <button type="button" class="btn btn-primary btn-sm" id="aiFromUrlBtn" onclick="aiFromUrlFetch()">Загрузить</button>
+        </div>
+    </div>
+
     <!-- Title -->
     <div class="editor-section">
         <label class="editor-label">Заголовок <span class="seo-badge" id="seoBadge"></span>
@@ -88,14 +97,22 @@
             </div>
         </div>
         {% endif %}
-        <input type="url" class="editor-input" id="editImage" value="{{ article.main_image or '' }}" placeholder="URL изображения">
+        <div style="display:flex;gap:8px;align-items:center">
+            <input type="url" class="editor-input" id="editImage" value="{{ article.main_image or '' }}" placeholder="URL изображения" style="flex:1">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="openMediaPicker()" style="white-space:nowrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Медиатека
+            </button>
+        </div>
         <input type="hidden" id="focalX" value="{{ article.focal_x or 0.5 }}">
         <input type="hidden" id="focalY" value="{{ article.focal_y or 0.5 }}">
     </div>
 
     <!-- Editor.js Block Editor -->
     <div class="editor-section">
-        <label class="editor-label">Текст статьи</label>
+        <label class="editor-label">Текст статьи
+            <button type="button" class="ai-btn" onclick="aiRewriteText()" id="aiRewriteBtn"><span class="ai-icon">✨</span><span class="spinner"></span> Улучшить текст</button>
+        </label>
         <div id="editorjs"></div>
         <div class="word-count-container" id="wordCountContainer">
             <span id="wordCountText">0 слов · ~0 мин чтения</span>
@@ -732,8 +749,98 @@ document.addEventListener('keydown', function(e) {
 // ═══ AI Assistant functions ═══
 function getArticleText() {
     var title = document.getElementById('editTitle').value.trim();
-    var body = document.getElementById('editExcerpt').value.trim();
-    return { title: title, body: body };
+    var excerpt = document.getElementById('editExcerpt').value.trim();
+    // Extract body text from Editor.js blocks
+    var bodyText = '';
+    var editorEl = document.getElementById('editorjs');
+    if (editorEl) {
+        var blocks = editorEl.querySelectorAll('.ce-block__content');
+        blocks.forEach(function(b) { var t = b.textContent.trim(); if (t) bodyText += t + '\n'; });
+    }
+    return { title: title, body: bodyText || excerpt };
+}
+
+function getArticleBodyAsync() {
+    return editor.save().then(function(data) {
+        var text = '';
+        data.blocks.forEach(function(b) {
+            if (b.data.text) text += b.data.text.replace(/<[^>]+>/g, '') + '\n';
+            if (b.data.items) b.data.items.forEach(function(i) { text += (typeof i === 'string' ? i : (i.content||'')).replace(/<[^>]+>/g, '') + '\n'; });
+            if (b.data.code) text += b.data.code + '\n';
+        });
+        return text.trim();
+    });
+}
+
+function aiRewriteText() {
+    var btn = document.getElementById('aiRewriteBtn');
+    btn.classList.add('loading');
+    var title = document.getElementById('editTitle').value.trim();
+    getArticleBodyAsync().then(function(bodyText) {
+        if (!bodyText) { btn.classList.remove('loading'); showToast('Нет текста для улучшения'); return; }
+        fetch('/api/admin/ai-generate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title, body: bodyText, fields: ['rewrite'] })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            btn.classList.remove('loading');
+            if (data.error) { showToast('Ошибка: ' + data.error); return; }
+            if (data.rewrite) { showRewriteModal(data.rewrite); }
+        }).catch(function() { btn.classList.remove('loading'); showToast('Ошибка сети'); });
+    });
+}
+
+function showRewriteModal(text) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:700px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">' +
+        '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:16px">Улучшенный текст</h3><button onclick="this.closest(\'div[style*=fixed]\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666">&times;</button></div>' +
+        '<div style="padding:20px;overflow-y:auto;flex:1;white-space:pre-wrap;font-size:14px;line-height:1.7" id="rewriteContent"></div>' +
+        '<div style="padding:12px 20px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end">' +
+        '<button class="btn btn-ghost" onclick="this.closest(\'div[style*=fixed]\').remove()">Отклонить</button>' +
+        '<button class="btn btn-primary" id="acceptRewriteBtn">Принять</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('rewriteContent').textContent = text;
+    document.getElementById('acceptRewriteBtn').addEventListener('click', function() {
+        // Replace editor content with rewritten text
+        var blocks = text.split(/\n\n+/).filter(function(p) { return p.trim(); }).map(function(p) {
+            return { type: 'paragraph', data: { text: p.trim() } };
+        });
+        editor.render({ blocks: blocks }).then(function() { markDirty(); updateWordCount(); });
+        overlay.remove();
+        showToast('Текст заменён');
+    });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+function aiFromUrl() {
+    var panel = document.getElementById('aiFromUrlPanel');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+}
+
+function aiFromUrlFetch() {
+    var url = document.getElementById('aiFromUrlInput').value.trim();
+    if (!url) { showToast('Введите URL'); return; }
+    var btn = document.getElementById('aiFromUrlBtn');
+    btn.disabled = true; btn.textContent = 'Загрузка...';
+    fetch('/api/admin/ai-from-url', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        btn.disabled = false; btn.textContent = 'Загрузить';
+        if (data.error) { showToast('Ошибка: ' + data.error); return; }
+        if (data.title) { document.getElementById('editTitle').value = data.title; document.getElementById('editTitle').dispatchEvent(new Event('input')); }
+        if (data.excerpt) { document.getElementById('editExcerpt').value = data.excerpt; document.getElementById('editExcerpt').dispatchEvent(new Event('input')); }
+        if (data.body) {
+            var blocks = data.body.split(/\n\n+/).filter(function(p) { return p.trim(); }).map(function(p) {
+                return { type: 'paragraph', data: { text: p.trim() } };
+            });
+            editor.render({ blocks: blocks }).then(function() { updateWordCount(); });
+        }
+        if (data.tags && data.tags.length) { data.tags.forEach(function(t) { addTag(t); }); }
+        document.getElementById('aiFromUrlPanel').style.display = 'none';
+        markDirty(); updateSeoScore();
+        showToast('Данные загружены из URL');
+    }).catch(function() { btn.disabled = false; btn.textContent = 'Загрузить'; showToast('Ошибка сети'); });
 }
 
 function aiGenerate(field) {
@@ -838,7 +945,87 @@ if (metaDescEl && metaDescCounter) {
 setTimeout(updateSeoScore, 500);
 
 function toggleRevisions(){revisionsVisible=!revisionsVisible;var l=document.getElementById('revisionList'),a=document.getElementById('revisionArrow');l.style.display=revisionsVisible?'block':'none';a.style.transform=revisionsVisible?'rotate(180deg)':'';if(revisionsVisible&&!revisionsLoaded)loadRevisions();}
+// Preload revisions on page load
+setTimeout(function(){ loadRevisions(); }, 500);
 function loadRevisions(){fetch('/api/article/'+ARTICLE_ID+'/revisions').then(function(r){return r.json();}).then(function(res){revisionsLoaded=true;var list=document.getElementById('revisionList');if(!res.ok||!res.revisions||res.revisions.length===0){list.innerHTML='<div class="revision-empty">Нет записей об изменениях</div>';return;}var html='';res.revisions.forEach(function(rev,idx){var badge='';if(rev.revision_type==='auto_save')badge='<span class="revision-badge revision-badge-auto">авто</span>';else if(rev.revision_type==='status_change')badge='<span class="revision-badge revision-badge-status">статус</span>';else if(rev.revision_type==='restore')badge='<span class="revision-badge revision-badge-restore">восстановление</span>';else badge='<span class="revision-badge revision-badge-edit">правка</span>';var cH='';var changes=rev.changes||{};var keys=Object.keys(changes).filter(function(k){return k!=='restored_from';});if(keys.length>0){var summary=keys.map(function(k){var labels={title:'заголовок',excerpt:'лид',sub_category:'категория',author:'автор',main_image:'изображение',status:'статус',editor_note:'заметка',tags:'теги',body_html:'текст'};return labels[k]||k;}).join(', ');cH='<div class="revision-summary">Изменено: '+summary+'</div>';var dH='<div class="revision-details" style="display:none">';keys.forEach(function(k){var c=changes[k];var label={title:'Заголовок',excerpt:'Лид',sub_category:'Категория',author:'Автор',main_image:'Изображение',status:'Статус',editor_note:'Заметка',tags:'Теги',body_html:'Текст'}[k]||k;var oV=typeof c.old==='object'?JSON.stringify(c.old):(c.old||'(пусто)');var nV=typeof c.new==='object'?JSON.stringify(c.new):(c.new||'(пусто)');if(k==='body_html'){oV='(текст изменён)';nV='(текст изменён)';}dH+='<div class="revision-detail"><strong>'+label+':</strong> <span class="revision-old">'+oV+'</span> → <span class="revision-new">'+nV+'</span></div>';});dH+='</div>';cH+=dH;}else if(rev.revision_type==='restore'){cH='<div class="revision-summary">Восстановлено из предыдущей ревизии</div>';}var authorHtml=rev.changed_by?'<span class="revision-author">'+rev.changed_by+'</span>':'';var restoreBtn='';if(rev.has_full_state&&idx>0){restoreBtn='<button class="btn btn-ghost btn-sm revision-restore-btn" onclick="event.stopPropagation();restoreRevision('+rev.id+')" title="Восстановить эту версию"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Восстановить</button>';}var ds=rev.changed_at?rev.changed_at.replace('T',' ').substring(0,16):'';html+='<div class="revision-item" onclick="var d=this.querySelector(\'.revision-details\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\'"><div class="revision-header"><span class="revision-time">'+ds+'</span>'+authorHtml+badge+restoreBtn+'</div>'+cH+'</div>';});list.innerHTML=html;}).catch(function(){document.getElementById('revisionList').innerHTML='<div class="revision-empty">Ошибка загрузки</div>';});}
 function restoreRevision(revId){if(!confirm('Восстановить статью до этой версии? Текущие изменения будут перезаписаны.'))return;fetch('/api/admin/article/'+ARTICLE_ID+'/restore/'+revId,{method:'POST',headers:{'Content-Type':'application/json'}}).then(function(r){return r.json();}).then(function(res){if(res.ok){showToast('Версия восстановлена');setTimeout(function(){location.reload();},600);}else{showToast('Ошибка: '+(res.error||'неизвестная'));}}).catch(function(){showToast('Ошибка сети');});}
+
+// ═══ Media Library Picker ═══
+var mediaPickerPage = 1, mediaPickerQuery = '', mediaPickerLoading = false;
+
+function openMediaPicker() {
+    mediaPickerPage = 1; mediaPickerQuery = '';
+    var overlay = document.createElement('div');
+    overlay.id = 'mediaPickerOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">' +
+        '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px">' +
+        '<h3 style="margin:0;font-size:16px;white-space:nowrap">Медиатека</h3>' +
+        '<input type="text" id="mediaPickerSearch" class="editor-input" placeholder="Поиск изображений..." style="flex:1;margin:0">' +
+        '<button onclick="closeMediaPicker()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666;padding:0 4px">&times;</button></div>' +
+        '<div id="mediaPickerGrid" style="padding:16px;overflow-y:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-content:start"></div>' +
+        '<div id="mediaPickerFooter" style="padding:12px 20px;border-top:1px solid #e5e7eb;text-align:center;display:none">' +
+        '<button class="btn btn-ghost" id="mediaPickerLoadMore" onclick="loadMediaPickerPage()">Загрузить ещё</button></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeMediaPicker(); });
+    var searchInput = document.getElementById('mediaPickerSearch');
+    var searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            mediaPickerQuery = searchInput.value.trim();
+            mediaPickerPage = 1;
+            document.getElementById('mediaPickerGrid').innerHTML = '';
+            loadMediaPickerPage();
+        }, 300);
+    });
+    loadMediaPickerPage();
+}
+
+function closeMediaPicker() {
+    var overlay = document.getElementById('mediaPickerOverlay');
+    if (overlay) overlay.remove();
+}
+
+function loadMediaPickerPage() {
+    if (mediaPickerLoading) return;
+    mediaPickerLoading = true;
+    var btn = document.getElementById('mediaPickerLoadMore');
+    if (btn) { btn.disabled = true; btn.textContent = 'Загрузка...'; }
+    fetch('/api/admin/media/search?q=' + encodeURIComponent(mediaPickerQuery) + '&page=' + mediaPickerPage + '&per_page=30')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        mediaPickerLoading = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Загрузить ещё'; }
+        if (!data.ok) return;
+        var grid = document.getElementById('mediaPickerGrid');
+        (data.items || []).forEach(function(item) {
+            if (!item.mime_type || !item.mime_type.startsWith('image/')) return;
+            var card = document.createElement('div');
+            card.style.cssText = 'border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color 0.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#f9fafb;';
+            card.innerHTML = '<img src="' + item.url + '" alt="' + (item.alt_text || item.original_name || '') + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">';
+            card.title = item.original_name || item.filename || '';
+            card.addEventListener('mouseenter', function() { card.style.borderColor = '#d83236'; });
+            card.addEventListener('mouseleave', function() { card.style.borderColor = '#e5e7eb'; });
+            card.addEventListener('click', function() {
+                var input = document.getElementById('editImage');
+                input.value = item.url;
+                input.dispatchEvent(new Event('change'));
+                document.getElementById('heroImg').src = item.url;
+                document.getElementById('imagePreview').style.display = 'block';
+                closeMediaPicker();
+                markDirty();
+                showToast('Изображение выбрано');
+            });
+            grid.appendChild(card);
+        });
+        var footer = document.getElementById('mediaPickerFooter');
+        footer.style.display = (data.page < data.pages) ? 'block' : 'none';
+        mediaPickerPage = data.page + 1;
+    }).catch(function() {
+        mediaPickerLoading = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Загрузить ещё'; }
+    });
+}
 </script>
 {% endblock %}
