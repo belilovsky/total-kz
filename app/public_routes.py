@@ -239,14 +239,23 @@ def estimate_reading_time(text: str | None) -> int:
 def article_url(article: dict) -> str:
     """Build new clean URL from article data."""
     url = article.get("url", "")
-    # Extract category and slug from old URL
-    # Old: https://total.kz/ru/news/{category}/{slug}
-    parts = url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
-    if len(parts) >= 2:
-        return f"/news/{parts[0]}/{parts[1]}"
-    elif len(parts) == 1 and parts[0]:
-        return f"/news/{parts[0]}"
-    return f"/news/article/{article.get('id', 0)}"
+    # Only process total.kz URLs
+    if "total.kz/ru/news/" in url:
+        parts = url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
+        if len(parts) >= 2:
+            return f"/news/{parts[0]}/{parts[1]}"
+        elif len(parts) == 1 and parts[0]:
+            return f"/news/{parts[0]}"
+    # For external/non-standard URLs, use ID-based route
+    article_id = article.get("id", 0)
+    sub_cat = article.get("sub_category", "")
+    if sub_cat and article_id:
+        # Generate a slug from title
+        title = article.get("title", "")
+        slug = re.sub(r"[^a-zA-Zа-яА-ЯёЁ0-9]+", "_", title)[:80].strip("_").lower()
+        if slug:
+            return f"/news/{sub_cat}/{slug}_id_{article_id}"
+    return f"/news/article/{article_id}"
 
 
 def _parse_datetime(date_str: str) -> datetime | None:
