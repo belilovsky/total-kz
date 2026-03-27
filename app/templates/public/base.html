@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
+<html lang="{{ lang|default('ru') }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,22 +7,31 @@
   <meta name="theme-color" content="#d83236" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="/manifest.json">
-  <title>{% block title %}Total.kz – Новости Казахстана{% endblock %}</title>
+  <title>{% block title %}{% if lang|default('ru') == 'kz' %}Total.kz – Қазақстан жаңалықтары{% else %}Total.kz – Новости Казахстана{% endif %}{% endblock %}</title>
 
   {% block meta %}
-  <meta name="description" content="{% block description %}Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.{% endblock %}">
+  <meta name="description" content="{% block description %}{{ t('site_description') if t is defined else 'Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.' }}{% endblock %}">
   <link rel="canonical" href="{{ site_domain }}{% block canonical %}{{ request.url.path }}{% endblock %}">
+  {% block hreflang %}
+  {% set _clean_path = request.url.path %}
+  {% if _clean_path.startswith('/kz/') %}{% set _ru_path = _clean_path[3:] %}{% set _kz_path = _clean_path %}
+  {% elif _clean_path == '/kz' %}{% set _ru_path = '/' %}{% set _kz_path = '/kz/' %}
+  {% else %}{% set _ru_path = _clean_path %}{% set _kz_path = '/kz' + _clean_path %}{% endif %}
+  <link rel="alternate" hreflang="ru" href="{{ site_domain }}{{ _ru_path }}">
+  <link rel="alternate" hreflang="kk" href="{{ site_domain }}{{ _kz_path }}">
+  <link rel="alternate" hreflang="x-default" href="{{ site_domain }}{{ _ru_path }}">
+  {% endblock %}
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:title" content="{% block og_title %}Total.kz – Новости Казахстана{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Ведущий новостной портал Казахстана{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ t('site_description_og') if t is defined else 'Ведущий новостной портал Казахстана' }}{% endblock %}">
   <meta property="og:url" content="{{ site_domain }}{{ request.url.path }}">
   <meta property="og:site_name" content="Total.kz">
-  <meta property="og:locale" content="ru_RU">
+  <meta property="og:locale" content="{{ 'kk_KZ' if lang|default('ru') == 'kz' else 'ru_RU' }}">
   {% block og_image %}<meta property="og:image" content="{{ site_domain }}/static/img/og-default.png">{% endblock %}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@totalkz">
-  <meta name="twitter:title" content="{% block twitter_title %}Total.kz – Новости Казахстана{% endblock %}">
-  <meta name="twitter:description" content="{% block twitter_description %}Ведущий новостной портал Казахстана{% endblock %}">
+  <meta name="twitter:title" content="{% block twitter_title %}{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}{{ t('site_description_og') if t is defined else 'Ведущий новостной портал Казахстана' }}{% endblock %}">
   {% block twitter_image %}<meta name="twitter:image" content="{{ site_domain }}/static/img/og-default.png">{% endblock %}
   {% endblock %}
 
@@ -88,10 +97,16 @@
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
+  <style>
+  .lang-switcher{display:flex;align-items:center;gap:2px;margin-right:4px}
+  .lang-btn{font-size:12px;font-weight:700;padding:3px 7px;border-radius:4px;color:var(--text-muted,#999);text-decoration:none;transition:all .15s;line-height:1}
+  .lang-btn:hover{color:var(--text-primary,#111)}
+  .lang-btn--active{background:var(--accent,#d83236);color:#fff !important}
+  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Перейти к содержимому</a>
+  <a href="#main-content" class="skip-link">{{ t('skip_link') if t is defined else 'Перейти к содержимому' }}</a>
 
   <!-- ═══ AD: TOP BANNER (A1) ═══ -->
   <div class="ad-placeholder ad-top-banner" data-ad-slot="A1" data-ad-size="970x90" aria-hidden="true">Реклама</div>
@@ -102,21 +117,32 @@
   <!-- ═══ HEADER ═══ -->
   <header class="site-header">
     <div class="header-inner">
-      <a href="/" class="site-logo" aria-label="Total.kz">
+      <a href="{{ lang_prefix|default('') }}/" class="site-logo" aria-label="Total.kz">
         <span class="site-logo-text">ТÓТАЛ</span>
       </a>
 
-      <nav class="header-nav" aria-label="Разделы">
+      <nav class="header-nav" aria-label="{{ t('header.menu') if t is defined else 'Разделы' }}">
         {% if nav_sections is defined %}
           {% for section in nav_sections %}
-            <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
+            <a href="{{ lang_prefix|default('') }}/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ (t('nav.' + section.slug) if t is defined else section.label) }}</a>
           {% endfor %}
         {% endif %}
-        <a href="/persons"{% if request.url.path == '/persons' %} class="active"{% endif %}>Персоны</a>
+        <a href="{{ lang_prefix|default('') }}/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>{{ t('nav.persons') if t is defined else 'Персоны' }}</a>
       </nav>
 
       <div class="header-actions">
-        <a href="/bookmarks" class="header-btn" aria-label="Закладки" title="Закладки">
+        <!-- Language switcher -->
+        <div class="lang-switcher">
+          {% if lang|default('ru') == 'kz' %}
+            {% set _switch_path = request.url.path[3:] if request.url.path.startswith('/kz/') else (request.url.path[3:] or '/') %}
+            <a href="{{ _switch_path }}" class="lang-btn">РУ</a>
+            <span class="lang-btn lang-btn--active">ҚЗ</span>
+          {% else %}
+            <span class="lang-btn lang-btn--active">РУ</span>
+            <a href="/kz{{ request.url.path }}" class="lang-btn">ҚЗ</a>
+          {% endif %}
+        </div>
+        <a href="{{ lang_prefix|default('') }}/bookmarks" class="header-btn" aria-label="{{ t('header.bookmarks') if t is defined else 'Закладки' }}" title="{{ t('header.bookmarks') if t is defined else 'Закладки' }}">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path>
           </svg>
@@ -186,11 +212,11 @@
   <div class="search-overlay" id="search-overlay">
     <div class="search-overlay-backdrop" id="search-backdrop"></div>
     <div class="search-overlay-inner">
-      <form action="/search" method="get" class="search-overlay-form" id="search-form">
+      <form action="{{ lang_prefix|default('') }}/search" method="get" class="search-overlay-form" id="search-form">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
-        <input type="text" name="q" placeholder="Поиск новостей…" value="{{ q if q is defined else '' }}" autocomplete="off" id="search-input">
+        <input type="text" name="q" placeholder="{{ t('search.placeholder') if t is defined else 'Поиск новостей…' }}" value="{{ q if q is defined else '' }}" autocomplete="off" id="search-input">
         <button type="submit" style="display:none" aria-hidden="true"></button>
         <button type="button" class="search-overlay-close" id="search-close" aria-label="Закрыть">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -216,20 +242,20 @@
       </div>
 
       <nav class="mobile-menu-nav">
-        <a href="/"{% if request.url.path == '/' %} class="active"{% endif %}>Главная</a>
+        <a href="{{ lang_prefix|default('') }}/"{% if request.url.path == '/' or request.url.path == '/kz/' %} class="active"{% endif %}>{{ t('mobile_menu.home') if t is defined else 'Главная' }}</a>
         {% if nav_sections is defined %}
           {% for section in nav_sections %}
-            <a href="/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ section.label }}</a>
+            <a href="{{ lang_prefix|default('') }}/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ (t('nav.' + section.slug) if t is defined else section.label) }}</a>
           {% endfor %}
         {% endif %}
-        <a href="/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>Персоны</a>
+        <a href="{{ lang_prefix|default('') }}/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>{{ t('nav.persons') if t is defined else 'Персоны' }}</a>
       </nav>
 
       <div class="mobile-menu-footer">
         <div class="mobile-menu-links">
-          <a href="/page/reklama">Реклама</a>
-          <a href="/page/pravila">Правила</a>
-          <a href="/page/contacts">Контакты</a>
+          <a href="/page/reklama">{{ t('mobile_menu.advertising') if t is defined else 'Реклама' }}</a>
+          <a href="/page/pravila">{{ t('mobile_menu.rules') if t is defined else 'Правила' }}</a>
+          <a href="/page/contacts">{{ t('mobile_menu.contacts') if t is defined else 'Контакты' }}</a>
         </div>
         <button data-theme-toggle-mobile aria-label="Переключить тему">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -264,13 +290,13 @@
         <a href="/" class="site-logo footer-logo" aria-label="Total.kz">
           <span class="site-logo-text">ТÓТАЛ</span>
         </a>
-        <nav class="footer-nav-links" aria-label="Навигация">
-          <a href="/persons">Персоны</a>
-          <a href="/tags">Тематики</a>
-          <a href="/page/reklama">Реклама</a>
-          <a href="/page/pravila">Правила</a>
-          <a href="/page/contacts">Контакты</a>
-          <a href="/rss" aria-label="RSS лента"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:3px"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20 5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1"/></svg>RSS</a>
+        <nav class="footer-nav-links" aria-label="{{ t('header.menu') if t is defined else 'Навигация' }}">
+          <a href="{{ lang_prefix|default('') }}/persons">{{ t('footer.persons') if t is defined else 'Персоны' }}</a>
+          <a href="{{ lang_prefix|default('') }}/tags">{{ t('footer.topics') if t is defined else 'Тематики' }}</a>
+          <a href="/page/reklama">{{ t('footer.advertising') if t is defined else 'Реклама' }}</a>
+          <a href="/page/pravila">{{ t('footer.rules') if t is defined else 'Правила' }}</a>
+          <a href="/page/contacts">{{ t('footer.contacts') if t is defined else 'Контакты' }}</a>
+          <a href="/rss" aria-label="RSS"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:3px"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20 5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1"/></svg>RSS</a>
         </nav>
       </div>
 
@@ -279,9 +305,9 @@
         <div class="footer-legal-text">
           <span>&copy; 2011–{{ current_year() }} Total Media Qazaqstan</span>
           <span class="footer-legal-sep">·</span>
-          <span>Свидетельство СМИ №16942-ИА</span>
+          <span>{{ t('footer.license') if t is defined else 'Свидетельство СМИ №16942-ИА' }}</span>
           <span class="footer-legal-sep">·</span>
-          <span>г. Алматы, пр. Жибек жолы, 115/46, оф. 306</span>
+          <span>{{ t('footer.address') if t is defined else 'г. Алматы, пр. Жибек жолы, 115/46, оф. 306' }}</span>
           <span class="footer-legal-sep">·</span>
           <a href="tel:+77009787854">+7 700 978-78-54</a>
         </div>
@@ -307,22 +333,22 @@
   </footer>
 
   <!-- ═══ MOBILE BOTTOM BAR ═══ -->
-  <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="Быстрая навигация">
-    <a href="/" class="bottom-bar-item{% if request.url.path == '/' %} active{% endif %}">
+  <nav class="mobile-bottom-bar" id="mobile-bottom-bar" aria-label="{{ t('header.menu') if t is defined else 'Быстрая навигация' }}">
+    <a href="{{ lang_prefix|default('') }}/" class="bottom-bar-item{% if request.url.path == '/' or request.url.path == '/kz/' %} active{% endif %}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-      <span>Главная</span>
+      <span>{{ t('mobile_bar.home') if t is defined else 'Главная' }}</span>
     </a>
     <button class="bottom-bar-item" id="bottom-bar-search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <span>Поиск</span>
+      <span>{{ t('mobile_bar.search') if t is defined else 'Поиск' }}</span>
     </button>
-    <a href="/#feed-section" class="bottom-bar-item">
+    <a href="{{ lang_prefix|default('') }}/#feed-section" class="bottom-bar-item">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-      <span>Свежее</span>
+      <span>{{ t('mobile_bar.fresh') if t is defined else 'Свежее' }}</span>
     </a>
     <button class="bottom-bar-item" id="bottom-bar-menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      <span>Меню</span>
+      <span>{{ t('mobile_bar.menu') if t is defined else 'Меню' }}</span>
     </button>
   </nav>
 
@@ -410,7 +436,8 @@
       searchForm.addEventListener('submit', function (e) {
         e.preventDefault();
         var q = (searchInput ? searchInput.value : '').trim();
-        if (q) window.location.href = '/search?q=' + encodeURIComponent(q);
+        var langPrefix = '{{ lang_prefix|default("") }}';
+        if (q) window.location.href = langPrefix + '/search?q=' + encodeURIComponent(q);
       });
     }
 

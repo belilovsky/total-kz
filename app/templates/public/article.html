@@ -79,7 +79,7 @@
     "@id": {{ _art_url | tojson }}
   },
   "articleSection": {{ category_name | tojson }},
-  "inLanguage": "ru",
+  "inLanguage": "{{ lang|default('ru') }}",
   "isAccessibleForFree": true,
   {% if article.pub_date %}"copyrightYear": {{ article.pub_date[:4] | tojson }},{% endif %}
   {% if article.body_text %}"wordCount": {{ article.body_text.split()|length }},{% endif %}
@@ -96,8 +96,8 @@
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
-    {"@type": "ListItem", "position": 1, "name": "Главная", "item": "{{ site_domain }}/"},
-    {"@type": "ListItem", "position": 2, "name": "{{ nav_section_name }}", "item": "{{ site_domain }}/news/{{ nav_section }}"},
+    {"@type": "ListItem", "position": 1, "name": "{{ t('breadcrumb.home') if t is defined else 'Главная' }}", "item": "{{ site_domain }}{{ lang_prefix|default('') }}/"},
+    {"@type": "ListItem", "position": 2, "name": "{{ nav_section_name }}", "item": "{{ site_domain }}{{ lang_prefix|default('') }}/news/{{ nav_section }}"},
     {"@type": "ListItem", "position": 3, "name": "{{ article.title[:70] }}"}
   ]
 }
@@ -165,11 +165,11 @@
   </div>
 
   {# ── Top bar: breadcrumbs only (badge moved to sidebar) ── #}
-  <nav aria-label="Навигация">
+  <nav aria-label="{{ t('header.menu') if t is defined else 'Навигация' }}">
     <div class="article-top-bar">
-      <a href="/">Главная</a>
+      <a href="{{ lang_prefix|default('') }}/">{{ t('breadcrumb.home') if t is defined else 'Главная' }}</a>
       <span class="sep">›</span>
-      <a href="/news/{{ nav_section }}">{{ nav_section_name }}</a>
+      <a href="{{ lang_prefix|default('') }}/news/{{ nav_section }}">{{ nav_section_name }}</a>
     </div>
   </nav>
 
@@ -227,7 +227,7 @@
 
       {# ── Inline share (mobile/tablet only, hidden >=1100px) ── #}
       <div class="share-buttons">
-        <span class="share-label">Поделиться</span>
+        <span class="share-label">{{ t('article.share') if t is defined else 'Поделиться' }}</span>
         <a href="https://t.me/share/url?url={{ site_domain }}/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
         </a>
@@ -258,7 +258,7 @@
 
         {# ── Category badge (moved from header top-bar) ── #}
         <div class="sidebar-badge">
-          <a href="/news/{{ nav_section }}" class="cat-badge" data-cat="{{ nav_section }}">
+          <a href="{{ lang_prefix|default('') }}/news/{{ nav_section }}" class="cat-badge" data-cat="{{ nav_section }}">
             <span class="cat-dot"></span>
             <span class="cat-name">{{ nav_section_name }}</span>
           </a>
@@ -286,16 +286,16 @@
 
         {# ── TOC: most useful for navigation ── #}
         <nav class="article-toc" id="article-toc" aria-label="Оглавление">
-          <div class="article-toc-title">Содержание</div>
+          <div class="article-toc-title">{{ t('article.toc') if t is defined else 'Содержание' }}</div>
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
 
         {# ── Персоны упомянутые в статье (mini-cards) ── #}
         {% if article_persons %}
         <div class="sidebar-persons">
-          <div class="sidebar-persons-title">Упоминаются</div>
+          <div class="sidebar-persons-title">{{ t('article.mentioned') if t is defined else 'Упоминаются' }}</div>
           {% for p in article_persons %}
-          <a href="/person/{{ p.slug }}" class="sidebar-person-card">
+          <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="sidebar-person-card">
             {% if p.photo_url %}
             <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 80) }}{% endif %}"
                  alt="{{ p.short_name }}" class="sidebar-person-photo" loading="lazy">
@@ -320,9 +320,9 @@
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
         <div class="popular-widget">
-          <h3 class="widget-heading">Сейчас читают</h3>
+          <h3 class="widget-heading">{{ t('article.trending') if t is defined else 'Сейчас читают' }}</h3>
           {% for art in popular %}
-          <a href="{{ article_url(art) }}" class="popular-item">
+          <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-item">
             <span class="popular-num">{{ loop.index }}</span>
             <span class="popular-title">{{ art.title }}</span>
           </a>
@@ -340,10 +340,10 @@
   {# ── Mobile: "Упоминаются" horizontal strip (hidden on desktop) ── #}
   {% if article_persons %}
   <div class="persons-mobile-strip">
-    <div class="sidebar-persons-title">Упоминаются</div>
+    <div class="sidebar-persons-title">{{ t('article.mentioned') if t is defined else 'Упоминаются' }}</div>
     <div class="persons-mobile-strip-inner">
       {% for p in article_persons %}
-      <a href="/person/{{ p.slug }}" class="sidebar-person-card">
+      <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="sidebar-person-card">
         {% if p.photo_url %}
         <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 80) }}{% endif %}"
              alt="{{ p.short_name }}" class="sidebar-person-photo" loading="lazy">
@@ -369,9 +369,9 @@
   {# ── Mobile: "Сейчас читают" popular articles (hidden on desktop) ── #}
   {% if popular %}
   <div class="popular-widget-mobile">
-    <h3 class="widget-heading">Сейчас читают</h3>
+    <h3 class="widget-heading">{{ t('article.trending') if t is defined else 'Сейчас читают' }}</h3>
     {% for art in popular %}
-    <a href="{{ article_url(art) }}" class="popular-item">
+    <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-item">
       <span class="popular-num">{{ loop.index }}</span>
       <span class="popular-title">{{ art.title }}</span>
     </a>
@@ -395,7 +395,7 @@
     <div class="timeline-header">
       <h2 class="timeline-heading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        {% if timeline_total > 0 %}Сюжет{% else %}Хронология{% endif %}{% if timeline_topic %}: <span class="timeline-topic">{{ timeline_topic }}</span>{% endif %}
+        {% if timeline_total > 0 %}{{ t('article.story') if t is defined else 'Сюжет' }}{% else %}{{ t('article.timeline') if t is defined else 'Хронология' }}{% endif %}{% if timeline_topic %}: <span class="timeline-topic">{{ timeline_topic }}</span>{% endif %}
       </h2>
       {% if timeline_total > 1 %}
       <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
@@ -403,7 +403,7 @@
     </div>
     <div class="timeline-track">
       {% for art in timeline.next|reverse %}
-      <a href="{{ article_url(art) }}" class="timeline-item">
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title">{{ art.title }}</span>
@@ -415,7 +415,7 @@
         <span class="timeline-title">{{ article.title }}</span>
       </div>
       {% for art in timeline.prev %}
-      <a href="{{ article_url(art) }}" class="timeline-item">
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title">{{ art.title }}</span>
@@ -431,10 +431,10 @@
   {# ── Related articles: 6 cards ── #}
   {% if related %}
   <section class="related-section">
-    <h2 class="related-heading">Читайте также</h2>
+    <h2 class="related-heading">{{ t('article.related') if t is defined else 'Читайте также' }}</h2>
     <div class="related-grid">
       {% for art in related %}
-      <a href="{{ article_url(art) }}" class="related-item">
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="related-item">
         {% if art.main_image or art.thumbnail %}
         <div class="related-thumb">
           <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"

@@ -17,12 +17,16 @@ cd /app && python scraper/enrich_articles_pg.py --batch 150 2>&1
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [3/5] NER extraction (batch 500, 2 workers)..."
 cd /app && python scripts/extract_entities_pg.py --batch 300 --workers 1 2>&1
 
+# Step 3.5: Translate new articles to Kazakh
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [3.5/6] Translating to Kazakh (batch 50)..."
+cd /app && python scripts/translate_articles_kz.py --batch 50 --workers 1 2>&1
+
 # Step 4: Denormalize tags from enrichments
-echo "$(date '+%Y-%m-%d %H:%M:%S') — [4/5] Denormalizing tags..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [4/6] Denormalizing tags..."
 cd /app && python scripts/extract_entities_pg.py --tags-only 2>&1
 
 # Step 5: Reindex Meilisearch
-echo "$(date '+%Y-%m-%d %H:%M:%S') — [5/5] Reindexing Meilisearch..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [5/6] Reindexing Meilisearch..."
 cd /app && python scripts/reindex_meilisearch.py 2>&1
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') — Pipeline complete"

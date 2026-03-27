@@ -1,16 +1,16 @@
 {% extends "public/base.html" %}
 
-{% block title %}Total.kz – Новости Казахстана{% endblock %}
+{% block title %}{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}{% endblock %}
 
 {% block content %}
 <div class="wide-layout">
-  <h1 class="sr-only">Total.kz – Новости Казахстана</h1>
+  <h1 class="sr-only">{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}</h1>
 
   <!-- ═══ HERO GRID ═══ -->
   {% if hero_articles %}
   <div class="hero-grid">
     {% set main = hero_articles[0] %}
-    <a href="{{ article_url(main) }}" class="hero-main">
+    <a href="{{ (article_url_i18n(main) if article_url_i18n is defined else article_url(main)) }}" class="hero-main">
       {% if main.main_image or main.thumbnail %}
         <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 900) }}" alt="{{ main.title }}" loading="eager"
              srcset="{{ imgproxy_url(main.main_image or main.thumbnail, 400) }} 400w, {{ imgproxy_url(main.main_image or main.thumbnail, 900) }} 900w"
@@ -31,7 +31,7 @@
     </a>
     <div class="hero-side">
       {% for hero in hero_articles[1:5] %}
-      <a href="{{ article_url(hero) }}" class="hero-side-item">
+      <a href="{{ (article_url_i18n(hero) if article_url_i18n is defined else article_url(hero)) }}" class="hero-side-item">
         {% if hero.main_image or hero.thumbnail %}
         <div class="hero-side-thumb">
           <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 300) }}" alt="{{ hero.title }}" loading="eager"
@@ -64,11 +64,11 @@
     <section class="shelf-section">
       <div class="section-header">
         <h2 class="section-title">{{ cat.label }}</h2>
-        <a href="/news/{{ cat.slug }}" class="section-more">Все →</a>
+        <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
       </div>
       <div class="shelf-row">
         {% for art in cat.articles[:4] %}
-        <a href="{{ article_url(art) }}" class="shelf-card">
+        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
           {% if art.main_image or art.thumbnail %}
           <div class="shelf-card-img">
             <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
@@ -90,12 +90,12 @@
   {% if homepage_persons %}
   <section class="persons-strip">
     <div class="section-header">
-      <h2 class="section-title">Ключевые персоны</h2>
-      <a href="/persons" class="section-more">Все →</a>
+      <h2 class="section-title">{{ t('homepage.key_persons') if t is defined else 'Ключевые персоны' }}</h2>
+      <a href="{{ lang_prefix|default('') }}/persons" class="section-more">{{ t('homepage.all_persons') if t is defined else 'Все →' }}</a>
     </div>
     <div class="persons-strip-scroll">
       {% for p in homepage_persons %}
-      <a href="/person/{{ p.slug }}" class="persons-strip-card">
+      <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="persons-strip-card">
         {% if p.photo_url %}
         <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
              alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
@@ -122,8 +122,8 @@
   <div class="feed-duo" id="feed-section">
     <div class="feed-duo-main">
       <div class="section-header">
-        <h2 class="section-title">Последние новости</h2>
-        <a href="/news/politika" class="section-more">Все новости →</a>
+        <h2 class="section-title">{{ t('homepage.latest') if t is defined else 'Последние новости' }}</h2>
+        <a href="{{ lang_prefix|default('') }}/news/politika" class="section-more">{{ t('homepage.all_news') if t is defined else 'Все новости →' }}</a>
       </div>
       <div class="feed-cards-grid">
         {% for art in latest[:10] %}
@@ -145,7 +145,7 @@
               <span class="sep">·</span>
               <span>{{ format_date_short(art.pub_date) }}</span>
             </div>
-            <h3 class="feed-card-title"><a href="{{ article_url(art) }}">{{ art.title }}</a></h3>
+            <h3 class="feed-card-title"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}</a></h3>
             {% if art.excerpt %}
               <p class="feed-card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
             {% endif %}
@@ -155,20 +155,20 @@
       </div>
       <div style="text-align:center;padding:var(--space-6) 0">
         <button class="btn-load-more" id="loadMoreBtn" onclick="loadMoreFeed()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 32px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);color:var(--text-primary);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;">
-          Показать ещё
+          {{ t('homepage.show_more') if t is defined else 'Показать ещё' }}
         </button>
       </div>
     </div>
     <aside class="feed-duo-sidebar">
       <div class="section-header">
-        <h2 class="section-title">Популярные</h2>
+        <h2 class="section-title">{{ t('homepage.popular') if t is defined else 'Популярные' }}</h2>
       </div>
       <ol class="popular-list">
         {% for art in popular[:10] %}
         <li class="popular-item">
           <span class="popular-num">{{ loop.index }}</span>
           <div class="popular-body">
-            <a href="{{ article_url(art) }}" class="popular-title">{{ art.title }}</a>
+            <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title">{{ art.title }}</a>
             <span class="popular-meta">{{ format_date_short(art.pub_date) }}</span>
           </div>
         </li>
@@ -201,16 +201,17 @@
   window.loadMoreFeed = function() {
     if (feedLoading) return;
     feedLoading = true;
-    btn.textContent = 'Загрузка...';
+    btn.textContent = '{{ t("homepage.loading") if t is defined else "Загрузка..." }}';
     btn.style.opacity = '0.6';
-    fetch('/api/feed?offset=' + feedOffset + '&limit=20')
+    var langPrefix = '{{ lang_prefix|default("") }}';
+    fetch(langPrefix + '/api/feed?offset=' + feedOffset + '&limit=20')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         feedLoading = false;
-        btn.textContent = 'Показать ещё';
+        btn.textContent = '{{ t("homepage.show_more") if t is defined else "Показать ещё" }}';
         btn.style.opacity = '1';
         if (!html.trim()) {
-          btn.textContent = 'Больше нет новостей';
+          btn.textContent = '{{ t("homepage.no_more") if t is defined else "Больше нет новостей" }}';
           btn.disabled = true;
           btn.style.opacity = '0.5';
           return;
@@ -230,7 +231,7 @@
       })
       .catch(function() {
         feedLoading = false;
-        btn.textContent = 'Показать ещё';
+        btn.textContent = '{{ t("homepage.show_more") if t is defined else "Показать ещё" }}';
         btn.style.opacity = '1';
       });
   };

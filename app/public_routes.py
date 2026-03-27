@@ -2,6 +2,7 @@
 
 import hashlib
 import httpx
+import json
 import logging
 import os
 import re
@@ -24,6 +25,158 @@ from . import cache
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# ══════════════════════════════════════════════
+#  LOCALIZATION / i18n
+# ══════════════════════════════════════════════
+_LOCALES_DIR = Path(__file__).parent / "locales"
+_LOCALE_CACHE: dict[str, dict] = {}
+
+
+def _load_locale(lang: str) -> dict:
+    """Load locale JSON file, cached in memory."""
+    if lang in _LOCALE_CACHE:
+        return _LOCALE_CACHE[lang]
+    fpath = _LOCALES_DIR / f"{lang}.json"
+    if fpath.exists():
+        with open(fpath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        _LOCALE_CACHE[lang] = data
+        return data
+    return {}
+
+
+def t(key: str, lang: str = "ru", **kwargs) -> str:
+    """Translate a UI string key for the given language.
+    Falls back to Russian, then returns the key itself.
+    Supports {placeholder} substitution via kwargs.
+    """
+    locale = _load_locale(lang)
+    value = locale.get(key)
+    if value is None:
+        # Fallback to Russian
+        if lang != "ru":
+            ru = _load_locale("ru")
+            value = ru.get(key)
+        if value is None:
+            return key
+    if isinstance(value, str) and kwargs:
+        try:
+            value = value.format(**kwargs)
+        except (KeyError, IndexError):
+            pass
+    return value
+
+
+def cat_label_i18n(slug: str, lang: str = "ru") -> str:
+    """Get localized category label."""
+    key = f"cat.{slug}"
+    result = t(key, lang)
+    if result != key:
+        return result
+    # Fallback: try nav section label
+    nav_key = f"nav.section.{slug}"
+    result2 = t(nav_key, lang)
+    if result2 != nav_key:
+        return result2
+    # Ultimate fallback: Russian label
+    return cat_label(slug)
+
+
+def _lang_url_prefix(lang: str) -> str:
+    """Return URL prefix for language: '' for ru, '/kz' for kz."""
+    return "/kz" if lang == "kz" else ""
+
+
+def article_url_i18n(article: dict, lang: str = "ru") -> str:
+    """Build article URL with language prefix."""
+    base = article_url(article)
+    if lang == "kz":
+        return f"/kz{base}"
+    return base
+
+
+def _get_translation(article_id: int, lang: str = "kz") -> dict | None:
+    """Fetch translation from article_translations table.
+    Returns dict with title, excerpt, body_html, body_text, meta_description or None.
+    """
+    try:
+        row = db.execute_raw(
+            "SELECT title, excerpt, body_html, body_text, meta_description "
+            "FROM article_translations WHERE article_id = %s AND lang = %s",
+            (article_id, lang),
+        )
+        if row:
+            return dict(row)
+    except Exception:
+        pass
+    return None
+
+
+def _apply_translation(article: dict, lang: str = "kz") -> dict:
+    """Apply Kazakh translation to article dict, falling back to Russian."""
+    if lang != "kz":
+        return article
+    tr = _get_translation(article.get("id", 0), lang)
+    if tr:
+        if tr.get("title"):
+            article["title"] = tr["title"]
+        if tr.get("excerpt"):
+            article["excerpt"] = tr["excerpt"]
+        if tr.get("body_html"):
+            article["body_html"] = tr["body_html"]
+        if tr.get("body_text"):
+            article["body_text"] = tr["body_text"]
+        if tr.get("meta_description"):
+            if not article.get("enrichment"):
+                article["enrichment"] = {}
+            article["enrichment"]["meta_description"] = tr["meta_description"]
+        article["_has_translation"] = True
+    else:
+        article["_has_translation"] = False
+    return article
+
+
+def _apply_translations_to_list(articles: list, lang: str = "kz") -> list:
+    """Apply translations to a list of articles (batch)."""
+    if lang != "kz" or not articles:
+        return articles
+    ids = [a.get("id", 0) for a in articles if a.get("id")]
+    if not ids:
+        return articles
+    try:
+        placeholders = ",".join(["%s"] * len(ids))
+        rows = db.execute_raw_many(
+            f"SELECT article_id, title, excerpt FROM article_translations "
+            f"WHERE article_id IN ({placeholders}) AND lang = %s",
+            (*ids, lang),
+        )
+        tr_map = {r["article_id"]: r for r in rows} if rows else {}
+    except Exception:
+        tr_map = {}
+    for article in articles:
+        aid = article.get("id", 0)
+        tr = tr_map.get(aid)
+        if tr:
+            if tr.get("title"):
+                article["title"] = tr["title"]
+            if tr.get("excerpt"):
+                article["excerpt"] = tr["excerpt"]
+            article["_has_translation"] = True
+        else:
+            article["_has_translation"] = False
+    return articles
+
+
+def _build_lang_ctx(lang: str) -> dict:
+    """Build common template context for language support."""
+    return {
+        "lang": lang,
+        "t": lambda key, **kw: t(key, lang, **kw),
+        "cat_label_i18n": lambda slug: cat_label_i18n(slug, lang),
+        "article_url_i18n": lambda art: article_url_i18n(art, lang),
+        "lang_prefix": _lang_url_prefix(lang),
+    }
 
 # ══════════════════════════════════════════════
 #  IMAGE PROXY – serve images locally with disk cache
@@ -477,6 +630,15 @@ def imgproxy_url(source_url: str, width: int = 800) -> str:
 templates.env.globals["dedup_entities"] = dedup_entities
 templates.env.globals["current_year"] = lambda: datetime.now().year
 templates.env.globals["imgproxy_url"] = imgproxy_url
+
+# ── Localization globals ──
+# Default lang for Russian routes (Kazakh routes override via _build_lang_ctx)
+templates.env.globals["lang"] = "ru"
+templates.env.globals["lang_prefix"] = ""
+templates.env.globals["t"] = lambda key, **kw: t(key, "ru", **kw)
+templates.env.globals["cat_label_i18n"] = lambda slug: cat_label_i18n(slug, "ru")
+templates.env.globals["article_url_i18n"] = lambda art: article_url_i18n(art, "ru")
+templates.env.globals["lang_url_prefix"] = _lang_url_prefix
 templates.env.filters["format_num"] = format_num
 
 
@@ -2680,3 +2842,545 @@ async def pwa_manifest():
             {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png"},
         ],
     }, media_type="application/manifest+json")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  KAZAKH LANGUAGE ROUTES (/kz/...)
+#  Mirror the main Russian routes but with lang="kz" context.
+#  Article content comes from article_translations table with RU fallback.
+# ══════════════════════════════════════════════════════════════════════════════
+
+kz_router = APIRouter(prefix="/kz")
+
+
+@kz_router.get("/", response_class=HTMLResponse)
+async def kz_homepage(request: Request):
+    """Kazakh homepage — same data, Kazakh UI strings."""
+    cached = cache.get("kz_homepage", ttl=cache.TTL_HOMEPAGE)
+    if cached:
+        ctx = {"request": request, **cached, **_build_lang_ctx("kz")}
+        return templates.TemplateResponse("public/home.html", ctx)
+
+    try:
+        all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
+        hero_articles = all_latest[:5]
+        latest = all_latest[5:]
+
+        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
+        category_highlights = []
+        for section in NAV_SECTIONS:
+            articles = highlights_map.get(section["slug"], [])
+            if articles:
+                category_highlights.append({
+                    "slug": section["slug"],
+                    "label": cat_label_i18n(section["slug"], "kz"),
+                    "articles": rewrite_articles_images(articles),
+                })
+    except Exception:
+        logger.exception("Database error in kz_homepage")
+        return _error_response(request)
+
+    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
+    homepage_persons = _get_homepage_persons()
+
+    try:
+        trending_tags = db.get_trending_tags(limit=15)
+    except Exception:
+        trending_tags = []
+
+    # Apply translations to article lists
+    _apply_translations_to_list(hero_articles, "kz")
+    _apply_translations_to_list(latest, "kz")
+    _apply_translations_to_list(popular, "kz")
+    for ch in category_highlights:
+        _apply_translations_to_list(ch["articles"], "kz")
+
+    ctx = {
+        "hero_articles": hero_articles,
+        "latest": latest,
+        "popular": popular,
+        "category_highlights": category_highlights,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "ticker_articles": hero_articles[:5],
+        "homepage_persons": homepage_persons,
+        "trending_tags": trending_tags,
+    }
+    cache.set("kz_homepage", ctx)
+    return templates.TemplateResponse("public/home.html", {
+        "request": request, **ctx, **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/news/{category}", response_class=HTMLResponse)
+async def kz_category_page(
+    request: Request,
+    category: str,
+    page: int = Query(1, ge=1),
+):
+    """Kazakh category listing."""
+    cache_key = f"kz_category:{category}:p{page}"
+    cached = cache.get(cache_key, ttl=cache.TTL_CATEGORY)
+    if cached:
+        return templates.TemplateResponse("public/category.html", {
+            "request": request, **cached, **_build_lang_ctx("kz"),
+        })
+
+    try:
+        per_page = 24
+        offset = (page - 1) * per_page
+
+        if category in NAV_SLUG_MAP:
+            subcats = NAV_SLUG_MAP[category]
+            result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
+        else:
+            subcats = [category]
+            result = db.get_latest_by_category(category, limit=per_page, offset=offset)
+    except Exception:
+        logger.exception("Database error in kz_category_page for %s", category)
+        return _error_response(request)
+
+    if not result["articles"] and page == 1:
+        return templates.TemplateResponse("public/404.html", {
+            "request": request, "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES, **_build_lang_ctx("kz"),
+        }, status_code=404)
+
+    articles_list = rewrite_articles_images(result["articles"])
+    _apply_translations_to_list(articles_list, "kz")
+
+    subcategory_pills = []
+    current_section = None
+    for sec in NAV_SECTIONS:
+        if sec["slug"] == category:
+            current_section = sec
+            break
+    if current_section and len(current_section["subcats"]) > 1:
+        subcategory_pills = [
+            {"slug": sc, "label": cat_label_i18n(sc, "kz")}
+            for sc in current_section["subcats"]
+        ]
+
+    try:
+        popular_articles = rewrite_articles_images(db.popular_in_category(subcats, limit=5))
+        _apply_translations_to_list(popular_articles, "kz")
+    except Exception:
+        popular_articles = []
+    try:
+        trending_tags = db.trending_tags_for_category(subcats, limit=15)
+    except Exception:
+        trending_tags = []
+
+    ctx = {
+        "articles": articles_list,
+        "total": result["total"],
+        "pages": result["pages"],
+        "page": page,
+        "category": category,
+        "category_name": cat_label_i18n(category, "kz"),
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "ticker_articles": articles_list[:5],
+        "subcategory_pills": subcategory_pills,
+        "popular_articles": popular_articles,
+        "trending_tags": trending_tags,
+    }
+    cache.set(cache_key, ctx)
+    return templates.TemplateResponse("public/category.html", {
+        "request": request, **ctx, **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/news/{category}/{slug}", response_class=HTMLResponse)
+async def kz_article_page(request: Request, category: str, slug: str):
+    """Kazakh single article page."""
+    try:
+        article = db.get_article_by_slug(category, slug)
+    except Exception:
+        logger.exception("Database error in kz_article_page for %s/%s", category, slug)
+        return _error_response(request)
+
+    if not article:
+        return templates.TemplateResponse("public/404.html", {
+            "request": request, "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES, **_build_lang_ctx("kz"),
+        }, status_code=404)
+
+    rewrite_article_images(article)
+    _apply_translation(article, "kz")
+
+    # Strip duplicate lead
+    excerpt = (article.get("excerpt") or "").strip()
+    body_html = (article.get("body_html") or "").strip()
+    if excerpt and body_html:
+        m = re.match(r'^<p[^>]*>(.*?)</p>', body_html, re.DOTALL | re.IGNORECASE)
+        if m:
+            first_p_text = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+            norm_exc = ' '.join(excerpt.split())
+            norm_fp = ' '.join(first_p_text.split())
+            if norm_exc and norm_fp and (
+                norm_fp.startswith(norm_exc) or norm_exc.startswith(norm_fp)
+                or norm_fp == norm_exc
+            ):
+                article["body_html"] = body_html[m.end():].lstrip()
+
+    entity_ids = [e["id"] for e in article.get("entities", [])]
+
+    try:
+        related = rewrite_articles_images(
+            db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
+        )
+        _apply_translations_to_list(related, "kz")
+    except Exception:
+        related = []
+
+    timeline = {"prev": [], "next": []}
+    timeline_topic = ""
+    timeline_total = 0
+    try:
+        story_tl = db.get_story_timeline(article["id"], article.get("pub_date", ""))
+        if story_tl and (story_tl["prev"] or story_tl["next"]):
+            timeline = {
+                "prev": rewrite_articles_images(story_tl["prev"]),
+                "next": rewrite_articles_images(story_tl["next"]),
+            }
+            timeline_topic = story_tl["story_title"]
+            timeline_total = story_tl["total_articles"]
+        else:
+            timeline_entity = None
+            if article.get("entities"):
+                priority = {"person": 0, "org": 1, "location": 2}
+                sorted_ents = sorted(
+                    article["entities"],
+                    key=lambda e: priority.get(e.get("entity_type", "location"), 3)
+                )
+                timeline_entity = sorted_ents[0] if sorted_ents else None
+            timeline_entity_ids = [timeline_entity["id"]] if timeline_entity else None
+            timeline_raw = db.get_timeline_articles(
+                article["id"], category, article.get("pub_date", ""),
+                entity_ids=timeline_entity_ids
+            )
+            timeline = {
+                "prev": rewrite_articles_images(timeline_raw["prev"]),
+                "next": rewrite_articles_images(timeline_raw["next"]),
+            }
+            timeline_topic = _to_genitive(timeline_entity["name"]) if timeline_entity else ""
+            timeline_total = 0
+    except Exception:
+        logger.exception("Error loading timeline for kz/%s/%s", category, slug)
+
+    article_slug = article.get("url", "").replace(
+        f"https://total.kz/ru/news/{category}/", ""
+    ).strip("/")
+    nav_section = nav_slug_for(category)
+    ticker_articles = related[:5] if related else []
+    article_persons = get_article_persons(article.get("entities", []))
+
+    try:
+        popular = rewrite_articles_images(db.get_latest_articles(limit=20))
+        popular = [a for a in popular if a.get("id") != article["id"]]
+        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:10]
+        _apply_translations_to_list(popular, "kz")
+    except Exception:
+        popular = []
+
+    return templates.TemplateResponse("public/article.html", {
+        "request": request,
+        "article": article,
+        "related": related,
+        "timeline": timeline,
+        "timeline_topic": timeline_topic,
+        "timeline_total": timeline_total,
+        "category": category,
+        "category_name": cat_label_i18n(category, "kz"),
+        "nav_section": nav_section,
+        "nav_section_name": cat_label_i18n(nav_section, "kz"),
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        "reading_time": estimate_reading_time(article.get("body_text", "")),
+        "slug": article_slug,
+        "ticker_articles": ticker_articles,
+        "article_persons": article_persons,
+        "popular": popular,
+        **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/search", response_class=HTMLResponse)
+async def kz_search_page(
+    request: Request,
+    q: str = "",
+    page: int = Query(1, ge=1),
+    cat: str = "",
+    period: str = "",
+    sort: str = "",
+):
+    """Kazakh search page."""
+    meili_results = None
+
+    filters = []
+    if cat:
+        section_match = next((s for s in NAV_SECTIONS if s["slug"] == cat), None)
+        if section_match:
+            sub_filters = " OR ".join(f'sub_category = "{sc}"' for sc in section_match["subcats"])
+            filters.append(f"({sub_filters})")
+        else:
+            filters.append(f'sub_category = "{cat}"')
+    if period:
+        from datetime import timedelta
+        now = datetime.now()
+        cutoff = ""
+        if period == "day":
+            cutoff = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        elif period == "week":
+            cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+        elif period == "month":
+            cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+        elif period == "year":
+            cutoff = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+        if cutoff:
+            filters.append(f'pub_date > "{cutoff}"')
+
+    filter_str = " AND ".join(filters)
+    sort_list = ["pub_date:desc"] if sort == "date" else []
+
+    try:
+        if q:
+            try:
+                from . import search_engine as meili
+                meili_results = meili.search(q, filters=filter_str, page=page, per_page=20, sort=sort_list)
+            except Exception:
+                pass
+
+            if meili_results and meili_results.get("hits"):
+                result = {
+                    "articles": rewrite_articles_images(meili_results["hits"]),
+                    "total": meili_results["total"],
+                    "page": page,
+                    "per_page": 20,
+                    "pages": max(1, (meili_results["total"] + 19) // 20),
+                    "meili": True,
+                }
+            else:
+                result = db.search_articles(query=q, page=page, per_page=20)
+                if result.get("articles"):
+                    result["articles"] = rewrite_articles_images(result["articles"])
+        else:
+            result = {"articles": [], "total": 0, "page": 1, "pages": 1, "per_page": 20}
+
+        popular_tags = db.get_trending_tags(limit=20) if not q else None
+    except Exception:
+        logger.exception("Database error in kz_search_page for q=%s", q)
+        return _error_response(request)
+
+    if result.get("articles"):
+        _apply_translations_to_list(result["articles"], "kz")
+
+    return templates.TemplateResponse("public/search.html", {
+        "request": request,
+        "q": q,
+        "cat": cat,
+        "period": period,
+        "sort": sort,
+        "result": result,
+        "popular_tags": popular_tags,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/tags", response_class=HTMLResponse)
+async def kz_tags_catalog(request: Request, q: str = ""):
+    """Kazakh tags catalog."""
+    if q:
+        result = db.get_tags_full(q=q, page=1, per_page=200)
+        return templates.TemplateResponse("public/tags.html", {
+            "request": request, "result": result, "popular_tags": [],
+            "q": q, "nav_sections": NAV_SECTIONS, "nav_categories": NAV_CATEGORIES,
+            **_build_lang_ctx("kz"),
+        })
+
+    cached = cache.get("kz_tags_catalog", ttl=cache.TTL_TAGS)
+    if cached:
+        return templates.TemplateResponse("public/tags.html", {
+            "request": request, **cached, **_build_lang_ctx("kz"),
+        })
+
+    popular_tags = db.get_popular_tags(limit=1000)
+    total_tags = len(popular_tags)
+    ctx = {
+        "result": {"total": total_tags, "items": []},
+        "popular_tags": popular_tags,
+        "q": q,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    }
+    cache.set("kz_tags_catalog", ctx)
+    return templates.TemplateResponse("public/tags.html", {
+        "request": request, **ctx, **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/tag/{tag_name}", response_class=HTMLResponse)
+async def kz_tag_page(request: Request, tag_name: str, page: int = Query(1, ge=1)):
+    """Kazakh tag page."""
+    result = db.search_articles(tag=tag_name, page=page, per_page=20)
+    if result.get("articles"):
+        result["articles"] = rewrite_articles_images(result["articles"])
+        _apply_translations_to_list(result["articles"], "kz")
+
+    return templates.TemplateResponse("public/tag.html", {
+        "request": request, "tag_name": tag_name, "result": result,
+        "page": page, "nav_sections": NAV_SECTIONS, "nav_categories": NAV_CATEGORIES,
+        **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/persons", response_class=HTMLResponse)
+async def kz_persons_catalog(request: Request, type: str = "", letter: str = ""):
+    """Kazakh persons catalog."""
+    try:
+        _ensure_persons_loaded()
+        all_persons = _persons_preloaded.get("all", [])
+        type_counts = _persons_preloaded.get("type_counts", {})
+        letters_list = _persons_preloaded.get("letters", [])
+
+        if not all_persons:
+            return templates.TemplateResponse("public/persons.html", {
+                "request": request, "persons": [], "type_counts": {},
+                "letters": [], "current_type": "", "current_letter": "",
+                "total_persons": 0, "nav_sections": NAV_SECTIONS,
+                "nav_categories": NAV_CATEGORIES, **_build_lang_ctx("kz"),
+            })
+
+        filtered = all_persons
+        if type:
+            if type == "culture_media":
+                filtered = [p for p in filtered if p.get("person_type") in ("culture", "media")]
+            else:
+                filtered = [p for p in filtered if p.get("person_type") == type]
+        if letter:
+            filtered = [p for p in filtered if (p.get("short_name") or "").startswith(letter)]
+
+        return templates.TemplateResponse("public/persons.html", {
+            "request": request,
+            "persons": filtered,
+            "type_counts": type_counts,
+            "letters": letters_list,
+            "current_type": type,
+            "current_letter": letter,
+            "total_persons": len(filtered),
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            **_build_lang_ctx("kz"),
+        })
+    except Exception:
+        logger.exception("Error in kz_persons_catalog")
+        return _error_response(request)
+
+
+@kz_router.get("/person/{slug}", response_class=HTMLResponse)
+async def kz_person_page(request: Request, slug: str):
+    """Kazakh person page — delegates to the Russian handler with lang context."""
+    conn = _get_persons_db()
+
+    person = conn.execute("SELECT * FROM persons WHERE slug = ?", (slug,)).fetchone()
+    if not person:
+        conn.close()
+        return HTMLResponse("<h1>Тұлға табылмады</h1>", status_code=404)
+
+    article_count = conn.execute(
+        "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+        (person["entity_id"],)
+    ).fetchone()[0]
+
+    positions = conn.execute(
+        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY sort_order, start_date DESC",
+        (person["id"],)
+    ).fetchall()
+
+    articles_raw = conn.execute("""
+        SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+        FROM articles a
+        JOIN article_entities ae ON a.id = ae.article_id
+        WHERE ae.entity_id = ?
+        AND a.pub_date IS NOT NULL AND a.pub_date != ''
+        ORDER BY a.pub_date DESC
+        LIMIT 200
+    """, (person["entity_id"],)).fetchall()
+
+    months_kz = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым",
+                  "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"]
+
+    months = []
+    current_key = None
+    current_group = None
+    for art in articles_raw:
+        try:
+            pd = art["pub_date"][:10]
+            y, m_num, d = int(pd[:4]), int(pd[5:7]), int(pd[8:10])
+            key = f"{y}-{m_num:02d}"
+            if key != current_key:
+                label = f"{months_kz[m_num - 1]} {y}"
+                current_group = {"label": label, "articles": []}
+                months.append(current_group)
+                current_key = key
+            current_group["articles"].append(dict(art))
+        except Exception:
+            continue
+
+    conn.close()
+
+    return templates.TemplateResponse("public/person.html", {
+        "request": request,
+        "person": dict(person),
+        "article_count": article_count,
+        "positions": [dict(p) for p in positions],
+        "months": months,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+        **_build_lang_ctx("kz"),
+    })
+
+
+@kz_router.get("/api/feed", response_class=HTMLResponse)
+async def kz_api_feed_more(request: Request, offset: int = Query(30, ge=0), limit: int = Query(20, ge=1, le=50)):
+    """Kazakh feed items for load-more."""
+    try:
+        articles = rewrite_articles_images(db.get_latest_articles(limit=limit, offset=offset + 5))
+        _apply_translations_to_list(articles, "kz")
+    except Exception:
+        return HTMLResponse("")
+    if not articles:
+        return HTMLResponse("")
+    html_parts = []
+    for art in articles:
+        cat_slug = nav_slug_for(art.get("sub_category", ""))
+        cat = cat_label_i18n(cat_slug, "kz")
+        img = imgproxy_url(art.get("main_image") or art.get("thumbnail", ""), 400)
+        url = article_url_i18n(art, "kz")
+        views = format_num(get_views_func(art))
+        date_s = format_date_short(art.get("pub_date", ""))
+        excerpt = (art.get("excerpt") or "")[:140]
+        if len(art.get("excerpt") or "") > 140:
+            excerpt += "\u2026"
+        thumb_html = f'<div class="feed-item-thumb"><img src="{img}" alt="" loading="lazy" onerror="this.src=\'/static/img/placeholder.svg\';this.onerror=null;"></div>' if img else '<div class="feed-item-thumb feed-item-thumb--ph"></div>'
+        html_parts.append(f'''
+        <article class="feed-item">
+          <div class="feed-item-body">
+            <div class="feed-item-meta">
+              <span class="cat-badge" data-cat="{cat_slug}"><span class="cat-dot"></span><span class="cat-name">{cat}</span></span>
+              <span class="sep">\u00b7</span><span>{date_s}</span>
+              <span class="view-count"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{views}</span>
+            </div>
+            <h3 class="feed-item-title"><a href="{url}">{art["title"]}</a></h3>
+            {f"<p class='feed-item-excerpt'>{excerpt}</p>" if excerpt else ""}
+          </div>
+          {thumb_html}
+        </article>''')
+    return HTMLResponse("\n".join(html_parts))
+
+
+# Register the Kazakh router
+router.include_router(kz_router)

@@ -1,57 +1,57 @@
 {% extends "public/base.html" %}
 
-{% block title %}{% if q %}{{ q }} – Поиск{% else %}Поиск{% endif %} – Total.kz{% endblock %}
-{% block description %}{% if q %}Результаты поиска по запросу «{{ q }}» на Total.kz{% else %}Поиск новостей на Total.kz{% endif %}{% endblock %}
-{% block og_title %}{% if q %}{{ q }} – Поиск{% else %}Поиск{% endif %} – Total.kz{% endblock %}
-{% block og_description %}{% if q %}Результаты поиска по запросу «{{ q }}»{% else %}Поиск новостей на Total.kz{% endif %}{% endblock %}
+{% block title %}{% if q %}{{ q }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
+{% block description %}{% if q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты поиска по запросу «' + q + '» на Total.kz') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
+{% block og_title %}{% if q %}{{ q }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
+{% block og_description %}{% if q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты поиска по запросу «' + q + '»') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="search-page">
 
   <div class="search-page-form">
     <h1 style="font-size:var(--text-xl);font-weight:800;margin-bottom:var(--space-6)">
-      {% if q.startswith('#') %}Тег: {{ q[1:] }}{% elif q %}Результаты: {{ q }}{% else %}Поиск{% endif %}
+      {% if q.startswith('#') %}{{ t('search.tag_for', tag=q[1:]) if t is defined else ('Тег: ' + q[1:]) }}{% elif q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты: ' + q) }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %}
     </h1>
-    <form action="/search" method="get" id="search-form">
+    <form action="{{ lang_prefix|default('') }}/search" method="get" id="search-form">
       <div class="search-input-wrap">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
-        <input type="text" name="q" placeholder="Введите запрос…" value="{{ q if not q.startswith('#') else '' }}" autofocus>
+        <input type="text" name="q" placeholder="{{ t('search.enter_query') if t is defined else 'Введите запрос…' }}" value="{{ q if not q.startswith('#') else '' }}" autofocus>
       </div>
 
       {# ── Filter bar ── #}
       <div class="search-filters">
         <div class="sf-group">
-          <label class="sf-label">Раздел</label>
+          <label class="sf-label">{{ t('search.filter.section') if t is defined else 'Раздел' }}</label>
           <select name="cat" class="sf-select" onchange="this.form.submit()">
-            <option value="">Все разделы</option>
+            <option value="">{{ t('search.filter.all_sections') if t is defined else 'Все разделы' }}</option>
             {% for section in nav_sections %}
             <option value="{{ section.slug }}"{% if cat == section.slug %} selected{% endif %}>{{ section.label }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Период</label>
+          <label class="sf-label">{{ t('search.filter.period') if t is defined else 'Период' }}</label>
           <select name="period" class="sf-select" onchange="this.form.submit()">
-            <option value="">Всё время</option>
-            <option value="day"{% if period == 'day' %} selected{% endif %}>За сутки</option>
-            <option value="week"{% if period == 'week' %} selected{% endif %}>За неделю</option>
-            <option value="month"{% if period == 'month' %} selected{% endif %}>За месяц</option>
-            <option value="year"{% if period == 'year' %} selected{% endif %}>За год</option>
+            <option value="">{{ t('search.filter.all_time') if t is defined else 'Всё время' }}</option>
+            <option value="day"{% if period == 'day' %} selected{% endif %}>{{ t('search.filter.day') if t is defined else 'За сутки' }}</option>
+            <option value="week"{% if period == 'week' %} selected{% endif %}>{{ t('search.filter.week') if t is defined else 'За неделю' }}</option>
+            <option value="month"{% if period == 'month' %} selected{% endif %}>{{ t('search.filter.month') if t is defined else 'За месяц' }}</option>
+            <option value="year"{% if period == 'year' %} selected{% endif %}>{{ t('search.filter.year') if t is defined else 'За год' }}</option>
           </select>
         </div>
         <div class="sf-group">
-          <label class="sf-label">Сортировка</label>
+          <label class="sf-label">{{ t('search.filter.sort') if t is defined else 'Сортировка' }}</label>
           <select name="sort" class="sf-select" onchange="this.form.submit()">
-            <option value="">По релевантности</option>
-            <option value="date"{% if sort == 'date' %} selected{% endif %}>По дате</option>
+            <option value="">{{ t('search.filter.relevance') if t is defined else 'По релевантности' }}</option>
+            <option value="date"{% if sort == 'date' %} selected{% endif %}>{{ t('search.filter.date') if t is defined else 'По дате' }}</option>
           </select>
         </div>
         {% if cat or period or sort %}
         <a href="/search{% if q %}?q={{ q }}{% endif %}" class="sf-reset" title="Сбросить фильтры">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Сбросить
+          {{ t('search.filter.reset') if t is defined else 'Сбросить' }}
         </a>
         {% endif %}
       </div>
@@ -76,7 +76,7 @@
           <span class="sep">·</span>
           <span>{{ format_date_short(art.pub_date) }}</span>
         </div>
-        <h3 class="feed-item-title"><a href="{{ article_url(art) }}">{{ (art._formatted.title if art._formatted is defined and art._formatted.title) | default(art.title) | safe }}</a></h3>
+        <h3 class="feed-item-title"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ (art._formatted.title if art._formatted is defined and art._formatted.title) | default(art.title) | safe }}</a></h3>
         {% if art._formatted is defined and art._formatted.excerpt %}
           <p class="feed-item-excerpt">{{ art._formatted.excerpt | safe }}</p>
         {% elif art.excerpt %}
@@ -134,15 +134,15 @@
 
   {% elif q %}
   <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
-    <h2 class="error-title">Ничего не найдено</h2>
-    <p class="error-desc">По запросу «{{ q }}» статей не нашлось.{% if cat or period %} Попробуйте сбросить фильтры.{% endif %}</p>
-    <a href="/search?q={{ q }}" class="btn-primary">Сбросить фильтры</a>
+    <h2 class="error-title">{{ t('search.no_results') if t is defined else 'Ничего не найдено' }}</h2>
+    <p class="error-desc">{{ t('search.no_results_desc', q=q) if t is defined else ('По запросу «' + q + '» статей не нашлось.') }}{% if cat or period %} {{ t('search.try_reset') if t is defined else 'Попробуйте сбросить фильтры.' }}{% endif %}</p>
+    <a href="{{ lang_prefix|default('') }}/search?q={{ q }}" class="btn-primary">{{ t('search.reset_filters') if t is defined else 'Сбросить фильтры' }}</a>
   </div>
 
   {% else %}
   {% if popular_tags %}
   <div style="margin-top:var(--space-4)">
-    <h2 class="search-heading">Популярные теги</h2>
+    <h2 class="search-heading">{{ t('search.popular_tags') if t is defined else 'Популярные теги' }}</h2>
     <div class="article-tags">
       {% for t in popular_tags %}
         <a href="/tag/{{ t.tag }}" class="tag-pill">{{ t.tag }}</a>

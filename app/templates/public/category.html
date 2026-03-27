@@ -7,8 +7,8 @@
 {% block canonical %}/news/{{ category }}{% endblock %}
 
 {% block head_extra %}
-{% if page > 1 %}<link rel="prev" href="/news/{{ category }}?page={{ page - 1 }}">{% endif %}
-{% if page < pages %}<link rel="next" href="/news/{{ category }}?page={{ page + 1 }}">{% endif %}
+{% if page > 1 %}<link rel="prev" href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ page - 1 }}">{% endif %}
+{% if page < pages %}<link rel="next" href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ page + 1 }}">{% endif %}
 {% endblock %}
 
 {% block jsonld %}
@@ -38,8 +38,8 @@
 {% block content %}
 <div class="wide-layout">
 
-  <nav class="breadcrumbs" aria-label="Навигация">
-    <a href="/">Главная</a>
+  <nav class="breadcrumbs" aria-label="{{ t('header.menu') if t is defined else 'Навигация' }}">
+    <a href="{{ lang_prefix|default('') }}/">{{ t('breadcrumb.home') if t is defined else 'Главная' }}</a>
     <span class="sep">›</span>
     <span>{{ category_name }}</span>
   </nav>
@@ -53,9 +53,9 @@
   {% if subcategory_pills %}
   <div class="cat2-pills-wrap">
   <nav class="cat2-pills" aria-label="Подкатегории">
-    <a href="/news/{{ category }}" class="cat2-pill cat2-pill--active">Все</a>
+    <a href="{{ lang_prefix|default('') }}/news/{{ category }}" class="cat2-pill cat2-pill--active">{{ t('category.all') if t is defined else 'Все' }}</a>
     {% for pill in subcategory_pills %}
-    <a href="/news/{{ pill.slug }}" class="cat2-pill">{{ pill.label }}</a>
+    <a href="{{ lang_prefix|default('') }}/news/{{ pill.slug }}" class="cat2-pill">{{ pill.label }}</a>
     {% endfor %}
   </nav>
   </div>
@@ -65,7 +65,7 @@
   {% if articles|length > 0 %}
   <div class="cat-top">
     {% set main = articles[0] %}
-    <a href="{{ article_url(main) }}" class="cat-top-lead">
+    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(main) }}" class="cat-top-lead">
       {% if main.main_image or main.thumbnail %}
         <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager"
              onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
@@ -79,7 +79,7 @@
       </div>
     </a>
     {% for art in articles[1:4] %}
-    <a href="{{ article_url(art) }}" class="cat-top-card">
+    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="cat-top-card">
       {% if art.main_image or art.thumbnail %}
       <div class="cat-top-card-img">
         <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager"
@@ -109,7 +109,7 @@
     <div class="cat2-grid">
       {% for art in articles[4:] %}
         <article class="cat2-card">
-          <a href="{{ article_url(art) }}" class="cat2-card-link">
+          <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="cat2-card-link">
             {% if art.main_image or art.thumbnail %}
             <div class="cat2-card-img">
               <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 480) }}" alt="{{ art.title }}" loading="lazy"
@@ -141,12 +141,12 @@
     <aside class="cat2-sidebar">
       {% if popular_articles %}
       <div class="cat2-sb-block">
-        <h4 class="cat2-sb-title">Популярное в разделе</h4>
+        <h4 class="cat2-sb-title">{{ t('category.popular_in_section') if t is defined else 'Популярное в разделе' }}</h4>
         <ol class="cat2-sb-popular">
           {% for pa in popular_articles %}
           <li class="cat2-sb-popular-item">
             <span class="cat2-sb-num">{{ loop.index }}</span>
-            <a href="{{ article_url(pa) }}" class="cat2-sb-popular-link">{{ pa.title }}</a>
+            <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(pa) }}" class="cat2-sb-popular-link">{{ pa.title }}</a>
           </li>
           {% endfor %}
         </ol>
@@ -155,7 +155,7 @@
 
       {% if trending_tags %}
       <div class="cat2-sb-block">
-        <h4 class="cat2-sb-title">Теги</h4>
+        <h4 class="cat2-sb-title">{{ t('category.tags') if t is defined else 'Теги' }}</h4>
         <div class="cat2-sb-tags">
           {% for t in trending_tags %}
           <a href="/tag/{{ t.tag|urlencode }}" class="tag-pill">{{ t.tag }}</a>
@@ -172,7 +172,7 @@
   {% if pages > 1 %}
   <nav class="pagination" aria-label="Страницы">
     {% if page > 1 %}
-      <a href="/news/{{ category }}?page={{ page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
+      <a href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ page - 1 }}" class="pg-arrow" aria-label="Назад">&larr;</a>
     {% else %}
       <span class="pg-arrow disabled">&larr;</span>
     {% endif %}
@@ -181,7 +181,7 @@
     {% set end = [pages, page + 2] | min %}
 
     {% if start > 1 %}
-      <a href="/news/{{ category }}?page=1">1</a>
+      <a href="{{ lang_prefix|default('') }}/news/{{ category }}?page=1">1</a>
       {% if start > 2 %}<span class="ellipsis">…</span>{% endif %}
     {% endif %}
 
@@ -189,17 +189,17 @@
       {% if p == page %}
         <span class="current">{{ p }}</span>
       {% else %}
-        <a href="/news/{{ category }}?page={{ p }}">{{ p }}</a>
+        <a href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ p }}">{{ p }}</a>
       {% endif %}
     {% endfor %}
 
     {% if end < pages %}
       {% if end < pages - 1 %}<span class="ellipsis">…</span>{% endif %}
-      <a href="/news/{{ category }}?page={{ pages }}">{{ pages }}</a>
+      <a href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ pages }}">{{ pages }}</a>
     {% endif %}
 
     {% if page < pages %}
-      <a href="/news/{{ category }}?page={{ page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
+      <a href="{{ lang_prefix|default('') }}/news/{{ category }}?page={{ page + 1 }}" class="pg-arrow" aria-label="Вперёд">&rarr;</a>
     {% else %}
       <span class="pg-arrow disabled">&rarr;</span>
     {% endif %}

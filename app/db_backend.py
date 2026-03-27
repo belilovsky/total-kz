@@ -71,3 +71,59 @@ else:
         update_ad_placement, get_ad_stats,
     )
     _BACKEND = "sqlite"
+
+
+import re as _re_db
+
+
+def _sql_to_sa(sql: str, params: tuple) -> tuple[str, dict]:
+    """Convert %s-style SQL to SQLAlchemy named params (:p0, :p1, ...)."""
+    named = {}
+    counter = [0]
+    def replacer(match):
+        key = f"p{counter[0]}"
+        named[key] = params[counter[0]]
+        counter[0] += 1
+        return f":{key}"
+    sa_sql = _re_db.sub(r'%s', replacer, sql)
+    return sa_sql, named
+
+
+def execute_raw(sql: str, params: tuple = ()) -> dict | None:
+    """Execute a raw SQL query and return first row as dict, or None."""
+    if _BACKEND == "postgresql":
+        from sqlalchemy import text
+        from app.pg_database import SessionLocal
+        sa_sql, named = _sql_to_sa(sql, params)
+        db = SessionLocal()
+        try:
+            result = db.execute(text(sa_sql), named)
+            row = result.mappings().first()
+            return dict(row) if row else None
+        finally:
+            db.close()
+    else:
+        from app.database import get_db
+        with get_db() as cur:
+            cur.execute(sql.replace("%s", "?"), params)
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def execute_raw_many(sql: str, params: tuple = ()) -> list[dict]:
+    """Execute a raw SQL query and return all rows as list of dicts."""
+    if _BACKEND == "postgresql":
+        from sqlalchemy import text
+        from app.pg_database import SessionLocal
+        sa_sql, named = _sql_to_sa(sql, params)
+        db = SessionLocal()
+        try:
+            result = db.execute(text(sa_sql), named)
+            return [dict(r) for r in result.mappings().all()]
+        finally:
+            db.close()
+    else:
+        from app.database import get_db
+        with get_db() as cur:
+            cur.execute(sql.replace("%s", "?"), params)
+            return [dict(r) for r in cur.fetchall()]
