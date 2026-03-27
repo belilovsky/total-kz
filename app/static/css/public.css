@@ -699,7 +699,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* Layout: content + optional sidebar on wide screens */
 .article-page { max-width:var(--content-default); margin:0 auto; padding:0 var(--space-4); }
 @media (min-width:640px) { .article-page { padding:0 var(--space-6); } }
-@media (min-width:1100px) { .article-page { max-width:1060px; } }
+/* article-page stays at content-default (960px) at all breakpoints */
 
 .article-layout { position:relative; }
 @media (min-width:1100px) {
@@ -731,7 +731,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* Sidebar actions: share + print in one compact row */
 .sidebar-actions {
   display:flex; align-items:center; gap:8px;
-  padding-top:var(--space-3); margin-top:auto;
+  margin-bottom:var(--space-4);
 }
 .sidebar-action-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1343,34 +1343,24 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .timeline-track {
   display:flex; flex-direction:column; gap:0;
   position:relative;
-  /* The vertical line is positioned relative to the dot column */
   padding-left:0;
 }
-.timeline-track::before {
-  content:''; position:absolute;
-  left:calc(100px + 4px); /* date-col-width + half-dot */
-  top:10px; bottom:10px;
-  width:2px; background:var(--border); border-radius:1px;
-}
-@media (max-width:639px) {
-  .timeline-track::before { left:calc(85px + 4px); }
-}
 .timeline-item {
-  display:grid; grid-template-columns:100px 10px 1fr; gap:var(--space-2);
+  display:grid; grid-template-columns:8px 100px 1fr; gap:var(--space-2);
   position:relative; text-decoration:none; color:inherit;
   padding:6px var(--space-2); border-radius:var(--radius-sm);
   transition:background var(--transition); align-items:baseline;
 }
-@media (max-width:639px) { .timeline-item { grid-template-columns:85px 10px 1fr; padding:4px var(--space-2); } }
+@media (max-width:639px) { .timeline-item { grid-template-columns:8px 85px 1fr; padding:4px var(--space-2); } }
 .timeline-item:hover { background:var(--surface-2); }
-/* Dot in the middle column */
+/* Dot at left edge */
 .timeline-dot {
   display:flex; align-items:center; justify-content:center;
-  position:relative; z-index:1;
+  position:relative;
 }
 .timeline-dot::before {
-  content:''; width:10px; height:10px; border-radius:50%;
-  background:var(--border); border:2px solid var(--bg);
+  content:''; width:8px; height:8px; border-radius:50%;
+  background:var(--border);
   transition:background var(--transition);
 }
 .timeline-item:hover .timeline-dot::before { background:var(--accent); }
@@ -1583,7 +1573,7 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .related-section {
   margin-top:var(--space-5); padding-top:var(--space-4);
 }
-@media (min-width:640px) { .related-section { margin-top:var(--space-6); padding-top:var(--space-5); border-top:1px solid var(--border); } }
+@media (min-width:640px) { .related-section { margin-top:var(--space-6); padding-top:var(--space-5); } }
 @media (min-width:640px) { .related-section { padding-top:var(--space-6); } }
 .related-heading {
   font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
@@ -3301,12 +3291,8 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
    MOBILE FIXES v13.2
    =================================================================== */
 
-/* 1. Timeline: proper 2-column grid on mobile with enough room for date */
+/* 1. Timeline: 3-column grid on mobile (dot + date + title) */
 @media (max-width:639px) {
-  .timeline-item {
-    grid-template-columns:100px 1fr;
-    gap:var(--space-2);
-  }
   .timeline-date {
     font-size:11px;
     white-space:nowrap;

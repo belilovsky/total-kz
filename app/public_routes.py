@@ -578,6 +578,87 @@ def person_url_for_entity(entity: dict) -> str:
     return f"/tag/{short_entity_name(entity)}"
 
 
+def _government_rank(position: str) -> int:
+    """Return a numeric rank for government hierarchy sorting (lower = higher rank)."""
+    if not position:
+        return 99
+    pos = position.lower()
+    if "президент" in pos and "республик" in pos:
+        return 1
+    # "Constitutional five" — exact matches, not sub-positions
+    if any(kw in pos for kw in (
+        "председатель сената", "спикер мажилиса", "председатель конституционного",
+        "генеральный прокурор",
+    )):
+        return 2
+    if "премьер-министр" in pos and "заместитель" not in pos and "вице" not in pos:
+        return 2
+    if "заместитель премьер" in pos or "вице-премьер" in pos:
+        return 3
+    if "министр" in pos:
+        return 4
+    if "аким" in pos:
+        return 5
+    if "депутат" in pos:
+        return 6
+    # Any other government-sounding position
+    if any(kw in pos for kw in ("руководитель", "директор", "секретарь", "глава")):
+        return 7
+    return 99
+
+
+def _to_genitive(name: str) -> str:
+    """Convert a Russian/Kazakh proper name to genitive case for headings.
+
+    Each word is declined independently. Handles common surname patterns:
+      -ов → -ова, -ев → -ева (masc); -ова → -овой, -ева → -евой (fem)
+      -ин → -ина (masc surname); -ина → -иной (fem surname)
+      -ский → -ского; -ская → -ской
+    Names that don't match known patterns are left unchanged.
+    """
+    if not name or not name.strip():
+        return name
+    return " ".join(_decline_word(w) for w in name.strip().split())
+
+
+def _decline_word(word: str) -> str:
+    """Decline a single name word to genitive."""
+    if len(word) < 3:
+        return word
+    wl = word.lower()
+    # Ordered: check longer suffixes first
+    # Feminine adjective-surnames
+    for fem_adj in ("ская", "цкая"):
+        if wl.endswith(fem_adj):
+            return word[:-2] + _match_case("ой", word[-2:])
+    # Masculine adjective-surnames
+    for masc_adj in ("ский", "ской", "цкий", "цкой"):
+        if wl.endswith(masc_adj):
+            return word[:-2] + _match_case("ого", word[-2:] + "x")
+    # Feminine -ова/-ева → -овой/-евой
+    for fem_ov in ("ова", "ева", "ёва"):
+        if wl.endswith(fem_ov):
+            return word[:-1] + _match_case("ой", word[-1:] + "x")
+    # Feminine -ина → -иной (surname, not first name like Ирина)
+    if wl.endswith("ина") and len(wl) > 4:
+        return word[:-1] + _match_case("ой", word[-1:] + "x")
+    # Masculine -ов/-ев → -ова/-ева
+    for masc_ov in ("ов", "ев", "ёв"):
+        if wl.endswith(masc_ov):
+            return word + _match_case("а", word[-1:])
+    # Masculine -ин → -ина (surname)
+    if wl.endswith("ин") and len(wl) > 3:
+        return word + _match_case("а", word[-1:])
+    return word
+
+
+def _match_case(suffix: str, ref: str) -> str:
+    """Match suffix casing to reference characters — uppercase if ref is all upper."""
+    if ref.isupper():
+        return suffix.upper()
+    return suffix
+
+
 def get_article_persons(entities: list) -> list:
     """Get list of matched persons for article entities (with photo, position)."""
     seen = set()
@@ -589,6 +670,7 @@ def get_article_persons(entities: list) -> list:
         if p and p["slug"] not in seen:
             seen.add(p["slug"])
             result.append(p)
+    result.sort(key=lambda p: _government_rank(p.get("current_position", "")))
     return result[:4]  # max 4 person cards in sidebar
 
 
@@ -1020,7 +1102,7 @@ async def article_page(request: Request, category: str, slug: str):
                 "prev": rewrite_articles_images(timeline_raw["prev"]),
                 "next": rewrite_articles_images(timeline_raw["next"]),
             }
-            timeline_topic = timeline_entity["name"] if timeline_entity else ""
+            timeline_topic = _to_genitive(timeline_entity["name"]) if timeline_entity else ""
             timeline_total = 0
     except Exception:
         logger.exception("Error loading timeline for %s/%s", category, slug)
@@ -1039,9 +1121,10 @@ async def article_page(request: Request, category: str, slug: str):
     # Persons mentioned in this article (for sidebar mini-cards)
     article_persons = get_article_persons(article.get("entities", []))
 
-    # Popular articles for sidebar widget
+    # Popular articles for sidebar widget (exclude current article)
     try:
         popular = rewrite_articles_images(db.get_latest_articles(limit=20))
+        popular = [a for a in popular if a.get("id") != article["id"]]
         popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:5]
     except Exception:
         popular = []
