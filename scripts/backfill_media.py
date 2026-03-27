@@ -50,7 +50,6 @@ def guess_mime_type(url: str) -> str:
     mime, _ = mimetypes.guess_type(path)
     if mime:
         return mime
-    # Common image extensions not always in mimetypes DB
     ext = Path(path).suffix
     ext_map = {
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -58,7 +57,7 @@ def guess_mime_type(url: str) -> str:
         ".webp": "image/webp", ".svg": "image/svg+xml",
         ".avif": "image/avif", ".bmp": "image/bmp",
     }
-    return ext_map.get(ext, "image/jpeg")  # default to jpeg for article images
+    return ext_map.get(ext, "image/jpeg")
 
 
 def extract_filename(url: str) -> str:
@@ -69,14 +68,16 @@ def extract_filename(url: str) -> str:
 
 
 def backfill(pg_url: str, batch_size: int, dry_run: bool):
-    """Main backfill logic."""
+    """Main backfill logic — uses two connections: one for reading, one for writing."""
     log.info("Connecting to PostgreSQL: %s", pg_url.split("@")[-1])
-    conn = psycopg2.connect(pg_url)
-    conn.autocommit = False
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Ensure media table exists (should already from Alembic, but just in case)
-    cur.execute("""
+    # Write connection — for DDL and inserts
+    conn_w = psycopg2.connect(pg_url)
+    conn_w.autocommit = True
+    cur_w = conn_w.cursor()
+
+    # Ensure media table exists
+    cur_w.execute("""
         CREATE TABLE IF NOT EXISTS media (
             id SERIAL PRIMARY KEY,
             filename TEXT NOT NULL,
@@ -92,80 +93,102 @@ def backfill(pg_url: str, batch_size: int, dry_run: bool):
             credit TEXT DEFAULT ''
         )
     """)
-    # Add unique index on url if it doesn't exist (idempotent)
-    cur.execute("""
+    cur_w.execute("""
         CREATE UNIQUE INDEX IF NOT EXISTS idx_media_url ON media(url)
     """)
-    conn.commit()
 
-    # Get already-indexed URLs to skip
-    cur.execute("SELECT url FROM media")
-    existing_urls = {row["url"] for row in cur.fetchall()}
+    # Get already-indexed URLs
+    cur_w.execute("SELECT url FROM media")
+    existing_urls = {row[0] for row in cur_w.fetchall()}
     log.info("Already in media table: %d URLs", len(existing_urls))
 
-    # Count articles with images
-    cur.execute("""
-        SELECT COUNT(*) as cnt FROM articles
+    # Read connection — for server-side cursor (stays in one transaction)
+    conn_r = psycopg2.connect(pg_url)
+    conn_r.autocommit = False
+
+    # Count
+    cur_count = conn_r.cursor()
+    cur_count.execute("""
+        SELECT COUNT(*) FROM articles
         WHERE main_image IS NOT NULL AND main_image != ''
     """)
-    total_articles = cur.fetchone()["cnt"]
+    total_articles = cur_count.fetchone()[0]
     log.info("Articles with main_image: %d", total_articles)
+    cur_count.close()
 
-    # Process in batches using server-side cursor for memory efficiency
-    cur.execute("DECLARE img_cursor CURSOR FOR "
-                "SELECT DISTINCT ON (main_image) "
-                "  main_image, image_credit, pub_date, title "
-                "FROM articles "
-                "WHERE main_image IS NOT NULL AND main_image != '' "
-                "ORDER BY main_image, pub_date DESC")
+    # ── Phase 1: main_image ──────────────────────────
+    log.info("Phase 1: Processing main_image URLs...")
+    cur_r = conn_r.cursor("img_cursor", cursor_factory=psycopg2.extras.RealDictCursor)
+    cur_r.itersize = batch_size
+    cur_r.execute(
+        "SELECT DISTINCT ON (main_image) "
+        "  main_image, image_credit, pub_date, title "
+        "FROM articles "
+        "WHERE main_image IS NOT NULL AND main_image != '' "
+        "ORDER BY main_image, pub_date DESC"
+    )
 
     inserted = 0
     skipped = 0
     errors = 0
     batch_num = 0
+    batch_inserts = []
 
-    while True:
-        cur.execute(f"FETCH {batch_size} FROM img_cursor")
-        rows = cur.fetchall()
-        if not rows:
-            break
+    for row in cur_r:
+        url = (row["main_image"] or "").strip()
+        if not url or url in existing_urls:
+            skipped += 1
+            continue
 
+        filename = extract_filename(url)
+        mime = guess_mime_type(url)
+        credit = (row.get("image_credit") or "").strip()
+        pub_date = row.get("pub_date") or ""
+        title = (row.get("title") or "").strip()
+        alt_text = title[:255] if title else ""
+
+        batch_inserts.append((
+            filename, filename, mime, url,
+            str(pub_date), "backfill", alt_text, credit,
+        ))
+        existing_urls.add(url)
+
+        if len(batch_inserts) >= batch_size:
+            batch_num += 1
+            if not dry_run:
+                try:
+                    psycopg2.extras.execute_batch(
+                        cur_w,
+                        """INSERT INTO media
+                           (filename, original_name, mime_type, url,
+                            uploaded_at, uploaded_by, alt_text, credit)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                           ON CONFLICT (url) DO NOTHING
+                        """,
+                        batch_inserts,
+                        page_size=100,
+                    )
+                    inserted += len(batch_inserts)
+                except Exception as e:
+                    log.error("Batch %d insert error: %s", batch_num, e)
+                    errors += len(batch_inserts)
+            else:
+                inserted += len(batch_inserts)
+            batch_inserts = []
+
+            if batch_num % 10 == 0:
+                log.info(
+                    "Progress: batch %d | inserted %d | skipped %d | errors %d",
+                    batch_num, inserted, skipped, errors,
+                )
+
+    # Flush remaining
+    if batch_inserts:
         batch_num += 1
-        batch_inserts = []
-
-        for row in rows:
-            url = (row["main_image"] or "").strip()
-            if not url:
-                continue
-            if url in existing_urls:
-                skipped += 1
-                continue
-
-            filename = extract_filename(url)
-            mime = guess_mime_type(url)
-            credit = (row.get("image_credit") or "").strip()
-            pub_date = row.get("pub_date") or ""
-            title = (row.get("title") or "").strip()
-
-            # Use article title as alt_text (truncated)
-            alt_text = title[:255] if title else ""
-
-            batch_inserts.append((
-                filename,       # filename
-                filename,       # original_name
-                mime,           # mime_type
-                url,            # url
-                pub_date,       # uploaded_at (use article pub_date)
-                "backfill",     # uploaded_by
-                alt_text,       # alt_text
-                credit,         # credit
-            ))
-            existing_urls.add(url)
-
-        if batch_inserts and not dry_run:
+        if not dry_run:
             try:
                 psycopg2.extras.execute_batch(
-                    cur,
+                    cur_w,
                     """INSERT INTO media
                        (filename, original_name, mime_type, url,
                         uploaded_at, uploaded_by, alt_text, credit)
@@ -175,66 +198,76 @@ def backfill(pg_url: str, batch_size: int, dry_run: bool):
                     batch_inserts,
                     page_size=100,
                 )
-                conn.commit()
                 inserted += len(batch_inserts)
             except Exception as e:
-                conn.rollback()
-                log.error("Batch %d insert error: %s", batch_num, e)
+                log.error("Final batch insert error: %s", e)
                 errors += len(batch_inserts)
-        elif batch_inserts and dry_run:
+        else:
             inserted += len(batch_inserts)
-
-        if batch_num % 10 == 0:
-            log.info(
-                "Progress: batch %d | inserted %d | skipped %d | errors %d",
-                batch_num, inserted, skipped, errors,
-            )
-
-    # Also process thumbnail URLs (distinct from main_image)
-    log.info("Processing thumbnail URLs...")
-    cur.execute("CLOSE img_cursor")
-    conn.commit()
-
-    cur.execute("DECLARE thumb_cursor CURSOR FOR "
-                "SELECT DISTINCT ON (thumbnail) "
-                "  thumbnail, pub_date, title "
-                "FROM articles "
-                "WHERE thumbnail IS NOT NULL AND thumbnail != '' "
-                "ORDER BY thumbnail, pub_date DESC")
-
-    while True:
-        cur.execute(f"FETCH {batch_size} FROM thumb_cursor")
-        rows = cur.fetchall()
-        if not rows:
-            break
-
-        batch_num += 1
         batch_inserts = []
 
-        for row in rows:
-            url = (row["thumbnail"] or "").strip()
-            if not url:
-                continue
-            if url in existing_urls:
-                skipped += 1
-                continue
+    cur_r.close()
+    log.info("Phase 1 done: %d inserted, %d skipped", inserted, skipped)
 
-            filename = extract_filename(url)
-            mime = guess_mime_type(url)
-            pub_date = row.get("pub_date") or ""
-            title = (row.get("title") or "").strip()
-            alt_text = title[:255] if title else ""
+    # ── Phase 2: thumbnail URLs ──────────────────────
+    log.info("Phase 2: Processing thumbnail URLs...")
+    cur_r2 = conn_r.cursor("thumb_cursor", cursor_factory=psycopg2.extras.RealDictCursor)
+    cur_r2.itersize = batch_size
+    cur_r2.execute(
+        "SELECT DISTINCT ON (thumbnail) "
+        "  thumbnail, pub_date, title "
+        "FROM articles "
+        "WHERE thumbnail IS NOT NULL AND thumbnail != '' "
+        "ORDER BY thumbnail, pub_date DESC"
+    )
 
-            batch_inserts.append((
-                filename, filename, mime, url,
-                pub_date, "backfill", alt_text, "",
-            ))
-            existing_urls.add(url)
+    for row in cur_r2:
+        url = (row["thumbnail"] or "").strip()
+        if not url or url in existing_urls:
+            skipped += 1
+            continue
 
-        if batch_inserts and not dry_run:
+        filename = extract_filename(url)
+        mime = guess_mime_type(url)
+        pub_date = row.get("pub_date") or ""
+        title = (row.get("title") or "").strip()
+        alt_text = title[:255] if title else ""
+
+        batch_inserts.append((
+            filename, filename, mime, url,
+            str(pub_date), "backfill", alt_text, "",
+        ))
+        existing_urls.add(url)
+
+        if len(batch_inserts) >= batch_size:
+            batch_num += 1
+            if not dry_run:
+                try:
+                    psycopg2.extras.execute_batch(
+                        cur_w,
+                        """INSERT INTO media
+                           (filename, original_name, mime_type, url,
+                            uploaded_at, uploaded_by, alt_text, credit)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                           ON CONFLICT (url) DO NOTHING
+                        """,
+                        batch_inserts,
+                        page_size=100,
+                    )
+                    inserted += len(batch_inserts)
+                except Exception as e:
+                    log.error("Thumb batch %d insert error: %s", batch_num, e)
+                    errors += len(batch_inserts)
+            else:
+                inserted += len(batch_inserts)
+            batch_inserts = []
+
+    # Flush remaining
+    if batch_inserts:
+        if not dry_run:
             try:
                 psycopg2.extras.execute_batch(
-                    cur,
+                    cur_w,
                     """INSERT INTO media
                        (filename, original_name, mime_type, url,
                         uploaded_at, uploaded_by, alt_text, credit)
@@ -244,19 +277,17 @@ def backfill(pg_url: str, batch_size: int, dry_run: bool):
                     batch_inserts,
                     page_size=100,
                 )
-                conn.commit()
                 inserted += len(batch_inserts)
             except Exception as e:
-                conn.rollback()
-                log.error("Thumb batch %d insert error: %s", batch_num, e)
+                log.error("Final thumb insert error: %s", e)
                 errors += len(batch_inserts)
-        elif batch_inserts and dry_run:
+        else:
             inserted += len(batch_inserts)
 
-    cur.execute("CLOSE thumb_cursor")
-    conn.commit()
-    cur.close()
-    conn.close()
+    cur_r2.close()
+    conn_r.close()
+    cur_w.close()
+    conn_w.close()
 
     log.info("=" * 50)
     log.info("Backfill complete%s", " (DRY RUN)" if dry_run else "")
