@@ -93,7 +93,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=15.5">
+  <link rel="stylesheet" href="/static/css/public.css?v=15.6">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -199,14 +199,16 @@
         <span class="currency-sep">·</span>
         {% for c in get_commodities() %}
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
-        <span class="currency-item">{{ c.label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}</span>
+        {% set commodity_label = c.label %}
+        {% if lang is defined and lang == 'kz' and c.label == 'Золото' %}{% set commodity_label = 'Алтын' %}{% endif %}
+        <span class="currency-item">{{ commodity_label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}</span>
         {% endfor %}
       </div>
     </div>
   </div>
 
   <!-- ═══ AD: BELOW HEADER (desktop only) ═══ -->
-  <div class="ad-placeholder ad-below-header" data-ad-slot="A2" data-ad-size="728x90" aria-hidden="true">Реклама</div>
+  <div class="ad-placeholder ad-below-header" data-ad-slot="A2" data-ad-size="728x90" aria-hidden="true">{{ t('ad_label') if t is defined else 'Реклама' }}</div>
 
   <!-- ═══ SEARCH OVERLAY ═══ -->
   <div class="search-overlay" id="search-overlay">

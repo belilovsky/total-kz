@@ -180,6 +180,9 @@ def _build_lang_ctx(lang: str) -> dict:
         "cat_label_i18n": lambda slug: cat_label_i18n(slug, lang),
         "article_url_i18n": lambda art: article_url_i18n(art, lang),
         "lang_prefix": _lang_url_prefix(lang),
+        # Override date formatters with lang-aware versions
+        "format_date": lambda d: format_date(d, lang),
+        "format_date_short": lambda d: format_date_short(d, lang),
     }
 
 # ══════════════════════════════════════════════
@@ -439,16 +442,21 @@ def _parse_datetime(date_str: str) -> datetime | None:
     return dt
 
 
-def format_date(date_str: str | None) -> str:
-    """Format ISO date to Russian readable (full month names).
-    Today:           12 марта, 14:14
-    Yesterday+/year: 12 марта
-    Past years:      12 марта 2024
-    """
+MONTHS_RU = ["января", "февраля", "марта", "апреля", "мая", "июня",
+             "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+MONTHS_KZ = ["қаңтар", "ақпан", "наурыз", "сәуір", "мамыр", "маусым",
+             "шілде", "тамыз", "қыркүйек", "қазан", "қараша", "желтоқсан"]
+
+
+def _get_months(lang: str = "ru") -> list:
+    return MONTHS_KZ if lang == "kz" else MONTHS_RU
+
+
+def format_date(date_str: str | None, lang: str = "ru") -> str:
+    """Format ISO date to readable (full month names). Supports ru/kz."""
     if not date_str:
         return ""
-    months = ["января", "февраля", "марта", "апреля", "мая", "июня",
-              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+    months = _get_months(lang)
     dt = _parse_datetime(date_str)
     if dt is None:
         return date_str[:10] if len(date_str) >= 10 else date_str
@@ -461,16 +469,11 @@ def format_date(date_str: str | None) -> str:
         return f"{dt.day} {months[dt.month - 1]} {dt.year}"
 
 
-def format_date_short(date_str: str | None) -> str:
-    """Short date format for cards (full month names, genitive case).
-    Today:           12 марта, 14:14
-    Yesterday+/year: 12 марта
-    Past years:      12 марта, 2024
-    """
+def format_date_short(date_str: str | None, lang: str = "ru") -> str:
+    """Short date format for cards. Supports ru/kz."""
     if not date_str:
         return ""
-    months = ["января", "февраля", "марта", "апреля", "мая", "июня",
-              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+    months = _get_months(lang)
     dt = _parse_datetime(date_str)
     if dt is None:
         return date_str[:10] if len(date_str) >= 10 else date_str

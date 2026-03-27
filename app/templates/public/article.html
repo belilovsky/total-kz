@@ -184,7 +184,7 @@
         <span class="header-author">{{ article.author }}</span>
         {% endif %}
         <span class="sep">·</span>
-        <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} мин</span>
+        <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} {{ t('article.min') if t is defined else 'мин' }}</span>
       </div>
     </div>
   </header>
@@ -661,10 +661,11 @@ function sharePDF() {
   function timeAgo(dateStr) {
     var d = new Date(dateStr + 'Z');
     var diff = (Date.now() - d.getTime()) / 1000;
-    if (diff < 60) return 'только что';
-    if (diff < 3600) return Math.floor(diff/60) + ' мин. назад';
-    if (diff < 86400) return Math.floor(diff/3600) + ' ч. назад';
-    return d.toLocaleDateString('ru', {day:'numeric',month:'short',year:'numeric'});
+    var isKz = '{{ lang|default("ru") }}' === 'kz';
+    if (diff < 60) return isKz ? 'дәл ғана' : 'только что';
+    if (diff < 3600) return Math.floor(diff/60) + (isKz ? ' мин. бұрын' : ' мин. назад');
+    if (diff < 86400) return Math.floor(diff/3600) + (isKz ? ' сағ. бұрын' : ' ч. назад');
+    return d.toLocaleDateString(isKz ? 'kk' : 'ru', {day:'numeric',month:'short',year:'numeric'});
   }
 
   function loadComments() {
