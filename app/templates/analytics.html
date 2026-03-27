@@ -4,7 +4,43 @@
 {% block page_title %}Аналитика{% endblock %}
 
 {% block content %}
-<!-- Umami self-hosted analytics is available at http://localhost:3000 (see docker-compose.yml) -->
+<!-- ═══════════════ TAB BAR ═══════════════ -->
+<div class="analytics-tabs" style="display:flex; gap:0; margin-bottom:24px; border-bottom:2px solid var(--border, #e5e7eb);">
+    {% if umami_share_url %}
+    <button class="analytics-tab active" data-tab="umami"
+        style="padding:10px 20px; border:none; background:none; font-size:14px; font-weight:600;
+               cursor:pointer; color:var(--accent, #2563eb); border-bottom:2px solid var(--accent, #2563eb);
+               margin-bottom:-2px; transition:all .2s;">
+        Посещаемость
+    </button>
+    {% endif %}
+    <button class="analytics-tab{% if not umami_share_url %} active{% endif %}" data-tab="gsc"
+        style="padding:10px 20px; border:none; background:none; font-size:14px;
+               font-weight:{% if not umami_share_url %}600{% else %}500{% endif %};
+               cursor:pointer;
+               color:var({% if not umami_share_url %}--accent, #2563eb{% else %}--text-secondary, #6b7280{% endif %});
+               border-bottom:2px solid {% if not umami_share_url %}var(--accent, #2563eb){% else %}transparent{% endif %};
+               margin-bottom:-2px; transition:all .2s;">
+        Поисковая консоль
+    </button>
+</div>
+
+{% if umami_share_url %}
+<!-- ═══════════════ UMAMI TAB ═══════════════ -->
+<div class="analytics-panel" id="panel-umami">
+    <div class="umami-embed" style="width:100%; height:calc(100vh - 120px);">
+        <iframe
+            src="{{ umami_share_url }}"
+            style="width:100%; height:100%; border:none; border-radius:8px;"
+            loading="lazy"
+            title="Umami Analytics"
+        ></iframe>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════ GSC TAB ═══════════════ -->
+<div class="analytics-panel" id="panel-gsc"{% if umami_share_url %} style="display:none"{% endif %}>
 {% set d = gsc %}
 {% set t = d.totals %}
 {% set pc = d.get('period_comparison', {}) %}
@@ -474,6 +510,29 @@ const chartDefaults = {
         type: 'doughnut',
         data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
         options: { ...chartDefaults, cutout: '55%', plugins: { ...chartDefaults.plugins, legend: { display: true, position: 'bottom', labels: { color: textColor, font: { size: 11 }, padding: 12, usePointStyle: true } } } }
+    });
+})();
+</script>
+</div><!-- /panel-gsc -->
+
+<script>
+(function() {
+    const tabs = document.querySelectorAll('.analytics-tab');
+    const panels = document.querySelectorAll('.analytics-panel');
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            const target = tab.getAttribute('data-tab');
+            tabs.forEach(function(t) {
+                const isActive = t.getAttribute('data-tab') === target;
+                t.style.color = isActive ? 'var(--accent, #2563eb)' : 'var(--text-secondary, #6b7280)';
+                t.style.borderBottomColor = isActive ? 'var(--accent, #2563eb)' : 'transparent';
+                t.style.fontWeight = isActive ? '600' : '500';
+                t.classList.toggle('active', isActive);
+            });
+            panels.forEach(function(p) {
+                p.style.display = p.id === 'panel-' + target ? '' : 'none';
+            });
+        });
     });
 })();
 </script>

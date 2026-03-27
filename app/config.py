@@ -17,5 +17,8 @@ class Settings(BaseConfig):
     # Scraper settings
     scraper_max_pages: int = 100
 
+    # Umami analytics
+    umami_share_url: str = ""
+
 
 settings = Settings()

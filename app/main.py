@@ -820,6 +820,7 @@ async def admin_analytics_page(request: Request):
         schema_json=schema_json,
         fresh_json=fresh_json,
         cat_label=cat_label,
+        umami_share_url=settings.umami_share_url,
     ))
 
 
