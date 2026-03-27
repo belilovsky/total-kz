@@ -77,7 +77,7 @@
           {% else %}
           <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
           {% endif %}
-          <h3 class="shelf-card-title">{{ art.title }}</h3>
+          <h3 class="shelf-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</h3>
         </a>
         {% endfor %}
       </div>
@@ -145,7 +145,7 @@
               <span class="sep">·</span>
               <span>{{ format_date_short(art.pub_date) }}</span>
             </div>
-            <h3 class="feed-card-title"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}</a></h3>
+            <h3 class="feed-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a></h3>
             {% if art.excerpt %}
               <p class="feed-card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
             {% endif %}
@@ -168,7 +168,7 @@
         <li class="popular-item">
           <span class="popular-num">{{ loop.index }}</span>
           <div class="popular-body">
-            <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title">{{ art.title }}</a>
+            <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a>
             <span class="popular-meta">{{ format_date_short(art.pub_date) }}</span>
           </div>
         </li>

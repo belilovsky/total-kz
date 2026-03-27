@@ -165,6 +165,10 @@ def _apply_translations_to_list(articles: list, lang: str = "kz") -> list:
             article["_has_translation"] = True
         else:
             article["_has_translation"] = False
+            # Mark untranslated titles for visual indication in templates
+            if article.get("title"):
+                article["title"] = article["title"]
+                article["_lang_badge"] = "RU"
     return articles
 
 
@@ -3068,6 +3072,10 @@ async def kz_article_page(request: Request, category: str, slug: str):
             timeline_total = 0
     except Exception:
         logger.exception("Error loading timeline for kz/%s/%s", category, slug)
+
+    # Apply KZ translations to timeline articles
+    _apply_translations_to_list(timeline.get("prev", []), "kz")
+    _apply_translations_to_list(timeline.get("next", []), "kz")
 
     article_slug = article.get("url", "").replace(
         f"https://total.kz/ru/news/{category}/", ""

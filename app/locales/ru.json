@@ -3,7 +3,6 @@
   "site_tagline": "Total.kz – Новости Казахстана",
   "site_description": "Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.",
   "site_description_og": "Ведущий новостной портал Казахстана",
-
   "nav.politika": "Политика",
   "nav.ekonomika": "Экономика",
   "nav.obshchestvo": "Общество",
@@ -11,14 +10,12 @@
   "nav.mir": "Мир",
   "nav.sport": "Спорт",
   "nav.persons": "Персоны",
-
   "nav.section.politika": "Политика",
   "nav.section.ekonomika": "Экономика",
   "nav.section.obshchestvo": "Общество",
   "nav.section.nauka": "Наука и Техно",
   "nav.section.mir": "Мир",
   "nav.section.sport": "Спорт",
-
   "cat.vnutrennyaya_politika": "Внутренняя политика",
   "cat.vneshnyaya_politika": "Внешняя политика",
   "cat.politika": "Политика",
@@ -43,21 +40,18 @@
   "cat.stil_zhizni": "Стиль жизни",
   "cat.redaktsiya_tandau": "Выбор редакции",
   "cat.drugoe": "Другое",
-
   "header.bookmarks": "Закладки",
   "header.notifications": "Уведомления",
   "header.search": "Поиск",
   "header.theme_toggle": "Переключить тему",
   "header.menu": "Меню",
   "header.no_notifications": "Нет новых уведомлений",
-
   "mobile_menu.home": "Главная",
   "mobile_menu.advertising": "Реклама",
   "mobile_menu.rules": "Правила",
   "mobile_menu.contacts": "Контакты",
   "mobile_menu.dark_theme": "Тёмная тема",
   "mobile_menu.light_theme": "Светлая тема",
-
   "search.title": "Поиск",
   "search.placeholder": "Поиск новостей…",
   "search.results_title": "Результаты",
@@ -82,7 +76,6 @@
   "search.filter.date": "По дате",
   "search.filter.reset": "Сбросить",
   "search.enter_query": "Введите запрос…",
-
   "homepage.latest": "Последние новости",
   "homepage.all_news": "Все новости →",
   "homepage.popular": "Популярные",
@@ -93,7 +86,6 @@
   "homepage.all_persons": "Все →",
   "homepage.all_section": "Все →",
   "homepage.ticker_latest": "ПОСЛЕДНИЕ:",
-
   "article.reading_time": "чтение",
   "article.min": "мин",
   "article.share": "Поделиться",
@@ -114,36 +106,28 @@
   "article.ad": "Реклама",
   "article.preview_banner": "ПРЕВЬЮ — не опубликовано",
   "article.back_to_editor": "← Вернуться в редактор",
-
   "category.articles_count": "статей",
   "category.all": "Все",
   "category.popular_in_section": "Популярное в разделе",
   "category.tags": "Теги",
   "category.latest_news": "Последние новости: {name}",
   "category.news_section": "Последние новости раздела «{name}»",
-
   "tags.title": "Тематики",
   "tags.search_placeholder": "Поиск тега...",
-
   "person.articles": "статей",
   "person.career": "Карьера",
   "person.present": "настоящее время",
   "person.latest_mentions": "Последние упоминания",
   "person.not_found": "Персона не найдена",
-
   "persons.title": "Персоны",
   "persons.all": "Все",
   "persons.by_letter": "По алфавиту",
-
   "entity.type.person": "Персона",
   "entity.type.org": "Организация",
   "entity.type.location": "Локация",
-
   "breadcrumb.home": "Главная",
-
   "pagination.prev": "Назад",
   "pagination.next": "Вперёд",
-
   "footer.persons": "Персоны",
   "footer.topics": "Тематики",
   "footer.advertising": "Реклама",
@@ -153,37 +137,55 @@
   "footer.copyright": "© 2011–{year} Total Media Qazaqstan",
   "footer.license": "Свидетельство СМИ №16942-ИА",
   "footer.address": "г. Алматы, пр. Жибек жолы, 115/46, оф. 306",
-
   "mobile_bar.home": "Главная",
   "mobile_bar.search": "Поиск",
   "mobile_bar.fresh": "Свежее",
   "mobile_bar.menu": "Меню",
-
   "skip_link": "Перейти к содержимому",
   "ad_label": "Реклама",
   "back_to_top": "Наверх",
-
   "bookmarks.title": "Закладки",
-
   "comments.title": "Комментарии",
   "comments.write": "Написать комментарий",
   "comments.send": "Отправить",
   "comments.empty": "Комментариев пока нет",
-
   "error.404_title": "Страница не найдена",
   "error.404_desc": "Страница, которую вы ищете, не найдена",
   "error.500_title": "Ошибка сервера",
   "error.500_desc": "Что-то пошло не так. Попробуйте позже.",
   "error.go_home": "На главную",
-
   "lang.ru": "РУ",
   "lang.kz": "ҚЗ",
   "lang.switch_to_ru": "Русская версия",
   "lang.switch_to_kz": "Казахская версия",
-
-  "months_genitive": ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
-  "months_short": ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"],
-
+  "months_genitive": [
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря"
+  ],
+  "months_short": [
+    "январь",
+    "февраль",
+    "март",
+    "апрель",
+    "май",
+    "июнь",
+    "июль",
+    "август",
+    "сентябрь",
+    "октябрь",
+    "ноябрь",
+    "декабрь"
+  ],
   "pluralize.article.one": "статья",
   "pluralize.article.few": "статьи",
   "pluralize.article.other": "статей",
@@ -192,5 +194,6 @@
   "pluralize.material.other": "материалов",
   "pluralize.result.one": "результат",
   "pluralize.result.few": "результата",
-  "pluralize.result.other": "результатов"
+  "pluralize.result.other": "результатов",
+  "ticker.latest": "ПОСЛЕДНИЕ"
 }

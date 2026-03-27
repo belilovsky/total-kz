@@ -4417,3 +4417,20 @@ a.related-item:visited .related-title {
     text-align:left;
   }
 }
+
+/* ── Language badge for untranslated articles in /kz/ ── */
+.lang-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #e0e0e0;
+  color: #666;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.untranslated {
+  opacity: 0.55;
+}

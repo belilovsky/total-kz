@@ -3,7 +3,6 @@
   "site_tagline": "Total.kz – Қазақстан жаңалықтары",
   "site_description": "Total.kz – Қазақстанның жетекші жаңалық порталы. Саясат, экономика, қоғам, спорт және технологиялар.",
   "site_description_og": "Қазақстанның жетекші жаңалық порталы",
-
   "nav.politika": "Саясат",
   "nav.ekonomika": "Экономика",
   "nav.obshchestvo": "Қоғам",
@@ -11,14 +10,12 @@
   "nav.mir": "Әлем",
   "nav.sport": "Спорт",
   "nav.persons": "Тұлғалар",
-
   "nav.section.politika": "Саясат",
   "nav.section.ekonomika": "Экономика",
   "nav.section.obshchestvo": "Қоғам",
   "nav.section.nauka": "Ғылым және Техно",
   "nav.section.mir": "Әлем",
   "nav.section.sport": "Спорт",
-
   "cat.vnutrennyaya_politika": "Ішкі саясат",
   "cat.vneshnyaya_politika": "Сыртқы саясат",
   "cat.politika": "Саясат",
@@ -43,21 +40,18 @@
   "cat.stil_zhizni": "Өмір салты",
   "cat.redaktsiya_tandau": "Редакция таңдауы",
   "cat.drugoe": "Басқа",
-
   "header.bookmarks": "Бетбелгілер",
   "header.notifications": "Хабарламалар",
   "header.search": "Іздеу",
   "header.theme_toggle": "Тақырыпты ауыстыру",
   "header.menu": "Мәзір",
   "header.no_notifications": "Жаңа хабарламалар жоқ",
-
   "mobile_menu.home": "Басты бет",
   "mobile_menu.advertising": "Жарнама",
   "mobile_menu.rules": "Ережелер",
   "mobile_menu.contacts": "Байланыс",
   "mobile_menu.dark_theme": "Қараңғы тақырып",
   "mobile_menu.light_theme": "Жарық тақырып",
-
   "search.title": "Іздеу",
   "search.placeholder": "Жаңалықтарды іздеу...",
   "search.results_title": "Нәтижелер",
@@ -82,7 +76,6 @@
   "search.filter.date": "Күні бойынша",
   "search.filter.reset": "Қалпына келтіру",
   "search.enter_query": "Сұранысты енгізіңіз...",
-
   "homepage.latest": "Соңғы жаңалықтар",
   "homepage.all_news": "Барлық жаңалықтар →",
   "homepage.popular": "Танымал",
@@ -93,7 +86,6 @@
   "homepage.all_persons": "Барлығы →",
   "homepage.all_section": "Барлығы →",
   "homepage.ticker_latest": "СОҢҒЫ:",
-
   "article.reading_time": "оқу уақыты",
   "article.min": "мин",
   "article.share": "Бөлісу",
@@ -114,36 +106,28 @@
   "article.ad": "Жарнама",
   "article.preview_banner": "АЛДЫН АЛА ҚАРАУ — жарияланбаған",
   "article.back_to_editor": "← Редакторға оралу",
-
   "category.articles_count": "мақала",
   "category.all": "Барлығы",
   "category.popular_in_section": "Бөлімдегі танымал",
   "category.tags": "Тегтер",
   "category.latest_news": "Соңғы жаңалықтар: {name}",
   "category.news_section": "«{name}» бөлімінің жаңалықтары",
-
   "tags.title": "Тақырыптар",
   "tags.search_placeholder": "Тегті іздеу...",
-
   "person.articles": "мақала",
   "person.career": "Мансап",
   "person.present": "қазір",
   "person.latest_mentions": "Соңғы еске алулар",
   "person.not_found": "Тұлға табылмады",
-
   "persons.title": "Тұлғалар",
   "persons.all": "Барлығы",
   "persons.by_letter": "Әріп бойынша",
-
   "entity.type.person": "Тұлға",
   "entity.type.org": "Ұйым",
   "entity.type.location": "Орын",
-
   "breadcrumb.home": "Басты бет",
-
   "pagination.prev": "Артқа",
   "pagination.next": "Алға",
-
   "footer.persons": "Тұлғалар",
   "footer.topics": "Тақырыптар",
   "footer.advertising": "Жарнама",
@@ -153,41 +137,60 @@
   "footer.copyright": "© 2011–{year} Total Media Qazaqstan",
   "footer.license": "БАҚ куәлігі №16942-ИА",
   "footer.address": "Алматы қ., Жібек жолы д-лы, 115/46, 306 кеңсе",
-
   "mobile_bar.home": "Басты бет",
   "mobile_bar.search": "Іздеу",
   "mobile_bar.fresh": "Жаңа",
   "mobile_bar.menu": "Мәзір",
-
   "skip_link": "Мазмұнға өту",
   "ad_label": "Жарнама",
   "back_to_top": "Жоғарыға",
-
   "bookmarks.title": "Бетбелгілер",
-
   "comments.title": "Пікірлер",
   "comments.write": "Пікір жазу",
   "comments.send": "Жіберу",
   "comments.empty": "Пікірлер әлі жоқ",
-
   "error.404_title": "Бет табылмады",
   "error.404_desc": "Сіз іздеген бет табылмады",
   "error.500_title": "Сервер қатесі",
   "error.500_desc": "Бір нәрсе дұрыс болмады. Кейінірек қайталап көріңіз.",
   "error.go_home": "Басты бетке оралу",
-
   "lang.ru": "РУ",
   "lang.kz": "ҚЗ",
   "lang.switch_to_ru": "Орысша нұсқасы",
   "lang.switch_to_kz": "Қазақша нұсқасы",
-
-  "months_genitive": ["қаңтардың", "ақпанның", "наурыздың", "сәуірдің", "мамырдың", "маусымның", "шілденің", "тамыздың", "қыркүйектің", "қазанның", "қарашаның", "желтоқсанның"],
-  "months_short": ["қаңтар", "ақпан", "наурыз", "сәуір", "мамыр", "маусым", "шілде", "тамыз", "қыркүйек", "қазан", "қараша", "желтоқсан"],
-
+  "months_genitive": [
+    "қаңтардың",
+    "ақпанның",
+    "наурыздың",
+    "сәуірдің",
+    "мамырдың",
+    "маусымның",
+    "шілденің",
+    "тамыздың",
+    "қыркүйектің",
+    "қазанның",
+    "қарашаның",
+    "желтоқсанның"
+  ],
+  "months_short": [
+    "қаңтар",
+    "ақпан",
+    "наурыз",
+    "сәуір",
+    "мамыр",
+    "маусым",
+    "шілде",
+    "тамыз",
+    "қыркүйек",
+    "қазан",
+    "қараша",
+    "желтоқсан"
+  ],
   "pluralize.article.one": "мақала",
   "pluralize.article.other": "мақала",
   "pluralize.material.one": "материал",
   "pluralize.material.other": "материал",
   "pluralize.result.one": "нәтиже",
-  "pluralize.result.other": "нәтиже"
+  "pluralize.result.other": "нәтиже",
+  "ticker.latest": "СОҢҒЫ"
 }

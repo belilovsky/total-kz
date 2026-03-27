@@ -324,7 +324,7 @@
           {% for art in popular %}
           <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-item">
             <span class="popular-num">{{ loop.index }}</span>
-            <span class="popular-title">{{ art.title }}</span>
+            <span class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
           </a>
           {% endfor %}
         </div>
@@ -373,7 +373,7 @@
     {% for art in popular %}
     <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-item">
       <span class="popular-num">{{ loop.index }}</span>
-      <span class="popular-title">{{ art.title }}</span>
+      <span class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
     </a>
     {% endfor %}
   </div>
@@ -406,7 +406,7 @@
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-        <span class="timeline-title">{{ art.title }}</span>
+        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
@@ -418,7 +418,7 @@
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-        <span class="timeline-title">{{ art.title }}</span>
+        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
     </div>
@@ -446,7 +446,7 @@
         </div>
         {% endif %}
         <div class="related-body">
-          <span class="related-title">{{ art.title }}</span>
+          <span class="related-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
           <div class="related-meta">{{ format_date_short(art.pub_date) }}</div>
         </div>
       </a>

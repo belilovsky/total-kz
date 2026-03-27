@@ -93,7 +93,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=15.4">
+  <link rel="stylesheet" href="/static/css/public.css?v=15.5">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -355,7 +355,7 @@
   <!-- ═══ NEWS TICKER (desktop) ═══ -->
   {% if ticker_articles is defined and ticker_articles %}
   <div class="news-ticker" id="news-ticker">
-    <span class="ticker-label">ПОСЛЕДНИЕ:</span>
+    <span class="ticker-label">{{ t('ticker.latest') if t is defined else 'ПОСЛЕДНИЕ' }}:</span>
     <div class="ticker-content">
       {% for art in ticker_articles %}
       <a href="{{ article_url(art) }}" class="ticker-headline{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">{{ art.title }}</a>
