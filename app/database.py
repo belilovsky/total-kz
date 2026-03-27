@@ -1385,6 +1385,33 @@ def get_category_counts() -> list:
         return [dict(r) for r in rows]
 
 
+def get_category_highlights_batch(nav_sections: list, per_section: int = 3) -> dict:
+    """Fetch top N articles per nav section for homepage highlights.
+
+    Returns: dict mapping section_slug -> list[dict]
+    """
+    result = {}
+    with get_db() as conn:
+        for section in nav_sections:
+            subcats = section.get("subcats", [])
+            if not subcats:
+                continue
+            placeholders = ",".join("?" for _ in subcats)
+            rows = conn.execute(f"""
+                SELECT id, url, pub_date, sub_category, title, author,
+                       excerpt, thumbnail, main_image, COALESCE(views, 0) as views
+                FROM articles
+                WHERE sub_category IN ({placeholders})
+                ORDER BY
+                    CASE WHEN main_image IS NOT NULL AND main_image != '' THEN 0 ELSE 1 END,
+                    pub_date DESC
+                LIMIT ?
+            """, (*subcats, per_section)).fetchall()
+            if rows:
+                result[section["slug"]] = [dict(r) for r in rows]
+    return result
+
+
 def get_latest_by_categories(categories: list, limit: int = 10, offset: int = 0) -> dict:
     """Get latest articles from multiple sub_categories (for grouped nav sections)."""
     if not categories:

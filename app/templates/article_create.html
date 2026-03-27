@@ -391,6 +391,7 @@ function collectArticleData() {
         return {
             title: document.getElementById('editTitle').value.trim(), sub_category: document.getElementById('editCategory').value,
             author: document.getElementById('editAuthor').value.trim(), excerpt: document.getElementById('editExcerpt').value.trim(),
+            meta_description: (document.getElementById('editMetaDesc') ? document.getElementById('editMetaDesc').value.trim() : ''),
             main_image: document.getElementById('editImage').value.trim(), body_blocks: JSON.stringify(outputData),
             status: getSelectedStatus(), editor_note: document.getElementById('editNote').value.trim(), tags: collectTags(),
             focal_x: parseFloat(document.getElementById('focalX').value)||0.5, focal_y: parseFloat(document.getElementById('focalY').value)||0.5,

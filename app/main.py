@@ -490,6 +490,7 @@ async def admin_dashboard(request: Request):
                 rows = sess.execute(
                     select(Article.id, Article.title, Article.author, Article.pub_date, Article.sub_category, Article.status)
                     .where(Article.status == "published")
+                    .where(Article.pub_date.isnot(None))
                     .order_by(Article.pub_date.desc())
                     .limit(10)
                 ).fetchall()
@@ -505,7 +506,8 @@ async def admin_dashboard(request: Request):
             with db.get_db() as conn:
                 rows = conn.execute("""
                     SELECT id, title, author, pub_date, sub_category, status
-                    FROM articles WHERE status='published'
+                    FROM articles
+                    WHERE status='published' AND pub_date IS NOT NULL
                     ORDER BY pub_date DESC LIMIT 10
                 """).fetchall()
                 recent_articles = [dict(r) for r in rows]
