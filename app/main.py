@@ -924,30 +924,61 @@ async def admin_reference_page(
     min_articles: int = 50,
     entity_type: str = "",
 ):
-    categories = db.get_all_categories()
-    authors = db.get_all_authors_managed(q=q) if tab == "authors" else []
-    tags_result = db.get_tags_full(q=q, page=page, min_articles=min_articles) if tab == "tags" else {"items": [], "total": 0, "page": 1, "pages": 1}
-    entities_result = db.get_entities_full(q=q, entity_type=entity_type, page=page) if tab == "entities" else {"items": [], "total": 0, "page": 1, "pages": 1}
+    if settings.use_postgres:
+        from app import pg_queries as pgq
+        categories = pgq.get_all_categories()
+        authors = pgq.get_all_authors_managed(q=q) if tab == "authors" else []
+        tags_result = pgq.get_tags_full(q=q, page=page) if tab == "tags" else {"items": [], "total": 0, "page": 1, "pages": 1}
+        entities_result = pgq.get_entities_full(q=q, entity_type=entity_type, page=page) if tab == "entities" else {"items": [], "total": 0, "page": 1, "pages": 1}
 
-    # Get totals for tab counters
-    if tab != "tags":
-        try:
-            with db.get_db() as conn:
-                tags_total = conn.execute("SELECT COUNT(DISTINCT tag) FROM article_tags").fetchone()[0]
-                tags_result["total"] = tags_total
-        except Exception:
-            pass
-    if tab != "entities":
-        try:
-            with db.get_db() as conn:
-                ent_total = conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
-                entities_result["total"] = ent_total
-        except Exception:
-            pass
-    if tab != "authors":
-        authors_for_count = db.get_all_authors_managed(q="")
+        # Get totals for tab counters
+        if tab != "tags":
+            try:
+                from app.pg_queries import get_pg_session, ArticleTag, NerEntity
+                from sqlalchemy import select, func, distinct
+                with get_pg_session() as sess:
+                    tags_total = sess.scalar(select(func.count(distinct(ArticleTag.tag)))) or 0
+                    tags_result["total"] = tags_total
+            except Exception:
+                pass
+        if tab != "entities":
+            try:
+                from app.pg_queries import get_pg_session, NerEntity
+                from sqlalchemy import select, func
+                with get_pg_session() as sess:
+                    ent_total = sess.scalar(select(func.count()).select_from(NerEntity)) or 0
+                    entities_result["total"] = ent_total
+            except Exception:
+                pass
+        if tab != "authors":
+            authors_for_count = pgq.get_all_authors_managed(q="")
+        else:
+            authors_for_count = authors
     else:
-        authors_for_count = authors
+        categories = db.get_all_categories()
+        authors = db.get_all_authors_managed(q=q) if tab == "authors" else []
+        tags_result = db.get_tags_full(q=q, page=page, min_articles=min_articles) if tab == "tags" else {"items": [], "total": 0, "page": 1, "pages": 1}
+        entities_result = db.get_entities_full(q=q, entity_type=entity_type, page=page) if tab == "entities" else {"items": [], "total": 0, "page": 1, "pages": 1}
+
+        # Get totals for tab counters
+        if tab != "tags":
+            try:
+                with db.get_db() as conn:
+                    tags_total = conn.execute("SELECT COUNT(DISTINCT tag) FROM article_tags").fetchone()[0]
+                    tags_result["total"] = tags_total
+            except Exception:
+                pass
+        if tab != "entities":
+            try:
+                with db.get_db() as conn:
+                    ent_total = conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+                    entities_result["total"] = ent_total
+            except Exception:
+                pass
+        if tab != "authors":
+            authors_for_count = db.get_all_authors_managed(q="")
+        else:
+            authors_for_count = authors
 
     return templates.TemplateResponse("reference.html", _ctx(request,
         tab=tab,
@@ -986,8 +1017,12 @@ async def admin_ads_page(request: Request, page_filter: str = ""):
     user = getattr(request.state, "current_user", None)
     if not user or user.get("role") != "admin":
         return RedirectResponse(url="/admin/articles", status_code=302)
-    placements = db.get_all_ad_placements(page_filter=page_filter)
-    stats = db.get_ad_stats()
+    try:
+        placements = db.get_all_ad_placements(page_filter=page_filter)
+        stats = db.get_ad_stats()
+    except Exception:
+        placements = []
+        stats = {"total": 0, "active": 0, "inactive": 0, "booked": 0, "available": 0}
     pages = sorted(set(p["page"] for p in placements))
     return templates.TemplateResponse("ads.html", _ctx(request,
         placements=placements, stats=stats, pages=pages,
