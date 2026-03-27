@@ -2431,7 +2431,7 @@ async def _get_umami_data() -> dict:
             stats_resp, active_resp, pages_resp, countries_resp, devices_resp, referrers_resp = await asyncio.gather(
                 client.get(f"{base}/api/websites/{wid}/stats", headers=headers, params=params),
                 client.get(f"{base}/api/websites/{wid}/active", headers=headers),
-                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "path", "limit": 10}),
+                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "title", "limit": 10}),
                 client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "country", "limit": 10}),
                 client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "device", "limit": 5}),
                 client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "referrer", "limit": 10}),
@@ -2444,12 +2444,22 @@ async def _get_umami_data() -> dict:
             devices = devices_resp.json()
             referrers = referrers_resp.json()
 
-            # Calculate derived metrics
-            pageviews = stats.get("pageviews", {}).get("value", 0)
-            visitors = stats.get("visitors", {}).get("value", 0)
-            bounces = stats.get("bounces", {}).get("value", 0)
-            visits = stats.get("visits", {}).get("value", 0)
-            totaltime = stats.get("totaltime", {}).get("value", 0)
+            # Calculate derived metrics (Umami v3 returns flat format)
+            pageviews = stats.get("pageviews", 0)
+            if isinstance(pageviews, dict):
+                pageviews = pageviews.get("value", 0)
+            visitors = stats.get("visitors", 0)
+            if isinstance(visitors, dict):
+                visitors = visitors.get("value", 0)
+            bounces = stats.get("bounces", 0)
+            if isinstance(bounces, dict):
+                bounces = bounces.get("value", 0)
+            visits = stats.get("visits", 0)
+            if isinstance(visits, dict):
+                visits = visits.get("value", 0)
+            totaltime = stats.get("totaltime", 0)
+            if isinstance(totaltime, dict):
+                totaltime = totaltime.get("value", 0)
 
             bounce_rate = f"{round(bounces / visits * 100)}%" if visits else "0%"
             avg_duration_sec = round(totaltime / visits) if visits else 0
@@ -2461,6 +2471,9 @@ async def _get_umami_data() -> dict:
             mobile_share = f"{round(mobile_count / total_device * 100)}%" if total_device else "0%"
 
             top_country = countries[0]["x"] if countries else "N/A"
+            # pages may return error dict for unsupported metric types
+            if isinstance(pages, dict):
+                pages = []
             top_page = pages[0]["x"] if pages else "/"
 
             return {
@@ -2472,10 +2485,11 @@ async def _get_umami_data() -> dict:
                 "top_page": top_page,
                 "top_country": top_country,
                 "mobile_share": mobile_share,
-                "top_pages": [{"path": p["x"], "views": p["y"]} for p in pages],
-                "countries": [{"country": c["x"], "views": c["y"]} for c in countries],
-                "devices": [{"device": d["x"], "views": d["y"]} for d in devices],
-                "referrers": [{"source": r["x"], "views": r["y"]} for r in referrers],
+                "top_pages": [{"path": p["x"], "views": p["y"]} for p in (pages if isinstance(pages, list) else [])],
+
+                "countries": [{"country": c["x"], "views": c["y"]} for c in (countries if isinstance(countries, list) else [])],
+                "devices": [{"device": d["x"], "views": d["y"]} for d in (devices if isinstance(devices, list) else [])],
+                "referrers": [{"source": r["x"], "views": r["y"]} for r in (referrers if isinstance(referrers, list) else [])],
             }
     except Exception as e:
         logger.exception("Error fetching Umami data for AI insights")
