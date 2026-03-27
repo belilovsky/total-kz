@@ -23,6 +23,13 @@
                margin-bottom:-2px; transition:all .2s;">
         Поисковая консоль
     </button>
+    <button class="analytics-tab" data-tab="ai"
+        style="padding:10px 20px; border:none; background:none; font-size:14px; font-weight:500;
+               cursor:pointer; color:var(--text-secondary, #6b7280);
+               border-bottom:2px solid transparent;
+               margin-bottom:-2px; transition:all .2s;">
+        AI-инсайты
+    </button>
 </div>
 
 {% if umami_share_url %}
@@ -514,6 +521,189 @@ const chartDefaults = {
 })();
 </script>
 </div><!-- /panel-gsc -->
+
+<!-- ═══════════════ AI INSIGHTS TAB ═══════════════ -->
+<div class="analytics-panel" id="panel-ai" style="display:none">
+<style>
+.ai-stats-bar { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:24px; }
+.ai-stat-card { background:var(--card-bg, #fff); border-radius:10px; padding:16px; text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid var(--border, #e5e7eb); }
+.ai-stat-value { font-size:24px; font-weight:700; color:var(--text-primary, #111); line-height:1.2; }
+.ai-stat-label { font-size:12px; color:var(--text-secondary, #6b7280); margin-top:4px; }
+.ai-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.ai-header h2 { font-size:18px; font-weight:600; margin:0; color:var(--text-primary, #111); }
+.ai-refresh-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px;
+    border:1px solid var(--border, #e5e7eb); background:var(--card-bg, #fff); color:var(--text-primary, #111);
+    font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; }
+.ai-refresh-btn:hover { border-color:var(--accent, #2563eb); color:var(--accent, #2563eb); }
+.ai-refresh-btn.loading { opacity:0.7; pointer-events:none; }
+.ai-refresh-btn .spinner { display:none; width:14px; height:14px; border:2px solid var(--border, #e5e7eb);
+    border-top-color:var(--accent, #2563eb); border-radius:50%; animation:aispin .6s linear infinite; }
+.ai-refresh-btn.loading .spinner { display:inline-block; }
+.ai-refresh-btn.loading .refresh-icon { display:none; }
+@keyframes aispin { to { transform:rotate(360deg); } }
+.ai-insights-grid { display:flex; flex-direction:column; gap:14px; }
+.ai-insight-card { background:var(--card-bg, #fff); border-radius:10px; padding:20px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid var(--border, #e5e7eb); }
+.ai-insight-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.ai-insight-icon { font-size:20px; line-height:1; }
+.ai-badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.5px; }
+.ai-badge-content { background:#dbeafe; color:#1d4ed8; }
+.ai-badge-seo { background:#d1fae5; color:#065f46; }
+.ai-badge-audience { background:#ffedd5; color:#9a3412; }
+.ai-badge-growth { background:#ede9fe; color:#5b21b6; }
+.ai-insight-title { font-size:15px; font-weight:600; color:var(--text-primary, #111); flex:1; }
+.ai-priority { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ai-priority-high { background:#ef4444; }
+.ai-priority-medium { background:#f59e0b; }
+.ai-priority-low { background:#9ca3af; }
+.ai-insight-desc { font-size:13px; line-height:1.6; color:var(--text-secondary, #4b5563); margin-bottom:12px; }
+.ai-insight-action { background:var(--bg-secondary, #f3f4f6); border-radius:8px; padding:10px 14px;
+    font-size:13px; font-weight:500; color:var(--text-primary, #111); border-left:3px solid var(--accent, #2563eb); }
+.ai-timestamp { text-align:center; margin-top:20px; font-size:12px; color:var(--text-secondary, #9ca3af); }
+.ai-skeleton { animation:aipulse 1.5s ease-in-out infinite; }
+@keyframes aipulse { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }
+.ai-skeleton-card { background:var(--card-bg, #fff); border-radius:10px; padding:20px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid var(--border, #e5e7eb); }
+.ai-skeleton-line { height:12px; background:var(--border, #e5e7eb); border-radius:6px; margin-bottom:10px; }
+.ai-skeleton-line.w60 { width:60%; }
+.ai-skeleton-line.w80 { width:80%; }
+.ai-skeleton-line.w40 { width:40%; }
+.ai-skeleton-line.w100 { width:100%; }
+.ai-error { text-align:center; padding:40px 20px; color:var(--text-secondary, #6b7280); }
+.ai-error-icon { font-size:36px; margin-bottom:12px; }
+.ai-error p { font-size:14px; margin:4px 0; }
+</style>
+
+<div class="ai-header">
+    <h2>AI-анализ сайта</h2>
+    <button class="ai-refresh-btn" id="aiRefreshBtn" onclick="loadAiInsights(true)">
+        <span class="refresh-icon">↻</span>
+        <span class="spinner"></span>
+        Обновить анализ
+    </button>
+</div>
+
+<!-- Stats bar -->
+<div class="ai-stats-bar" id="aiStatsBar">
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+    <div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>
+</div>
+
+<!-- Insights container -->
+<div class="ai-insights-grid" id="aiInsightsGrid">
+    <div class="ai-skeleton-card ai-skeleton"><div class="ai-skeleton-line w40"></div><div class="ai-skeleton-line w100"></div><div class="ai-skeleton-line w80"></div><div class="ai-skeleton-line w60"></div></div>
+    <div class="ai-skeleton-card ai-skeleton"><div class="ai-skeleton-line w40"></div><div class="ai-skeleton-line w100"></div><div class="ai-skeleton-line w80"></div><div class="ai-skeleton-line w60"></div></div>
+    <div class="ai-skeleton-card ai-skeleton"><div class="ai-skeleton-line w40"></div><div class="ai-skeleton-line w100"></div><div class="ai-skeleton-line w80"></div><div class="ai-skeleton-line w60"></div></div>
+    <div class="ai-skeleton-card ai-skeleton"><div class="ai-skeleton-line w40"></div><div class="ai-skeleton-line w100"></div><div class="ai-skeleton-line w80"></div><div class="ai-skeleton-line w60"></div></div>
+</div>
+
+<div class="ai-timestamp" id="aiTimestamp"></div>
+
+<script>
+var _aiLoaded = false;
+
+function loadAiInsights(refresh) {
+    var btn = document.getElementById('aiRefreshBtn');
+    var statsBar = document.getElementById('aiStatsBar');
+    var grid = document.getElementById('aiInsightsGrid');
+    var tsEl = document.getElementById('aiTimestamp');
+
+    btn.classList.add('loading');
+
+    // Show skeleton on refresh
+    if (refresh || !_aiLoaded) {
+        statsBar.innerHTML = Array(6).fill(0).map(function() {
+            return '<div class="ai-stat-card ai-skeleton"><div class="ai-skeleton-line w60" style="height:24px;margin:0 auto 6px"></div><div class="ai-skeleton-line w80" style="height:10px;margin:0 auto"></div></div>';
+        }).join('');
+        grid.innerHTML = Array(4).fill(0).map(function() {
+            return '<div class="ai-skeleton-card ai-skeleton"><div class="ai-skeleton-line w40"></div><div class="ai-skeleton-line w100"></div><div class="ai-skeleton-line w80"></div><div class="ai-skeleton-line w60"></div></div>';
+        }).join('');
+    }
+
+    var url = '/api/admin/ai-insights' + (refresh ? '?refresh=true' : '');
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btn.classList.remove('loading');
+            if (!data.ok) {
+                grid.innerHTML = '<div class="ai-error"><div class="ai-error-icon">⚠️</div><p>' + (data.error || 'Ошибка загрузки') + '</p></div>';
+                statsBar.innerHTML = '';
+                return;
+            }
+            _aiLoaded = true;
+            renderAiStats(data.stats);
+            renderAiInsights(data.insights);
+            if (data.generated_at) {
+                var dt = new Date(data.generated_at);
+                tsEl.textContent = 'Сгенерировано: ' + dt.toLocaleString('ru-RU', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            }
+        })
+        .catch(function(err) {
+            btn.classList.remove('loading');
+            grid.innerHTML = '<div class="ai-error"><div class="ai-error-icon">⚠️</div><p>Ошибка соединения</p><p style="font-size:12px;color:#9ca3af">' + err.message + '</p></div>';
+        });
+}
+
+function renderAiStats(stats) {
+    if (!stats || !stats.visitors_7d) {
+        document.getElementById('aiStatsBar').innerHTML = '';
+        return;
+    }
+    var items = [
+        {v: stats.visitors_7d.toLocaleString('ru-RU'), l: 'Визитов (7д)'},
+        {v: stats.pageviews_7d.toLocaleString('ru-RU'), l: 'Просмотров (7д)'},
+        {v: stats.bounce_rate, l: 'Отказы'},
+        {v: stats.avg_duration, l: 'Ср. время'},
+        {v: stats.active_now, l: 'Сейчас онлайн'},
+        {v: stats.mobile_share, l: 'Мобильные'},
+    ];
+    document.getElementById('aiStatsBar').innerHTML = items.map(function(i) {
+        return '<div class="ai-stat-card"><div class="ai-stat-value">' + i.v + '</div><div class="ai-stat-label">' + i.l + '</div></div>';
+    }).join('');
+}
+
+function renderAiInsights(insights) {
+    if (!insights || !insights.length) {
+        document.getElementById('aiInsightsGrid').innerHTML = '<div class="ai-error"><p>Нет инсайтов</p></div>';
+        return;
+    }
+    var badgeMap = {content: 'ai-badge-content', seo: 'ai-badge-seo', audience: 'ai-badge-audience', growth: 'ai-badge-growth'};
+    var catLabel = {content: 'Контент', seo: 'SEO', audience: 'Аудитория', growth: 'Рост'};
+
+    document.getElementById('aiInsightsGrid').innerHTML = insights.map(function(ins) {
+        var badge = badgeMap[ins.category] || 'ai-badge-content';
+        var label = catLabel[ins.category] || ins.category;
+        var prio = 'ai-priority-' + (ins.priority || 'medium');
+        return '<div class="ai-insight-card">' +
+            '<div class="ai-insight-header">' +
+                '<span class="ai-insight-icon">' + (ins.icon || '💡') + '</span>' +
+                '<span class="ai-badge ' + badge + '">' + label + '</span>' +
+                '<span class="ai-insight-title">' + (ins.title || '') + '</span>' +
+                '<span class="ai-priority ' + prio + '" title="' + (ins.priority || 'medium') + '"></span>' +
+            '</div>' +
+            '<div class="ai-insight-desc">' + (ins.description || '') + '</div>' +
+            (ins.action ? '<div class="ai-insight-action">→ ' + ins.action + '</div>' : '') +
+        '</div>';
+    }).join('');
+}
+
+// Lazy-load: fetch data when AI tab is first shown
+document.addEventListener('DOMContentLoaded', function() {
+    var aiTab = document.querySelector('[data-tab="ai"]');
+    if (aiTab) {
+        aiTab.addEventListener('click', function() {
+            if (!_aiLoaded) loadAiInsights(false);
+        });
+    }
+});
+</script>
+</div><!-- /panel-ai -->
 
 <script>
 (function() {

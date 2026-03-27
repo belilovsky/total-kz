@@ -19,6 +19,10 @@ class Settings(BaseConfig):
 
     # Umami analytics
     umami_share_url: str = ""
+    umami_api_url: str = "http://127.0.0.1:3000"
+    umami_username: str = "admin"
+    umami_password: str = "umami"
+    umami_website_id: str = "be22e361-8abe-4f3e-be5f-80529fb98789"
 
 
 settings = Settings()

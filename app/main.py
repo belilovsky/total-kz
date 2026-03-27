@@ -2319,6 +2319,306 @@ async def api_admin_ai_from_url(request: Request):
         return JSONResponse({"error": f"Ошибка AI: {str(e)[:100]}"}, status_code=500)
 
 
+# ══════════════════════════════════════════════
+#  AI INSIGHTS FOR ANALYTICS
+# ══════════════════════════════════════════════
+
+_ai_insights_cache: dict = {}  # {"data": ..., "ts": float}
+
+
+def _get_content_stats() -> dict:
+    """Query PostgreSQL for content statistics used by AI insights."""
+    if not settings.use_postgres:
+        return {}
+    try:
+        from app.pg_queries import get_pg_session
+        from app.models import Article, ArticleEntity, NerEntity
+        from sqlalchemy import func, select, desc, cast
+        from sqlalchemy import DateTime as SA_DateTime
+
+        with get_pg_session() as sess:
+            # Total articles
+            total = sess.scalar(select(func.count(Article.id))) or 0
+
+            # Articles published in last 7 days, by category
+            seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
+            thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+
+            recent_by_cat = sess.execute(
+                select(
+                    Article.sub_category,
+                    func.count(Article.id).label("cnt"),
+                ).where(Article.pub_date >= seven_days_ago)
+                .group_by(Article.sub_category)
+                .order_by(func.count(Article.id).desc())
+            ).all()
+
+            # Top 5 authors by article count (last 30 days)
+            top_authors = sess.execute(
+                select(
+                    Article.author,
+                    func.count(Article.id).label("cnt"),
+                ).where(Article.pub_date >= thirty_days_ago)
+                .where(Article.author.isnot(None))
+                .group_by(Article.author)
+                .order_by(func.count(Article.id).desc())
+                .limit(5)
+            ).all()
+
+            # Top 10 trending entities (by sum of mention_count in last 7 days)
+            trending_entities = sess.execute(
+                select(
+                    NerEntity.name,
+                    NerEntity.entity_type,
+                    func.sum(ArticleEntity.mention_count).label("mentions"),
+                ).join(ArticleEntity, NerEntity.id == ArticleEntity.entity_id)
+                .join(Article, Article.id == ArticleEntity.article_id)
+                .where(Article.pub_date >= seven_days_ago)
+                .group_by(NerEntity.name, NerEntity.entity_type)
+                .order_by(func.sum(ArticleEntity.mention_count).desc())
+                .limit(10)
+            ).all()
+
+            # Average articles per day (last 30 days)
+            articles_30d = sess.scalar(
+                select(func.count(Article.id)).where(Article.pub_date >= thirty_days_ago)
+            ) or 0
+            avg_per_day = round(articles_30d / 30, 1)
+
+            # Total articles last 7 days
+            articles_7d = sum(r.cnt for r in recent_by_cat)
+
+            return {
+                "total_articles": total,
+                "articles_7d": articles_7d,
+                "articles_30d": articles_30d,
+                "avg_per_day": avg_per_day,
+                "categories_7d": [{"category": r.sub_category or "без категории", "count": r.cnt} for r in recent_by_cat],
+                "top_authors_30d": [{"author": r.author, "count": r.cnt} for r in top_authors],
+                "trending_entities": [{"name": r.name, "type": r.entity_type, "mentions": r.mentions} for r in trending_entities],
+            }
+    except Exception as e:
+        logger.exception("Error getting content stats for AI insights")
+        return {"error": str(e)[:200]}
+
+
+async def _get_umami_data() -> dict:
+    """Fetch traffic data from Umami API."""
+    base = settings.umami_api_url
+    wid = settings.umami_website_id
+    if not base or not wid:
+        return {"error": "Umami not configured"}
+
+    import httpx as _httpx
+    now_ms = int(time.time() * 1000)
+    seven_days_ms = now_ms - 7 * 24 * 60 * 60 * 1000
+
+    try:
+        async with _httpx.AsyncClient(timeout=15) as client:
+            # Authenticate
+            auth_resp = await client.post(f"{base}/api/auth/login", json={
+                "username": settings.umami_username,
+                "password": settings.umami_password,
+            })
+            token = auth_resp.json().get("token")
+            if not token:
+                return {"error": "Umami auth failed"}
+
+            headers = {"Authorization": f"Bearer {token}"}
+            params = {"startAt": seven_days_ms, "endAt": now_ms}
+
+            # Fetch stats, active visitors, and top metrics in parallel
+            stats_resp, active_resp, pages_resp, countries_resp, devices_resp, referrers_resp = await asyncio.gather(
+                client.get(f"{base}/api/websites/{wid}/stats", headers=headers, params=params),
+                client.get(f"{base}/api/websites/{wid}/active", headers=headers),
+                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "path", "limit": 10}),
+                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "country", "limit": 10}),
+                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "device", "limit": 5}),
+                client.get(f"{base}/api/websites/{wid}/metrics", headers=headers, params={**params, "type": "referrer", "limit": 10}),
+            )
+
+            stats = stats_resp.json()
+            active = active_resp.json()
+            pages = pages_resp.json()
+            countries = countries_resp.json()
+            devices = devices_resp.json()
+            referrers = referrers_resp.json()
+
+            # Calculate derived metrics
+            pageviews = stats.get("pageviews", {}).get("value", 0)
+            visitors = stats.get("visitors", {}).get("value", 0)
+            bounces = stats.get("bounces", {}).get("value", 0)
+            visits = stats.get("visits", {}).get("value", 0)
+            totaltime = stats.get("totaltime", {}).get("value", 0)
+
+            bounce_rate = f"{round(bounces / visits * 100)}%" if visits else "0%"
+            avg_duration_sec = round(totaltime / visits) if visits else 0
+            avg_duration = f"{avg_duration_sec // 60}m {avg_duration_sec % 60:02d}s"
+
+            # Device shares
+            total_device = sum(d.get("y", 0) for d in devices)
+            mobile_count = sum(d.get("y", 0) for d in devices if d.get("x", "").lower() == "mobile")
+            mobile_share = f"{round(mobile_count / total_device * 100)}%" if total_device else "0%"
+
+            top_country = countries[0]["x"] if countries else "N/A"
+            top_page = pages[0]["x"] if pages else "/"
+
+            return {
+                "visitors_7d": visitors,
+                "pageviews_7d": pageviews,
+                "bounce_rate": bounce_rate,
+                "avg_duration": avg_duration,
+                "active_now": active.get("visitors", 0),
+                "top_page": top_page,
+                "top_country": top_country,
+                "mobile_share": mobile_share,
+                "top_pages": [{"path": p["x"], "views": p["y"]} for p in pages],
+                "countries": [{"country": c["x"], "views": c["y"]} for c in countries],
+                "devices": [{"device": d["x"], "views": d["y"]} for d in devices],
+                "referrers": [{"source": r["x"], "views": r["y"]} for r in referrers],
+            }
+    except Exception as e:
+        logger.exception("Error fetching Umami data for AI insights")
+        return {"error": str(e)[:200]}
+
+
+@app.get("/api/admin/ai-insights")
+async def api_admin_ai_insights(request: Request, refresh: bool = False):
+    """AI-powered analytics insights combining Umami, GSC, and internal data."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    if not _OPENAI_KEY:
+        return JSONResponse({"error": "OPENAI_API_KEY not configured"}, status_code=500)
+
+    # Check cache (1 hour)
+    cache = _ai_insights_cache
+    if not refresh and cache.get("data") and (time.time() - cache.get("ts", 0)) < 3600:
+        return JSONResponse(cache["data"])
+
+    # Collect data from all sources in parallel
+    umami_task = _get_umami_data()
+    gsc_data = search.get_search_data()
+    content_stats = _get_content_stats()
+    umami_data = await umami_task
+
+    # Build stats summary for response
+    stats = {}
+    if not umami_data.get("error"):
+        stats = {
+            "visitors_7d": umami_data.get("visitors_7d", 0),
+            "pageviews_7d": umami_data.get("pageviews_7d", 0),
+            "bounce_rate": umami_data.get("bounce_rate", "N/A"),
+            "avg_duration": umami_data.get("avg_duration", "N/A"),
+            "active_now": umami_data.get("active_now", 0),
+            "top_page": umami_data.get("top_page", "N/A"),
+            "top_country": umami_data.get("top_country", "N/A"),
+            "mobile_share": umami_data.get("mobile_share", "N/A"),
+        }
+
+    # Build prompt for GPT
+    prompt_parts = [
+        "Ты — AI-аналитик для казахстанского новостного портала Total.kz.",
+        "Проанализируй данные и дай 6-8 конкретных, actionable инсайтов.",
+        "Каждый инсайт должен быть в одной из категорий: content, seo, audience, growth.",
+        "",
+        "Ответь строго в формате JSON массива (без markdown):",
+        '[{"category": "content|seo|audience|growth", "icon": "эмодзи", "title": "Краткий заголовок", "description": "Подробное описание на 2-3 предложения", "action": "Конкретное действие", "priority": "high|medium|low"}]',
+        "",
+        "═══ ДАННЫЕ ═══",
+    ]
+
+    if not umami_data.get("error"):
+        prompt_parts.append(f"\n## Трафик (последние 7 дней):")
+        prompt_parts.append(f"Визиты: {umami_data.get('visitors_7d', 'N/A')}, Просмотры: {umami_data.get('pageviews_7d', 'N/A')}")
+        prompt_parts.append(f"Показатель отказов: {umami_data.get('bounce_rate', 'N/A')}, Среднее время: {umami_data.get('avg_duration', 'N/A')}")
+        prompt_parts.append(f"Сейчас онлайн: {umami_data.get('active_now', 0)}")
+        prompt_parts.append(f"Мобильные: {umami_data.get('mobile_share', 'N/A')}")
+        if umami_data.get("top_pages"):
+            prompt_parts.append(f"Топ страницы: {json.dumps(umami_data['top_pages'][:5], ensure_ascii=False)}")
+        if umami_data.get("countries"):
+            prompt_parts.append(f"Страны: {json.dumps(umami_data['countries'][:5], ensure_ascii=False)}")
+        if umami_data.get("referrers"):
+            prompt_parts.append(f"Реферреры: {json.dumps(umami_data['referrers'][:5], ensure_ascii=False)}")
+    else:
+        prompt_parts.append(f"\n## Трафик: данные недоступны ({umami_data.get('error', '')})")
+
+    if gsc_data and gsc_data.get("totals"):
+        t = gsc_data["totals"]
+        prompt_parts.append(f"\n## Google Search Console:")
+        prompt_parts.append(f"Клики: {t.get('clicks', 0)}, Показы: {t.get('impressions', 0)}, CTR: {t.get('avg_ctr', 0)}%, Позиция: {t.get('avg_position', 0)}")
+        if gsc_data.get("top_queries"):
+            top_q = gsc_data["top_queries"][:10]
+            prompt_parts.append(f"Топ запросы: {json.dumps([{'query': q['query'], 'clicks': q['clicks'], 'position': q['position']} for q in top_q], ensure_ascii=False)}")
+        if gsc_data.get("growth_opportunities"):
+            prompt_parts.append(f"Возможности роста: {json.dumps(gsc_data['growth_opportunities'][:5], ensure_ascii=False)}")
+    else:
+        prompt_parts.append("\n## GSC: данные недоступны")
+
+    if content_stats and not content_stats.get("error"):
+        prompt_parts.append(f"\n## Контент:")
+        prompt_parts.append(f"Всего статей: {content_stats.get('total_articles', 0)}, За 7 дней: {content_stats.get('articles_7d', 0)}, В среднем/день: {content_stats.get('avg_per_day', 0)}")
+        if content_stats.get("categories_7d"):
+            prompt_parts.append(f"Категории за 7д: {json.dumps(content_stats['categories_7d'][:10], ensure_ascii=False)}")
+        if content_stats.get("top_authors_30d"):
+            prompt_parts.append(f"Топ авторы (30д): {json.dumps(content_stats['top_authors_30d'], ensure_ascii=False)}")
+        if content_stats.get("trending_entities"):
+            prompt_parts.append(f"Трендовые сущности: {json.dumps(content_stats['trending_entities'][:7], ensure_ascii=False)}")
+
+    full_prompt = "\n".join(prompt_parts)
+
+    # Call GPT-4o-mini
+    import httpx as _httpx
+    try:
+        async with _httpx.AsyncClient(timeout=45) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {_OPENAI_KEY}"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": "Ты — AI-аналитик для новостного портала. Отвечай строго валидным JSON-массивом инсайтов. Никакого markdown, только JSON."},
+                        {"role": "user", "content": full_prompt},
+                    ],
+                    "max_tokens": 2000,
+                    "temperature": 0.7,
+                },
+            )
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"].strip()
+
+            # Parse JSON — strip markdown fences if present
+            if content.startswith("```"):
+                content = re.sub(r'^```\w*\n?', '', content)
+                content = re.sub(r'\n?```$', '', content)
+            insights = json.loads(content)
+
+            # Ensure proper structure
+            icon_map = {"content": "📝", "seo": "🔍", "audience": "👥", "growth": "📈"}
+            for ins in insights:
+                if "icon" not in ins or not ins["icon"]:
+                    ins["icon"] = icon_map.get(ins.get("category", ""), "💡")
+                if "priority" not in ins:
+                    ins["priority"] = "medium"
+
+            result = {
+                "ok": True,
+                "generated_at": datetime.utcnow().isoformat(),
+                "stats": stats,
+                "insights": insights,
+            }
+
+            # Cache the result
+            _ai_insights_cache["data"] = result
+            _ai_insights_cache["ts"] = time.time()
+
+            return JSONResponse(result)
+
+    except Exception as e:
+        logger.exception("AI insights generation error")
+        return JSONResponse({"ok": False, "error": f"Ошибка генерации: {str(e)[:200]}"}, status_code=500)
+
+
 @app.get("/api/admin/media/search")
 async def api_media_search(request: Request, q: str = "", page: int = 1, per_page: int = 30):
     """Search media library for the image picker."""
