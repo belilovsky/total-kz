@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 import psycopg2
@@ -44,6 +45,10 @@ def publish_article(
 
     tags_json = json.dumps(rewritten.get("tags", []), ensure_ascii=False)
 
+    # Generate plain-text body from HTML for body_text field
+    body_html = rewritten.get("body_html", "")
+    body_text = re.sub(r"<[^>]+>", "", body_html).strip()
+
     try:
         conn = psycopg2.connect(get_db_url())
         cur = conn.cursor()
@@ -59,17 +64,18 @@ def publish_article(
         cur.execute(
             """
             INSERT INTO articles
-                (url, title, excerpt, body_html, sub_category, tags,
+                (url, title, excerpt, body_html, body_text, sub_category, tags,
                  author, status, pub_date, imported_at, editor_note)
             VALUES
-                (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 original_url,
                 rewritten["title"],
                 rewritten["excerpt"],
-                rewritten["body_html"],
+                body_html,
+                body_text,
                 sub_cat,
                 tags_json,
                 f"news-monitor ({source_name})",

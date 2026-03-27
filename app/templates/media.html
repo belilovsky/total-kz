@@ -67,7 +67,7 @@
         </div>
         <div class="media-item-info">
             <span class="media-item-name" title="{{ item.original_name }}">{{ item.original_name[:30] }}{% if item.original_name|length > 30 %}...{% endif %}</span>
-            <span class="media-item-meta">{{ (item.file_size / 1024)|int }}&nbsp;КБ{% if item.uploaded_at %} · {{ item.uploaded_at[:10] }}{% endif %}</span>
+            <span class="media-item-meta">{% if item.file_size %}{{ (item.file_size / 1024)|int }}&nbsp;КБ{% else %}—{% endif %}{% if item.uploaded_at %} · {{ item.uploaded_at[:10] }}{% endif %}</span>
         </div>
     </div>
     {% endfor %}
@@ -167,7 +167,7 @@ function showMediaDetail(item){
     document.getElementById('mediaDetailImg').src=item.url;
     document.getElementById('mediaDetailFilename').textContent=item.original_name||item.filename;
     document.getElementById('mediaDetailType').textContent=item.mime_type||'';
-    document.getElementById('mediaDetailSize').textContent=Math.round((item.file_size||0)/1024)+' КБ';
+    document.getElementById('mediaDetailSize').textContent=item.file_size ? Math.round(item.file_size/1024)+' КБ' : '—';
     document.getElementById('mediaDetailDate').textContent=(item.uploaded_at||'').replace('T',' ').substring(0,16);
     if(item.width&&item.height){
         document.getElementById('mediaDetailDimensions').textContent=item.width+'×'+item.height+' px';

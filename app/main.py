@@ -483,18 +483,37 @@ async def admin_dashboard(request: Request):
 
     # Recent articles for dashboard
     try:
-        with db.get_db() as conn:
-            rows = conn.execute("""
-                SELECT id, title, author, pub_date, sub_category, status
-                FROM articles ORDER BY pub_date DESC LIMIT 10
-            """).fetchall()
-            recent_articles = [dict(r) for r in rows]
-            # Articles needing review
-            rows2 = conn.execute("""
-                SELECT id, title FROM articles WHERE status='review'
-                ORDER BY pub_date DESC LIMIT 5
-            """).fetchall()
-            attention_articles = [dict(r) for r in rows2]
+        if settings.use_postgres:
+            from app.pg_queries import get_pg_session, Article
+            from sqlalchemy import select
+            with get_pg_session() as sess:
+                rows = sess.execute(
+                    select(Article.id, Article.title, Article.author, Article.pub_date, Article.sub_category, Article.status)
+                    .where(Article.status == "published")
+                    .order_by(Article.pub_date.desc())
+                    .limit(10)
+                ).fetchall()
+                recent_articles = [{"id": r.id, "title": r.title, "author": r.author, "pub_date": r.pub_date, "sub_category": r.sub_category, "status": r.status} for r in rows]
+                rows2 = sess.execute(
+                    select(Article.id, Article.title)
+                    .where(Article.status == "review")
+                    .order_by(Article.pub_date.desc())
+                    .limit(5)
+                ).fetchall()
+                attention_articles = [{"id": r.id, "title": r.title} for r in rows2]
+        else:
+            with db.get_db() as conn:
+                rows = conn.execute("""
+                    SELECT id, title, author, pub_date, sub_category, status
+                    FROM articles WHERE status='published'
+                    ORDER BY pub_date DESC LIMIT 10
+                """).fetchall()
+                recent_articles = [dict(r) for r in rows]
+                rows2 = conn.execute("""
+                    SELECT id, title FROM articles WHERE status='review'
+                    ORDER BY pub_date DESC LIMIT 5
+                """).fetchall()
+                attention_articles = [dict(r) for r in rows2]
     except Exception:
         pass
 
@@ -2004,6 +2023,20 @@ async def api_update_article(article_id: int, request: Request):
                 meili.index_article(article_data)
         except Exception:
             pass
+        # Audit log (skip auto_save to avoid noise)
+        if user and revision_type != "auto_save":
+            try:
+                ip = request.client.host if request.client else ""
+                action = "edit"
+                details = ""
+                if "status" in changes:
+                    action = "status_change"
+                    details = f"Статус: {changes['status'].get('old', '')} → {changes['status'].get('new', '')}"
+                elif changes:
+                    details = f"Изменено: {', '.join(changes.keys())}"
+                db.log_audit(user["user_id"], user["username"], action, "article", article_id, details, ip)
+            except Exception:
+                pass
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -2059,13 +2092,19 @@ async def api_create_article(request: Request):
             meili.index_article(data)
         except Exception:
             pass
+        # Audit log
+        user = getattr(request.state, "current_user", None)
+        if user:
+            ip = request.client.host if request.client else ""
+            db.log_audit(user["user_id"], user["username"], "create", "article", new_id,
+                          f"Создана статья: {title[:80]}", ip)
         return {"ok": True, "id": new_id}
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
 @app.delete("/api/article/{article_id}")
-async def api_delete_article(article_id: int):
+async def api_delete_article(article_id: int, request: Request):
     try:
         db.update_article(article_id, {"status": "archived", "updated_at": datetime.now().isoformat(timespec="seconds")})
         # Remove from Meilisearch
@@ -2073,6 +2112,12 @@ async def api_delete_article(article_id: int):
             meili.delete_article(article_id)
         except Exception:
             pass
+        # Audit log
+        user = getattr(request.state, "current_user", None)
+        if user:
+            ip = request.client.host if request.client else ""
+            db.log_audit(user["user_id"], user["username"], "delete", "article", article_id,
+                          "Статья архивирована", ip)
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}

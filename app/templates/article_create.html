@@ -381,7 +381,13 @@ function showToast(msg){var t=document.getElementById('toast');t.textContent=msg
 function getSelectedStatus(){var r=document.getElementsByName('status');for(var i=0;i<r.length;i++){if(r[i].checked)return r[i].value;}return'draft';}
 
 function collectArticleData() {
-    return editor.save().then(function(outputData) {
+    var editorPromise;
+    try {
+        editorPromise = editor.save();
+    } catch(e) {
+        editorPromise = Promise.resolve({blocks: []});
+    }
+    return editorPromise.then(function(outputData) {
         return {
             title: document.getElementById('editTitle').value.trim(), sub_category: document.getElementById('editCategory').value,
             author: document.getElementById('editAuthor').value.trim(), excerpt: document.getElementById('editExcerpt').value.trim(),
@@ -413,6 +419,11 @@ function createArticle(isAutoSave) {
             if(res.ok&&res.id){ARTICLE_ID=res.id;isDirty=false;lastSavedAt=new Date();updateSaveIndicator('saved','только что');if(!isAutoSave){showToast('Статья создана');setTimeout(function(){window.location.href='/admin/article/'+res.id;},600);}else{var btn=document.getElementById('saveBtn');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить';}}
             else{if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';}updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка: '+(res.error||'неизвестная'));}
         }).catch(function(){if(!isAutoSave){var btn=document.getElementById('saveBtn');btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';}updateSaveIndicator('unsaved');if(!isAutoSave)showToast('Ошибка сети');});
+    }).catch(function(err){
+        console.error('collectArticleData error:', err);
+        if(!isAutoSave)showToast('Ошибка редактора: ' + (err.message || 'попробуйте ещё раз'));
+        var btn=document.getElementById('saveBtn');
+        if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Создать';}
     });
 }
 setInterval(function() { if (isDirty) createArticle(true); }, 30000);
@@ -517,11 +528,13 @@ function aiFromUrlFetch() {
 var mediaPickerPage = 1, mediaPickerQuery = '', mediaPickerLoading = false;
 
 function openMediaPicker() {
+    var existing = document.getElementById('mediaPickerOverlay');
+    if (existing) existing.remove();
     mediaPickerPage = 1; mediaPickerQuery = '';
     var overlay = document.createElement('div');
     overlay.id = 'mediaPickerOverlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">' +
+    overlay.innerHTML = '<div style="background:var(--bg-card,#fff);border-radius:12px;max-width:900px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">' +
         '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:12px">' +
         '<h3 style="margin:0;font-size:16px;white-space:nowrap">Медиатека</h3>' +
         '<input type="text" id="mediaPickerSearch" class="editor-input" placeholder="Поиск изображений..." style="flex:1;margin:0">' +

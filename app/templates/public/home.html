@@ -55,10 +55,10 @@
   <!-- ═══ AD: AFTER HERO ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="H1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  <!-- ═══ CATEGORY SHELVES (top 3 categories) ═══ -->
+  <!-- ═══ CATEGORY SHELVES (all categories) ═══ -->
   {% if category_highlights %}
   <div class="category-shelves">
-    {% for cat in category_highlights[:3] %}
+    {% for cat in category_highlights %}
     <section class="shelf-section">
       <div class="section-header">
         <h2 class="section-title">{{ cat.label }}</h2>
@@ -149,6 +149,11 @@
         </article>
         {% endfor %}
       </div>
+      <div style="text-align:center;padding:var(--space-6) 0">
+        <button class="btn-load-more" id="loadMoreBtn" onclick="loadMoreFeed()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 32px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);color:var(--text-primary);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;">
+          Показать ещё
+        </button>
+      </div>
     </div>
     <aside class="feed-duo-sidebar">
       <div class="section-header">
@@ -179,4 +184,52 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  var feedOffset = 30;
+  var feedLoading = false;
+  var btn = document.getElementById('loadMoreBtn');
+  if (!btn) return;
+
+  window.loadMoreFeed = function() {
+    if (feedLoading) return;
+    feedLoading = true;
+    btn.textContent = 'Загрузка...';
+    btn.style.opacity = '0.6';
+    fetch('/api/feed?offset=' + feedOffset + '&limit=20')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        feedLoading = false;
+        btn.textContent = 'Показать ещё';
+        btn.style.opacity = '1';
+        if (!html.trim()) {
+          btn.textContent = 'Больше нет новостей';
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          return;
+        }
+        var grid = document.querySelector('.feed-cards-grid');
+        if (grid) {
+          grid.insertAdjacentHTML('beforeend', html);
+          // Animate new items
+          if ('IntersectionObserver' in window) {
+            grid.querySelectorAll('.feed-item:not(.will-animate)').forEach(function(el) {
+              el.classList.add('will-animate');
+              el.classList.add('visible');
+            });
+          }
+        }
+        feedOffset += 20;
+      })
+      .catch(function() {
+        feedLoading = false;
+        btn.textContent = 'Показать ещё';
+        btn.style.opacity = '1';
+      });
+  };
+})();
+</script>
 {% endblock %}
