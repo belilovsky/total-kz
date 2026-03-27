@@ -879,6 +879,7 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
     with get_pg_session() as db:
         rows = db.execute(
             select(*_ARTICLE_LIST_COLUMNS)
+            .where(Article.status == "published")
             .order_by(Article.pub_date.desc())
             .limit(limit).offset(offset)
         ).all()
