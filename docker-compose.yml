@@ -68,7 +68,7 @@ services:
             /app/scraper/cron_backup.sh >> /app/data/cron_backup.log 2>&1
           fi
 
-          sleep 7200
+          sleep 3600
         done
     networks:
       - app_net
