@@ -1401,13 +1401,15 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Full-width timeline — just a semantic hook, styling inherited from .article-timeline */
 
-/* Regional section pin icon color */
-.regional-section .section-title svg { stroke:var(--accent); }
+/* Regional section */
+.regional-section .section-title { display:inline-flex; align-items:center; gap:6px; }
+.regional-section .section-title svg { stroke:var(--accent); flex-shrink:0; }
 .regional-section .section-header {
   border-bottom:1px solid #D4D1CA;
   padding-bottom:var(--space-3);
   margin-bottom:var(--space-4);
 }
+.regional-section { margin-bottom:var(--space-10); }
 
 /* Share buttons (inline, in article body) */
 .share-buttons { display:none; }
