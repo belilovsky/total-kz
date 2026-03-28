@@ -1417,8 +1417,16 @@ async def search_page(
                 pass
 
             if meili_results and meili_results.get("hits"):
+                # Deduplicate search results by title+date
+                seen = set()
+                deduped = []
+                for h in meili_results["hits"]:
+                    key = (h.get("title", ""), (h.get("pub_date") or "")[:10])
+                    if key not in seen:
+                        seen.add(key)
+                        deduped.append(h)
                 result = {
-                    "articles": rewrite_articles_images(meili_results["hits"]),
+                    "articles": rewrite_articles_images(deduped),
                     "total": meili_results["total"],
                     "page": page,
                     "per_page": 20,
@@ -3279,8 +3287,16 @@ async def kz_search_page(
                 pass
 
             if meili_results and meili_results.get("hits"):
+                # Deduplicate search results by title+date
+                seen = set()
+                deduped = []
+                for h in meili_results["hits"]:
+                    key = (h.get("title", ""), (h.get("pub_date") or "")[:10])
+                    if key not in seen:
+                        seen.add(key)
+                        deduped.append(h)
                 result = {
-                    "articles": rewrite_articles_images(meili_results["hits"]),
+                    "articles": rewrite_articles_images(deduped),
                     "total": meili_results["total"],
                     "page": page,
                     "per_page": 20,
