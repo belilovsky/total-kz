@@ -76,7 +76,7 @@
                onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
         </div>
         {% else %}
-        <div class="shelf-card-img shelf-card-img--ph"></div>
+        <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
         {% endif %}
         <h3 class="shelf-card-title">{{ art.title }}</h3>
         <div class="shelf-card-meta">
@@ -108,7 +108,7 @@
                  onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
           </div>
           {% else %}
-          <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+          <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
           {% endif %}
           <h3 class="shelf-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</h3>
           <div class="shelf-card-meta">
@@ -185,6 +185,7 @@
           {% else %}
           <div class="feed-card-img feed-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}" style="position:relative">
             {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
+            <img src="/static/img/placeholder.svg" alt="" loading="lazy">
           </div>
           {% endif %}
           <div class="feed-card-body">

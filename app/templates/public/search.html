@@ -1,16 +1,16 @@
 {% extends "public/base.html" %}
 
-{% block title %}{% if q %}{{ q }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
-{% block description %}{% if q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты поиска по запросу «' + q + '» на Total.kz') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
-{% block og_title %}{% if q %}{{ q }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
-{% block og_description %}{% if q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты поиска по запросу «' + q + '»') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
+{% block title %}{% if q %}{{ q|e }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
+{% block description %}{% if q %}{{ t('search.results_for', q=q|e) if t is defined else ('Результаты поиска по запросу «' + q|e + '» на Total.kz') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
+{% block og_title %}{% if q %}{{ q|e }} – {{ t('search.title') if t is defined else 'Поиск' }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %} – Total.kz{% endblock %}
+{% block og_description %}{% if q %}{{ t('search.results_for', q=q|e) if t is defined else ('Результаты поиска по запросу «' + q|e + '»') }}{% else %}{{ t('search.placeholder') if t is defined else 'Поиск новостей на Total.kz' }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="search-page">
 
   <div class="search-page-form">
     <h1 style="font-size:var(--text-xl);font-weight:800;margin-bottom:var(--space-6)">
-      {% if q.startswith('#') %}{{ t('search.tag_for', tag=q[1:]) if t is defined else ('Тег: ' + q[1:]) }}{% elif q %}{{ t('search.results_for', q=q) if t is defined else ('Результаты: ' + q) }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %}
+      {% if q.startswith('#') %}{{ t('search.tag_for', tag=q[1:]|e) if t is defined else ('Тег: ' + q[1:]|e) }}{% elif q %}{{ t('search.results_for', q=q|e) if t is defined else ('Результаты: ' + q|e) }}{% else %}{{ t('search.title') if t is defined else 'Поиск' }}{% endif %}
     </h1>
     <form action="{{ lang_prefix|default('') }}/search" method="get" id="search-form">
       <div class="search-input-wrap">
@@ -135,7 +135,7 @@
   {% elif q %}
   <div class="error-page" style="min-height:40vh;padding:var(--space-12) 0">
     <h2 class="error-title">{{ t('search.no_results') if t is defined else 'Ничего не найдено' }}</h2>
-    <p class="error-desc">{{ t('search.no_results_desc', q=q) if t is defined else ('По запросу «' + q + '» статей не нашлось.') }}{% if cat or period %} {{ t('search.try_reset') if t is defined else 'Попробуйте сбросить фильтры.' }}{% endif %}</p>
+    <p class="error-desc">{{ t('search.no_results_desc', q=q|e) if t is defined else ('По запросу «' + q|e + '» статей не нашлось.') }}{% if cat or period %} {{ t('search.try_reset') if t is defined else 'Попробуйте сбросить фильтры.' }}{% endif %}</p>
     <a href="{{ lang_prefix|default('') }}/search?q={{ q }}" class="btn-primary">{{ t('search.reset_filters') if t is defined else 'Сбросить фильтры' }}</a>
   </div>
 

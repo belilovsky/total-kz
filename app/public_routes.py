@@ -1261,10 +1261,13 @@ async def category_page(
             current_section = sec
             break
     if current_section and len(current_section["subcats"]) > 1:
-        subcategory_pills = [
-            {"slug": sc, "label": cat_label(sc)}
-            for sc in current_section["subcats"]
-        ]
+        seen_labels = set()
+        subcategory_pills = []
+        for sc in current_section["subcats"]:
+            lbl = cat_label(sc)
+            if lbl not in seen_labels:
+                seen_labels.add(lbl)
+                subcategory_pills.append({"slug": sc, "label": lbl})
 
     # --- Sidebar: popular articles & trending tags ---
     try:
@@ -1301,7 +1304,11 @@ async def article_page(request: Request, category: str, slug: str):
         article = db.get_article_by_slug(category, slug)
     except Exception:
         logger.exception("Database error in article_page for %s/%s", category, slug)
-        return _error_response(request)
+        return templates.TemplateResponse("public/404.html", {
+            "request": request,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+        }, status_code=404)
 
     if not article:
         return templates.TemplateResponse("public/404.html", {
@@ -1506,7 +1513,7 @@ async def search_page(
         logger.exception("Database error in search_page for q=%s", q)
         return _error_response(request)
 
-    return templates.TemplateResponse("public/search.html", {
+    response = templates.TemplateResponse("public/search.html", {
         "request": request,
         "q": q,
         "cat": cat,
@@ -1517,6 +1524,8 @@ async def search_page(
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
     })
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com"
+    return response
 
 
 @router.get("/tags", response_class=HTMLResponse)
@@ -3289,10 +3298,13 @@ async def kz_category_page(
             current_section = sec
             break
     if current_section and len(current_section["subcats"]) > 1:
-        subcategory_pills = [
-            {"slug": sc, "label": cat_label_i18n(sc, "kz")}
-            for sc in current_section["subcats"]
-        ]
+        seen_labels = set()
+        subcategory_pills = []
+        for sc in current_section["subcats"]:
+            lbl = cat_label_i18n(sc, "kz")
+            if lbl not in seen_labels:
+                seen_labels.add(lbl)
+                subcategory_pills.append({"slug": sc, "label": lbl})
 
     try:
         popular_articles = rewrite_articles_images(db.popular_in_category(subcats, limit=5))
@@ -3331,7 +3343,10 @@ async def kz_article_page(request: Request, category: str, slug: str):
         article = db.get_article_by_slug(category, slug)
     except Exception:
         logger.exception("Database error in kz_article_page for %s/%s", category, slug)
-        return _error_response(request)
+        return templates.TemplateResponse("public/404.html", {
+            "request": request, "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES, **_build_lang_ctx("kz"),
+        }, status_code=404)
 
     if not article:
         return templates.TemplateResponse("public/404.html", {
@@ -3533,7 +3548,7 @@ async def kz_search_page(
     if result.get("articles"):
         _apply_translations_to_list(result["articles"], "kz")
 
-    return templates.TemplateResponse("public/search.html", {
+    response = templates.TemplateResponse("public/search.html", {
         "request": request,
         "q": q,
         "cat": cat,
@@ -3545,6 +3560,8 @@ async def kz_search_page(
         "nav_categories": NAV_CATEGORIES,
         **_build_lang_ctx("kz"),
     })
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com"
+    return response
 
 
 @kz_router.get("/tags", response_class=HTMLResponse)

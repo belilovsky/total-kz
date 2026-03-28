@@ -764,6 +764,7 @@ function sharePDF() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.ok) {
+        form.querySelector('[name=author_name]').value = '';
         form.querySelector('[name=text]').value = '';
         var msg = document.createElement('div');
         msg.className = 'cf-success';
