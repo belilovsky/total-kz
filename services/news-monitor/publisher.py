@@ -7,8 +7,45 @@ import re
 from datetime import datetime, timezone
 
 import psycopg2
+import requests
 
 log = logging.getLogger("news-monitor.publisher")
+
+
+def extract_og_image(url: str) -> str | None:
+    """Extract og:image from source article."""
+    try:
+        resp = requests.get(url, timeout=10, headers={"User-Agent": "Total.kz Bot"})
+        match = re.search(r'<meta\s+property="og:image"\s+content="([^"]+)"', resp.text)
+        if match:
+            return match.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def notify_telegram(title: str, excerpt: str, article_id: int) -> None:
+    """Send Telegram notification about a new article for review."""
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    if not bot_token or not chat_id:
+        return
+    admin_url = os.environ.get("SITE_DOMAIN", "https://total.qdev.run")
+    article_url = f"{admin_url}/admin/article/{article_id}"
+    text = (
+        f"\U0001f4f0 *Новая статья на рецензии*\n\n"
+        f"*{title}*\n"
+        f"{excerpt[:200]}\n\n"
+        f"[Открыть в админке]({article_url})"
+    )
+    try:
+        requests.post(
+            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+            json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"},
+            timeout=10,
+        )
+    except Exception as e:
+        log.warning("Telegram notification failed: %s", e)
 
 
 def get_db_url() -> str:
@@ -49,6 +86,9 @@ def publish_article(
     body_html = rewritten.get("body_html", "")
     body_text = re.sub(r"<[^>]+>", "", body_html).strip()
 
+    # Extract og:image from source article
+    main_image = extract_og_image(original_url)
+
     try:
         conn = psycopg2.connect(get_db_url())
         cur = conn.cursor()
@@ -65,9 +105,9 @@ def publish_article(
             """
             INSERT INTO articles
                 (url, title, excerpt, body_html, body_text, sub_category, tags,
-                 author, status, pub_date, imported_at, editor_note)
+                 author, status, pub_date, imported_at, editor_note, main_image)
             VALUES
-                (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -83,6 +123,7 @@ def publish_article(
                 now,
                 now,
                 f"Автоматически: {source_name} | Категория: {source_category}",
+                main_image,
             ),
         )
         article_id = cur.fetchone()[0]
@@ -90,6 +131,10 @@ def publish_article(
         conn.close()
 
         log.info("Published article id=%d: %s", article_id, rewritten["title"][:60])
+
+        # Send Telegram notification (optional, only if configured)
+        notify_telegram(rewritten["title"], rewritten.get("excerpt", ""), article_id)
+
         return article_id
 
     except Exception as e:

@@ -1410,12 +1410,12 @@ def generate_sitemap_urls(limit: int = 50000) -> list:
     """Get URLs for sitemap generation."""
     with get_pg_session() as db:
         rows = db.execute(
-            select(Article.url, Article.pub_date, Article.sub_category)
+            select(Article.id, Article.url, Article.pub_date, Article.sub_category)
             .where(Article.pub_date.isnot(None))
             .order_by(Article.pub_date.desc())
             .limit(limit)
         ).all()
-        return [{"url": r[0], "pub_date": r[1], "sub_category": r[2]} for r in rows]
+        return [{"id": r[0], "url": r[1], "pub_date": r[2], "sub_category": r[3]} for r in rows]
 
 
 # ═══════════════════════════════════════════════

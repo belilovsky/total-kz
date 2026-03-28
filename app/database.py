@@ -1476,7 +1476,7 @@ def generate_sitemap_urls(limit: int = 50000) -> list:
     """Get URLs for sitemap generation."""
     with get_db() as conn:
         rows = conn.execute("""
-            SELECT url, pub_date, sub_category, main_image, title
+            SELECT id, url, pub_date, sub_category, main_image, title
             FROM articles
             WHERE pub_date IS NOT NULL
             ORDER BY pub_date DESC

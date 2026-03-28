@@ -69,7 +69,7 @@
     "url": "{{ site_domain }}",
     "logo": {
       "@type": "ImageObject",
-      "url": "{{ site_domain }}/static/img/logotype.png",
+      "url": "{{ site_domain }}/static/img/logo.svg",
       "width": 200,
       "height": 60
     }
@@ -469,30 +469,29 @@
   </section>
   {% endif %}
 
-  {# ── Comments section (hidden — code preserved for future) ── #}
-  {% if false %}
+  {# ── Comments section ── #}
   <section class="comments-section" id="comments">
     <h2 class="comments-heading">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      Комментарии <span class="comments-count" id="commentsCount"></span>
+      {{ t('comments.title') if t is defined else 'Комментарии' }} <span class="comments-count" id="commentsCount"></span>
     </h2>
 
     <div id="commentsList" class="comments-list">
-      <p class="comments-loading">Загрузка…</p>
+      <p class="comments-loading">{{ t('comments.loading') if t is defined else 'Загрузка…' }}</p>
     </div>
 
+    <h3 class="cf-heading">{{ t('comments.leave') if t is defined else 'Оставить комментарий' }}</h3>
     <form class="comment-form" id="commentForm">
       <div class="cf-row">
-        <input type="text" name="author_name" placeholder="Ваше имя" required maxlength="80" class="cf-name">
+        <input type="text" name="author_name" placeholder="{{ t('comments.name') if t is defined else 'Ваше имя' }}" required maxlength="80" class="cf-name">
       </div>
-      <textarea name="text" placeholder="Напишите комментарий…" required maxlength="2000" rows="3" class="cf-text"></textarea>
+      <textarea name="text" placeholder="{{ t('comments.placeholder') if t is defined else 'Напишите комментарий…' }}" required maxlength="2000" rows="3" class="cf-text"></textarea>
       <div class="cf-actions">
-        <span class="cf-hint">Комментарий появится после модерации</span>
-        <button type="submit" class="cf-submit">Отправить</button>
+        <span class="cf-hint">{{ t('comments.hint') if t is defined else 'Комментарий появится после модерации' }}</span>
+        <button type="submit" class="cf-submit">{{ t('comments.submit') if t is defined else 'Отправить' }}</button>
       </div>
     </form>
   </section>
-  {% endif %}{# end comments hidden #}
 
   {# ── Print-only footer (hidden on screen) ── #}
   <div class="print-footer" style="display:none">
@@ -703,7 +702,7 @@ function sharePDF() {
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!data.comments || data.comments.length === 0) {
-          list.innerHTML = '<p class="comments-empty">Пока нет комментариев. Будьте первым!</p>';
+          list.innerHTML = '<p class="comments-empty">{{ t("comments.empty") if t is defined else "Пока нет комментариев. Будьте первым!" }}</p>';
           countEl.textContent = '';
           return;
         }
@@ -719,7 +718,7 @@ function sharePDF() {
         }).join('');
       })
       .catch(function() {
-        list.innerHTML = '<p class="comments-empty">Не удалось загрузить комментарии</p>';
+        list.innerHTML = '<p class="comments-empty">{{ t("comments.error") if t is defined else "Не удалось загрузить комментарии" }}</p>';
       });
   }
 
@@ -743,7 +742,7 @@ function sharePDF() {
         form.querySelector('[name=text]').value = '';
         var msg = document.createElement('div');
         msg.className = 'cf-success';
-        msg.textContent = 'Спасибо! Комментарий отправлен на модерацию.';
+        msg.textContent = '{{ t("comments.success") if t is defined else "Спасибо! Комментарий отправлен на модерацию." }}';
         form.parentNode.insertBefore(msg, form);
         setTimeout(function() { msg.remove(); }, 5000);
         localStorage.setItem('comment_name', author);

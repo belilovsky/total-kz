@@ -1611,6 +1611,7 @@ Allow: /
 
 Sitemap: {SITE_DOMAIN}/sitemap.xml
 Sitemap: {SITE_DOMAIN}/sitemap-news.xml
+Sitemap: {SITE_DOMAIN}/kz/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
 
@@ -1889,6 +1890,58 @@ async def sitemap_news_xml():
       <news:title>{title_escaped}</news:title>
     </news:news>
   </url>""")
+
+    xml_parts.append("</urlset>")
+    return Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
+@router.get("/kz/sitemap.xml", response_class=Response)
+async def kz_sitemap():
+    """Kazakh sitemap — only articles that have translations."""
+    import html as html_mod
+    try:
+        urls = db.generate_sitemap_urls(limit=50000)
+    except Exception:
+        logger.exception("Database error in kz_sitemap")
+        return Response(content="Service unavailable", status_code=503)
+
+    # Get all translated article IDs
+    translated_ids = set()
+    try:
+        rows = db.execute_raw_many(
+            "SELECT article_id FROM article_translations WHERE lang = %s",
+            ("kz",),
+        )
+        if rows:
+            translated_ids = {r["article_id"] for r in rows}
+    except Exception:
+        logger.exception("Error fetching translation IDs for kz sitemap")
+
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_parts.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    xml_parts.append(f"<url><loc>{SITE_DOMAIN}/kz/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>")
+
+    # Category pages
+    seen_cats = set()
+    for u in urls:
+        cat = u["sub_category"]
+        if cat and cat not in seen_cats:
+            seen_cats.add(cat)
+            xml_parts.append(f"<url><loc>{SITE_DOMAIN}/kz/news/{cat}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>")
+
+    # Translated articles only
+    for u in urls:
+        aid = u.get("id")
+        if aid and aid in translated_ids:
+            old_url = u["url"]
+            parts = old_url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
+            if len(parts) >= 2:
+                new_path = f"/kz/news/{parts[0]}/{parts[1]}"
+                lastmod = u["pub_date"][:10] if u.get("pub_date") else ""
+                xml_parts.append(f"<url><loc>{SITE_DOMAIN}{new_path}</loc>")
+                if lastmod:
+                    xml_parts.append(f"<lastmod>{lastmod}</lastmod>")
+                xml_parts.append("<changefreq>daily</changefreq><priority>0.6</priority></url>")
 
     xml_parts.append("</urlset>")
     return Response(content="\n".join(xml_parts), media_type="application/xml")
@@ -2778,12 +2831,12 @@ async def post_public_comment(article_id: int, request: Request):
     ip = request.client.host if request.client else ""
 
     conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "data" / "total.db"))
-    # Rate limit: max 5 comments per IP per hour
+    # Rate limit: max 3 comments per IP per hour
     recent = conn.execute(
         "SELECT COUNT(*) FROM public_comments WHERE ip_address = ? AND created_at > datetime('now', '-1 hour')",
         (ip,)
     ).fetchone()[0]
-    if recent >= 5:
+    if recent >= 3:
         conn.close()
         return {"ok": False, "error": "Слишком много комментариев. Попробуйте позже."}
 
