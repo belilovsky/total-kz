@@ -1264,6 +1264,9 @@ async def category_page(
         seen_labels = set()
         subcategory_pills = []
         for sc in current_section["subcats"]:
+            # Skip subcat that matches the nav section slug (redundant with "Все")
+            if sc == category:
+                continue
             lbl = cat_label(sc)
             if lbl not in seen_labels:
                 seen_labels.add(lbl)
@@ -3301,6 +3304,9 @@ async def kz_category_page(
         seen_labels = set()
         subcategory_pills = []
         for sc in current_section["subcats"]:
+            # Skip subcat that matches the nav section slug (redundant with "Барлығы")
+            if sc == category:
+                continue
             lbl = cat_label_i18n(sc, "kz")
             if lbl not in seen_labels:
                 seen_labels.add(lbl)
