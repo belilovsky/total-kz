@@ -126,7 +126,7 @@
                   <span class="ptl-date">{{ art['pub_date'][8:10] | int }}</span>
                   <span class="ptl-title">{{ art['title'] }}</span>
                   {% if art.get('sub_category') %}
-                  <span class="ptl-cat">{{ art['sub_category'] }}</span>
+                  <span class="ptl-cat">{{ cat_label(art['sub_category']) }}</span>
                   {% endif %}
                 </a>
                 {% endfor %}

@@ -24,7 +24,6 @@ import logging
 import os
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import httpx
@@ -301,7 +300,11 @@ def download_and_optimize(url: str, client: httpx.Client) -> dict:
 
 
 def process_batch(urls: list, args) -> dict:
-    """Download and optimize a batch of images."""
+    """Download and optimize a batch of images.
+    
+    Uses sequential processing to minimize memory usage.
+    Each result is yielded and saved immediately, not accumulated.
+    """
     stats = {"ok": 0, "failed": 0, "not_found": 0, "duplicate": 0, "skipped": 0}
     results = []
     
@@ -311,16 +314,10 @@ def process_batch(urls: list, args) -> dict:
     )
     
     try:
-        with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            futures = {}
-            for url in urls:
-                f = executor.submit(download_and_optimize, url, client)
-                futures[f] = url
-            
-            for f in as_completed(futures):
-                result = f.result()
-                results.append(result)
-                stats[result["status"]] = stats.get(result["status"], 0) + 1
+        for url in urls:
+            result = download_and_optimize(url, client)
+            results.append(result)
+            stats[result["status"]] = stats.get(result["status"], 0) + 1
     finally:
         client.close()
     

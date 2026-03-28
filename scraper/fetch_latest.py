@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fetch latest articles from total.kz RSS feed, download full content,
-and import into the database. Skips articles already in DB.
+and import into PostgreSQL. Skips articles already in DB.
 
 Usage:
     python scraper/fetch_latest.py              # fetch & import new articles
@@ -10,8 +10,8 @@ Usage:
 
 import argparse
 import json
+import os
 import re
-import sqlite3
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -19,27 +19,28 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
+import psycopg2
 from selectolax.parser import HTMLParser
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "data" / "total.db"
 LOG_PATH = BASE_DIR / "data" / "fetch_latest.log"
 RSS_URL = "https://total.kz/rss"
 BASE_URL = "https://total.kz"
+DB_URL = os.environ.get(
+    "PG_DATABASE_URL",
+    "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz",
+)
 
 
 def log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{ts}] {msg}"
     print(line, flush=True)
-    with open(LOG_PATH, "a") as f:
-        f.write(line + "\n")
-
-
-def make_full_url(src):
-    if not src:
-        return ""
-    return src if src.startswith("http") else BASE_URL + src
+    try:
+        with open(LOG_PATH, "a") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
 
 
 def parse_rss():
@@ -53,7 +54,6 @@ def parse_rss():
         title = item.findtext("title", "").strip()
         excerpt = item.findtext("description", "").strip()
         pub_date_raw = item.findtext("pubDate", "")
-        # Parse image from enclosure
         enc = item.find("enclosure")
         image = enc.attrib.get("url", "") if enc is not None else ""
         items.append({
@@ -67,13 +67,14 @@ def parse_rss():
 
 
 def get_existing_urls(conn):
-    """Get set of URLs already in DB."""
-    rows = conn.execute("SELECT url FROM articles").fetchall()
-    return {r[0] for r in rows}
+    """Get set of URLs already in DB (PostgreSQL)."""
+    cur = conn.cursor()
+    cur.execute("SELECT url FROM articles")
+    return {r[0] for r in cur.fetchall()}
 
 
 def download_article(url):
-    """Download and parse full article content."""
+    """Download and parse full article content from total.kz."""
     try:
         resp = httpx.get(url, timeout=httpx.Timeout(10, read=20), follow_redirects=True)
         if resp.status_code != 200:
@@ -87,7 +88,7 @@ def download_article(url):
     title_el = tree.css_first("h1")
     title = title_el.text(strip=True) if title_el else ""
 
-    # Author — second span.gray-text (first is date)
+    # Author
     author = ""
     meta_el = tree.css_first("div.article__meta")
     if meta_el:
@@ -98,7 +99,7 @@ def download_article(url):
                 author = span.text(strip=True)
                 break
 
-    # Date from URL pattern: date_YYYY_MM_DD_HH_MM_SS
+    # Date from URL: date_YYYY_MM_DD_HH_MM_SS
     pub_date = ""
     m = re.search(r"date_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})", url)
     if m:
@@ -121,17 +122,16 @@ def download_article(url):
     if lead_el:
         excerpt = lead_el.text(strip=True)
 
-    # Main image + thumbnail from og:image
+    # Main image from og:image
     main_image = ""
     thumbnail = ""
     og_img = tree.css_first("meta[property='og:image']")
     if og_img:
         og_url = og_img.attributes.get("content", "") or ""
         thumbnail = og_url
-        # Convert to larger size for main image
         main_image = og_url.replace("_resize_w_600_h_315", "_resize_w_830_h_465") if og_url else ""
 
-    # Tags — from meta--bottom section
+    # Tags
     tags = []
     meta_bottom = tree.css_first("div.meta--bottom")
     if meta_bottom:
@@ -159,12 +159,18 @@ def download_article(url):
 
 
 def import_article(conn, data):
-    """Insert article into DB and update FTS5 index."""
-    conn.execute("""
-        INSERT OR IGNORE INTO articles
+    """Insert article into PostgreSQL. Skip if already exists."""
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM articles WHERE url = %s", (data["url"],))
+    if cur.fetchone():
+        return False  # already exists
+
+    cur.execute("""
+        INSERT INTO articles
         (url, pub_date, sub_category, category_label, title, author, excerpt,
-         body_text, body_html, main_image, image_credit, thumbnail, tags, inline_images)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         body_text, body_html, main_image, image_credit, thumbnail, tags, inline_images,
+         imported_at, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'published')
     """, (
         data["url"], data["pub_date"], data["sub_category"], data["category_label"],
         data["title"], data["author"], data["excerpt"],
@@ -172,29 +178,7 @@ def import_article(conn, data):
         data["image_credit"], data["thumbnail"], data["tags"], data["inline_images"],
     ))
     conn.commit()
-
-    # Update FTS5 index for the new article
-    try:
-        fts_exists = conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='articles_fts'"
-        ).fetchone()
-        if fts_exists:
-            row = conn.execute(
-                "SELECT id, title, excerpt FROM articles WHERE url = ?",
-                (data["url"],)
-            ).fetchone()
-            if row:
-                conn.execute(
-                    "INSERT OR REPLACE INTO articles_fts_content (rowid, title, excerpt, keywords) VALUES (?, ?, ?, '')",
-                    (row[0], row[1] or "", row[2] or "")
-                )
-                conn.execute(
-                    "INSERT INTO articles_fts (rowid, title, excerpt, keywords) VALUES (?, ?, ?, '')",
-                    (row[0], row[1] or "", row[2] or "")
-                )
-                conn.commit()
-    except Exception:
-        pass  # FTS update is non-critical
+    return True
 
 
 def main():
@@ -206,8 +190,7 @@ def main():
     rss_items = parse_rss()
     log(f"RSS: {len(rss_items)} items")
 
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DB_URL)
     existing = get_existing_urls(conn)
 
     new_items = [item for item in rss_items if item["url"] not in existing]
@@ -229,17 +212,20 @@ def main():
         log(f"  Downloading: {item['title'][:60]}...")
         data = download_article(item["url"])
         if data:
-            # Use RSS excerpt if article parser didn't find one
             if not data.get("excerpt") and item.get("excerpt"):
                 data["excerpt"] = item["excerpt"]
-            # Use RSS image if not found
             if not data.get("main_image") and item.get("image"):
                 data["main_image"] = item["image"]
             if not data.get("thumbnail") and item.get("image"):
                 data["thumbnail"] = item["image"]
-            import_article(conn, data)
-            imported += 1
-        time.sleep(0.5)  # be polite
+            
+            if import_article(conn, data):
+                imported += 1
+                if data.get("body_text"):
+                    log(f"    OK: {len(data['body_text'])} chars")
+                else:
+                    log(f"    WARNING: empty body!")
+        time.sleep(0.5)
 
     conn.close()
     log(f"Done: {imported} new articles imported")
