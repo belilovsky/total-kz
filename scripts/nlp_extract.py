@@ -287,6 +287,15 @@ async def process_articles(articles: list, model: str, delay: float, dry_run: bo
                 processed += 1
                 if processed % 10 == 0:
                     log.info("Processed %d/%d articles (errors: %d)", processed, len(articles), errors)
+                # Save every 50 articles to avoid data loss
+                if not dry_run and len(results) >= 50:
+                    conn = psycopg2.connect(PG_URL)
+                    try:
+                        _save_batch(conn, results, model)
+                        log.info("Intermediate save: %d results", len(results))
+                        results = []
+                    finally:
+                        conn.close()
             else:
                 errors += 1
                 log.warning("Failed to process article %d", article_id)
@@ -294,17 +303,18 @@ async def process_articles(articles: list, model: str, delay: float, dry_run: bo
             if delay > 0 and i < len(articles) - 1:
                 await asyncio.sleep(delay)
 
+    # Save remaining results
     if dry_run:
         log.info("DRY RUN — would save %d results (skipped)", len(results))
         for aid, data in results[:3]:
             log.info("  Article %d: sentiment=%s, importance=%d, topics=%s",
                      aid, data.get("sentiment"), data.get("importance", 0),
                      data.get("topics", [])[:3])
-    else:
+    elif results:
         conn = psycopg2.connect(PG_URL)
         try:
             _save_batch(conn, results, model)
-            log.info("Saved %d NLP results to database", len(results))
+            log.info("Final save: %d results", len(results))
         finally:
             conn.close()
 
