@@ -106,7 +106,11 @@ def ensure_media_columns(conn):
 
 
 def collect_unique_urls(conn):
-    """Get all unique image URLs from articles that need downloading."""
+    """Get all unique image URLs from articles that need downloading.
+    
+    Returns (cached_urls, remote_urls) — cached have files in img_cache,
+    remote need to be downloaded from total.kz.
+    """
     cur = conn.cursor()
     
     # Get unique main_image URLs that point to total.kz/storage
@@ -136,15 +140,23 @@ def collect_unique_urls(conn):
     """)
     done = {r[0] for r in cur.fetchall()}
     
-    # Also check existing cache
-    pending = set()
-    for url in urls:
-        if url in done:
-            continue
-        pending.add(url)
-    
+    pending = urls - done
     log.info(f"Already downloaded: {len(done)}, pending: {len(pending)}")
-    return list(pending)
+    
+    # Split into cached (have file on disk) vs remote (need download)
+    cache_dir = Path("/app/data/img_cache")
+    cached = []
+    remote = []
+    for url in pending:
+        path = url.split("/storage/", 1)[-1]
+        if (cache_dir / path).exists():
+            cached.append(url)
+        else:
+            remote.append(url)
+    
+    log.info(f"  From img_cache (no download): {len(cached)}")
+    log.info(f"  Need download from total.kz: {len(remote)}")
+    return cached, remote
 
 
 def url_to_local_path(url: str) -> Path:
@@ -162,7 +174,10 @@ def compute_phash(img: Image.Image, hash_size=8) -> str:
     """Compute perceptual hash of an image."""
     # Resize to hash_size+1 x hash_size, grayscale
     small = img.resize((hash_size + 1, hash_size), Image.Resampling.LANCZOS).convert("L")
-    pixels = list(small.getdata())
+    try:
+        pixels = list(small.get_flattened_data())
+    except AttributeError:
+        pixels = list(small.getdata())  # Pillow < 11
     
     # Compute difference hash (dHash)
     bits = []
@@ -488,6 +503,7 @@ def main():
     parser.add_argument("--skip-optimize", action="store_true")
     parser.add_argument("--skip-rewrite", action="store_true")
     parser.add_argument("--skip-dedup", action="store_true")
+    parser.add_argument("--skip-cache-migrate", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--limit", type=int, default=0, help="Limit URLs to process (0=all)")
     args = parser.parse_args()
@@ -501,23 +517,25 @@ def main():
     if not args.skip_download:
         # Step 1: Collect URLs
         log.info("Collecting unique image URLs...")
-        urls = collect_unique_urls(conn)
+        cached_urls, remote_urls = collect_unique_urls(conn)
+        
+        all_urls = cached_urls + remote_urls  # cached first (fast, no network)
         
         if args.limit > 0:
-            urls = urls[:args.limit]
+            all_urls = all_urls[:args.limit]
         
-        if not urls:
-            log.info("No new images to download")
+        if not all_urls:
+            log.info("No new images to process")
         else:
-            log.info(f"Processing {len(urls)} images with {args.workers} workers...")
+            log.info(f"Processing {len(all_urls)} images ({min(len(cached_urls), args.limit or 999999)} cached + rest remote) with {args.workers} workers...")
             
             # Process in batches
             total_stats = {"ok": 0, "failed": 0, "not_found": 0}
             
-            for i in range(0, len(urls), args.batch):
-                batch = urls[i : i + args.batch]
+            for i in range(0, len(all_urls), args.batch):
+                batch = all_urls[i : i + args.batch]
                 batch_num = i // args.batch + 1
-                total_batches = (len(urls) + args.batch - 1) // args.batch
+                total_batches = (len(all_urls) + args.batch - 1) // args.batch
                 
                 log.info(f"Batch {batch_num}/{total_batches}: processing {len(batch)} images...")
                 
@@ -547,8 +565,11 @@ def main():
             log.info(f"Download complete: {total_stats}")
     
     # Step 2: Migrate existing img_cache to media
-    log.info("Checking img_cache for already-cached images...")
-    migrate_img_cache(conn)
+    if not args.skip_cache_migrate:
+        log.info("Checking img_cache for already-cached images...")
+        migrate_img_cache(conn)
+    else:
+        log.info("Skipping img_cache migration (--skip-cache-migrate)")
     
     # Step 3: Deduplicate
     if not args.skip_dedup:
