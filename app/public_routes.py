@@ -280,7 +280,7 @@ CATEGORY_LABELS = {
     "gossektor": "Госсектор",
     "tehno": "Технологии",
     "obshchestvo": "Общество",
-    "obshchestvo_sobitiya": "Общество",
+    "obshchestvo_sobitiya": "События",
     "proisshestviya": "Происшествия",
     "zhizn": "Жизнь",
     "kultura": "Культура",
