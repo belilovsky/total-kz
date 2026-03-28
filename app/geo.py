@@ -213,11 +213,13 @@ def get_regional_articles(entity_names: list[str], limit: int = 8) -> list[dict]
     """Fetch articles linked to region entities (locations).
 
     Uses raw SQL via db_backend to query article_entities + entities tables.
+    Matches on both e.name and e.normalized (lowered) for robustness.
     """
     if not entity_names:
         return []
     try:
-        placeholders = ",".join(["%s"] * len(entity_names))
+        lowered = [n.lower() for n in entity_names]
+        placeholders = ",".join(["%s"] * len(lowered))
         sql = f"""
             SELECT DISTINCT a.id, a.title, a.excerpt, a.main_image, a.pub_date,
                    a.sub_category, a.url, a.thumbnail
@@ -225,12 +227,12 @@ def get_regional_articles(entity_names: list[str], limit: int = 8) -> list[dict]
             JOIN article_entities ae ON a.id = ae.article_id
             JOIN entities e ON ae.entity_id = e.id
             WHERE e.entity_type = 'location'
-              AND e.name IN ({placeholders})
+              AND LOWER(e.name) IN ({placeholders})
               AND a.status = 'published'
             ORDER BY a.pub_date DESC
             LIMIT %s
         """
-        rows = db.execute_raw_many(sql, tuple(entity_names) + (limit,))
+        rows = db.execute_raw_many(sql, tuple(lowered) + (limit,))
         return rows
     except Exception:
         logger.exception("Error fetching regional articles")

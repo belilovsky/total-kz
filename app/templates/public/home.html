@@ -79,6 +79,11 @@
         <div class="shelf-card-img shelf-card-img--ph"></div>
         {% endif %}
         <h3 class="shelf-card-title">{{ art.title }}</h3>
+        <div class="shelf-card-meta">
+          <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
+          <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+          <span class="shelf-card-date">{{ format_date_short(art.pub_date) }}</span>
+        </div>
       </a>
       {% endfor %}
     </div>
@@ -106,6 +111,11 @@
           <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
           {% endif %}
           <h3 class="shelf-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</h3>
+          <div class="shelf-card-meta">
+            <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
+            <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+            <span class="shelf-card-date">{{ format_date_short(art.pub_date) }}</span>
+          </div>
         </a>
         {% endfor %}
       </div>
