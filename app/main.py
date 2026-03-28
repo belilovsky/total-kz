@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote as _url_quote, unquote as _url_unquote
 from fastapi import FastAPI, Request, Query, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from brotli_asgi import BrotliMiddleware
@@ -1573,18 +1573,23 @@ async def api_delete_media(request: Request, media_id: int):
     return {"ok": True}
 
 
-@app.get("/media/{filename}")
-async def serve_media(filename: str):
-    """Serve uploaded media files."""
-    filepath = MEDIA_DIR / filename
+@app.get("/media/{path:path}")
+async def serve_media(path: str):
+    """Serve uploaded media files (supports subdirectories like /media/ab/file.jpg)."""
+    # Sanitize path
+    if ".." in path:
+        return Response(status_code=400)
+    filepath = MEDIA_DIR / path
     if not filepath.exists() or not filepath.is_file():
         return Response(status_code=404)
     ext = filepath.suffix.lower()
     mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
                 ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml"}
     mime = mime_map.get(ext, "application/octet-stream")
-    return Response(content=filepath.read_bytes(), media_type=mime,
-                    headers={"Cache-Control": "public, max-age=2592000"})
+    return FileResponse(
+        filepath, media_type=mime,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 # ══════════════════════════════════════════════
