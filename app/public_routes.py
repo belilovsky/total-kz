@@ -184,6 +184,8 @@ def _build_lang_ctx(lang: str) -> dict:
         # Override date formatters with lang-aware versions
         "format_date": lambda d: format_date(d, lang),
         "format_date_short": lambda d: format_date_short(d, lang),
+        # Override cat_label to use i18n version
+        "cat_label": lambda slug: cat_label_i18n(slug, lang),
     }
 
 # ══════════════════════════════════════════════
