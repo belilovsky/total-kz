@@ -192,20 +192,52 @@
           {% set weather = get_weather() %}
         {% endif %}
         {% if weather %}
-        <span class="currency-item weather-item">{{ weather[0].emoji }} {{ weather[0].city }} {{ weather[0].temp }}°</span>
+        {% set w = weather[0] %}
+        <span class="currency-item weather-item">
+          {{ w.emoji }} {{ w.city }} {{ w.temp }}°{% if w.wind and w.wind|int > 15 %} &#x1F4A8;{% endif %}{% if w.storm_warning %} &#x26A0;&#xFE0F;{% endif %}
+          <span class="info-tooltip">
+            <strong>{{ w.city }}</strong><br>
+            {{ w.desc }}<br>
+            {% if lang is defined and lang == 'kz' %}Температура{% else %}Температура{% endif %}: {{ w.temp }}°C<br>
+            {% if lang is defined and lang == 'kz' %}Сезілу температурасы{% else %}Ощущается как{% endif %}: {{ w.feels_like }}°C<br>
+            {% if lang is defined and lang == 'kz' %}Жел{% else %}Ветер{% endif %}: {{ w.wind }} {% if lang is defined and lang == 'kz' %}км/сағ{% else %}км/ч{% endif %}{% if w.wind_dir %} {{ w.wind_dir }}{% endif %}<br>
+            {% if lang is defined and lang == 'kz' %}Ылғалдылық{% else %}Влажность{% endif %}: {{ w.humidity }}%
+            {% if w.storm_warning %}<br><span style="color:var(--accent)">&#x26A0;&#xFE0F; {% if lang is defined and lang == 'kz' %}Дауыл ескертуі{% else %}Штормовое предупреждение{% endif %}</span>{% endif %}
+          </span>
+        </span>
         {% endif %}
       </div>
       <div class="strip-right">
+        {% set currency_names = {'USD': 'Доллар США', 'EUR': 'Евро', 'CNY': 'Юань', 'RUB': 'Рубль'} %}
+        {% set currency_names_kz = {'USD': 'АҚШ доллары', 'EUR': 'Еуро', 'CNY': 'Юань', 'RUB': 'Рубль'} %}
         {% for r in get_currency_rates() %}
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
-        <span class="currency-item">{{ r.code }} {{ r.rate }}₸{% if r.direction %}<span class="currency-arrow {{ 'up' if r.direction == '↑' else 'down' }}"></span>{% endif %}</span>
+        {% set full_name = (currency_names_kz[r.code] if lang is defined and lang == 'kz' else currency_names[r.code]) if r.code in currency_names else r.code %}
+        <span class="currency-item">
+          {{ r.code }} {{ r.rate }}₸{% if r.direction %}<span class="currency-arrow {{ 'up' if r.direction == '↑' else 'down' }}"></span>{% endif %}
+          <span class="info-tooltip">
+            <strong>{{ full_name }}</strong><br>
+            1 {{ r.code }} = {{ r.rate }} ₸<br>
+            {% if lang is defined and lang == 'kz' %}Өзгеріс{% else %}Изменение{% endif %}: {{ r.change }} ₸ {{ r.direction }}
+          </span>
+        </span>
         {% endfor %}
         <span class="currency-sep">·</span>
+        {% set commodity_names = {'Brent': 'Нефть Brent (за баррель)', 'Золото': 'Золото (за тр. унцию)'} %}
+        {% set commodity_names_kz = {'Brent': 'Brent мұнайы (баррелі)', 'Золото': 'Алтын (тр. унция)'} %}
         {% for c in get_commodities() %}
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
         {% set commodity_label = c.label %}
         {% if lang is defined and lang == 'kz' and c.label == 'Золото' %}{% set commodity_label = 'Алтын' %}{% endif %}
-        <span class="currency-item">{{ commodity_label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}</span>
+        {% set commodity_full = (commodity_names_kz[c.label] if lang is defined and lang == 'kz' else commodity_names[c.label]) if c.label in commodity_names else c.label %}
+        <span class="currency-item">
+          {{ commodity_label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}
+          <span class="info-tooltip">
+            <strong>{{ commodity_full }}</strong><br>
+            {% if lang is defined and lang == 'kz' %}Бағасы{% else %}Цена{% endif %}: {{ c.value }}<br>
+            {% if c.direction %}{% if lang is defined and lang == 'kz' %}Бағыт{% else %}Тренд{% endif %}: {{ c.direction }}{% endif %}
+          </span>
+        </span>
         {% endfor %}
       </div>
     </div>

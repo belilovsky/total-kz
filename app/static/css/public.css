@@ -4561,3 +4561,23 @@ a.related-item:visited .related-title {
   z-index: 2;
   box-shadow: 0 1px 4px rgba(0,0,0,.2);
 }
+
+/* ═══ Info Bar: Tooltips ═══ */
+.currency-item { position: relative; }
+.currency-item:hover .info-tooltip { display: block; }
+.info-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+  pointer-events: none;
+}
