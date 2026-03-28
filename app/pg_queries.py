@@ -942,9 +942,9 @@ def get_timeline_articles(article_id: int, category: str, pub_date: str, entity_
     """Get timeline articles related by shared entities (or fallback to category)."""
     _timeline_cols = [
         Article.id, Article.url, Article.pub_date, Article.sub_category,
-        Article.title, Article.thumbnail, Article.main_image,
+        Article.title, Article.thumbnail, Article.main_image, Article.excerpt,
     ]
-    _keys = ["id", "url", "pub_date", "sub_category", "title", "thumbnail", "main_image"]
+    _keys = ["id", "url", "pub_date", "sub_category", "title", "thumbnail", "main_image", "excerpt"]
 
     with get_pg_session() as db:
         if entity_ids:
@@ -1012,8 +1012,8 @@ def _get_story_timeline_inner(article_id: int, pub_date: str) -> dict | None:
         story_id, story_title, art_count = story_row
 
         _cols = [Article.id, Article.url, Article.pub_date, Article.sub_category,
-                 Article.title, Article.thumbnail, Article.main_image]
-        _keys = ["id", "url", "pub_date", "sub_category", "title", "thumbnail", "main_image"]
+                 Article.title, Article.thumbnail, Article.main_image, Article.excerpt]
+        _keys = ["id", "url", "pub_date", "sub_category", "title", "thumbnail", "main_image", "excerpt"]
 
         prev_rows = db.execute(
             select(*_cols)
@@ -1086,6 +1086,146 @@ def get_related_by_entities(article_id: int, entity_ids: list, category: str, li
             ).all()
             results.extend([_row_to_dict(r, keys_base) for r in fill])
         return results
+
+
+def get_smart_related(article_id: int, entity_ids: list, category: str, limit: int = 6) -> list:
+    """Get related articles using multi-signal scoring.
+
+    Scoring = entity_overlap * 3 + same_category * 2 + popularity_bonus + recency.
+    Ensures diversity by mixing sources.
+    """
+    if not entity_ids:
+        return get_related_by_entities(article_id, entity_ids, category, limit)
+
+    with get_pg_session() as db:
+        sql = text("""
+            SELECT a.id, a.url, a.pub_date, a.sub_category,
+                   a.title, a.author, a.excerpt, a.thumbnail, a.main_image,
+                   COUNT(DISTINCT ae.entity_id) as entity_overlap,
+                   CASE WHEN a.sub_category = :category THEN 2 ELSE 0 END as cat_bonus,
+                   COALESCE(a.views, 0) as views
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = ANY(:entity_ids)
+              AND a.id != :article_id
+              AND a.status = 'published'
+            GROUP BY a.id
+            ORDER BY COUNT(DISTINCT ae.entity_id) * 3 +
+                     CASE WHEN a.sub_category = :category THEN 2 ELSE 0 END +
+                     LEAST(COALESCE(a.views, 0) / 10, 5) DESC,
+                     a.pub_date DESC
+            LIMIT :limit
+        """)
+        rows = db.execute(sql, {
+            "entity_ids": entity_ids,
+            "article_id": article_id,
+            "category": category,
+            "limit": limit,
+        }).all()
+
+        keys = ["id", "url", "pub_date", "sub_category", "title", "author",
+                "excerpt", "thumbnail", "main_image", "entity_overlap",
+                "cat_bonus", "views"]
+        results = [_row_to_dict(r, keys) for r in rows]
+
+        # Fill remaining slots from same category if needed
+        if len(results) < limit:
+            existing_ids = [r["id"] for r in results] + [article_id]
+            fill = db.execute(
+                select(
+                    Article.id, Article.url, Article.pub_date, Article.sub_category,
+                    Article.title, Article.author, Article.excerpt,
+                    Article.thumbnail, Article.main_image,
+                )
+                .where(Article.sub_category == category, Article.id.notin_(existing_ids))
+                .order_by(Article.pub_date.desc())
+                .limit(limit - len(results))
+            ).all()
+            fill_keys = ["id", "url", "pub_date", "sub_category", "title", "author",
+                         "excerpt", "thumbnail", "main_image"]
+            results.extend([_row_to_dict(r, fill_keys) for r in fill])
+
+        return results
+
+
+def get_recommendations(categories: list, entity_ids: list, exclude_ids: list, limit: int = 6) -> list:
+    """Get personalized article recommendations based on reading history.
+
+    Mix: 3 entity-based + 2 category-based + 1 trending.
+    """
+    with get_pg_session() as db:
+        results = []
+        seen_ids = set(exclude_ids or [])
+        keys = ["id", "url", "pub_date", "sub_category", "title", "author",
+                "excerpt", "thumbnail", "main_image"]
+
+        # 1. Entity-based recommendations (3 articles)
+        if entity_ids:
+            entity_rows = db.execute(
+                text("""
+                    SELECT DISTINCT a.id, a.url, a.pub_date, a.sub_category,
+                           a.title, a.author, a.excerpt, a.thumbnail, a.main_image
+                    FROM articles a
+                    JOIN article_entities ae ON a.id = ae.article_id
+                    WHERE ae.entity_id = ANY(:entity_ids)
+                      AND a.id != ALL(:exclude_ids)
+                      AND a.status = 'published'
+                    ORDER BY a.pub_date DESC
+                    LIMIT :limit
+                """),
+                {"entity_ids": entity_ids, "exclude_ids": list(seen_ids) or [0], "limit": 3},
+            ).all()
+            for r in entity_rows:
+                d = _row_to_dict(r, keys)
+                if d["id"] not in seen_ids:
+                    results.append(d)
+                    seen_ids.add(d["id"])
+
+        # 2. Category-based recommendations (2 articles)
+        if categories:
+            cat_rows = db.execute(
+                select(
+                    Article.id, Article.url, Article.pub_date, Article.sub_category,
+                    Article.title, Article.author, Article.excerpt,
+                    Article.thumbnail, Article.main_image,
+                )
+                .where(
+                    Article.sub_category.in_(categories),
+                    Article.id.notin_(list(seen_ids) or [0]),
+                    Article.status == "published",
+                )
+                .order_by(Article.pub_date.desc())
+                .limit(2)
+            ).all()
+            for r in cat_rows:
+                d = _row_to_dict(r, keys)
+                if d["id"] not in seen_ids:
+                    results.append(d)
+                    seen_ids.add(d["id"])
+
+        # 3. Trending / popular (fill remaining)
+        remaining = limit - len(results)
+        if remaining > 0:
+            trend_rows = db.execute(
+                select(
+                    Article.id, Article.url, Article.pub_date, Article.sub_category,
+                    Article.title, Article.author, Article.excerpt,
+                    Article.thumbnail, Article.main_image,
+                )
+                .where(
+                    Article.id.notin_(list(seen_ids) or [0]),
+                    Article.status == "published",
+                )
+                .order_by(func.coalesce(Article.views, 0).desc())
+                .limit(remaining)
+            ).all()
+            for r in trend_rows:
+                d = _row_to_dict(r, keys)
+                if d["id"] not in seen_ids:
+                    results.append(d)
+                    seen_ids.add(d["id"])
+
+        return results[:limit]
 
 
 def get_trending_tags(limit: int = 20) -> list:

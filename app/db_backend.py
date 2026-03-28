@@ -21,7 +21,8 @@ if settings.use_postgres:
         duplicate_article, bulk_update_articles, bulk_delete_articles,
         get_article_by_slug, get_latest_articles, get_latest_by_category,
         get_related_articles, get_timeline_articles, get_story_timeline,
-        get_related_by_entities, get_trending_tags, get_category_counts,
+        get_related_by_entities, get_smart_related, get_recommendations,
+        get_trending_tags, get_category_counts,
         get_latest_by_categories, get_entity, get_articles_by_entity,
         generate_sitemap_urls, get_user_by_username, get_user, get_all_users,
         create_user, update_user, delete_user, get_all_categories,
@@ -127,3 +128,12 @@ def execute_raw_many(sql: str, params: tuple = ()) -> list[dict]:
         with get_db() as cur:
             cur.execute(sql.replace("%s", "?"), params)
             return [dict(r) for r in cur.fetchall()]
+
+
+# ── Fallback stubs for SQLite backend (these are PG-only) ──
+if _BACKEND == "sqlite":
+    def get_smart_related(article_id, entity_ids, category, limit=6):
+        return get_related_by_entities(article_id, entity_ids, category, limit)
+
+    def get_recommendations(categories, entity_ids, exclude_ids, limit=6):
+        return get_latest_articles(limit=limit)

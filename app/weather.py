@@ -67,11 +67,34 @@ def _code_to_emoji(code: int) -> str:
         return "🌤️"
 
 
-def get_weather() -> list[dict]:
-    """Return weather data for cities. Uses cache."""
+def get_weather(city_name: str | None = None, city_query: str | None = None) -> list[dict]:
+    """Return weather data for cities. Uses cache.
+
+    If city_name and city_query are provided, fetch weather for that city first
+    and place it at the front of the results list.
+    """
     now = time.time()
     results = []
+
+    # If a specific city is requested, fetch it first
+    if city_name and city_query:
+        key = city_query
+        cached = _cache.get(key)
+        if cached and (now - cached["ts"]) < CACHE_TTL:
+            results.append({"city": city_name, **cached["data"]})
+        else:
+            data = _fetch_weather(city_query)
+            if data:
+                _cache[key] = {"ts": now, "data": data}
+                results.append({"city": city_name, **data})
+            elif cached:
+                results.append({"city": city_name, **cached["data"]})
+
+    # Then fetch the standard cities (skip if already fetched above)
+    seen_queries = {city_query} if city_query else set()
     for city in CITIES:
+        if city["query"] in seen_queries:
+            continue
         key = city["query"]
         cached = _cache.get(key)
         if cached and (now - cached["ts"]) < CACHE_TTL:
@@ -82,6 +105,5 @@ def get_weather() -> list[dict]:
             _cache[key] = {"ts": now, "data": data}
             results.append({"city": city["name"], **data})
         elif cached:
-            # Use stale cache on failure
             results.append({"city": city["name"], **cached["data"]})
     return results

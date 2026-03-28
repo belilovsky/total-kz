@@ -57,6 +57,34 @@
   <!-- ═══ AD: AFTER HERO ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="H1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
+  <!-- ═══ REGIONAL SECTION: "В ВАШЕМ РЕГИОНЕ" ═══ -->
+  {% if regional_articles %}
+  <section class="shelf-section regional-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        {% if lang is defined and lang == "kz" %}СІЗДІҢ АЙМАҒЫҢЫЗДА{% else %}В ВАШЕМ РЕГИОНЕ{% endif %}: {{ region_label }}
+      </h2>
+      <a href="{{ lang_prefix|default('') }}/search?q={{ region_label }}" class="section-more">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+    </div>
+    <div class="shelf-row">
+      {% for art in regional_articles[:4] %}
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
+        {% if art.main_image or art.thumbnail %}
+        <div class="shelf-card-img">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+        </div>
+        {% else %}
+        <div class="shelf-card-img shelf-card-img--ph"></div>
+        {% endif %}
+        <h3 class="shelf-card-title">{{ art.title }}</h3>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ═══ CATEGORY SHELVES (all categories) ═══ -->
   {% if category_highlights %}
   <div class="category-shelves">
@@ -85,6 +113,16 @@
     {% endfor %}
   </div>
   {% endif %}
+
+  <!-- ═══ "ДЛЯ ВАС" / "РЕКОМЕНДУЕМ" — loaded via AJAX from reading history ═══ -->
+  <section class="shelf-section" id="for-you-section" style="display:none">
+    <div class="section-header">
+      <h2 class="section-title" id="for-you-title">
+        {% if lang is defined and lang == "kz" %}СІЗГЕ АРНАЛҒАН{% else %}ДЛЯ ВАС{% endif %}
+      </h2>
+    </div>
+    <div class="shelf-row" id="for-you-grid"></div>
+  </section>
 
   <!-- ═══ KEY PERSONS STRIP ═══ -->
   {% if homepage_persons %}
@@ -235,6 +273,24 @@
         btn.style.opacity = '1';
       });
   };
+})();
+</script>
+<script src="/static/js/reading_history.js"></script>
+<script>
+(function() {
+  if (typeof ReadingHistory === 'undefined') return;
+  ReadingHistory.loadRecommendations(function(html) {
+    var section = document.getElementById('for-you-section');
+    var grid = document.getElementById('for-you-grid');
+    if (!section || !grid) return;
+    if (html) {
+      grid.innerHTML = html;
+      section.style.display = '';
+    } else {
+      // No reading history — hide section
+      section.style.display = 'none';
+    }
+  });
 })();
 </script>
 {% endblock %}

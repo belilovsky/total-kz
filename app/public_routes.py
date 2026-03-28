@@ -21,6 +21,7 @@ from qazstack.content import reading_time_minutes, slug_from_url, category_from_
 
 from . import db_backend as db
 from . import cache
+from .geo import detect_region, get_regional_articles, get_region_label
 
 logger = logging.getLogger(__name__)
 
@@ -1023,56 +1024,66 @@ def _get_homepage_persons() -> list:
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     """Homepage: hero + category highlights + chronological feed."""
-    # Check in-memory cache first
+    # Geo-personalization (per-request, not cached)
+    region = detect_region(request)
+
+    # Check in-memory cache for main content
     cached = cache.get("homepage", ttl=cache.TTL_HOMEPAGE)
-    if cached:
-        return templates.TemplateResponse("public/home.html", {"request": request, **cached})
+    if not cached:
+        try:
+            all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
+            hero_articles = all_latest[:5]
+            latest = all_latest[5:]
 
+            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
+            category_highlights = []
+            for section in NAV_SECTIONS:
+                articles = highlights_map.get(section["slug"], [])
+                if articles:
+                    category_highlights.append({
+                        "slug": section["slug"],
+                        "label": section["label"],
+                        "articles": rewrite_articles_images(articles),
+                    })
+        except Exception:
+            logger.exception("Database error in homepage")
+            return _error_response(request)
+
+        popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
+        homepage_persons = _get_homepage_persons()
+        try:
+            trending_tags = db.get_trending_tags(limit=15)
+        except Exception:
+            trending_tags = []
+
+        cached = {
+            "hero_articles": hero_articles,
+            "latest": latest,
+            "popular": popular,
+            "category_highlights": category_highlights,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            "ticker_articles": hero_articles[:5],
+            "homepage_persons": homepage_persons,
+            "trending_tags": trending_tags,
+        }
+        cache.set("homepage", cached)
+
+    # Regional articles (per-request based on geo)
     try:
-        # Combined hero + feed: one query instead of two
-        all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
-        hero_articles = all_latest[:5]
-        latest = all_latest[5:]
-
-        # One batch query replaces 6 separate category queries
-        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
-        category_highlights = []
-        for section in NAV_SECTIONS:
-            articles = highlights_map.get(section["slug"], [])
-            if articles:
-                category_highlights.append({
-                    "slug": section["slug"],
-                    "label": section["label"],
-                    "articles": rewrite_articles_images(articles),
-                })
+        regional_articles = rewrite_articles_images(
+            get_regional_articles(region["entity_names"], limit=8)
+        )
     except Exception:
-        logger.exception("Database error in homepage")
-        return _error_response(request)
+        regional_articles = []
 
-    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
-
-    # Top persons from preloaded cache
-    homepage_persons = _get_homepage_persons()
-
-    # Trending tags for tag cloud
-    try:
-        trending_tags = db.get_trending_tags(limit=15)
-    except Exception:
-        trending_tags = []
-
-    ctx = {
-        "hero_articles": hero_articles,
-        "latest": latest,
-        "popular": popular,
-        "category_highlights": category_highlights,
-        "nav_sections": NAV_SECTIONS,
-        "nav_categories": NAV_CATEGORIES,
-        "ticker_articles": hero_articles[:5],
-        "homepage_persons": homepage_persons,
-        "trending_tags": trending_tags,
-    }
-    cache.set("homepage", ctx)
-    return templates.TemplateResponse("public/home.html", {"request": request, **ctx})
+    return templates.TemplateResponse("public/home.html", {
+        "request": request,
+        **cached,
+        "region": region,
+        "region_label": get_region_label(region, "ru"),
+        "regional_articles": regional_articles,
+    })
 
 
 @router.get("/api/feed", response_class=HTMLResponse)
@@ -1109,6 +1120,49 @@ async def api_feed_more(request: Request, offset: int = Query(30, ge=0), limit: 
           </div>
           {thumb_html}
         </article>''')
+    return HTMLResponse("\n".join(html_parts))
+
+
+@router.get("/api/recommendations", response_class=HTMLResponse)
+async def api_recommendations(
+    request: Request,
+    categories: str = Query(""),
+    entities: str = Query(""),
+    exclude: str = Query(""),
+):
+    """Return personalized article recommendations as HTML cards."""
+    cat_list = [c.strip() for c in categories.split(",") if c.strip()]
+    entity_list = []
+    for e in entities.split(","):
+        e = e.strip()
+        if e.isdigit():
+            entity_list.append(int(e))
+    exclude_list = []
+    for e in exclude.split(","):
+        e = e.strip()
+        if e.isdigit():
+            exclude_list.append(int(e))
+
+    try:
+        articles = rewrite_articles_images(
+            db.get_recommendations(cat_list, entity_list, exclude_list, limit=6)
+        )
+    except Exception:
+        return HTMLResponse("")
+
+    if not articles:
+        return HTMLResponse("")
+
+    html_parts = []
+    for art in articles:
+        cat_slug = nav_slug_for(art.get("sub_category", ""))
+        img = imgproxy_url(art.get("main_image") or art.get("thumbnail", ""), 400)
+        url = article_url(art)
+        thumb_html = f'<div class="shelf-card-img"><img src="{img}" alt="" loading="lazy" onerror="this.src=\'/static/img/placeholder.svg\';this.onerror=null;"></div>' if img else '<div class="shelf-card-img shelf-card-img--ph" data-cat="{cat_slug}"></div>'
+        html_parts.append(f'''<a href="{url}" class="shelf-card">
+          {thumb_html}
+          <h3 class="shelf-card-title">{art["title"]}</h3>
+        </a>''')
     return HTMLResponse("\n".join(html_parts))
 
 
@@ -1229,10 +1283,10 @@ async def article_page(request: Request, category: str, slug: str):
     # Entity IDs for smart matching (timeline + related)
     entity_ids = [e["id"] for e in article.get("entities", [])]
 
-    # ── Related articles (independent try/except) ──
+    # ── Related articles (smart multi-signal scoring) ──
     try:
         related = rewrite_articles_images(
-            db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
+            db.get_smart_related(article["id"], entity_ids, category, limit=6)
         )
     except Exception:
         logger.exception("Error loading related for %s/%s", category, slug)
@@ -1242,6 +1296,7 @@ async def article_page(request: Request, category: str, slug: str):
     timeline = {"prev": [], "next": []}
     timeline_topic = ""
     timeline_total = 0
+    story_summary = ""
     try:
         story_tl = db.get_story_timeline(article["id"], article.get("pub_date", ""))
         if story_tl and (story_tl["prev"] or story_tl["next"]):
@@ -1276,21 +1331,13 @@ async def article_page(request: Request, category: str, slug: str):
     except Exception:
         logger.exception("Error loading timeline for %s/%s", category, slug)
 
-    # Extract slug from article URL for share buttons
     article_slug = article.get("url", "").replace(
         f"https://total.kz/ru/news/{category}/", ""
     ).strip("/")
-
-    # Resolve nav section for this sub_category
     nav_section = nav_slug_for(category)
-
-    # Ticker: use related articles, fallback to latest
     ticker_articles = related[:5] if related else []
-
-    # Persons mentioned in this article (for sidebar mini-cards)
     article_persons = get_article_persons(article.get("entities", []))
 
-    # Popular articles for sidebar widget (exclude current article)
     try:
         popular = rewrite_articles_images(db.get_latest_articles(limit=20))
         popular = [a for a in popular if a.get("id") != article["id"]]
@@ -1305,6 +1352,7 @@ async def article_page(request: Request, category: str, slug: str):
         "timeline": timeline,
         "timeline_topic": timeline_topic,
         "timeline_total": timeline_total,
+        "story_summary": story_summary,
         "category": category,
         "category_name": cat_label(category),
         "nav_section": nav_section,
@@ -2863,59 +2911,72 @@ kz_router = APIRouter(prefix="/kz")
 @kz_router.get("/", response_class=HTMLResponse)
 async def kz_homepage(request: Request):
     """Kazakh homepage — same data, Kazakh UI strings."""
+    region = detect_region(request)
+
     cached = cache.get("kz_homepage", ttl=cache.TTL_HOMEPAGE)
-    if cached:
-        ctx = {"request": request, **cached, **_build_lang_ctx("kz")}
-        return templates.TemplateResponse("public/home.html", ctx)
+    if not cached:
+        try:
+            all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
+            hero_articles = all_latest[:5]
+            latest = all_latest[5:]
 
+            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
+            category_highlights = []
+            for section in NAV_SECTIONS:
+                articles = highlights_map.get(section["slug"], [])
+                if articles:
+                    category_highlights.append({
+                        "slug": section["slug"],
+                        "label": cat_label_i18n(section["slug"], "kz"),
+                        "articles": rewrite_articles_images(articles),
+                    })
+        except Exception:
+            logger.exception("Database error in kz_homepage")
+            return _error_response(request)
+
+        popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
+        homepage_persons = _get_homepage_persons()
+
+        try:
+            trending_tags = db.get_trending_tags(limit=15)
+        except Exception:
+            trending_tags = []
+
+        _apply_translations_to_list(hero_articles, "kz")
+        _apply_translations_to_list(latest, "kz")
+        _apply_translations_to_list(popular, "kz")
+        for ch in category_highlights:
+            _apply_translations_to_list(ch["articles"], "kz")
+
+        cached = {
+            "hero_articles": hero_articles,
+            "latest": latest,
+            "popular": popular,
+            "category_highlights": category_highlights,
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            "ticker_articles": hero_articles[:5],
+            "homepage_persons": homepage_persons,
+            "trending_tags": trending_tags,
+        }
+        cache.set("kz_homepage", cached)
+
+    # Regional articles (per-request)
     try:
-        all_latest = rewrite_articles_images(db.get_latest_articles(limit=35))
-        hero_articles = all_latest[:5]
-        latest = all_latest[5:]
-
-        highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
-        category_highlights = []
-        for section in NAV_SECTIONS:
-            articles = highlights_map.get(section["slug"], [])
-            if articles:
-                category_highlights.append({
-                    "slug": section["slug"],
-                    "label": cat_label_i18n(section["slug"], "kz"),
-                    "articles": rewrite_articles_images(articles),
-                })
+        regional_articles = rewrite_articles_images(
+            get_regional_articles(region["entity_names"], limit=8)
+        )
+        _apply_translations_to_list(regional_articles, "kz")
     except Exception:
-        logger.exception("Database error in kz_homepage")
-        return _error_response(request)
+        regional_articles = []
 
-    popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
-    homepage_persons = _get_homepage_persons()
-
-    try:
-        trending_tags = db.get_trending_tags(limit=15)
-    except Exception:
-        trending_tags = []
-
-    # Apply translations to article lists
-    _apply_translations_to_list(hero_articles, "kz")
-    _apply_translations_to_list(latest, "kz")
-    _apply_translations_to_list(popular, "kz")
-    for ch in category_highlights:
-        _apply_translations_to_list(ch["articles"], "kz")
-
-    ctx = {
-        "hero_articles": hero_articles,
-        "latest": latest,
-        "popular": popular,
-        "category_highlights": category_highlights,
-        "nav_sections": NAV_SECTIONS,
-        "nav_categories": NAV_CATEGORIES,
-        "ticker_articles": hero_articles[:5],
-        "homepage_persons": homepage_persons,
-        "trending_tags": trending_tags,
-    }
-    cache.set("kz_homepage", ctx)
     return templates.TemplateResponse("public/home.html", {
-        "request": request, **ctx, **_build_lang_ctx("kz"),
+        "request": request,
+        **cached,
+        **_build_lang_ctx("kz"),
+        "region": region,
+        "region_label": get_region_label(region, "kz"),
+        "regional_articles": regional_articles,
     })
 
 
@@ -3035,7 +3096,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
 
     try:
         related = rewrite_articles_images(
-            db.get_related_by_entities(article["id"], entity_ids, category, limit=6)
+            db.get_smart_related(article["id"], entity_ids, category, limit=6)
         )
         _apply_translations_to_list(related, "kz")
     except Exception:
@@ -3044,6 +3105,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
     timeline = {"prev": [], "next": []}
     timeline_topic = ""
     timeline_total = 0
+    story_summary = ""
     try:
         story_tl = db.get_story_timeline(article["id"], article.get("pub_date", ""))
         if story_tl and (story_tl["prev"] or story_tl["next"]):
@@ -3076,7 +3138,6 @@ async def kz_article_page(request: Request, category: str, slug: str):
     except Exception:
         logger.exception("Error loading timeline for kz/%s/%s", category, slug)
 
-    # Apply KZ translations to timeline articles
     _apply_translations_to_list(timeline.get("prev", []), "kz")
     _apply_translations_to_list(timeline.get("next", []), "kz")
 
@@ -3102,6 +3163,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
         "timeline": timeline,
         "timeline_topic": timeline_topic,
         "timeline_total": timeline_total,
+        "story_summary": story_summary,
         "category": category,
         "category_name": cat_label_i18n(category, "kz"),
         "nav_section": nav_section,
@@ -3390,6 +3452,50 @@ async def kz_api_feed_more(request: Request, offset: int = Query(30, ge=0), limi
           </div>
           {thumb_html}
         </article>''')
+    return HTMLResponse("\n".join(html_parts))
+
+
+@kz_router.get("/api/recommendations", response_class=HTMLResponse)
+async def kz_api_recommendations(
+    request: Request,
+    categories: str = Query(""),
+    entities: str = Query(""),
+    exclude: str = Query(""),
+):
+    """Kazakh personalized recommendations."""
+    cat_list = [c.strip() for c in categories.split(",") if c.strip()]
+    entity_list = []
+    for e in entities.split(","):
+        e = e.strip()
+        if e.isdigit():
+            entity_list.append(int(e))
+    exclude_list = []
+    for e in exclude.split(","):
+        e = e.strip()
+        if e.isdigit():
+            exclude_list.append(int(e))
+
+    try:
+        articles = rewrite_articles_images(
+            db.get_recommendations(cat_list, entity_list, exclude_list, limit=6)
+        )
+        _apply_translations_to_list(articles, "kz")
+    except Exception:
+        return HTMLResponse("")
+
+    if not articles:
+        return HTMLResponse("")
+
+    html_parts = []
+    for art in articles:
+        cat_slug = nav_slug_for(art.get("sub_category", ""))
+        img = imgproxy_url(art.get("main_image") or art.get("thumbnail", ""), 400)
+        url = article_url_i18n(art, "kz")
+        thumb_html = f'<div class="shelf-card-img"><img src="{img}" alt="" loading="lazy" onerror="this.src=\'/static/img/placeholder.svg\';this.onerror=null;"></div>' if img else '<div class="shelf-card-img shelf-card-img--ph" data-cat="{cat_slug}"></div>'
+        html_parts.append(f'''<a href="{url}" class="shelf-card">
+          {thumb_html}
+          <h3 class="shelf-card-title">{art["title"]}</h3>
+        </a>''')
     return HTMLResponse("\n".join(html_parts))
 
 

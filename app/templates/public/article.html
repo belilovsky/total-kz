@@ -391,6 +391,7 @@
 
   {# ── Story timeline — full width, below article-layout ── #}
   {% if timeline and (timeline.prev or timeline.next) %}
+  {% set tl_items = (timeline.next|reverse|list) + (timeline.prev|list) %}
   <section class="article-timeline article-timeline--full">
     <div class="timeline-header">
       <h2 class="timeline-heading">
@@ -401,27 +402,40 @@
       <span class="timeline-count">{{ pluralize_materials(timeline_total) }}</span>
       {% endif %}
     </div>
+    {% if story_summary is defined and story_summary %}
+    <p class="timeline-summary" style="font-size:var(--text-sm);color:var(--text-secondary);margin:0 0 var(--space-4);padding:0 var(--space-2)">{{ story_summary }}</p>
+    {% endif %}
     <div class="timeline-track">
       {% for art in timeline.next|reverse %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
+        {% if art.excerpt %}<span class="timeline-excerpt">{{ art.excerpt[:80] }}{% if art.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
         <span class="timeline-title">{{ article.title }}</span>
+        {% if article.excerpt %}<span class="timeline-excerpt">{{ article.excerpt[:80] }}{% if article.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </div>
       {% for art in timeline.prev %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
+        {% if art.excerpt %}<span class="timeline-excerpt">{{ art.excerpt[:80] }}{% if art.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </a>
       {% endfor %}
     </div>
+    {% if tl_items|length > 5 and timeline_total > tl_items|length + 1 %}
+    <div style="text-align:center;padding:var(--space-3) 0">
+      <a href="{{ lang_prefix|default('') }}/search?q={{ timeline_topic }}" class="section-more" style="font-size:var(--text-sm)">
+        {% if lang is defined and lang == "kz" %}Бүкіл хронологияны көрсету{% else %}Показать всю хронологию{% endif %} →
+      </a>
+    </div>
+    {% endif %}
   </section>
   {% endif %}
 
@@ -649,6 +663,22 @@ function sharePDF() {
 (function(){
   var aid = {{ article.id }};
   if (aid) fetch('/api/view/' + aid, { method: 'POST' }).catch(function(){});
+})();
+
+// Track reading history for personalization
+(function(){
+  var s = document.createElement('script');
+  s.src = '/static/js/reading_history.js';
+  s.onload = function() {
+    if (typeof ReadingHistory !== 'undefined') {
+      ReadingHistory.track(
+        {{ article.id }},
+        '{{ category }}',
+        [{% for e in article.entities[:10] %}{{ e.id }}{% if not loop.last %},{% endif %}{% endfor %}]
+      );
+    }
+  };
+  document.head.appendChild(s);
 })();
 
 // ── Comments system ────────────────────────────────────────────

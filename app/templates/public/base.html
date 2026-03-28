@@ -186,7 +186,11 @@
   <div class="currency-strip">
     <div class="currency-strip-inner">
       <div class="strip-left">
-        {% set weather = get_weather() %}
+        {% if region is defined and region.city and region.weather_query %}
+          {% set weather = get_weather(region.city, region.weather_query) %}
+        {% else %}
+          {% set weather = get_weather() %}
+        {% endif %}
         {% if weather %}
         <span class="currency-item weather-item">{{ weather[0].emoji }} {{ weather[0].city }} {{ weather[0].temp }}°</span>
         {% endif %}
