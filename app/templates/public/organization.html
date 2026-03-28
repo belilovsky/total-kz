@@ -1,0 +1,234 @@
+{% extends "public/base.html" %}
+
+{% block title %}{{ org['short_name'] or org['name'] }} – Total.kz{% endblock %}
+{% block description %}{{ org['short_name'] or org['name'] }} — {{ pluralize_articles(article_count) }} на Total.kz{% endblock %}
+{% block canonical %}{{ lang_prefix|default('') }}/organization/{{ org['name'] | urlencode }}{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": {{ (org['short_name'] or org['name']) | tojson }},
+  "url": "{{ site_domain }}{{ lang_prefix|default('') }}/organization/{{ org['name'] | urlencode }}"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="person-page">
+  <nav class="article-top-bar" aria-label="Навигация">
+    <a href="{{ lang_prefix|default('') }}/">{% if lang is defined and lang == "kz" %}Басты бет{% else %}Главная{% endif %}</a>
+    <span class="sep">›</span>
+    <a href="{{ lang_prefix|default('') }}/organizations">{% if lang is defined and lang == "kz" %}Ұйымдар{% else %}Организации{% endif %}</a>
+    <span class="sep">›</span>
+    <span>{{ org['short_name'] or org['name'] }}</span>
+  </nav>
+
+  {# ── Hero Block ── #}
+  <header class="person-hero">
+    <div class="person-hero-avatar">
+      <span class="person-hero-initials" style="font-size:2rem">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </span>
+    </div>
+    <div class="person-hero-info">
+      <h1 class="person-hero-name">{{ org['short_name'] or org['name'] }}</h1>
+      {% if org['short_name'] and org['short_name'] != org['name'] %}
+      <div class="person-hero-fullname">{{ org['name'] }}</div>
+      {% endif %}
+
+      <div class="person-hero-stats">
+        <span class="person-stat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+          {{ pluralize_articles(article_count) }}
+        </span>
+        <span class="person-stat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          {{ format_num(mention_count) }} {% if lang is defined and lang == "kz" %}еске алу{% else %}упоминаний{% endif %}
+        </span>
+        <span class="person-type-badge international">
+          {% if lang is defined and lang == "kz" %}Ұйым{% else %}Организация{% endif %}
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div class="person-layout">
+    <div class="person-main">
+
+      {# ── Articles Timeline ── #}
+      <div class="person-tab-panels">
+        <div class="person-tab-panel active" id="tab-timeline">
+          {% if months %}
+          <div class="person-timeline">
+            {% for month in months %}
+            <div class="ptl-month{% if loop.index > 3 %} ptl-month--collapsed{% endif %}" data-month-index="{{ loop.index }}">
+              <button class="ptl-month-header" type="button" aria-expanded="{% if loop.index <= 3 %}true{% else %}false{% endif %}">
+                <span class="ptl-month-label">{{ month['label'] }}</span>
+                <span class="ptl-month-count">{{ month['articles'] | length }}
+                  {% set ac = month['articles'] | length %}
+                  {% if lang is defined and lang == "kz" %}мақала{% elif ac % 10 == 1 and ac % 100 != 11 %}статья{% elif ac % 10 in [2,3,4] and ac % 100 not in [12,13,14] %}статьи{% else %}статей{% endif %}
+                </span>
+                <svg class="ptl-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="ptl-articles"{% if loop.index > 3 %} style="display:none"{% endif %}>
+                {% for art in month['articles'] %}
+                <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="ptl-article{% if loop.index > 5 %} ptl-article--hidden{% endif %}">
+                  <span class="ptl-date">{{ art['pub_date'][8:10] | int }}</span>
+                  <span class="ptl-title">{{ art['title'] }}</span>
+                  {% if art.get('sub_category') %}
+                  <span class="ptl-cat">{{ art['sub_category'] }}</span>
+                  {% endif %}
+                </a>
+                {% endfor %}
+                {% if month['articles'] | length > 5 %}
+                <button class="ptl-show-more" type="button" data-total="{{ month['articles'] | length }}">
+                  {% if lang is defined and lang == "kz" %}тағы {{ month['articles'] | length - 5 }} мақала{% else %}ещё {{ month['articles'] | length - 5 }}
+                  {% set rem = month['articles'] | length - 5 %}
+                  {% if rem % 10 == 1 and rem % 100 != 11 %}статья{% elif rem % 10 in [2,3,4] and rem % 100 not in [12,13,14] %}статьи{% else %}статей{% endif %}{% endif %}
+                </button>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if months | length > 3 %}
+          <button class="ptl-expand-all" type="button" id="expandAllMonths">{% if lang is defined and lang == "kz" %}Барлық айларды көрсету{% else %}Показать все месяцы{% endif %}</button>
+          {% endif %}
+          {% else %}
+          <p class="person-empty">{% if lang is defined and lang == "kz" %}Мақалалар табылмады{% else %}Статьи не найдены{% endif %}</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>{# /person-main #}
+
+    {# ── Sidebar ── #}
+    <aside class="person-sidebar">
+      {# Infobox #}
+      <div class="person-sidebar-block person-infobox">
+        <h3 class="psb-title">{% if lang is defined and lang == "kz" %}Қысқаша анықтама{% else %}Краткая справка{% endif %}</h3>
+        <table class="person-infobox-table">
+          <tr>
+            <td class="infobox-label">{% if lang is defined and lang == "kz" %}Атауы{% else %}Название{% endif %}</td>
+            <td class="infobox-value">{{ org['name'] }}</td>
+          </tr>
+          {% if org['short_name'] %}
+          <tr>
+            <td class="infobox-label">{% if lang is defined and lang == "kz" %}Қысқартылған{% else %}Сокращение{% endif %}</td>
+            <td class="infobox-value">{{ org['short_name'] }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td class="infobox-label">{% if lang is defined and lang == "kz" %}Мақалалар{% else %}Статьи{% endif %}</td>
+            <td class="infobox-value">{{ format_num(article_count) }}</td>
+          </tr>
+          <tr>
+            <td class="infobox-label">{% if lang is defined and lang == "kz" %}Түрі{% else %}Тип{% endif %}</td>
+            <td class="infobox-value">
+              <span class="person-type-badge international">{% if lang is defined and lang == "kz" %}Ұйым{% else %}Организация{% endif %}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      {% if related_persons %}
+      <div class="person-sidebar-block">
+        <h3 class="psb-title">{% if lang is defined and lang == "kz" %}Байланысты тұлғалар{% else %}Связанные персоны{% endif %}</h3>
+        <div class="psb-list">
+          {% for r in related_persons %}
+          <a href="{{ lang_prefix|default('') }}/person/{{ r['slug'] }}" class="psb-person">
+            <div class="psb-person-avatar">
+              {% if r['photo_url'] %}
+              <img src="{% if r['photo_url'].startswith('/') %}{{ r['photo_url'] }}{% else %}{{ imgproxy_url(r['photo_url'], 100) }}{% endif %}" alt="{{ r['short_name'] }}">
+              {% else %}
+              <span class="psb-person-initials">{{ r['short_name'][:1] }}</span>
+              {% endif %}
+            </div>
+            <div class="psb-person-info">
+              <span class="psb-name">{{ r['short_name'] }}</span>
+              {% if r['current_position'] %}
+              <span class="psb-pos">{{ r['current_position'] }}</span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if related_locations %}
+      <div class="person-sidebar-block">
+        <h3 class="psb-title">{% if lang is defined and lang == "kz" %}Байланысты орындар{% else %}Связанные локации{% endif %}</h3>
+        <div class="psb-list">
+          {% for loc in related_locations %}
+          <a href="{{ lang_prefix|default('') }}/tag/{{ (loc['short_name'] or loc['name']) | urlencode }}" class="psb-person">
+            <div class="psb-person-avatar">
+              <span class="psb-person-initials">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </span>
+            </div>
+            <div class="psb-person-info">
+              <span class="psb-name">{{ loc['short_name'] or loc['name'] }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+
+{# ── Client-side JS: Accordion ── #}
+<script>
+(function(){
+  /* Month accordion */
+  document.querySelectorAll('.ptl-month-header').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var month = btn.closest('.ptl-month');
+      var articles = month.querySelector('.ptl-articles');
+      var isCollapsed = month.classList.contains('ptl-month--collapsed');
+      if(isCollapsed){
+        month.classList.remove('ptl-month--collapsed');
+        articles.style.display = '';
+        btn.setAttribute('aria-expanded', 'true');
+      } else {
+        month.classList.add('ptl-month--collapsed');
+        articles.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+
+  /* Expand all months */
+  var expandAll = document.getElementById('expandAllMonths');
+  if(expandAll){
+    expandAll.addEventListener('click', function(){
+      document.querySelectorAll('.ptl-month--collapsed').forEach(function(m){
+        m.classList.remove('ptl-month--collapsed');
+        var a = m.querySelector('.ptl-articles');
+        if(a) a.style.display = '';
+        var h = m.querySelector('.ptl-month-header');
+        if(h) h.setAttribute('aria-expanded', 'true');
+      });
+      expandAll.style.display = 'none';
+    });
+  }
+
+  /* Show more articles in month */
+  document.querySelectorAll('.ptl-show-more').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var panel = btn.closest('.ptl-articles');
+      panel.querySelectorAll('.ptl-article--hidden').forEach(function(a){
+        a.classList.remove('ptl-article--hidden');
+      });
+      btn.style.display = 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

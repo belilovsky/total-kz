@@ -2990,6 +2990,138 @@ async def pwa_manifest():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  ORGANIZATION ROUTES
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/organizations", response_class=HTMLResponse)
+async def organizations_catalog(request: Request):
+    """Organizations catalog — top organizations by article mention count."""
+    try:
+        conn = _get_persons_db()
+        orgs_raw = conn.execute("""
+            SELECT e.id, e.name, e.normalized, e.short_name,
+                   COUNT(ae.article_id) as mention_count
+            FROM entities e
+            LEFT JOIN article_entities ae ON e.id = ae.entity_id
+            WHERE e.entity_type = 'org'
+            GROUP BY e.id
+            HAVING mention_count > 0
+            ORDER BY mention_count DESC
+            LIMIT 200
+        """).fetchall()
+        orgs = [dict(o) for o in orgs_raw]
+        conn.close()
+
+        return templates.TemplateResponse("public/organizations.html", {
+            "request": request,
+            "organizations": orgs,
+            "total_orgs": len(orgs),
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+        })
+    except Exception:
+        logger.exception("Error in organizations_catalog")
+        return _error_response(request)
+
+
+@router.get("/organization/{name:path}", response_class=HTMLResponse)
+async def organization_page(request: Request, name: str):
+    """Organization detail page — articles and related entities."""
+    try:
+        conn = _get_persons_db()
+
+        # Find entity by name or normalized name
+        org = conn.execute(
+            "SELECT * FROM entities WHERE entity_type = 'org' AND (name = ? OR normalized = ? OR short_name = ?)",
+            (name, name.lower(), name)
+        ).fetchone()
+        if not org:
+            conn.close()
+            return HTMLResponse("<h1>Организация не найдена</h1>", status_code=404)
+
+        org_dict = dict(org)
+
+        # Mention count
+        mention_count = conn.execute(
+            "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+            (org_dict["id"],)
+        ).fetchone()[0]
+
+        # Articles
+        articles_raw = conn.execute("""
+            SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = ?
+            AND a.pub_date IS NOT NULL AND a.pub_date != ''
+            ORDER BY a.pub_date DESC
+            LIMIT 200
+        """, (org_dict["id"],)).fetchall()
+
+        # Group articles by month
+        months_ru = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                     "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+        months = []
+        current_key = None
+        current_group = None
+        for art in articles_raw:
+            try:
+                pd = art["pub_date"][:10]
+                y, m_num, d = int(pd[:4]), int(pd[5:7]), int(pd[8:10])
+                key = f"{y}-{m_num:02d}"
+                if key != current_key:
+                    label = f"{months_ru[m_num - 1]} {y}"
+                    current_group = {"label": label, "articles": []}
+                    months.append(current_group)
+                    current_key = key
+                current_group["articles"].append(dict(art))
+            except Exception:
+                continue
+
+        # Related persons (co-occurring in articles)
+        related_persons = conn.execute("""
+            SELECT p.slug, p.short_name, p.current_position, p.photo_url, COUNT(*) as shared
+            FROM persons p
+            JOIN article_entities ae1 ON p.entity_id = ae1.entity_id
+            JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+            WHERE ae2.entity_id = ? AND p.entity_id != ?
+            GROUP BY p.id
+            ORDER BY shared DESC
+            LIMIT 6
+        """, (org_dict["id"], org_dict["id"])).fetchall()
+
+        # Related locations (co-occurring)
+        related_locations = conn.execute("""
+            SELECT e.name, e.short_name, COUNT(*) as shared
+            FROM entities e
+            JOIN article_entities ae1 ON e.id = ae1.entity_id
+            JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+            WHERE ae2.entity_id = ? AND e.id != ? AND e.entity_type = 'location'
+            GROUP BY e.id
+            ORDER BY shared DESC
+            LIMIT 6
+        """, (org_dict["id"], org_dict["id"])).fetchall()
+
+        conn.close()
+
+        return templates.TemplateResponse("public/organization.html", {
+            "request": request,
+            "org": org_dict,
+            "mention_count": mention_count,
+            "months": months,
+            "article_count": len(articles_raw),
+            "related_persons": [dict(r) for r in related_persons],
+            "related_locations": [dict(r) for r in related_locations],
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+        })
+    except Exception:
+        logger.exception("Error in organization_page")
+        return _error_response(request)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  KAZAKH LANGUAGE ROUTES (/kz/...)
 #  Mirror the main Russian routes but with lang="kz" context.
 #  Article content comes from article_translations table with RU fallback.
@@ -3545,9 +3677,19 @@ async def kz_person_page(request: Request, slug: str):
         if k.startswith("position.") and isinstance(v, str)
     }
 
+    # Translate person current_position/current_org and career positions using mapping dicts
+    pos_map = kz_locale.get("positions", {})
+    org_map = kz_locale.get("orgs", {})
+    person_dict = dict(person)
+    person_dict["current_position"] = pos_map.get(person_dict.get("current_position", ""), person_dict.get("current_position", ""))
+    person_dict["current_org"] = org_map.get(person_dict.get("current_org", ""), person_dict.get("current_org", ""))
+    for p in positions:
+        p["organization"] = org_map.get(p.get("organization", ""), p.get("organization", ""))
+        p["position_title"] = pos_map.get(p.get("position_title", ""), p.get("position_title", ""))
+
     return templates.TemplateResponse("public/person.html", {
         "request": request,
-        "person": dict(person),
+        "person": person_dict,
         "article_count": article_count,
         "positions": positions,
         "months": months,
@@ -3640,6 +3782,129 @@ async def kz_api_recommendations(
           <h3 class="shelf-card-title">{art["title"]}</h3>
         </a>''')
     return HTMLResponse("\n".join(html_parts))
+
+
+@kz_router.get("/organizations", response_class=HTMLResponse)
+async def kz_organizations_catalog(request: Request):
+    """Kazakh organizations catalog."""
+    try:
+        conn = _get_persons_db()
+        orgs_raw = conn.execute("""
+            SELECT e.id, e.name, e.normalized, e.short_name,
+                   COUNT(ae.article_id) as mention_count
+            FROM entities e
+            LEFT JOIN article_entities ae ON e.id = ae.entity_id
+            WHERE e.entity_type = 'org'
+            GROUP BY e.id
+            HAVING mention_count > 0
+            ORDER BY mention_count DESC
+            LIMIT 200
+        """).fetchall()
+        orgs = [dict(o) for o in orgs_raw]
+        conn.close()
+
+        return templates.TemplateResponse("public/organizations.html", {
+            "request": request,
+            "organizations": orgs,
+            "total_orgs": len(orgs),
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            **_build_lang_ctx("kz"),
+        })
+    except Exception:
+        logger.exception("Error in kz_organizations_catalog")
+        return _error_response(request)
+
+
+@kz_router.get("/organization/{name:path}", response_class=HTMLResponse)
+async def kz_organization_page(request: Request, name: str):
+    """Kazakh organization detail page."""
+    try:
+        conn = _get_persons_db()
+
+        org = conn.execute(
+            "SELECT * FROM entities WHERE entity_type = 'org' AND (name = ? OR normalized = ? OR short_name = ?)",
+            (name, name.lower(), name)
+        ).fetchone()
+        if not org:
+            conn.close()
+            return HTMLResponse("<h1>Ұйым табылмады</h1>", status_code=404)
+
+        org_dict = dict(org)
+
+        mention_count = conn.execute(
+            "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+            (org_dict["id"],)
+        ).fetchone()[0]
+
+        articles_raw = conn.execute("""
+            SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = ?
+            AND a.pub_date IS NOT NULL AND a.pub_date != ''
+            ORDER BY a.pub_date DESC
+            LIMIT 200
+        """, (org_dict["id"],)).fetchall()
+
+        months_kz = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым",
+                     "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"]
+        months = []
+        current_key = None
+        current_group = None
+        for art in articles_raw:
+            try:
+                pd = art["pub_date"][:10]
+                y, m_num, d = int(pd[:4]), int(pd[5:7]), int(pd[8:10])
+                key = f"{y}-{m_num:02d}"
+                if key != current_key:
+                    label = f"{months_kz[m_num - 1]} {y}"
+                    current_group = {"label": label, "articles": []}
+                    months.append(current_group)
+                    current_key = key
+                current_group["articles"].append(dict(art))
+            except Exception:
+                continue
+
+        related_persons = conn.execute("""
+            SELECT p.slug, p.short_name, p.current_position, p.photo_url, COUNT(*) as shared
+            FROM persons p
+            JOIN article_entities ae1 ON p.entity_id = ae1.entity_id
+            JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+            WHERE ae2.entity_id = ? AND p.entity_id != ?
+            GROUP BY p.id
+            ORDER BY shared DESC
+            LIMIT 6
+        """, (org_dict["id"], org_dict["id"])).fetchall()
+
+        related_locations = conn.execute("""
+            SELECT e.name, e.short_name, COUNT(*) as shared
+            FROM entities e
+            JOIN article_entities ae1 ON e.id = ae1.entity_id
+            JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+            WHERE ae2.entity_id = ? AND e.id != ? AND e.entity_type = 'location'
+            GROUP BY e.id
+            ORDER BY shared DESC
+            LIMIT 6
+        """, (org_dict["id"], org_dict["id"])).fetchall()
+
+        conn.close()
+
+        return templates.TemplateResponse("public/organization.html", {
+            "request": request,
+            "org": org_dict,
+            "mention_count": mention_count,
+            "months": months,
+            "article_count": len(articles_raw),
+            "related_persons": [dict(r) for r in related_persons],
+            "related_locations": [dict(r) for r in related_locations],
+            "nav_sections": NAV_SECTIONS,
+            "nav_categories": NAV_CATEGORIES,
+            **_build_lang_ctx("kz"),
+        })
+    except Exception:
+        logger.exception("Error in kz_organization_page")
+        return _error_response(request)
 
 
 # Register the Kazakh router

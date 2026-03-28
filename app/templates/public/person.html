@@ -35,9 +35,9 @@
 {% block content %}
 <div class="person-page">
   <nav class="article-top-bar" aria-label="Навигация">
-    <a href="/">Главная</a>
+    <a href="{{ lang_prefix|default('') }}/">{% if lang is defined and lang == "kz" %}Басты бет{% else %}Главная{% endif %}</a>
     <span class="sep">›</span>
-    <a href="/persons">Персоны</a>
+    <a href="{{ lang_prefix|default('') }}/persons">{% if lang is defined and lang == "kz" %}Тұлғалар{% else %}Персоны{% endif %}</a>
     <span class="sep">›</span>
     <span>{{ person['short_name'] }}</span>
   </nav>
@@ -249,7 +249,7 @@
         <h3 class="psb-title">Связанные персоны</h3>
         <div class="psb-list">
           {% for r in related %}
-          <a href="/person/{{ r['slug'] }}" class="psb-person">
+          <a href="{{ lang_prefix|default('') }}/person/{{ r['slug'] }}" class="psb-person">
             <div class="psb-person-avatar">
               {% if r['photo_url'] %}
               <img src="{% if r['photo_url'].startswith('/') %}{{ r['photo_url'] }}{% else %}{{ imgproxy_url(r['photo_url'], 100) }}{% endif %}" alt="{{ r['short_name'] }}">

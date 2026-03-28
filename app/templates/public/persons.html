@@ -1,8 +1,8 @@
 {% extends "public/base.html" %}
 
-{% block title %}Персоны – Total.kz{% endblock %}
-{% block description %}Каталог ключевых персон в новостях Казахстана — политики, чиновники, международные лидеры{% endblock %}
-{% block canonical %}/persons{% endblock %}
+{% block title %}{% if lang is defined and lang == "kz" %}Тұлғалар{% else %}Персоны{% endif %} – Total.kz{% endblock %}
+{% block description %}{% if lang is defined and lang == "kz" %}Қазақстан жаңалықтарындағы негізгі тұлғалар каталогы{% else %}Каталог ключевых персон в новостях Казахстана — политики, чиновники, международные лидеры{% endif %}{% endblock %}
+{% block canonical %}{{ lang_prefix|default('') }}/persons{% endblock %}
 
 {% block jsonld %}
 {{ super() }}
@@ -21,14 +21,14 @@
 {% block content %}
 <div class="persons-page">
   <nav class="article-top-bar" aria-label="Навигация">
-    <a href="/">Главная</a>
+    <a href="{{ lang_prefix|default('') }}/">{% if lang is defined and lang == "kz" %}Басты бет{% else %}Главная{% endif %}</a>
     <span class="sep">›</span>
-    <span>Персоны</span>
+    <span>{% if lang is defined and lang == "kz" %}Тұлғалар{% else %}Персоны{% endif %}</span>
   </nav>
 
   <header class="persons-header">
-    <h1 class="persons-title">Персоны</h1>
-    <p class="persons-subtitle">{{ format_num(total_persons) }} {{ 'персона' if total_persons % 10 == 1 and total_persons % 100 != 11 else ('персоны' if 2 <= total_persons % 10 <= 4 and not (12 <= total_persons % 100 <= 14) else 'персон') }} в базе</p>
+    <h1 class="persons-title">{% if lang is defined and lang == "kz" %}Тұлғалар{% else %}Персоны{% endif %}</h1>
+    <p class="persons-subtitle">{{ format_num(total_persons) }} {% if lang is defined and lang == "kz" %}тұлға базада{% else %}{{ 'персона' if total_persons % 10 == 1 and total_persons % 100 != 11 else ('персоны' if 2 <= total_persons % 10 <= 4 and not (12 <= total_persons % 100 <= 14) else 'персон') }} в базе{% endif %}</p>
   </header>
 
   <!-- ═══ AD: ABOVE PERSONS LIST (P1-PR) ═══ -->
@@ -39,25 +39,25 @@
     <svg class="persons-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
     </svg>
-    <input type="text" id="persons-search-input" class="persons-search-input" placeholder="Поиск по имени..." autocomplete="off">
+    <input type="text" id="persons-search-input" class="persons-search-input" placeholder="{% if lang is defined and lang == 'kz' %}Аты бойынша іздеу...{% else %}Поиск по имени...{% endif %}" autocomplete="off">
   </div>
 
   {# ── Type filters ── #}
   <div class="persons-filters">
-    <a href="/persons" class="pf-chip{% if not current_type %} active{% endif %}">Все</a>
-    <a href="/persons?type=government" class="pf-chip{% if current_type == 'government' %} active{% endif %}">Государство{% if type_counts.get('government') %} <span class="pf-count">{{ type_counts['government'] }}</span>{% endif %}</a>
-    <a href="/persons?type=international" class="pf-chip{% if current_type == 'international' %} active{% endif %}">Международные{% if type_counts.get('international') %} <span class="pf-count">{{ type_counts['international'] }}</span>{% endif %}</a>
-    <a href="/persons?type=business" class="pf-chip{% if current_type == 'business' %} active{% endif %}">Бизнес{% if type_counts.get('business') %} <span class="pf-count">{{ type_counts['business'] }}</span>{% endif %}</a>
-    <a href="/persons?type=sports" class="pf-chip{% if current_type == 'sports' %} active{% endif %}">Спорт{% if type_counts.get('sports') %} <span class="pf-count">{{ type_counts['sports'] }}</span>{% endif %}</a>
-    <a href="/persons?type=culture_media" class="pf-chip{% if current_type == 'culture_media' %} active{% endif %}">Культура и медиа{% if type_counts.get('culture', 0) + type_counts.get('media', 0) > 0 %} <span class="pf-count">{{ type_counts.get('culture', 0) + type_counts.get('media', 0) }}</span>{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons" class="pf-chip{% if not current_type %} active{% endif %}">{% if lang is defined and lang == "kz" %}Барлығы{% else %}Все{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?type=government" class="pf-chip{% if current_type == 'government' %} active{% endif %}">{% if lang is defined and lang == "kz" %}Мемлекет{% else %}Государство{% endif %}{% if type_counts.get('government') %} <span class="pf-count">{{ type_counts['government'] }}</span>{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?type=international" class="pf-chip{% if current_type == 'international' %} active{% endif %}">{% if lang is defined and lang == "kz" %}Халықаралық{% else %}Международные{% endif %}{% if type_counts.get('international') %} <span class="pf-count">{{ type_counts['international'] }}</span>{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?type=business" class="pf-chip{% if current_type == 'business' %} active{% endif %}">{% if lang is defined and lang == "kz" %}Бизнес{% else %}Бизнес{% endif %}{% if type_counts.get('business') %} <span class="pf-count">{{ type_counts['business'] }}</span>{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?type=sports" class="pf-chip{% if current_type == 'sports' %} active{% endif %}">{% if lang is defined and lang == "kz" %}Спорт{% else %}Спорт{% endif %}{% if type_counts.get('sports') %} <span class="pf-count">{{ type_counts['sports'] }}</span>{% endif %}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?type=culture_media" class="pf-chip{% if current_type == 'culture_media' %} active{% endif %}">{% if lang is defined and lang == "kz" %}Мәдениет және медиа{% else %}Культура и медиа{% endif %}{% if type_counts.get('culture', 0) + type_counts.get('media', 0) > 0 %} <span class="pf-count">{{ type_counts.get('culture', 0) + type_counts.get('media', 0) }}</span>{% endif %}</a>
   </div>
 
   {# ── Alphabet filter ── #}
   {% if letters %}
   <div class="persons-alpha">
-    <a href="/persons{% if current_type %}?type={{ current_type }}{% endif %}" class="alpha-letter{% if not current_letter %} active{% endif %}">Все</a>
+    <a href="{{ lang_prefix|default('') }}/persons{% if current_type %}?type={{ current_type }}{% endif %}" class="alpha-letter{% if not current_letter %} active{% endif %}">{% if lang is defined and lang == "kz" %}Барлығы{% else %}Все{% endif %}</a>
     {% for l in letters %}
-    <a href="/persons?letter={{ l }}{% if current_type %}&type={{ current_type }}{% endif %}" class="alpha-letter{% if current_letter == l %} active{% endif %}">{{ l }}</a>
+    <a href="{{ lang_prefix|default('') }}/persons?letter={{ l }}{% if current_type %}&type={{ current_type }}{% endif %}" class="alpha-letter{% if current_letter == l %} active{% endif %}">{{ l }}</a>
     {% endfor %}
   </div>
   {% endif %}
@@ -65,7 +65,7 @@
   {# ── Person cards ── #}
   <div class="persons-grid">
     {% for p in persons %}
-    <a href="/person/{{ p['slug'] }}" class="person-card">
+    <a href="{{ lang_prefix|default('') }}/person/{{ p['slug'] }}" class="person-card">
       <div class="person-card-avatar{% if p['photo_url'] %} has-photo{% endif %}">
         {% if p['photo_url'] %}
         <img src="{% if p['photo_url'].startswith('/') %}{{ p['photo_url'] }}{% else %}{{ imgproxy_url(p['photo_url'], 200) }}{% endif %}" alt="{{ p['short_name'] }}" loading="lazy">
@@ -85,10 +85,10 @@
   </div>
 
   {% if not persons %}
-  <p class="persons-empty">Персоны не найдены</p>
+  <p class="persons-empty">{% if lang is defined and lang == "kz" %}Тұлғалар табылмады{% else %}Персоны не найдены{% endif %}</p>
   {% endif %}
 
-  <p class="persons-empty" id="persons-no-results" style="display:none">Ничего не найдено</p>
+  <p class="persons-empty" id="persons-no-results" style="display:none">{% if lang is defined and lang == "kz" %}Ештеңе табылмады{% else %}Ничего не найдено{% endif %}</p>
 </div>
 
 <script>
