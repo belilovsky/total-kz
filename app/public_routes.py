@@ -2250,11 +2250,21 @@ async def person_page(request: Request, slug: str):
         (person["entity_id"],)
     ).fetchone()[0]
 
-    # Career positions
-    positions = conn.execute(
-        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY sort_order, start_date DESC",
+    # Career positions — newest first by start_date, mark only ONE as current
+    positions_raw = conn.execute(
+        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY start_date DESC",
         (person["id"],)
     ).fetchall()
+    positions = []
+    found_current = False
+    for p in positions_raw:
+        pd = dict(p)
+        if not pd.get("end_date") and not found_current:
+            pd["is_current"] = True
+            found_current = True
+        else:
+            pd["is_current"] = False
+        positions.append(pd)
 
     # Articles grouped by month (latest first, limit 200)
     articles_raw = conn.execute("""
@@ -2313,7 +2323,7 @@ async def person_page(request: Request, slug: str):
         "request": request,
         "person": dict(person),
         "article_count": article_count,
-        "positions": [dict(p) for p in positions],
+        "positions": positions,
         "months": months,
         "related": [dict(r) for r in related],
         "first_mention": first_mention,
@@ -3437,10 +3447,21 @@ async def kz_person_page(request: Request, slug: str):
         (person["entity_id"],)
     ).fetchone()[0]
 
-    positions = conn.execute(
-        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY sort_order, start_date DESC",
+    # Career positions — newest first by start_date, mark only ONE as current
+    positions_raw = conn.execute(
+        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY start_date DESC",
         (person["id"],)
     ).fetchall()
+    positions = []
+    found_current = False
+    for p in positions_raw:
+        pd = dict(p)
+        if not pd.get("end_date") and not found_current:
+            pd["is_current"] = True
+            found_current = True
+        else:
+            pd["is_current"] = False
+        positions.append(pd)
 
     articles_raw = conn.execute("""
         SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
@@ -3472,14 +3493,47 @@ async def kz_person_page(request: Request, slug: str):
         except Exception:
             continue
 
+    # First/last mention
+    date_range = conn.execute("""
+        SELECT MIN(a.pub_date), MAX(a.pub_date)
+        FROM articles a
+        JOIN article_entities ae ON a.id = ae.article_id
+        WHERE ae.entity_id = ?
+        AND a.pub_date IS NOT NULL AND a.pub_date != ''
+    """, (person["entity_id"],)).fetchone()
+    first_mention = date_range[0][:10] if date_range and date_range[0] else None
+
+    # Related persons
+    related = conn.execute("""
+        SELECT p.slug, p.short_name, p.current_position, p.photo_url, COUNT(*) as shared
+        FROM persons p
+        JOIN article_entities ae1 ON p.entity_id = ae1.entity_id
+        JOIN article_entities ae2 ON ae1.article_id = ae2.article_id
+        WHERE ae2.entity_id = ? AND p.id != ?
+        GROUP BY p.id
+        ORDER BY shared DESC
+        LIMIT 6
+    """, (person["entity_id"], person["id"])).fetchall()
+
     conn.close()
+
+    # Build position title translations from locale keys starting with "position."
+    kz_locale = _load_locale("kz")
+    position_translations = {
+        k[len("position."):]: v
+        for k, v in kz_locale.items()
+        if k.startswith("position.") and isinstance(v, str)
+    }
 
     return templates.TemplateResponse("public/person.html", {
         "request": request,
         "person": dict(person),
         "article_count": article_count,
-        "positions": [dict(p) for p in positions],
+        "positions": positions,
         "months": months,
+        "related": [dict(r) for r in related],
+        "first_mention": first_mention,
+        "position_translations": position_translations,
         "nav_sections": NAV_SECTIONS,
         "nav_categories": NAV_CATEGORIES,
         **_build_lang_ctx("kz"),

@@ -100,7 +100,7 @@
         <button class="person-tab" data-tab="about">О персоне</button>
         {% endif %}
         {% if positions %}
-        <button class="person-tab" data-tab="career">Карьера</button>
+        <button class="person-tab" data-tab="career">{% if lang is defined and lang == "kz" %}Мансап{% else %}Карьера{% endif %}</button>
         {% endif %}
       </div>
 
@@ -186,19 +186,19 @@
         <div class="person-tab-panel" id="tab-career">
           <div class="person-career">
             {% for pos in positions %}
-            <div class="career-item{% if not pos['end_date'] %} career-current{% endif %}">
+            <div class="career-item{% if pos.get('is_current') %} career-current{% endif %}">
               <div class="career-dot"></div>
               <div class="career-body">
-                {% if not pos['end_date'] %}
-                <span class="career-current-badge">Текущая должность</span>
+                {% if pos.get('is_current') %}
+                <span class="career-current-badge">{% if lang is defined and lang == "kz" %}ҚАЗІРГІ ЛАУАЗЫМЫ{% else %}ТЕКУЩАЯ ДОЛЖНОСТЬ{% endif %}</span>
                 {% endif %}
-                <span class="career-title">{{ pos['position_title'] }}</span>
+                <span class="career-title">{% if lang is defined and lang == "kz" and position_translations is defined and pos['position_title'] in position_translations %}{{ position_translations[pos['position_title']] }}{% else %}{{ pos['position_title'] }}{% endif %}</span>
                 {% if pos['organization'] %}
                 <span class="career-org">{{ pos['organization'] }}</span>
                 {% endif %}
                 {% if pos['start_date'] %}
                 <span class="career-date">
-                  с {{ pos['start_date'] }}{% if pos['end_date'] %} по {{ pos['end_date'] }}{% endif %}
+                  {% if lang is defined and lang == "kz" %}{{ pos['start_date'] }}-{% if pos['end_date'] %}{{ pos['end_date'] }}{% else %}қазір{% endif %}{% else %}с {{ pos['start_date'] }}{% if pos['end_date'] %} по {{ pos['end_date'] }}{% endif %}{% endif %}
                 </span>
                 {% endif %}
               </div>
@@ -219,7 +219,7 @@
     <aside class="person-sidebar">
       {# Infobox #}
       <div class="person-sidebar-block person-infobox">
-        <h3 class="psb-title">Краткая справка</h3>
+        <h3 class="psb-title">{% if lang is defined and lang == "kz" %}Қысқаша анықтама{% else %}Краткая справка{% endif %}</h3>
         <table class="person-infobox-table">
           {% if person['current_position'] %}
           <tr><td class="infobox-label">Должность</td><td class="infobox-value">{{ person['current_position'] }}</td></tr>
