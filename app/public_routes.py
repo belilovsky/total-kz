@@ -777,6 +777,24 @@ def _government_rank(position: str) -> int:
     return 99
 
 
+def _parse_career_date(d: str | None) -> tuple:
+    """Parse varied date formats (yyyy, mm.yyyy, dd.mm.yyyy) to sortable tuple."""
+    if not d:
+        return (9999, 12, 31)  # no date = sort to top
+    d = d.strip().replace("/", ".")
+    parts = d.split(".")
+    try:
+        if len(parts) == 3:
+            return (int(parts[2]), int(parts[1]), int(parts[0]))
+        elif len(parts) == 2:
+            return (int(parts[1]), int(parts[0]), 1)
+        elif len(parts) == 1:
+            return (int(parts[0]), 1, 1)
+    except (ValueError, IndexError):
+        pass
+    return (0, 0, 0)
+
+
 def _to_genitive(name: str) -> str:
     """Convert a Russian/Kazakh proper name to genitive case for headings.
 
@@ -2250,15 +2268,16 @@ async def person_page(request: Request, slug: str):
         (person["entity_id"],)
     ).fetchone()[0]
 
-    # Career positions — newest first by start_date, mark only ONE as current
+    # Career positions — newest first, mark only ONE as current
     positions_raw = conn.execute(
-        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY start_date DESC",
+        "SELECT * FROM person_positions WHERE person_id = ?",
         (person["id"],)
     ).fetchall()
+    positions_dicts = [dict(p) for p in positions_raw]
+    positions_dicts.sort(key=lambda p: _parse_career_date(p.get("start_date", "")), reverse=True)
     positions = []
     found_current = False
-    for p in positions_raw:
-        pd = dict(p)
+    for pd in positions_dicts:
         if not pd.get("end_date") and not found_current:
             pd["is_current"] = True
             found_current = True
@@ -3447,15 +3466,16 @@ async def kz_person_page(request: Request, slug: str):
         (person["entity_id"],)
     ).fetchone()[0]
 
-    # Career positions — newest first by start_date, mark only ONE as current
+    # Career positions — newest first, mark only ONE as current
     positions_raw = conn.execute(
-        "SELECT * FROM person_positions WHERE person_id = ? ORDER BY start_date DESC",
+        "SELECT * FROM person_positions WHERE person_id = ?",
         (person["id"],)
     ).fetchall()
+    positions_dicts = [dict(p) for p in positions_raw]
+    positions_dicts.sort(key=lambda p: _parse_career_date(p.get("start_date", "")), reverse=True)
     positions = []
     found_current = False
-    for p in positions_raw:
-        pd = dict(p)
+    for pd in positions_dicts:
         if not pd.get("end_date") and not found_current:
             pd["is_current"] = True
             found_current = True
