@@ -4464,3 +4464,100 @@ a.related-item:visited .related-title {
 .untranslated {
   opacity: 0.55;
 }
+
+/* ═══ NLP: Key Facts Box ═══ */
+.nlp-key-facts {
+  background: var(--surface-secondary, #f8f9fa);
+  border-left: 4px solid var(--accent, #d83236);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.nlp-key-facts-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent, #d83236);
+  margin-bottom: 10px;
+}
+.nlp-key-facts-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.nlp-key-facts-list li {
+  position: relative;
+  padding: 6px 0 6px 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light, #eee);
+}
+.nlp-key-facts-list li:last-child { border-bottom: none; }
+.nlp-key-facts-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #d83236);
+}
+
+/* ═══ NLP: Sentiment Badge ═══ */
+.nlp-sentiment-badge {
+  font-size: var(--text-xs, 12px);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.nlp-sentiment-positive { color: #16a34a; }
+.nlp-sentiment-negative { color: #dc2626; }
+.nlp-sentiment-neutral { color: var(--text-muted); }
+
+/* ═══ NLP: Topic Tags ═══ */
+.nlp-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light, #eee);
+}
+.nlp-topic-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #555);
+  background: var(--surface-secondary, #f0f0f0);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.nlp-topic-tag:hover {
+  background: var(--accent, #d83236);
+  color: #fff;
+}
+
+/* ═══ NLP: Importance Badge on Cards ═══ */
+.nlp-importance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #dc2626);
+  padding: 2px 8px;
+  border-radius: 4px;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}

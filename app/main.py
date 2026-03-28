@@ -2228,6 +2228,52 @@ async def api_seo_duplicates(limit: int = 30):
 
 
 # ══════════════════════════════════════════════
+#  NLP DATA API
+# ══════════════════════════════════════════════
+
+@app.get("/api/article/{article_id}/nlp")
+async def api_article_nlp(article_id: int):
+    """Return NLP extraction data for a single article."""
+    row = db.execute_raw(
+        "SELECT * FROM article_nlp WHERE article_id = %s", (article_id,)
+    )
+    if not row:
+        return JSONResponse({"error": "NLP data not found"}, status_code=404)
+    return row
+
+
+@app.get("/api/analytics/topics")
+async def api_analytics_topics(limit: int = 50):
+    """Top topics by article count (from NLP extraction)."""
+    rows = db.execute_raw_many("""
+        SELECT topic, COUNT(*) as article_count
+        FROM article_nlp, jsonb_array_elements_text(topics) AS topic
+        GROUP BY topic
+        ORDER BY article_count DESC
+        LIMIT %s
+    """, (limit,))
+    return {"topics": rows, "total": len(rows)}
+
+
+@app.get("/api/analytics/sentiment")
+async def api_analytics_sentiment(days: int = 30):
+    """Sentiment distribution over time (daily aggregation)."""
+    rows = db.execute_raw_many("""
+        SELECT
+            DATE(a.pub_date) as date,
+            n.sentiment,
+            COUNT(*) as count,
+            ROUND(AVG(n.sentiment_score)::numeric, 2) as avg_score
+        FROM article_nlp n
+        JOIN articles a ON a.id = n.article_id
+        WHERE a.pub_date >= NOW() - INTERVAL '%s days'
+        GROUP BY DATE(a.pub_date), n.sentiment
+        ORDER BY date DESC, n.sentiment
+    """, (days,))
+    return {"sentiment_over_time": rows, "days": days}
+
+
+# ══════════════════════════════════════════════
 #  ADMIN AI ASSISTANT (GPT-4o-mini)
 # ══════════════════════════════════════════════
 

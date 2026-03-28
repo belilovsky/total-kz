@@ -111,12 +111,15 @@
         <article class="cat2-card">
           <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="cat2-card-link">
             {% if art.main_image or art.thumbnail %}
-            <div class="cat2-card-img">
+            <div class="cat2-card-img" style="position:relative">
+              {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
               <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 480) }}" alt="{{ art.title }}" loading="lazy"
                    onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
             </div>
             {% else %}
-            <div class="cat2-card-img cat2-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+            <div class="cat2-card-img cat2-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}" style="position:relative">
+              {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
+            </div>
             {% endif %}
             <div class="cat2-card-body">
               <div class="cat2-card-meta">

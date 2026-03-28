@@ -185,6 +185,10 @@
         {% endif %}
         <span class="sep">·</span>
         <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} {{ t('article.min') if t is defined else 'мин' }}</span>
+        {% if nlp %}
+        <span class="sep">·</span>
+        <span class="nlp-sentiment-badge nlp-sentiment-{{ nlp.sentiment }}" title="{% if nlp.sentiment == 'positive' %}Позитивная{% elif nlp.sentiment == 'negative' %}Негативная{% else %}Нейтральная{% endif %} тональность">{% if nlp.sentiment == 'positive' %}&#x1F7E2;{% elif nlp.sentiment == 'negative' %}&#x1F534;{% else %}&#x26AA;{% endif %} {% if lang is defined and lang == 'kz' %}{% if nlp.sentiment == 'positive' %}позитивті{% elif nlp.sentiment == 'negative' %}негативті{% else %}бейтарап{% endif %}{% else %}{% if nlp.sentiment == 'positive' %}позитивная{% elif nlp.sentiment == 'negative' %}негативная{% else %}нейтральная{% endif %}{% endif %}</span>
+        {% endif %}
       </div>
     </div>
   </header>
@@ -213,6 +217,21 @@
 
   <div class="article-layout">
     <div class="article-content">
+      {% if nlp and nlp.key_facts %}
+      {% set facts = nlp.key_facts_kz if (lang is defined and lang == 'kz' and nlp.key_facts_kz) else nlp.key_facts %}
+      <div class="nlp-key-facts">
+        <div class="nlp-key-facts-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          {% if lang is defined and lang == 'kz' %}НЕГІЗГІ ФАКТІЛЕР{% else %}КЛЮЧЕВЫЕ ФАКТЫ{% endif %}
+        </div>
+        <ul class="nlp-key-facts-list">
+          {% for fact in facts %}
+          <li>{{ fact }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
       <div class="article-body" id="article-body">
         {% if article.body_html %}
           {{ article.body_html | safe }}
@@ -222,6 +241,15 @@
           {% endfor %}
         {% endif %}
       </div>
+
+      {% if nlp and nlp.topics %}
+      {% set topics_display = nlp.topics_kz if (lang is defined and lang == 'kz' and nlp.topics_kz) else nlp.topics %}
+      <div class="nlp-topics">
+        {% for topic in topics_display %}
+        <a href="{{ lang_prefix|default('') }}/search?q={{ topic | urlencode }}" class="nlp-topic-tag">{{ topic }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
 
       {# Pull quote hidden — data kept for social cards / sharing #}
 

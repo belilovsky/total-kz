@@ -866,6 +866,36 @@ templates.env.globals["person_url_for_entity"] = person_url_for_entity
 templates.env.globals["get_article_persons"] = get_article_persons
 
 
+# ── NLP importance cache for article cards ────
+_nlp_importance_cache: dict = {}
+_nlp_importance_ts: float = 0.0
+_NLP_IMPORTANCE_TTL = 300  # 5 minutes
+
+
+def _refresh_nlp_importance():
+    global _nlp_importance_cache, _nlp_importance_ts
+    try:
+        rows = db.execute_raw_many(
+            "SELECT article_id, importance FROM article_nlp WHERE importance >= 4"
+        )
+        _nlp_importance_cache = {r["article_id"]: r["importance"] for r in rows}
+        _nlp_importance_ts = _time_mod.time()
+    except Exception:
+        pass
+
+
+def get_nlp_importance(article_id: int) -> int:
+    """Get NLP importance score for an article (0 if not found or < 4)."""
+    global _nlp_importance_ts
+    now = _time_mod.time()
+    if now - _nlp_importance_ts > _NLP_IMPORTANCE_TTL:
+        _refresh_nlp_importance()
+    return _nlp_importance_cache.get(article_id, 0)
+
+
+templates.env.globals["get_nlp_importance"] = get_nlp_importance
+
+
 # ══════════════════════════════════════════════
 #  IMAGE PROXY ENDPOINT
 # ══════════════════════════════════════════════
@@ -1363,6 +1393,16 @@ async def article_page(request: Request, category: str, slug: str):
     except Exception:
         popular = []
 
+    # Load NLP data if available
+    nlp_data = None
+    try:
+        nlp_data = db.execute_raw(
+            "SELECT * FROM article_nlp WHERE article_id = %s",
+            (article["id"],)
+        )
+    except Exception:
+        pass
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
@@ -1382,6 +1422,7 @@ async def article_page(request: Request, category: str, slug: str):
         "ticker_articles": ticker_articles,
         "article_persons": article_persons,
         "popular": popular,
+        "nlp": nlp_data,
     })
 
 
@@ -3378,6 +3419,16 @@ async def kz_article_page(request: Request, category: str, slug: str):
     except Exception:
         popular = []
 
+    # Load NLP data if available
+    nlp_data = None
+    try:
+        nlp_data = db.execute_raw(
+            "SELECT * FROM article_nlp WHERE article_id = %s",
+            (article["id"],)
+        )
+    except Exception:
+        pass
+
     return templates.TemplateResponse("public/article.html", {
         "request": request,
         "article": article,
@@ -3397,6 +3448,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
         "ticker_articles": ticker_articles,
         "article_persons": article_persons,
         "popular": popular,
+        "nlp": nlp_data,
         **_build_lang_ctx("kz"),
     })
 

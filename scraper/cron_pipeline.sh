@@ -1,7 +1,7 @@
 #!/bin/sh
 # Unified article processing pipeline
 # Runs every 2 hours from the cron container
-# Steps: fetch → enrich (PG) → NER → story-assign → translate → tags → reindex
+# Steps: fetch → enrich (PG) → NLP → NER → story-assign → translate → tags → reindex
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') — Pipeline start"
 
@@ -13,8 +13,12 @@ cd /app && python scraper/fetch_latest.py 2>&1
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [2/7] Enriching articles (batch 200)..."
 cd /app && python scraper/enrich_articles_pg.py --batch 150 2>&1
 
+# Step 2.5: NLP extraction on new articles
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [2.5/8] NLP extraction (batch 100)..."
+cd /app && python scripts/nlp_extract.py --batch 100 --delay 0.3 2>&1
+
 # Step 3: NER extraction on unprocessed articles
-echo "$(date '+%Y-%m-%d %H:%M:%S') — [3/7] NER extraction (batch 500, 2 workers)..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [3/8] NER extraction (batch 500, 2 workers)..."
 cd /app && python scripts/extract_entities_pg.py --batch 300 --workers 1 2>&1
 
 # Step 3.5: Auto-assign new articles to stories (entity-based)

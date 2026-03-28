@@ -177,12 +177,15 @@
         {% for art in latest[:10] %}
         <article class="feed-card">
           {% if art.main_image or art.thumbnail %}
-          <div class="feed-card-img">
+          <div class="feed-card-img" style="position:relative">
+            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
             <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
                  onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
           </div>
           {% else %}
-          <div class="feed-card-img feed-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"></div>
+          <div class="feed-card-img feed-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}" style="position:relative">
+            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
+          </div>
           {% endif %}
           <div class="feed-card-body">
             <div class="feed-item-meta">
