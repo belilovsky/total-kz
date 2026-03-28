@@ -411,21 +411,18 @@
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
-        {% if art.excerpt %}<span class="timeline-excerpt">{{ art.excerpt[:80] }}{% if art.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
         <span class="timeline-title">{{ article.title }}</span>
-        {% if article.excerpt %}<span class="timeline-excerpt">{{ article.excerpt[:80] }}{% if article.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </div>
       {% for art in timeline.prev %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
-        {% if art.excerpt %}<span class="timeline-excerpt">{{ art.excerpt[:80] }}{% if art.excerpt|length > 80 %}…{% endif %}</span>{% endif %}
       </a>
       {% endfor %}
     </div>
