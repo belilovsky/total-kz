@@ -9,8 +9,12 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') — Pipeline start"
 echo "$(date '+%Y-%m-%d %H:%M:%S') — [1/7] Fetching new articles..."
 cd /app && python scraper/fetch_latest.py 2>&1
 
+# Step 1.5: Download & optimize new article images
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [1.5/8] Media pipeline (new images)..."
+cd /app && python scripts/media_pipeline.py --workers 2 --batch 300 --skip-cache-migrate --skip-dedup 2>&1
+
 # Step 2: Enrich new articles via GPT (PostgreSQL version)
-echo "$(date '+%Y-%m-%d %H:%M:%S') — [2/7] Enriching articles (batch 200)..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') — [2/8] Enriching articles (batch 200)..."
 cd /app && python scraper/enrich_articles_pg.py --batch 150 2>&1
 
 # Step 2.5: NLP extraction on new articles
