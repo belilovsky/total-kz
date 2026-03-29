@@ -252,8 +252,13 @@ templates.env.filters["log"] = _log_filter
 
 def _get_legal_articles(legal_tags: list, limit: int = 24, offset: int = 0) -> dict:
     """Get articles matching legal tags (for /news/zakon section)."""
-    from app.database import get_db
-    with get_db() as conn:
+    import psycopg2, psycopg2.extras
+    conn = psycopg2.connect(os.getenv(
+        "PG_DATABASE_URL",
+        "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz",
+    ))
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         tag_conditions = " OR ".join([f"tags::text ILIKE '%{t}%'" for t in legal_tags])
         query = f"""
             SELECT *, count(*) OVER() as total_count
@@ -262,11 +267,14 @@ def _get_legal_articles(legal_tags: list, limit: int = 24, offset: int = 0) -> d
             ORDER BY pub_date DESC
             LIMIT %s OFFSET %s
         """
-        rows = conn.execute(query, (limit, offset)).fetchall()
+        cur.execute(query, (limit, offset))
+        rows = cur.fetchall()
         total = rows[0]["total_count"] if rows else 0
         articles = [dict(r) for r in rows]
         pages = (total + limit - 1) // limit if total else 1
         return {"articles": articles, "total": total, "pages": pages}
+    finally:
+        conn.close()
 
 
 def _error_response(request: Request, status_code: int = 503):
