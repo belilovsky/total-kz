@@ -243,25 +243,46 @@ def generate_comment(article, is_kz=False):
 
 
 def main():
-    conn = psycopg2.connect(DB_URL)
-    cur = conn.cursor()
+    import sqlite3
+    from pathlib import Path
     
-    # Get all 2026 articles
-    cur.execute("""
+    # Get articles from PostgreSQL
+    pg = psycopg2.connect(DB_URL)
+    pg_cur = pg.cursor()
+    pg_cur.execute("""
         SELECT id, title, sub_category, pub_date 
         FROM articles 
         WHERE pub_date >= '2026-01-01' AND status = 'published'
         ORDER BY pub_date
     """)
     articles = [{"id": r[0], "title": r[1], "sub_category": r[2], "pub_date": r[3]} 
-                for r in cur.fetchall()]
+                for r in pg_cur.fetchall()]
+    pg.close()
     
     print(f"Found {len(articles)} articles from 2026")
     
-    # Check existing comments
-    cur.execute("SELECT count(*) FROM article_comments")
-    existing = cur.fetchone()[0]
-    if existing > 0:
+    # Comments go to SQLite (public_comments table)
+    db_path = Path("/app/data/total.db")
+    conn = sqlite3.connect(str(db_path))
+    
+    # Ensure table exists
+    conn.execute("""CREATE TABLE IF NOT EXISTS public_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_id INTEGER NOT NULL,
+        author_name TEXT NOT NULL,
+        text TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        ip_address TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        moderated_at TEXT DEFAULT NULL,
+        moderated_by TEXT DEFAULT NULL
+    )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_pc_article ON public_comments(article_id, status)")
+    conn.commit()
+    
+    # Check existing
+    existing = conn.execute("SELECT count(*) FROM public_comments").fetchone()[0]
+    if existing > 100:
         print(f"Already {existing} comments exist. Skipping.")
         conn.close()
         return
@@ -274,7 +295,7 @@ def main():
         num_ru = random.choices([1, 2, 3], weights=[50, 35, 15])[0]
         for _ in range(num_ru):
             c = generate_comment(article, is_kz=False)
-            batch.append((c["article_id"], 0, c["username"], "reader", c["comment"], c["created_at"]))
+            batch.append((c["article_id"], c["username"], c["comment"], "approved", "", c["created_at"]))
             total_comments += 1
         
         # 30% chance of 1-2 Kazakh comments
@@ -282,37 +303,34 @@ def main():
             num_kz = random.choices([1, 2], weights=[70, 30])[0]
             for _ in range(num_kz):
                 c = generate_comment(article, is_kz=True)
-                batch.append((c["article_id"], 0, c["username"], "reader", c["comment"], c["created_at"]))
+                batch.append((c["article_id"], c["username"], c["comment"], "approved", "", c["created_at"]))
                 total_comments += 1
         
         # Insert in batches of 500
         if len(batch) >= 500:
-            cur.executemany("""
-                INSERT INTO article_comments (article_id, user_id, username, role, comment, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+            conn.executemany("""
+                INSERT INTO public_comments (article_id, author_name, text, status, ip_address, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, batch)
             conn.commit()
             print(f"  Inserted {total_comments} comments...")
             batch = []
     
-    # Insert remaining
     if batch:
-        cur.executemany("""
-            INSERT INTO article_comments (article_id, user_id, username, role, comment, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
+        conn.executemany("""
+            INSERT INTO public_comments (article_id, author_name, text, status, ip_address, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, batch)
         conn.commit()
     
     print(f"\nDone: {total_comments} comments created for {len(articles)} articles")
     
-    # Stats
-    cur.execute("SELECT count(*) FROM article_comments")
-    print(f"Total in DB: {cur.fetchone()[0]}")
+    total = conn.execute("SELECT count(*) FROM public_comments").fetchone()[0]
+    print(f"Total in DB: {total}")
     
-    cur.execute("""SELECT username, count(*) FROM article_comments 
-                   GROUP BY username ORDER BY count DESC LIMIT 5""")
+    rows = conn.execute("SELECT author_name, count(*) FROM public_comments GROUP BY author_name ORDER BY count(*) DESC LIMIT 5").fetchall()
     print("\nTop commenters:")
-    for r in cur.fetchall():
+    for r in rows:
         print(f"  {r[0]}: {r[1]}")
     
     conn.close()
