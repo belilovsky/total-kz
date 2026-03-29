@@ -250,6 +250,25 @@ def _log_filter(value):
 templates.env.filters["log"] = _log_filter
 
 
+def _get_legal_articles(legal_tags: list, limit: int = 24, offset: int = 0) -> dict:
+    """Get articles matching legal tags (for /news/zakon section)."""
+    from app.database import get_db
+    with get_db() as conn:
+        tag_conditions = " OR ".join([f"tags::text ILIKE '%{t}%'" for t in legal_tags])
+        query = f"""
+            SELECT *, count(*) OVER() as total_count
+            FROM articles
+            WHERE status = 'published' AND ({tag_conditions})
+            ORDER BY pub_date DESC
+            LIMIT %s OFFSET %s
+        """
+        rows = conn.execute(query, (limit, offset)).fetchall()
+        total = rows[0]["total_count"] if rows else 0
+        articles = [dict(r) for r in rows]
+        pages = (total + limit - 1) // limit if total else 1
+        return {"articles": articles, "total": total, "pages": pages}
+
+
 def _error_response(request: Request, status_code: int = 503):
     """Return an error page response for DB or other failures."""
     return templates.TemplateResponse("public/404.html", {
@@ -1129,6 +1148,16 @@ async def homepage(request: Request):
             category_highlights = []
             for section in NAV_SECTIONS:
                 articles = highlights_map.get(section["slug"], [])
+                if not articles and section["slug"] == "zakon":
+                    # Zakon uses tag-based query, not sub_category
+                    try:
+                        legal = _get_legal_articles(
+                            ["закон", "суд", "право", "конституция", "законопроект"],
+                            limit=4, offset=0,
+                        )
+                        articles = legal.get("articles", [])
+                    except Exception:
+                        articles = []
                 if articles:
                     category_highlights.append({
                         "slug": section["slug"],
@@ -1272,8 +1301,13 @@ async def category_page(
         per_page = 24
         offset = (page - 1) * per_page
 
-        # Check if this is a grouped nav section
-        if category in NAV_SLUG_MAP:
+        # Special handling for "zakon" — tag-based section (no sub_category exists)
+        if category == "zakon":
+            LEGAL_TAGS = ["закон", "суд", "право", "конституция", "законопроект",
+                          "кодекс", "правонарушен", "уголовн", "административн"]
+            subcats = []
+            result = _get_legal_articles(LEGAL_TAGS, per_page, offset)
+        elif category in NAV_SLUG_MAP:
             subcats = NAV_SLUG_MAP[category]
             result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
         else:
@@ -3363,6 +3397,15 @@ async def kz_homepage(request: Request):
             category_highlights = []
             for section in NAV_SECTIONS:
                 articles = highlights_map.get(section["slug"], [])
+                if not articles and section["slug"] == "zakon":
+                    try:
+                        legal = _get_legal_articles(
+                            ["закон", "суд", "право", "конституция"],
+                            limit=4, offset=0,
+                        )
+                        articles = legal.get("articles", [])
+                    except Exception:
+                        articles = []
                 if articles:
                     category_highlights.append({
                         "slug": section["slug"],
