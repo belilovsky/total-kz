@@ -259,15 +259,22 @@ def _get_legal_articles(legal_tags: list, limit: int = 24, offset: int = 0) -> d
     ))
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        tag_conditions = " OR ".join([f"tags::text ILIKE '%{t}%'" for t in legal_tags])
+        # Build parameterized ILIKE conditions
+        conditions = []
+        params = []
+        for t in legal_tags:
+            conditions.append("tags::text ILIKE %s")
+            params.append(f"%{t}%")
+        tag_where = " OR ".join(conditions)
+        params.extend([limit, offset])
         query = f"""
             SELECT *, count(*) OVER() as total_count
             FROM articles
-            WHERE status = 'published' AND ({tag_conditions})
+            WHERE status = 'published' AND ({tag_where})
             ORDER BY pub_date DESC
             LIMIT %s OFFSET %s
         """
-        cur.execute(query, (limit, offset))
+        cur.execute(query, params)
         rows = cur.fetchall()
         total = rows[0]["total_count"] if rows else 0
         articles = [dict(r) for r in rows]
