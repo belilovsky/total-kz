@@ -38,6 +38,8 @@ services:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
     container_name: total_kz_cron
     restart: unless-stopped
+    healthcheck:
+      disable: true
     env_file: .env
     volumes:
       - ./data:/app/data
