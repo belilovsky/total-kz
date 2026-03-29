@@ -4568,19 +4568,24 @@ a.related-item:visited .related-title {
 .info-tooltip {
   display: none;
   position: absolute;
-  bottom: 100%;
+  top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-size: 12px;
+  line-height: 1.5;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  z-index: 9999;
   pointer-events: none;
 }
+/* Ensure info strip sits above sticky header so tooltips aren't clipped */
+.currency-strip { position: relative; z-index: 200; overflow: visible; }
+.currency-strip-inner { overflow: visible; }
+.cur-flat { color: var(--text-faint); font-size: 11px; margin-left: 2px; }
 
 /* ═══ Feature 1: Currency Change Indicators ═══ */
 .cur-up { color: var(--green, #16a34a); font-weight: 600; font-size: 11px; margin-left: 2px; }

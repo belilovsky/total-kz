@@ -242,14 +242,7 @@
         {% endif %}
       </div>
 
-      {% if nlp and nlp.topics %}
-      {% set topics_display = nlp.topics_kz if (lang is defined and lang == 'kz' and nlp.topics_kz) else nlp.topics %}
-      <div class="nlp-topics">
-        {% for topic in topics_display %}
-        <a href="{{ lang_prefix|default('') }}/search?q={{ topic | urlencode }}" class="nlp-topic-tag">{{ topic }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
+      {# NLP topics shown inline — dedup happens in combined tags section below #}
 
       {# Pull quote hidden — data kept for social cards / sharing #}
 
@@ -407,12 +400,27 @@
   </div>
   {% endif %}
 
-  {# ── Tag pills (between article body and timeline) ── #}
+  {# ── Combined tags: enrichment keywords + NLP topics (deduplicated) ── #}
   {% set _tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
-  {% if _tags %}
+  {% set _nlp_topics = (nlp.topics if nlp and nlp.topics else []) %}
+  {% set _seen = [] %}
+  {% set _combined = [] %}
+  {% for t in _nlp_topics %}
+    {% if t.lower().strip() not in _seen %}
+      {% if _seen.append(t.lower().strip()) %}{% endif %}
+      {% if _combined.append(t) %}{% endif %}
+    {% endif %}
+  {% endfor %}
+  {% for t in _tags %}
+    {% if t.lower().strip() not in _seen %}
+      {% if _seen.append(t.lower().strip()) %}{% endif %}
+      {% if _combined.append(t) %}{% endif %}
+    {% endif %}
+  {% endfor %}
+  {% if _combined %}
   <div class="article-keywords article-keywords--full">
-    {% for kw in _tags[:8] %}
-    <a href="/search?q={{ kw }}" class="keyword-chip">{{ kw }}</a>
+    {% for kw in _combined[:12] %}
+    <a href="{{ lang_prefix|default('') }}/search?q={{ kw | urlencode }}" class="keyword-chip">{{ kw }}</a>
     {% endfor %}
   </div>
   {% endif %}

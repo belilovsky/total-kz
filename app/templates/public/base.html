@@ -93,7 +93,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=16.0">
+  <link rel="stylesheet" href="/static/css/public.css?v=16.1">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -229,7 +229,7 @@
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
         {% set full_name = (currency_names_kz[r.code] if lang is defined and lang == 'kz' else currency_names[r.code]) if r.code in currency_names else r.code %}
         <span class="currency-item">
-          {{ r.code }} {{ r.rate }}₸{% if r.change and r.change != '0.00' and r.change != '0' %} <span class="cur-{{ 'up' if r.direction == '↑' else 'down' }}">{{ '▲' if r.direction == '↑' else '▼' }}{{ r.change }}₸</span>{% endif %}
+          {{ r.code }} {{ r.rate }}₸{% if r.change and r.change != '0.00' and r.change != '0' %} <span class="cur-{{ 'up' if r.direction == '↑' else 'down' }}">{{ '▲' if r.direction == '↑' else '▼' }}{{ r.change }}₸</span>{% else %} <span class="cur-flat">—</span>{% endif %}
           <span class="info-tooltip">
             <strong>{{ full_name }}</strong><br>
             1 {{ r.code }} = {{ r.rate }} ₸<br>
