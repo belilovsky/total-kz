@@ -6,51 +6,69 @@
 <div class="wide-layout">
   <h1 class="sr-only">{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}</h1>
 
-  <!-- ═══ HERO GRID ═══ -->
+  <!-- ═══ HERO + LIVE FEED ═══ -->
   {% if hero_articles %}
-  <div class="hero-grid">
-    {% set main = hero_articles[0] %}
-    <a href="{{ (article_url_i18n(main) if article_url_i18n is defined else article_url(main)) }}" class="hero-main">
-      {% if main.main_image or main.thumbnail %}
-        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 900) }}" alt="{{ main.title }}" loading="eager"
-             srcset="{{ imgproxy_url(main.main_image or main.thumbnail, 400) }} 400w, {{ imgproxy_url(main.main_image or main.thumbnail, 900) }} 900w"
-             sizes="(max-width:768px) 100vw, 60vw"
-             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-      {% endif %}
-      <div class="hero-main-body">
-        <span class="cat-badge" data-cat="{{ nav_slug_for(main.sub_category) }}">
-          <span class="cat-dot"></span>
-          <span class="cat-name">{{ cat_label(nav_slug_for(main.sub_category)) }}</span>
-        </span>
-        <h2 class="hero-main-title">{{ main.title }}</h2>
-        {% if main.excerpt %}
-          <p class="hero-main-excerpt">{{ main.excerpt[:180] }}{% if main.excerpt|length > 180 %}…{% endif %}</p>
-        {% endif %}
-        <span class="hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
-      </div>
-    </a>
-    <div class="hero-side">
-      {% for hero in hero_articles[1:5] %}
-      <a href="{{ (article_url_i18n(hero) if article_url_i18n is defined else article_url(hero)) }}" class="hero-side-item">
-        {% if hero.main_image or hero.thumbnail %}
-        <div class="hero-side-thumb">
-          <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 300) }}" alt="{{ hero.title }}" loading="eager"
-               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-        </div>
-        {% endif %}
-        <div class="hero-side-body">
-          <div class="hero-side-top">
-            <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
+  <div class="hero-with-feed">
+    <div class="hero-with-feed__main">
+      <div class="hero-grid">
+        {% set main = hero_articles[0] %}
+        <a href="{{ (article_url_i18n(main) if article_url_i18n is defined else article_url(main)) }}" class="hero-main">
+          {% if main.main_image or main.thumbnail %}
+            <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 900) }}" alt="{{ main.title }}" loading="eager"
+                 srcset="{{ imgproxy_url(main.main_image or main.thumbnail, 400) }} 400w, {{ imgproxy_url(main.main_image or main.thumbnail, 900) }} 900w"
+                 sizes="(max-width:768px) 100vw, 60vw"
+                 onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          {% endif %}
+          <div class="hero-main-body">
+            <span class="cat-badge" data-cat="{{ nav_slug_for(main.sub_category) }}">
               <span class="cat-dot"></span>
-              <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
+              <span class="cat-name">{{ cat_label(nav_slug_for(main.sub_category)) }}</span>
             </span>
-            <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
+            <h2 class="hero-main-title">{{ main.title }}</h2>
+            {% if main.excerpt %}
+              <p class="hero-main-excerpt">{{ main.excerpt[:180] }}{% if main.excerpt|length > 180 %}…{% endif %}</p>
+            {% endif %}
+            <span class="hero-main-meta">{{ format_date_short(main.pub_date) }}</span>
           </div>
-          <h3 class="hero-side-title">{{ hero.title }}</h3>
+        </a>
+        <div class="hero-side">
+          {% for hero in hero_articles[1:5] %}
+          <a href="{{ (article_url_i18n(hero) if article_url_i18n is defined else article_url(hero)) }}" class="hero-side-item">
+            {% if hero.main_image or hero.thumbnail %}
+            <div class="hero-side-thumb">
+              <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 300) }}" alt="{{ hero.title }}" loading="eager"
+                   onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+            </div>
+            {% endif %}
+            <div class="hero-side-body">
+              <div class="hero-side-top">
+                <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
+                  <span class="cat-dot"></span>
+                  <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
+                </span>
+                <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
+              </div>
+              <h3 class="hero-side-title">{{ hero.title }}</h3>
+            </div>
+          </a>
+          {% endfor %}
         </div>
-      </a>
-      {% endfor %}
+      </div>
     </div>
+    <aside class="live-feed">
+      <div class="live-feed__header">
+        <span class="live-feed__dot"></span>
+        <h2 class="live-feed__title">{{ t('homepage.live_feed') if t is defined else 'Лента новостей' }}</h2>
+      </div>
+      <div class="live-feed__list">
+        {% for art in latest[:15] %}
+        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="live-feed__item">
+          <span class="live-feed__time">{{ format_time_hhmm(art.pub_date) or format_date_short(art.pub_date) }}</span>
+          <span class="live-feed__text">{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </aside>
   </div>
   {% endif %}
 
@@ -115,6 +133,7 @@
             <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
             <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
             <span class="shelf-card-date">{{ format_date_short(art.pub_date) }}</span>
+            <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
           </div>
         </a>
         {% endfor %}
@@ -196,6 +215,7 @@
               </span>
               <span class="sep">·</span>
               <span>{{ format_date_short(art.pub_date) }}</span>
+              <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
             </div>
             <h3 class="feed-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a></h3>
             {% if art.excerpt %}

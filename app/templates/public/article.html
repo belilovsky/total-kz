@@ -494,6 +494,40 @@
   </section>
   {% endif %}
 
+  {# ── Copyright block ── #}
+  <div class="article-copyright">
+    {{ t('article.copyright') if t is defined else 'При использовании материалов Total.kz ссылка на источник обязательна. Полное или частичное копирование материалов без согласия редакции запрещено.' }}
+  </div>
+
+  {# ── Reactions engagement bar ── #}
+  <div class="engagement-bar" id="engagementBar" data-article-id="{{ article.id }}">
+    <button class="reaction-btn" data-reaction="like" type="button">
+      <span class="reaction-emoji">👍</span>
+      <span class="reaction-label">{{ t('reaction.like') if t is defined else 'Нравится' }}</span>
+      <span class="reaction-count" data-count="like">0</span>
+    </button>
+    <button class="reaction-btn" data-reaction="useful" type="button">
+      <span class="reaction-emoji">💡</span>
+      <span class="reaction-label">{{ t('reaction.useful') if t is defined else 'Полезно' }}</span>
+      <span class="reaction-count" data-count="useful">0</span>
+    </button>
+    <button class="reaction-btn" data-reaction="funny" type="button">
+      <span class="reaction-emoji">😄</span>
+      <span class="reaction-label">{{ t('reaction.funny') if t is defined else 'Забавно' }}</span>
+      <span class="reaction-count" data-count="funny">0</span>
+    </button>
+    <button class="reaction-btn" data-reaction="sad" type="button">
+      <span class="reaction-emoji">😢</span>
+      <span class="reaction-label">{{ t('reaction.sad') if t is defined else 'Сочувствую' }}</span>
+      <span class="reaction-count" data-count="sad">0</span>
+    </button>
+    <button class="reaction-btn" data-reaction="angry" type="button">
+      <span class="reaction-emoji">😡</span>
+      <span class="reaction-label">{{ t('reaction.angry') if t is defined else 'Возмутительно' }}</span>
+      <span class="reaction-count" data-count="angry">0</span>
+    </button>
+  </div>
+
   {# ── Comments section ── #}
   <section class="comments-section" id="comments">
     <h2 class="comments-heading">
@@ -823,6 +857,53 @@ function toggleBookmark(id, title, url, image, date) {
     this.classList.toggle('bookmarked', saved);
     var ic = this.querySelector('.bookmark-icon');
     if (ic) ic.style.fill = saved ? 'var(--accent)' : 'none';
+  });
+})();
+</script>
+<script>
+(function() {
+  var bar = document.getElementById('engagementBar');
+  if (!bar) return;
+  var articleId = bar.dataset.articleId;
+  var lsKey = 'reactions_' + articleId;
+  var userReactions = {};
+  try { userReactions = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch(e) {}
+
+  function updateUI(counts) {
+    bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
+      var rtype = btn.dataset.reaction;
+      var countEl = btn.querySelector('.reaction-count');
+      if (countEl && counts[rtype] !== undefined) {
+        countEl.textContent = counts[rtype] > 0 ? counts[rtype] : '';
+      }
+      btn.classList.toggle('active', !!userReactions[rtype]);
+    });
+  }
+
+  fetch('/api/public/reactions/' + articleId)
+    .then(function(r) { return r.json(); })
+    .then(function(data) { updateUI(data); });
+
+  bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var rtype = btn.dataset.reaction;
+      btn.classList.add('reaction-pulse');
+      setTimeout(function() { btn.classList.remove('reaction-pulse'); }, 300);
+      fetch('/api/public/reactions/' + articleId, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({reaction: rtype})
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok) {
+          if (data.active) { userReactions[rtype] = true; }
+          else { delete userReactions[rtype]; }
+          try { localStorage.setItem(lsKey, JSON.stringify(userReactions)); } catch(e) {}
+          updateUI(data.counts);
+        }
+      });
+    });
   });
 })();
 </script>

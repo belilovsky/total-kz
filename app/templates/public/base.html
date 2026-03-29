@@ -93,7 +93,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/css/public.css?v=15.7">
+  <link rel="stylesheet" href="/static/css/public.css?v=16.0">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -124,13 +124,28 @@
       <nav class="header-nav" aria-label="{{ t('header.menu') if t is defined else 'Разделы' }}">
         {% if nav_sections is defined %}
           {% for section in nav_sections %}
+            {% if section.subcats|length > 1 %}
+            <div class="nav-dropdown">
+              <a href="{{ lang_prefix|default('') }}/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ (t('nav.' + section.slug) if t is defined else section.label) }}</a>
+              <div class="nav-dropdown__menu">
+                {% for sc in section.subcats %}
+                <a href="{{ lang_prefix|default('') }}/news/{{ sc }}" class="nav-dropdown__item">{{ (cat_label_i18n(sc) if cat_label_i18n is defined else cat_label(sc)) }}</a>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
             <a href="{{ lang_prefix|default('') }}/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ (t('nav.' + section.slug) if t is defined else section.label) }}</a>
+            {% endif %}
           {% endfor %}
         {% endif %}
         <a href="{{ lang_prefix|default('') }}/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>{{ t('nav.persons') if t is defined else 'Персоны' }}</a>
       </nav>
 
       <div class="header-actions">
+        <a href="{{ report_news_url|default('https://t.me/total_kz_bot') }}" target="_blank" rel="noopener" class="report-news-btn" title="{{ t('header.report_news') if t is defined else 'Сообщить новость' }}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+          <span class="report-news-label">{{ t('header.report_news') if t is defined else 'Сообщить' }}</span>
+        </a>
         <!-- Language switcher -->
         <div class="lang-switcher">
           {% if lang|default('ru') == 'kz' %}
@@ -214,7 +229,7 @@
         {% if not loop.first %}<span class="currency-sep">·</span>{% endif %}
         {% set full_name = (currency_names_kz[r.code] if lang is defined and lang == 'kz' else currency_names[r.code]) if r.code in currency_names else r.code %}
         <span class="currency-item">
-          {{ r.code }} {{ r.rate }}₸{% if r.direction %}<span class="currency-arrow {{ 'up' if r.direction == '↑' else 'down' }}"></span>{% endif %}
+          {{ r.code }} {{ r.rate }}₸{% if r.change and r.change != '0.00' and r.change != '0' %} <span class="cur-{{ 'up' if r.direction == '↑' else 'down' }}">{{ '▲' if r.direction == '↑' else '▼' }}{{ r.change }}₸</span>{% endif %}
           <span class="info-tooltip">
             <strong>{{ full_name }}</strong><br>
             1 {{ r.code }} = {{ r.rate }} ₸<br>
@@ -231,7 +246,7 @@
         {% if lang is defined and lang == 'kz' and c.label == 'Золото' %}{% set commodity_label = 'Алтын' %}{% endif %}
         {% set commodity_full = (commodity_names_kz[c.label] if lang is defined and lang == 'kz' else commodity_names[c.label]) if c.label in commodity_names else c.label %}
         <span class="currency-item">
-          {{ commodity_label }} {{ c.value }}{% if c.direction %}<span class="currency-arrow {{ 'up' if c.direction == '↑' else 'down' }}"></span>{% endif %}
+          {{ commodity_label }} {{ c.value }}{% if c.direction %} <span class="cur-{{ 'up' if c.direction == '↑' else 'down' }}">{{ '▲' if c.direction == '↑' else '▼' }}</span>{% endif %}
           <span class="info-tooltip">
             <strong>{{ commodity_full }}</strong><br>
             {% if lang is defined and lang == 'kz' %}Бағасы{% else %}Цена{% endif %}: {{ c.value }}<br>
@@ -284,6 +299,13 @@
         {% if nav_sections is defined %}
           {% for section in nav_sections %}
             <a href="{{ lang_prefix|default('') }}/news/{{ section.slug }}"{% if category is defined and category == section.slug %} class="active"{% endif %}>{{ (t('nav.' + section.slug) if t is defined else section.label) }}</a>
+            {% if section.subcats|length > 1 %}
+            <div class="mobile-subcats">
+              {% for sc in section.subcats %}
+              <a href="{{ lang_prefix|default('') }}/news/{{ sc }}" class="mobile-subcat-link">{{ (cat_label_i18n(sc) if cat_label_i18n is defined else cat_label(sc)) }}</a>
+              {% endfor %}
+            </div>
+            {% endif %}
           {% endfor %}
         {% endif %}
         <a href="{{ lang_prefix|default('') }}/persons"{% if '/person' in request.url.path %} class="active"{% endif %}>{{ t('nav.persons') if t is defined else 'Персоны' }}</a>

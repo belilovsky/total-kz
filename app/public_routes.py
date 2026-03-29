@@ -291,6 +291,9 @@ CATEGORY_LABELS = {
     "stil_zhizni": "Стиль жизни",
     "redaktsiya_tandau": "Выбор редакции",
     "drugoe": "Другое",
+    "zakon": "Закон",
+    "pravo": "Право",
+    "zakonodatelstvo": "Законодательство",
 }
 
 # ── Smart grouped navigation (covers 100% of content) ──
@@ -310,6 +313,11 @@ NAV_SECTIONS = [
         "slug": "obshchestvo",
         "label": "Общество",
         "subcats": ["obshchestvo_sobitiya", "obshchestvo", "zhizn", "proisshestviya", "bezopasnost", "stil_zhizni", "religiya", "kultura", "mneniya", "den_v_istorii"],
+    },
+    {
+        "slug": "zakon",
+        "label": "Закон",
+        "subcats": ["zakon", "pravo", "zakonodatelstvo"],
     },
     {
         "slug": "nauka",
@@ -649,6 +657,7 @@ templates.env.globals["t"] = lambda key, **kw: t(key, "ru", **kw)
 templates.env.globals["cat_label_i18n"] = lambda slug: cat_label_i18n(slug, "ru")
 templates.env.globals["article_url_i18n"] = lambda art: article_url_i18n(art, "ru")
 templates.env.globals["lang_url_prefix"] = _lang_url_prefix
+templates.env.globals["report_news_url"] = os.getenv("REPORT_NEWS_URL", "https://t.me/total_kz_bot")
 templates.env.filters["format_num"] = format_num
 
 
@@ -673,6 +682,37 @@ templates.env.filters["fake_views"] = get_views_func
 templates.env.globals["fake_views"] = get_views_func
 templates.env.filters["get_views"] = get_views_func
 templates.env.globals["get_views"] = get_views_func
+
+
+def format_views(n) -> str:
+    """Format view count: 1200 → '1.2K', 345 → '345'."""
+    if isinstance(n, dict):
+        n = get_views_func(n)
+    n = int(n) if n else 0
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return str(n)
+
+
+templates.env.globals["format_views"] = format_views
+templates.env.filters["format_views"] = format_views
+
+
+def format_time_hhmm(date_str) -> str:
+    """Extract HH:MM from a date string."""
+    if not date_str:
+        return ""
+    dt = _parse_datetime(date_str)
+    if dt:
+        return dt.strftime("%H:%M")
+    # Fallback: try to find HH:MM in string
+    m = re.search(r'(\d{2}:\d{2})', str(date_str))
+    return m.group(1) if m else ""
+
+
+templates.env.globals["format_time_hhmm"] = format_time_hhmm
 
 
 # ══════════════════════════════════════════════
@@ -2939,6 +2979,128 @@ async def post_public_comment(article_id: int, request: Request):
     conn.commit()
     conn.close()
     return {"ok": True}
+
+
+# ══════════════════════════════════════════════
+#  Article Reactions (PostgreSQL)
+# ══════════════════════════════════════════════
+
+_REACTION_TYPES = ("like", "useful", "funny", "sad", "angry")
+
+def _get_pg_conn():
+    """Get a raw psycopg2 connection to PostgreSQL."""
+    import psycopg2
+    return psycopg2.connect(os.getenv(
+        "PG_DATABASE_URL",
+        "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz"
+    ))
+
+def _ensure_reactions_table():
+    """Create article_reactions table if not exists."""
+    try:
+        conn = _get_pg_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS article_reactions (
+                id SERIAL PRIMARY KEY,
+                article_id INTEGER NOT NULL,
+                reaction_type TEXT NOT NULL,
+                fingerprint TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_reactions_article ON article_reactions(article_id)")
+        cur.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_reactions_unique
+            ON article_reactions(article_id, reaction_type, fingerprint)
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        logger.warning("Could not create reactions table: %s", e)
+
+_ensure_reactions_table()
+
+
+def _reaction_fingerprint(request: Request) -> str:
+    """Generate a fingerprint from IP + User-Agent."""
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("user-agent", "")
+    return hashlib.md5(f"{ip}:{ua}".encode()).hexdigest()[:16]
+
+
+@router.get("/api/public/reactions/{article_id}")
+async def get_reactions(article_id: int):
+    """Get reaction counts for an article."""
+    try:
+        conn = _get_pg_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT reaction_type, COUNT(*) FROM article_reactions "
+            "WHERE article_id = %s GROUP BY reaction_type",
+            (article_id,)
+        )
+        counts = {rtype: 0 for rtype in _REACTION_TYPES}
+        for row in cur.fetchall():
+            if row[0] in counts:
+                counts[row[0]] = row[1]
+        cur.close()
+        conn.close()
+        return counts
+    except Exception as e:
+        logger.warning("Reactions fetch failed: %s", e)
+        return {rtype: 0 for rtype in _REACTION_TYPES}
+
+
+@router.post("/api/public/reactions/{article_id}")
+async def post_reaction(article_id: int, request: Request):
+    """Toggle a reaction for an article."""
+    try:
+        body = await request.json()
+    except Exception:
+        return {"ok": False, "error": "Invalid request"}
+
+    reaction = body.get("reaction", "")
+    if reaction not in _REACTION_TYPES:
+        return {"ok": False, "error": "Invalid reaction type"}
+
+    fp = body.get("fingerprint") or _reaction_fingerprint(request)
+
+    try:
+        conn = _get_pg_conn()
+        cur = conn.cursor()
+        # Try insert; on conflict (already reacted), delete (toggle off)
+        cur.execute(
+            "SELECT id FROM article_reactions WHERE article_id = %s AND reaction_type = %s AND fingerprint = %s",
+            (article_id, reaction, fp)
+        )
+        existing = cur.fetchone()
+        if existing:
+            cur.execute("DELETE FROM article_reactions WHERE id = %s", (existing[0],))
+        else:
+            cur.execute(
+                "INSERT INTO article_reactions (article_id, reaction_type, fingerprint) VALUES (%s, %s, %s)",
+                (article_id, reaction, fp)
+            )
+        conn.commit()
+
+        # Return updated counts
+        cur.execute(
+            "SELECT reaction_type, COUNT(*) FROM article_reactions "
+            "WHERE article_id = %s GROUP BY reaction_type",
+            (article_id,)
+        )
+        counts = {rtype: 0 for rtype in _REACTION_TYPES}
+        for row in cur.fetchall():
+            if row[0] in counts:
+                counts[row[0]] = row[1]
+        cur.close()
+        conn.close()
+        return {"ok": True, "counts": counts, "toggled": reaction, "active": not existing}
+    except Exception as e:
+        logger.warning("Reaction post failed: %s", e)
+        return {"ok": False, "error": "Server error"}
 
 
 # ══════════════════════════════════════════════

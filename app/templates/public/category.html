@@ -130,6 +130,7 @@
                 </span>
                 <span class="meta-sep">·</span>
                 <span>{{ format_date_short(art.pub_date) }}</span>
+                <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
               </div>
               <h3 class="cat2-card-title">{{ art.title }}</h3>
               {% if art.excerpt %}
