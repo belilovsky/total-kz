@@ -112,12 +112,20 @@ def _fetch_commodities() -> list[dict]:
     return results
 
 
+def _emergency_mode() -> bool:
+    import os
+    return os.getenv("EMERGENCY_MODE", "").lower() in ("1", "true", "yes")
+
+
 def get_rates() -> list[dict]:
     """Return cached currency rates; refresh if stale."""
     global _cache, _cache_ts
     now = time.time()
     if _cache and (now - _cache_ts) < _TTL:
         return _cache
+    # Emergency mode: skip external API, use cache or fallback
+    if _emergency_mode():
+        return _cache or _FALLBACK_RATES
     try:
         rates = _fetch_rates()
         if rates:
@@ -142,6 +150,9 @@ def get_commodities() -> list[dict]:
     now = time.time()
     if _comm_cache and (now - _comm_cache_ts) < _COMM_TTL:
         return _comm_cache
+    # Emergency mode: skip external API, use cache or fallback
+    if _emergency_mode():
+        return _comm_cache or _FALLBACK_COMMODITIES
     try:
         data = _fetch_commodities()
         if data:

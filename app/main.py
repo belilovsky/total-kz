@@ -53,6 +53,7 @@ _RATE_LIMITS: dict[str, tuple[int, int]] = {
     "/search":              (30, 60),   # 30 запросов в минуту
     "/ask":                 (20, 60),   # 20 запросов в минуту
     "/api/public/comments": (10, 60),   # 10 запросов в минуту
+    "/api/public/reactions": (30, 60),  # 30 запросов в минуту
     "/api/suggest":         (60, 60),   # 60 запросов в минуту (autocomplete)
 }
 
@@ -120,6 +121,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # Vary: Save-Data for proper cache separation (lite mode)
+        ct = response.headers.get("content-type", "")
+        if ct.startswith("text/html"):
+            existing_vary = response.headers.get("Vary", "")
+            if "Save-Data" not in existing_vary:
+                parts = [p.strip() for p in existing_vary.split(",") if p.strip()]
+                parts.append("Save-Data")
+                response.headers["Vary"] = ", ".join(parts)
         return response
 
 

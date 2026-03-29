@@ -4837,3 +4837,87 @@ a.related-item:visited .related-title {
   color: var(--accent);
   background: var(--accent-bg);
 }
+
+/* ═══ Print Stylesheet ═══ */
+@media print {
+  .site-header,
+  .header-nav,
+  .currency-strip,
+  .mobile-bar,
+  .mobile-menu,
+  .footer,
+  .ad-placeholder,
+  .engagement-bar,
+  .comments-section .comment-form,
+  .share-sidebar,
+  .live-feed,
+  .trending-tags-row,
+  .persons-strip,
+  .back-to-top,
+  .reading-progress,
+  .search-overlay,
+  .push-bell-wrap,
+  .report-news-btn,
+  .nav-dropdown__menu,
+  .ticker,
+  .ad-top-banner,
+  .ad-below-header,
+  .lite-banner,
+  .for-you-section,
+  .btn-load-more,
+  .feed-duo-sidebar { display: none !important; }
+
+  body {
+    max-width: 100%;
+    font-size: 12pt;
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+  }
+  .wide-layout { max-width: 100%; padding: 0; }
+  img { max-width: 100% !important; page-break-inside: avoid; }
+  a { color: #000 !important; text-decoration: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+  .article-body { font-size: 12pt; line-height: 1.6; }
+  .article-copyright { border-top: 1px solid #ccc; font-size: 9pt; }
+}
+
+/* ═══ Lite Mode: Slow Connections ═══ */
+.lite-mode .hero-side,
+.lite-mode .live-feed,
+.lite-mode .persons-strip,
+.lite-mode .trending-tags-row,
+.lite-mode .ad-placeholder,
+.lite-mode .engagement-bar,
+.lite-mode .shelf-card-img,
+.lite-mode .hero-main img,
+.lite-mode .feed-card-img,
+.lite-mode .article-hero img,
+.lite-mode .regional-section,
+.lite-mode .related-section,
+.lite-mode .cat-top-card-img img,
+.lite-mode .cat2-card-img img,
+.lite-mode .hero-side-thumb img { display: none !important; }
+
+.lite-mode .shelf-row {
+  grid-template-columns: 1fr 1fr;
+}
+.lite-mode .hero-with-feed {
+  display: block;
+}
+.lite-mode .hero-with-feed .live-feed { display: none !important; }
+
+/* Lite banner */
+.lite-banner {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 16px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.lite-banner a { color: var(--accent); text-decoration: underline; }
+[data-theme="dark"] .lite-banner {
+  background: var(--surface-1);
+  color: var(--text-muted);
+}

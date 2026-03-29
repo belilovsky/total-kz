@@ -16,6 +16,7 @@ from pathlib import Path
 SITE_DOMAIN = os.getenv("SITE_DOMAIN", "https://total.qdev.run")
 UMAMI_WEBSITE_ID = os.getenv("UMAMI_WEBSITE_ID", "")
 UMAMI_URL = os.getenv("UMAMI_URL", "/umami")  # relative or absolute URL to Umami instance
+EMERGENCY_MODE = os.getenv("EMERGENCY_MODE", "").lower() in ("1", "true", "yes")
 
 from qazstack.content import reading_time_minutes, slug_from_url, category_from_url
 
@@ -692,7 +693,37 @@ templates.env.globals["cat_label_i18n"] = lambda slug: cat_label_i18n(slug, "ru"
 templates.env.globals["article_url_i18n"] = lambda art: article_url_i18n(art, "ru")
 templates.env.globals["lang_url_prefix"] = _lang_url_prefix
 templates.env.globals["report_news_url"] = os.getenv("REPORT_NEWS_URL", "https://t.me/total_kz_bot")
+templates.env.globals["emergency_mode"] = EMERGENCY_MODE
 templates.env.filters["format_num"] = format_num
+
+
+def is_lite_mode(request: Request) -> bool:
+    """Check if we should serve lite/lightweight content.
+
+    Three signals:
+    1. Save-Data: on HTTP header (user opted in)
+    2. Cookie 'connection_quality' == 'slow' (set by JS Network Info API)
+    3. URL param ?lite=1 (manual override, ?lite=0 forces full)
+    """
+    # Explicit override off
+    if request.query_params.get("lite") == "0":
+        return False
+    # Explicit override on
+    if request.query_params.get("lite") == "1":
+        return True
+    # Save-Data header
+    if request.headers.get("Save-Data") == "on":
+        return True
+    # Cookie from JS detection
+    if request.cookies.get("connection_quality") == "slow":
+        return True
+    # Emergency mode forces lite
+    if EMERGENCY_MODE:
+        return True
+    return False
+
+
+templates.env.globals["is_lite_mode"] = is_lite_mode
 
 
 def get_views_func(article):
@@ -1143,6 +1174,27 @@ def _get_homepage_persons() -> list:
     """Get top 12 persons with photos for homepage strip."""
     _ensure_persons_loaded()
     return _persons_preloaded.get("homepage", [])
+
+
+@router.get("/offline", response_class=HTMLResponse)
+async def offline_page(request: Request):
+    """Offline fallback page served by the service worker."""
+    return templates.TemplateResponse("public/offline.html", {
+        "request": request,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    })
+
+
+@router.get("/sw.js")
+async def serve_sw(request: Request):
+    """Serve service worker from root scope (/ instead of /static/)."""
+    sw_path = Path(__file__).parent / "static" / "sw.js"
+    return FileResponse(
+        sw_path,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"},
+    )
 
 
 @router.get("/", response_class=HTMLResponse)

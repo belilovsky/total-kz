@@ -111,6 +111,20 @@ def get_weather(city_name: str | None = None, city_query: str | None = None) -> 
     If city_name and city_query are provided, fetch weather for that city first
     and place it at the front of the results list.
     """
+    import os as _os
+    if _os.getenv("EMERGENCY_MODE", "").lower() in ("1", "true", "yes"):
+        # Emergency mode: return cached data only, no external calls
+        results = []
+        if city_name and city_query:
+            cached = _cache.get(city_query)
+            if cached:
+                results.append({"city": city_name, **cached["data"]})
+        for city in CITIES:
+            cached = _cache.get(city["query"])
+            if cached:
+                results.append({"city": city["name"], **cached["data"]})
+        return results
+
     now = time.time()
     results = []
 
