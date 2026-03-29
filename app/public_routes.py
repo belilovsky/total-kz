@@ -3495,7 +3495,13 @@ async def kz_category_page(
         per_page = 24
         offset = (page - 1) * per_page
 
-        if category in NAV_SLUG_MAP:
+        # Special handling for "zakon" — tag-based section
+        if category == "zakon":
+            LEGAL_TAGS = ["закон", "суд", "право", "конституция", "законопроект",
+                          "кодекс", "правонарушен", "уголовн", "административн"]
+            subcats = []
+            result = _get_legal_articles(LEGAL_TAGS, per_page, offset)
+        elif category in NAV_SLUG_MAP:
             subcats = NAV_SLUG_MAP[category]
             result = db.get_latest_by_categories(subcats, limit=per_page, offset=offset)
         else:
