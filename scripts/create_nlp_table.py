@@ -15,7 +15,7 @@ import psycopg2
 
 PG_URL = os.environ.get(
     "PG_DATABASE_URL",
-    "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz",
+    "postgresql://total_kz:total_kz@db:5432/total_kz",
 )
 
 CREATE_SQL = """

@@ -26,11 +26,12 @@ from pathlib import Path
 import httpx
 import psycopg2
 import psycopg2.extras
+from psycopg2.extras import Json
 
 # ── Config ──────────────────────────────────────────────
 PG_URL = os.environ.get(
     "PG_DATABASE_URL",
-    "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz",
+    "postgresql://total_kz:total_kz@db:5432/total_kz",
 )
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 DEFAULT_MODEL = "gpt-4o-mini"
@@ -212,52 +213,60 @@ def _validate_result(data: dict) -> dict:
     }
 
 
-def _save_batch(conn, results: list, model: str):
-    """Save a batch of NLP results to PostgreSQL."""
+def _save_batch(conn, results: list, model: str) -> int:
+    """Save a batch of NLP results to PostgreSQL. Returns count of saved rows."""
     if not results:
-        return
+        return 0
+    saved = 0
     cur = conn.cursor()
     for article_id, data in results:
         v = _validate_result(data)
-        cur.execute("""
-            INSERT INTO article_nlp (
-                article_id, sentiment, sentiment_score, importance, geo_focus,
-                topics, key_facts, events, money_mentions, laws_mentioned,
-                related_context, topics_kz, key_facts_kz, model
-            ) VALUES (
-                %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, %s,
-                %s, %s, %s, %s
-            )
-            ON CONFLICT (article_id) DO UPDATE SET
-                sentiment = EXCLUDED.sentiment,
-                sentiment_score = EXCLUDED.sentiment_score,
-                importance = EXCLUDED.importance,
-                geo_focus = EXCLUDED.geo_focus,
-                topics = EXCLUDED.topics,
-                key_facts = EXCLUDED.key_facts,
-                events = EXCLUDED.events,
-                money_mentions = EXCLUDED.money_mentions,
-                laws_mentioned = EXCLUDED.laws_mentioned,
-                related_context = EXCLUDED.related_context,
-                topics_kz = EXCLUDED.topics_kz,
-                key_facts_kz = EXCLUDED.key_facts_kz,
-                processed_at = NOW(),
-                model = EXCLUDED.model
-        """, (
-            article_id, v["sentiment"], v["sentiment_score"], v["importance"], v["geo_focus"],
-            json.dumps(v["topics"], ensure_ascii=False),
-            json.dumps(v["key_facts"], ensure_ascii=False),
-            json.dumps(v["events"], ensure_ascii=False),
-            json.dumps(v["money_mentions"], ensure_ascii=False),
-            json.dumps(v["laws_mentioned"], ensure_ascii=False),
-            v["related_context"],
-            json.dumps(v["topics_kz"], ensure_ascii=False),
-            json.dumps(v["key_facts_kz"], ensure_ascii=False),
-            model,
-        ))
+        try:
+            cur.execute("""
+                INSERT INTO article_nlp (
+                    article_id, sentiment, sentiment_score, importance, geo_focus,
+                    topics, key_facts, events, money_mentions, laws_mentioned,
+                    related_context, topics_kz, key_facts_kz, model
+                ) VALUES (
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s
+                )
+                ON CONFLICT (article_id) DO UPDATE SET
+                    sentiment = EXCLUDED.sentiment,
+                    sentiment_score = EXCLUDED.sentiment_score,
+                    importance = EXCLUDED.importance,
+                    geo_focus = EXCLUDED.geo_focus,
+                    topics = EXCLUDED.topics,
+                    key_facts = EXCLUDED.key_facts,
+                    events = EXCLUDED.events,
+                    money_mentions = EXCLUDED.money_mentions,
+                    laws_mentioned = EXCLUDED.laws_mentioned,
+                    related_context = EXCLUDED.related_context,
+                    topics_kz = EXCLUDED.topics_kz,
+                    key_facts_kz = EXCLUDED.key_facts_kz,
+                    processed_at = NOW(),
+                    model = EXCLUDED.model
+            """, (
+                article_id, v["sentiment"], v["sentiment_score"], v["importance"], v["geo_focus"],
+                Json(v["topics"]),
+                Json(v["key_facts"]),
+                Json(v["events"]),
+                Json(v["money_mentions"]),
+                Json(v["laws_mentioned"]),
+                v["related_context"],
+                Json(v["topics_kz"]),
+                Json(v["key_facts_kz"]),
+                model,
+            ))
+            saved += 1
+        except Exception as e:
+            log.error("Failed to upsert article %d: %s", article_id, e)
+            conn.rollback()
+            continue
     conn.commit()
     cur.close()
+    return saved
 
 
 async def process_articles(articles: list, model: str, delay: float, dry_run: bool):
@@ -289,13 +298,17 @@ async def process_articles(articles: list, model: str, delay: float, dry_run: bo
                     log.info("Processed %d/%d articles (errors: %d)", processed, len(articles), errors)
                 # Save every 50 articles to avoid data loss
                 if not dry_run and len(results) >= 50:
-                    conn = psycopg2.connect(PG_URL)
                     try:
-                        _save_batch(conn, results, model)
-                        log.info("Intermediate save: %d results", len(results))
-                        results = []
-                    finally:
-                        conn.close()
+                        conn = psycopg2.connect(PG_URL)
+                        try:
+                            saved = _save_batch(conn, results, model)
+                            log.info("Intermediate save: %d/%d results written to DB", saved, len(results))
+                            results = []
+                        finally:
+                            conn.close()
+                    except psycopg2.OperationalError as e:
+                        log.error("DB connection failed during intermediate save: %s", e)
+                        # Keep results in memory, will retry on next batch or final save
             else:
                 errors += 1
                 log.warning("Failed to process article %d", article_id)
@@ -311,12 +324,15 @@ async def process_articles(articles: list, model: str, delay: float, dry_run: bo
                      aid, data.get("sentiment"), data.get("importance", 0),
                      data.get("topics", [])[:3])
     elif results:
-        conn = psycopg2.connect(PG_URL)
         try:
-            _save_batch(conn, results, model)
-            log.info("Final save: %d results", len(results))
-        finally:
-            conn.close()
+            conn = psycopg2.connect(PG_URL)
+            try:
+                saved = _save_batch(conn, results, model)
+                log.info("Final save: %d/%d results written to DB", saved, len(results))
+            finally:
+                conn.close()
+        except psycopg2.OperationalError as e:
+            log.error("DB connection failed during final save — %d results LOST: %s", len(results), e)
 
     return processed, errors
 
