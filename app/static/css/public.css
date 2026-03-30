@@ -830,6 +830,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   display:flex; align-items:center; gap:var(--space-3);
   margin-top:var(--space-2);
   font-size:var(--text-xs); color:var(--text-muted);
+  flex-wrap:wrap;
+}
+@media (max-width:480px) {
+  .article-header-aside { gap:var(--space-1) var(--space-2); font-size:11px; }
+  .article-header-aside .nlp-sentiment-badge { display:none; }
 }
 .header-date {
   font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap;
@@ -1334,7 +1339,8 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 .timeline-heading {
   font-size:var(--text-xs); font-weight:700; text-transform:uppercase;
   letter-spacing:0.06em; color:var(--text-muted);
-  display:inline-flex; align-items:center; gap:6px; margin-bottom:var(--space-1);
+  display:flex; align-items:baseline; gap:6px; margin-bottom:var(--space-1);
+  flex-wrap:wrap;
 }
 @media (min-width:640px) { .timeline-heading { font-size:var(--text-sm); } }
 .timeline-heading svg { width:15px; height:15px; color:var(--text-muted); flex-shrink:0; position:relative; top:-0.5px; }
@@ -4422,6 +4428,38 @@ a.related-item:visited .related-title {
 @media (max-width:767px) {
   .floating-share { display:none !important; }
   .share-buttons { display:none !important; }
+}
+
+/* ── Reactions: hide on desktop, show inline on mobile ── */
+.sidebar-reactions { display:none !important; }
+.reactions-mobile { display:none; }
+@media (max-width:1099px) {
+  .reactions-mobile {
+    display:block;
+    margin:20px 0 8px;
+    padding:16px 0;
+    border-top:1px solid var(--border-light);
+  }
+  .reactions-mobile-grid {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    justify-content:center;
+  }
+  .reactions-mobile .sidebar-reaction-btn {
+    padding:8px 14px;
+    font-size:13px;
+    border-radius:20px;
+  }
+  .reactions-mobile .reaction-emoji { font-size:18px; line-height:1; }
+  .reactions-mobile .reaction-count { font-size:12px; font-weight:700; }
+}
+@media (max-width:480px) {
+  .reactions-mobile .sidebar-reaction-btn {
+    padding:10px 16px;
+    min-height:44px;
+    min-width:44px;
+  }
 }
 
 /* ── FIX M3b: "Сейчас читают" – show below article on mobile ── */
