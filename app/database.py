@@ -997,6 +997,35 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
         return articles
 
 
+def get_latest_articles_full(limit: int = 50) -> list:
+    """Get latest articles WITH body_html for RSS/feed syndication."""
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, url, pub_date, sub_category, title, author, excerpt,
+                   thumbnail, main_image, COALESCE(views, 0) as views, body_html
+            FROM articles
+            WHERE pub_date IS NOT NULL AND pub_date != ''
+            ORDER BY pub_date DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+        articles = [dict(r) for r in rows]
+        try:
+            ids = [a["id"] for a in articles if not a.get("excerpt")]
+            if ids:
+                placeholders = ','.join('?' * len(ids))
+                sums = conn.execute(f"""
+                    SELECT article_id, summary FROM article_enrichments
+                    WHERE article_id IN ({placeholders})
+                """, ids).fetchall()
+                smap = {r["article_id"]: r["summary"] for r in sums}
+                for a in articles:
+                    if not a.get("excerpt") and a["id"] in smap:
+                        a["excerpt"] = smap[a["id"]]
+        except Exception:
+            pass
+        return articles
+
+
 def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> dict:
     """Get latest articles for a category with pagination."""
     with get_db() as conn:

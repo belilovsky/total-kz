@@ -2354,7 +2354,7 @@ def _build_rss_xml(title: str, description: str, self_url: str, articles: list) 
 async def rss_feed():
     """RSS 2.0 feed — latest 50 articles across all categories."""
     try:
-        articles = db.get_latest_articles(limit=50)
+        articles = db.get_latest_articles_full(limit=50)
     except Exception:
         logger.exception("Database error in rss_feed")
         return Response(content="Service unavailable", status_code=503)
@@ -3046,7 +3046,7 @@ async def turbo_rss():
     """Yandex Turbo Pages RSS feed — full article body_html."""
     import html as html_mod
     try:
-        articles = db.get_latest_articles(limit=100)
+        articles = db.get_latest_articles_full(limit=100)
     except Exception:
         logger.exception("Database error in turbo_rss")
         return Response(content="Service unavailable", status_code=503)
@@ -3126,7 +3126,7 @@ async def zen_rss():
     """Yandex Zen/Dzen RSS feed — full content:encoded for syndication."""
     import html as html_mod
     try:
-        articles = db.get_latest_articles(limit=50)
+        articles = db.get_latest_articles_full(limit=50)
     except Exception:
         logger.exception("Database error in zen_rss")
         return Response(content="Service unavailable", status_code=503)
@@ -3189,7 +3189,7 @@ async def fb_instant_articles_rss():
     """Facebook Instant Articles RSS feed."""
     import html as html_mod
     try:
-        articles = db.get_latest_articles(limit=30)
+        articles = db.get_latest_articles_full(limit=30)
     except Exception:
         logger.exception("Database error in fb_instant_articles_rss")
         return Response(content="Service unavailable", status_code=503)
@@ -3266,7 +3266,7 @@ async def flipboard_rss():
     """Flipboard RSS feed — full content with media:content."""
     import html as html_mod
     try:
-        articles = db.get_latest_articles(limit=30)
+        articles = db.get_latest_articles_full(limit=30)
     except Exception:
         logger.exception("Database error in flipboard_rss")
         return Response(content="Service unavailable", status_code=503)

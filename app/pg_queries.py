@@ -903,6 +903,35 @@ def get_latest_articles(limit: int = 20, offset: int = 0) -> list:
         return articles
 
 
+def get_latest_articles_full(limit: int = 50) -> list:
+    """Get latest articles WITH body_html for RSS/feed syndication."""
+    _FEED_COLUMNS = _ARTICLE_LIST_COLUMNS + [Article.body_html]
+    with get_pg_session() as db:
+        rows = db.execute(
+            select(*_FEED_COLUMNS)
+            .where(Article.status == "published")
+            .order_by(Article.pub_date.desc())
+            .limit(limit)
+        ).all()
+        keys = ["id", "url", "pub_date", "sub_category", "title", "author",
+                "excerpt", "thumbnail", "main_image", "views", "body_html"]
+        articles = [_row_to_dict(r, keys) for r in rows]
+        try:
+            ids = [a["id"] for a in articles if not a.get("excerpt")]
+            if ids:
+                sums = db.execute(
+                    select(ArticleEnrichment.article_id, ArticleEnrichment.summary)
+                    .where(ArticleEnrichment.article_id.in_(ids))
+                ).all()
+                smap = {r[0]: r[1] for r in sums}
+                for a in articles:
+                    if not a.get("excerpt") and a["id"] in smap:
+                        a["excerpt"] = smap[a["id"]]
+        except Exception:
+            pass
+        return articles
+
+
 def get_latest_by_category(category: str, limit: int = 10, offset: int = 0) -> dict:
     """Get latest articles for a category with pagination."""
     with get_pg_session() as db:
