@@ -4430,68 +4430,95 @@ a.related-item:visited .related-title {
   .share-buttons { display:none !important; }
 }
 
-/* ── Reactions: hide on desktop, show inline on mobile ── */
+/* ── Sidebar reactions: always hidden (replaced by engage-bar on mobile) ── */
 .sidebar-reactions { display:none !important; }
-.reactions-mobile { display:none; }
+/* Floating share bar removed — replaced by inline engage-bar */
+.mobile-share-bar { display:none !important; }
 
-/* ── Inline share buttons: replace floating bar ── */
-.share-buttons-inline {
-  display:none;
-}
+/* ── Engage bar: compact card with reactions + share (≤ 1099px) ── */
+.engage-bar { display:none; }
 @media (max-width:1099px) {
-  .share-buttons-inline {
+  .engage-bar {
     display:flex;
     align-items:center;
-    justify-content:center;
-    gap:4px;
-    margin:12px 0 0;
+    gap:0;
+    margin:24px 0 16px;
+    padding:8px 12px;
+    background:var(--surface-2, #f5f5f5);
+    border-radius:var(--radius-lg, 12px);
   }
-  .share-buttons-inline .share-btn {
-    display:flex; align-items:center; justify-content:center;
-    width:40px; height:40px;
-    border-radius:50%;
-    border:1px solid var(--border-light);
-    background:var(--surface);
-    color:var(--text-muted);
-    transition:all var(--transition);
-  }
-  .share-buttons-inline .share-btn:hover,
-  .share-buttons-inline .share-btn:active {
-    border-color:var(--accent);
-    color:var(--accent);
-    background:var(--accent-bg);
-  }
-  .share-buttons-inline .share-btn svg { width:18px; height:18px; }
-}
-/* Floating share bar replaced by inline buttons */
-.mobile-share-bar { display:none !important; }
-@media (max-width:1099px) {
-  .reactions-mobile {
-    display:block;
-    margin:20px 0 8px;
-    padding:0;
-  }
-  .reactions-mobile-grid {
+  .engage-bar-reactions {
     display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-    justify-content:center;
+    align-items:center;
+    gap:2px;
+    flex:1;
+    min-width:0;
   }
-  .reactions-mobile .sidebar-reaction-btn {
-    padding:8px 14px;
-    font-size:13px;
-    border-radius:20px;
+  .engage-reaction {
+    display:inline-flex;
+    align-items:center;
+    gap:3px;
+    padding:6px 8px;
+    border:none;
+    background:transparent;
+    border-radius:var(--radius-md, 8px);
+    cursor:pointer;
+    transition:background var(--transition, .15s);
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
   }
-  .reactions-mobile .reaction-emoji { font-size:18px; line-height:1; }
-  .reactions-mobile .reaction-count { font-size:12px; font-weight:700; }
+  .engage-reaction:hover,
+  .engage-reaction:active {
+    background:var(--surface, #fff);
+  }
+  .engage-reaction.active {
+    background:var(--surface, #fff);
+    box-shadow:0 0 0 1.5px var(--accent, #d83236);
+  }
+  .engage-reaction .reaction-emoji { font-size:18px; line-height:1; }
+  .engage-reaction .reaction-count {
+    font-size:11px; font-weight:700; color:var(--text-muted);
+    min-width:0;
+  }
+  .engage-reaction .reaction-count:empty { display:none; }
+  .engage-bar-divider {
+    width:1px;
+    height:24px;
+    background:var(--border-light, #e0e0e0);
+    margin:0 8px;
+    flex-shrink:0;
+  }
+  .engage-bar-share {
+    display:flex;
+    align-items:center;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .engage-share-btn {
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px;
+    border-radius:var(--radius-md, 8px);
+    border:none;
+    background:transparent;
+    color:var(--text-muted);
+    cursor:pointer;
+    transition:background var(--transition, .15s);
+    text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .engage-share-btn:hover,
+  .engage-share-btn:active {
+    background:var(--surface, #fff);
+    color:var(--text);
+  }
+  .engage-share-btn svg { width:16px; height:16px; }
 }
-@media (max-width:480px) {
-  .reactions-mobile .sidebar-reaction-btn {
-    padding:10px 16px;
-    min-height:44px;
-    min-width:44px;
-  }
-}
+[data-theme="dark"] .engage-bar { background:var(--surface-2, #1e1e1e); }
+[data-theme="dark"] .engage-reaction:hover,
+[data-theme="dark"] .engage-reaction:active,
+[data-theme="dark"] .engage-reaction.active { background:var(--surface, #2a2a2a); }
+[data-theme="dark"] .engage-share-btn:hover,
+[data-theme="dark"] .engage-share-btn:active { background:var(--surface, #2a2a2a); }
 
 /* ── FIX M3b: "Сейчас читают" – show below article on mobile ── */
 @media (max-width:1099px) {
