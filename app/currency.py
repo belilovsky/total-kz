@@ -13,6 +13,7 @@ _cache: dict | None = None
 _cache_ts: float = 0
 _TTL = 3600  # 1 hour
 
+
 _CODES = ("USD", "EUR", "CNY", "RUB")
 _FLAGS = {"USD": "🇺🇸", "EUR": "🇪🇺", "CNY": "🇨🇳", "RUB": "🇷🇺"}
 
@@ -29,10 +30,49 @@ _FALLBACK_COMMODITIES = [
 ]
 
 
+def _fetch_rates_for_date(date_str: str) -> list[dict]:
+    """Fetch full rates list for a given date dd.mm.yyyy."""
+    url = f"https://nationalbank.kz/rss/get_rates.cfm?fdate={date_str}"
+    resp = httpx.get(url, timeout=10, follow_redirects=True)
+    resp.raise_for_status()
+    root = ET.fromstring(resp.text)
+    result = []
+    for item in root.findall("item"):
+        code = item.findtext("title", "").strip()
+        if code not in _CODES:
+            continue
+        raw_rate = float(item.findtext("description", "0").strip())
+        quant = int(item.findtext("quant", "1").strip())
+        change_val = item.findtext("change", "0").strip()
+        result.append({"code": code, "rate": raw_rate / quant if quant > 1 else raw_rate, "change": change_val})
+    return result
+
+
 def _fetch_rates() -> list[dict]:
-    """Fetch currency rates from NB RK XML API."""
-    today = datetime.now().strftime("%d.%m.%Y")
-    url = f"https://nationalbank.kz/rss/get_rates.cfm?fdate={today}"
+    """Fetch currency rates from NB RK XML API with prev day comparison."""
+    from datetime import timedelta
+    today = datetime.now()
+    today_str = today.strftime("%d.%m.%Y")
+    # Find last business day with non-zero changes (to use on weekends)
+    last_bday_changes = {}  # code -> {change, direction}
+    for delta in range(1, 7):
+        prev_day = today - timedelta(days=delta)
+        try:
+            prev_data = _fetch_rates_for_date(prev_day.strftime("%d.%m.%Y"))
+            has_changes = False
+            for pd in prev_data:
+                cv = float(pd["change"]) if pd["change"] else 0.0
+                if abs(cv) > 0.001 and pd["code"] not in last_bday_changes:
+                    last_bday_changes[pd["code"]] = {
+                        "change": pd["change"],
+                        "direction": "↑" if cv > 0 else "↓"
+                    }
+                    has_changes = True
+            if has_changes and len(last_bday_changes) >= len(_CODES):
+                break
+        except Exception:
+            continue
+    url = f"https://nationalbank.kz/rss/get_rates.cfm?fdate={today_str}"
     resp = httpx.get(url, timeout=10, follow_redirects=True)
     resp.raise_for_status()
     root = ET.fromstring(resp.text)
@@ -51,7 +91,13 @@ def _fetch_rates() -> list[dict]:
         elif change_f < 0:
             direction = "↓"
         else:
-            direction = ""
+            # Use last business day's change data on weekends/holidays
+            bday = last_bday_changes.get(code)
+            if bday:
+                direction = bday["direction"]
+                change_val = bday["change"]
+            else:
+                direction = ""
         # Format rate nicely
         if rate_per_one >= 10:
             rate_str = f"{rate_per_one:.2f}"

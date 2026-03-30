@@ -841,14 +841,14 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* Title – full-width, slightly larger */
 .article-title {
-  font-size:clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem); font-weight:800; line-height:1.2;
+  font-size:clamp(1.375rem, 1.2rem + 0.5vw, 1.625rem); font-weight:800; line-height:1.2;
   letter-spacing:-0.02em; color:var(--text);
 }
 @media (min-width:640px) {
-  .article-title { font-size:clamp(1.5rem, 1.3rem + 0.8vw, 2rem); line-height:1.18; letter-spacing:-0.025em; }
+  .article-title { font-size:clamp(1.625rem, 1.4rem + 0.8vw, 2.125rem); line-height:1.18; letter-spacing:-0.025em; }
 }
 @media (min-width:1100px) {
-  .article-title { font-size:clamp(1.5rem, 1.3rem + 0.5vw, 1.8rem); }
+  .article-title { font-size:clamp(1.625rem, 1.4rem + 0.5vw, 1.925rem); }
 }
 
 /* Excerpt + meta on one compact line if short */
@@ -4534,21 +4534,16 @@ a.related-item:visited .related-title {
 
 /* ═══ NLP: Key Facts Card ═══ */
 .nlp-key-facts {
-  background: var(--surface, #fff);
+  background: linear-gradient(135deg, rgba(216, 50, 54, 0.03) 0%, rgba(216, 50, 54, 0.08) 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 12px);
   padding: 20px 24px;
   margin-bottom: 28px;
-  box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
 .nlp-key-facts::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--accent, #d83236);
+  display: none;
 }
 .nlp-key-facts-title {
   display: flex;
@@ -4560,8 +4555,8 @@ a.related-item:visited .related-title {
   text-transform: uppercase;
   color: var(--accent, #d83236);
   margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-light, #eee);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .nlp-key-facts-title svg {
   color: var(--accent, #d83236);
