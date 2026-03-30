@@ -191,9 +191,7 @@
   <header class="article-page-header">
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
-      {% if article.excerpt %}
-      <p class="article-lead">{{ article.excerpt }}</p>
-      {% endif %}
+      {# Lead removed — excerpt already shown as first sentence of body #}
       <div class="article-header-aside">
         <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
@@ -355,11 +353,25 @@
           <ul class="article-toc-list" id="toc-list"></ul>
         </nav>
 
-        {# ── Персоны упомянутые в статье (mini-cards) ── #}
-        {% if article_persons %}
+        {# ── Персоны упомянутые в статье (mini-cards, deduplicated) ── #}
+        {# Dedup: skip persons whose short_name is a substring of another person's short_name #}
+        {% set _all_names = article_persons|map(attribute='short_name')|list if article_persons else [] %}
+        {% set _deduped_persons = [] %}
+        {% for p in article_persons %}
+          {% set dominated = [] %}
+          {% for other in _all_names %}
+            {% if other != p.short_name and p.short_name in other %}
+              {% if dominated.append(1) %}{% endif %}
+            {% endif %}
+          {% endfor %}
+          {% if dominated|length == 0 %}
+            {% if _deduped_persons.append(p) %}{% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if _deduped_persons %}
         <div class="sidebar-persons">
           <div class="sidebar-persons-title">{{ t('article.mentioned') if t is defined else 'Упоминаются' }}</div>
-          {% for p in article_persons %}
+          {% for p in _deduped_persons %}
           <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="sidebar-person-card">
             {% if p.photo_url %}
             <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 80) }}{% endif %}"
@@ -427,12 +439,6 @@
           </div>
         </div>
 
-        {# ── Сообщить новость button ── #}
-        <a href="{{ report_news_url|default('https://t.me/total_kz_bot') }}" target="_blank" rel="noopener" class="sidebar-report-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
-          {{ t('header.report_news') if t is defined else 'Сообщить новость' }}
-        </a>
-
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
         <div class="popular-widget">
@@ -449,16 +455,22 @@
         <!-- ═══ AD: ARTICLE SIDEBAR ═══ -->
         <div class="ad-placeholder ad-sidebar" data-ad-slot="R4" data-ad-size="300x250" aria-hidden="true">Реклама</div>
         <div class="ad-placeholder ad-sidebar-btf" data-ad-slot="R5" data-ad-size="300x600" aria-hidden="true">Реклама</div>
+
+        {# ── Поделиться темой (bottom of sidebar) ── #}
+        <a href="https://t.me/share/url?url={{ site_domain }}/news/{{ category }}/{{ slug }}&text={{ article.title | urlencode }}" target="_blank" rel="noopener" class="sidebar-report-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+          Поделиться темой
+        </a>
       </div>
     </aside>
   </div>
 
-  {# ── Mobile: "Упоминаются" horizontal strip (hidden on desktop) ── #}
-  {% if article_persons %}
+  {# ── Mobile: "Упоминаются" horizontal strip (hidden on desktop, deduplicated) ── #}
+  {% if _deduped_persons %}
   <div class="persons-mobile-strip">
     <div class="sidebar-persons-title">{{ t('article.mentioned') if t is defined else 'Упоминаются' }}</div>
     <div class="persons-mobile-strip-inner">
-      {% for p in article_persons %}
+      {% for p in _deduped_persons %}
       <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="sidebar-person-card">
         {% if p.photo_url %}
         <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 80) }}{% endif %}"
