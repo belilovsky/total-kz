@@ -137,20 +137,22 @@ p { text-wrap:pretty; }
 @media (min-width:640px) { .site-logo-text { font-size:1.75rem; } }
 /* ═══ ANNIVERSARY BADGE ═══ */
 .anniversary-badge {
-  display:inline-flex; align-items:center;
-  margin-left:6px;
-  padding:2px 7px;
+  display:inline-flex; align-items:center; justify-content:center;
+  margin-left:8px;
+  padding:3px 8px;
   font-family:'Montserrat',var(--font-display),sans-serif;
-  font-weight:900; font-size:0.55rem; letter-spacing:0.04em;
+  font-weight:900; font-size:0.6rem; letter-spacing:0.05em;
   line-height:1; text-transform:uppercase;
-  color:#fff; background:var(--accent);
-  border-radius:3px;
+  color:#fff;
+  background:linear-gradient(135deg, var(--accent) 0%, #b5121e 100%);
+  border-radius:4px;
   vertical-align:middle;
   position:relative; top:-1px;
   white-space:nowrap;
+  box-shadow:0 1px 3px rgba(216,50,54,.3);
 }
 @media (min-width:640px) {
-  .anniversary-badge { font-size:0.625rem; padding:2px 8px; margin-left:8px; }
+  .anniversary-badge { font-size:0.7rem; padding:4px 10px; margin-left:10px; border-radius:5px; }
 }
 .footer-logo .anniversary-badge { display:none; }
 .footer-logo .site-logo-text { font-size:1.25rem; }
@@ -4821,6 +4823,8 @@ a.related-item:visited .related-title {
 /* ═══ Feature 1: Currency Change Indicators ═══ */
 .cur-up { color: var(--green, #16a34a); font-weight: 600; font-size: 11px; margin-left: 2px; }
 .cur-down { color: var(--red, #d83236); font-weight: 600; font-size: 11px; margin-left: 2px; }
+.cur-val { display:none; }
+.currency-item:hover .cur-val { display:inline; }
 
 /* ═══ Feature 2: Article Copyright Block ═══ */
 .article-copyright {
