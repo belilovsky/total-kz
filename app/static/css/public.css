@@ -4433,12 +4433,43 @@ a.related-item:visited .related-title {
 /* ── Reactions: hide on desktop, show inline on mobile ── */
 .sidebar-reactions { display:none !important; }
 .reactions-mobile { display:none; }
+
+/* ── Inline share buttons: replace floating bar ── */
+.share-buttons-inline {
+  display:none;
+}
+@media (max-width:1099px) {
+  .share-buttons-inline {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    margin:12px 0 0;
+  }
+  .share-buttons-inline .share-btn {
+    display:flex; align-items:center; justify-content:center;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid var(--border-light);
+    background:var(--surface);
+    color:var(--text-muted);
+    transition:all var(--transition);
+  }
+  .share-buttons-inline .share-btn:hover,
+  .share-buttons-inline .share-btn:active {
+    border-color:var(--accent);
+    color:var(--accent);
+    background:var(--accent-bg);
+  }
+  .share-buttons-inline .share-btn svg { width:18px; height:18px; }
+}
+/* Floating share bar replaced by inline buttons */
+.mobile-share-bar { display:none !important; }
 @media (max-width:1099px) {
   .reactions-mobile {
     display:block;
     margin:20px 0 8px;
-    padding:16px 0;
-    border-top:1px solid var(--border-light);
+    padding:0;
   }
   .reactions-mobile-grid {
     display:flex;
