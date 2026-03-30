@@ -1011,6 +1011,10 @@ def _get_story_timeline_inner(article_id: int, pub_date: str) -> dict | None:
 
         story_id, story_title, art_count = story_row
 
+        # Skip catch-all "Разное" stories and oversized groupings
+        if story_title and (story_title.startswith("Разное") or art_count > 500):
+            return None
+
         _cols = [Article.id, Article.url, Article.pub_date, Article.sub_category,
                  Article.title, Article.thumbnail, Article.main_image, Article.excerpt]
         _keys = ["id", "url", "pub_date", "sub_category", "title", "thumbnail", "main_image", "excerpt"]

@@ -393,13 +393,22 @@ def cat_label(slug: str) -> str:
 
 
 def _humanize_story_title(title: str) -> str:
-    """Replace category slugs in story titles with human-readable labels."""
+    """Replace category slugs in story titles with human-readable labels.
+    Also cleans up malformed titles (extra whitespace, raw slugs)."""
+    if not title:
+        return title
     parts = [p.strip() for p in title.split(":")]
     result = []
     for p in parts:
         slug = p.lower().replace(" ", "_")
         label = CATEGORY_LABELS.get(slug)
-        result.append(label if label else p)
+        if label:
+            result.append(label)
+        else:
+            # Clean up slug-like strings: replace underscores with spaces, titlecase
+            cleaned = p.replace("_", " ").strip()
+            if cleaned:
+                result.append(cleaned)
     return ": ".join(result)
 
 
@@ -966,18 +975,36 @@ def _match_case(suffix: str, ref: str) -> str:
 
 
 def get_article_persons(entities: list) -> list:
-    """Get list of matched persons for article entities (with photo, position)."""
+    """Get list of persons for article entities.
+    Matched persons get photo/position from directory.
+    Unmatched person entities shown as plain name cards."""
     seen = set()
-    result = []
+    matched = []
+    unmatched = []
     for ent in (entities or []):
         if ent.get("entity_type") != "person":
+            continue
+        name = (ent.get("short_name") or ent.get("name") or "").strip()
+        if not name or name.lower() in seen:
             continue
         p = _match_person_for_entity(ent)
         if p and p["slug"] not in seen:
             seen.add(p["slug"])
-            result.append(p)
-    result.sort(key=lambda p: _government_rank(p.get("current_position", "")))
-    return result[:4]  # max 4 person cards in sidebar
+            seen.add(name.lower())
+            matched.append(p)
+        elif name.lower() not in seen:
+            seen.add(name.lower())
+            # Create a basic person card from entity data
+            slug = name.lower().replace(" ", "-")
+            unmatched.append({
+                "slug": slug,
+                "short_name": name,
+                "full_name": name,
+                "current_position": "",
+                "photo_url": "",
+            })
+    matched.sort(key=lambda p: _government_rank(p.get("current_position", "")))
+    return (matched + unmatched)[:6]  # max 6 person cards in sidebar
 
 
 templates.env.globals["person_url_for_entity"] = person_url_for_entity

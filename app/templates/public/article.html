@@ -193,7 +193,10 @@
     </div>
   </header>
 
-  {# excerpt removed — duplicates first paragraph of article body #}
+  {# ── Lead / excerpt (under title, before hero) ── #}
+  {% if article.excerpt %}
+  <p class="article-lead">{{ article.excerpt }}</p>
+  {% endif %}
 
   {# ── Hero image / placeholder ── #}
   {% if article.main_image %}
@@ -265,7 +268,30 @@
         </button>
       </div>
 
-      {# Tags moved to full-width section between body and timeline #}
+      {# ── Combined tags: enrichment keywords + NLP topics (deduplicated) ── #}
+      {% set _tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
+      {% set _nlp_topics = (nlp.topics if nlp and nlp.topics else []) %}
+      {% set _seen = [] %}
+      {% set _combined = [] %}
+      {% for t in _nlp_topics %}
+        {% if t.lower().strip() not in _seen %}
+          {% if _seen.append(t.lower().strip()) %}{% endif %}
+          {% if _combined.append(t) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% for t in _tags %}
+        {% if t.lower().strip() not in _seen %}
+          {% if _seen.append(t.lower().strip()) %}{% endif %}
+          {% if _combined.append(t) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if _combined %}
+      <div class="article-keywords">
+        {% for kw in _combined[:12] %}
+        <a href="{{ lang_prefix|default('') }}/search?q={{ kw | urlencode }}" class="keyword-chip">{{ kw }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
 
     </div>
 
@@ -295,9 +321,6 @@
           <button class="sidebar-action-btn" onclick="window.print()" aria-label="Печать" title="Печать">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           </button>
-          <a href="{{ report_news_url|default('https://t.me/total_kz_bot') }}" target="_blank" rel="noopener" class="sidebar-action-btn" aria-label="Сообщить новость" title="Сообщить новость">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
-          </a>
           <span class="sidebar-actions-divider"></span>
           <button class="sidebar-action-btn sidebar-action-btn--bookmark" id="bookmarkBtn" data-article-id="{{ article.id }}" aria-label="Сохранить" title="Сохранить">
             <svg class="bookmark-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>
@@ -382,6 +405,12 @@
           </div>
         </div>
 
+        {# ── Сообщить новость button ── #}
+        <a href="{{ report_news_url|default('https://t.me/total_kz_bot') }}" target="_blank" rel="noopener" class="sidebar-report-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+          {{ t('header.report_news') if t is defined else 'Сообщить новость' }}
+        </a>
+
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
         <div class="popular-widget">
@@ -444,30 +473,7 @@
   </div>
   {% endif %}
 
-  {# ── Combined tags: enrichment keywords + NLP topics (deduplicated) ── #}
-  {% set _tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
-  {% set _nlp_topics = (nlp.topics if nlp and nlp.topics else []) %}
-  {% set _seen = [] %}
-  {% set _combined = [] %}
-  {% for t in _nlp_topics %}
-    {% if t.lower().strip() not in _seen %}
-      {% if _seen.append(t.lower().strip()) %}{% endif %}
-      {% if _combined.append(t) %}{% endif %}
-    {% endif %}
-  {% endfor %}
-  {% for t in _tags %}
-    {% if t.lower().strip() not in _seen %}
-      {% if _seen.append(t.lower().strip()) %}{% endif %}
-      {% if _combined.append(t) %}{% endif %}
-    {% endif %}
-  {% endfor %}
-  {% if _combined %}
-  <div class="article-keywords article-keywords--full">
-    {% for kw in _combined[:12] %}
-    <a href="{{ lang_prefix|default('') }}/search?q={{ kw | urlencode }}" class="keyword-chip">{{ kw }}</a>
-    {% endfor %}
-  </div>
-  {% endif %}
+  {# Tags moved inside article-content for sidebar continuity #}
 
   {# ── Story timeline — full width, below article-layout ── #}
   {% if timeline and (timeline.prev or timeline.next) %}
@@ -519,34 +525,33 @@
   <!-- ═══ AD: AFTER ARTICLE (R6) ═══ -->
   <div class="ad-placeholder ad-after-article" data-ad-slot="R6" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  {# ── Copyright block ── #}
-  <div class="article-copyright">
-    {{ t('article.copyright') if t is defined else 'При использовании материалов Total.kz ссылка на источник обязательна. Полное или частичное копирование материалов без согласия редакции запрещено.' }}
-  </div>
+  {# Copyright block removed per editorial request #}
 
-  {# ── Comments section (compact, after tags) ── #}
-  <section class="comments-section" id="comments">
-    <h2 class="comments-heading">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  {# ── Comments section (accordion — collapsed by default) ── #}
+  <details class="comments-accordion" id="comments">
+    <summary class="comments-accordion-summary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       {{ t('comments.title') if t is defined else 'Комментарии' }} <span class="comments-count" id="commentsCount"></span>
-    </h2>
-
-    <div id="commentsList" class="comments-list">
-      <p class="comments-loading">{{ t('comments.loading') if t is defined else 'Загрузка…' }}</p>
-    </div>
-
-    <h3 class="cf-heading">{{ t('comments.leave') if t is defined else 'Оставить комментарий' }}</h3>
-    <form class="comment-form" id="commentForm">
-      <div class="cf-row">
-        <input type="text" name="author_name" placeholder="{{ t('comments.name') if t is defined else 'Ваше имя' }}" required maxlength="80" class="cf-name">
+      <svg class="accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+    <section class="comments-section">
+      <div id="commentsList" class="comments-list">
+        <p class="comments-loading">{{ t('comments.loading') if t is defined else 'Загрузка…' }}</p>
       </div>
-      <textarea name="text" placeholder="{{ t('comments.placeholder') if t is defined else 'Напишите комментарий…' }}" required maxlength="2000" rows="3" class="cf-text"></textarea>
-      <div class="cf-actions">
-        <span class="cf-hint">{{ t('comments.hint') if t is defined else 'Комментарий появится после модерации' }}</span>
-        <button type="submit" class="cf-submit">{{ t('comments.submit') if t is defined else 'Отправить' }}</button>
-      </div>
-    </form>
-  </section>
+
+      <h3 class="cf-heading">{{ t('comments.leave') if t is defined else 'Оставить комментарий' }}</h3>
+      <form class="comment-form" id="commentForm">
+        <div class="cf-row">
+          <input type="text" name="author_name" placeholder="{{ t('comments.name') if t is defined else 'Ваше имя' }}" required maxlength="80" class="cf-name">
+        </div>
+        <textarea name="text" placeholder="{{ t('comments.placeholder') if t is defined else 'Напишите комментарий…' }}" required maxlength="2000" rows="3" class="cf-text"></textarea>
+        <div class="cf-actions">
+          <span class="cf-hint">{{ t('comments.hint') if t is defined else 'Комментарий появится после модерации' }}</span>
+          <button type="submit" class="cf-submit">{{ t('comments.submit') if t is defined else 'Отправить' }}</button>
+        </div>
+      </form>
+    </section>
+  </details>
 
   {# ── Related articles: 6 cards (after comments) ── #}
   {% if related %}
