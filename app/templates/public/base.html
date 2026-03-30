@@ -96,7 +96,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="/static/css/public.min.css?v=18.4">
+  <link rel="stylesheet" href="/static/css/public.min.css?v=18.5">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -192,6 +192,11 @@
         <button class="header-btn" id="search-toggle" aria-label="Поиск">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+        <button class="header-btn" data-lite-toggle aria-label="Лёгкий режим" title="Лёгкий режим">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
         </button>
         <button class="header-btn" data-theme-toggle aria-label="Переключить тему">
@@ -333,6 +338,12 @@
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
           <span id="mobile-theme-label">Тёмная тема</span>
+        </button>
+        <button data-lite-toggle-mobile aria-label="Лёгкий режим">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <span id="mobile-lite-label">Лёгкий режим</span>
         </button>
       </div>
     </div>
@@ -756,18 +767,78 @@
   <script defer src="{{ umami_url }}/script.js" data-website-id="{{ umami_website_id }}"></script>
   {% endif %}
 
-  <!-- Connection quality detection for lite mode -->
+  <!-- ═══ LITE MODE: toggle + auto-detect ═══ -->
   <script>
   (function() {
+    var KEY = 'total_lite_mode';
+    var root = document.documentElement;
+
+    // 1. Check manual preference (localStorage)
+    var manual = localStorage.getItem(KEY); // 'on', 'off', or null
+
+    // 2. Auto-detect slow connection
     var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    var quality = 'fast';
+    var autoSlow = false;
     if (conn) {
       var etype = conn.effectiveType;
-      if (etype === 'slow-2g' || etype === '2g' || etype === '3g') quality = 'slow';
-      if (conn.saveData) quality = 'slow';
+      if (etype === 'slow-2g' || etype === '2g' || etype === '3g') autoSlow = true;
+      if (conn.saveData) autoSlow = true;
     }
-    document.cookie = 'connection_quality=' + quality + ';path=/;max-age=3600;SameSite=Lax';
-    if (quality === 'slow') document.documentElement.classList.add('lite-mode');
+
+    // 3. Resolve: manual overrides auto
+    var isLite = manual === 'on' ? true : manual === 'off' ? false : autoSlow;
+
+    // 4. Apply
+    function applyLite(on) {
+      isLite = on;
+      if (on) {
+        root.classList.add('lite-mode');
+        document.cookie = 'connection_quality=slow;path=/;max-age=86400;SameSite=Lax';
+        document.cookie = 'lite=1;path=/;max-age=86400;SameSite=Lax';
+      } else {
+        root.classList.remove('lite-mode');
+        document.cookie = 'connection_quality=fast;path=/;max-age=86400;SameSite=Lax';
+        document.cookie = 'lite=0;path=/;max-age=86400;SameSite=Lax';
+      }
+      updateLiteUI();
+    }
+
+    // 5. UI update
+    function updateLiteUI() {
+      // Header button
+      document.querySelectorAll('[data-lite-toggle]').forEach(function(el) {
+        el.classList.toggle('lite-active', isLite);
+        el.title = isLite ? 'Полная версия' : 'Лёгкий режим';
+      });
+      // Mobile menu label
+      var ml = document.getElementById('mobile-lite-label');
+      if (ml) ml.textContent = isLite ? 'Полная версия' : 'Лёгкий режим';
+    }
+
+    // 6. Toggle handler
+    function toggleLite() {
+      var next = !isLite;
+      localStorage.setItem(KEY, next ? 'on' : 'off');
+      applyLite(next);
+    }
+
+    // 7. Bind buttons
+    document.querySelectorAll('[data-lite-toggle], [data-lite-toggle-mobile]').forEach(function(el) {
+      el.addEventListener('click', toggleLite);
+    });
+
+    // 8. Listen for connection changes (auto-switch if no manual preference)
+    if (conn && conn.addEventListener) {
+      conn.addEventListener('change', function() {
+        if (localStorage.getItem(KEY)) return; // manual overrides
+        var etype = conn.effectiveType;
+        var slow = (etype === 'slow-2g' || etype === '2g' || etype === '3g' || conn.saveData);
+        applyLite(slow);
+      });
+    }
+
+    // 9. Init
+    applyLite(isLite);
   })();
   </script>
 

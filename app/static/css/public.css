@@ -5121,7 +5121,16 @@ a.related-item:visited .related-title {
   .article-copyright { border-top: 1px solid #ccc; font-size: 9pt; }
 }
 
+/* ═══ Lite Mode Toggle Button ═══ */
+[data-lite-toggle].lite-active,
+[data-lite-toggle-mobile].lite-active {
+  color:var(--accent) !important;
+  background:var(--accent-bg, rgba(216,50,54,.1));
+}
+[data-lite-toggle].lite-active svg { fill:var(--accent); stroke:var(--accent); }
+
 /* ═══ Lite Mode: Slow Connections ═══ */
+/* Hide heavy elements */
 .lite-mode .hero-side,
 .lite-mode .live-feed,
 .lite-mode .persons-strip,
@@ -5136,15 +5145,45 @@ a.related-item:visited .related-title {
 .lite-mode .related-section,
 .lite-mode .cat-top-card-img img,
 .lite-mode .cat2-card-img img,
-.lite-mode .hero-side-thumb img { display: none !important; }
+.lite-mode .hero-side-thumb img,
+.lite-mode .news-ticker,
+.lite-mode .article-enrichment,
+.lite-mode .article-timeline,
+.lite-mode .comments-section,
+.lite-mode .floating-share { display: none !important; }
 
-.lite-mode .shelf-row {
-  grid-template-columns: 1fr 1fr;
-}
-.lite-mode .hero-with-feed {
-  display: block;
-}
+/* Simplify layout */
+.lite-mode .shelf-row { grid-template-columns: 1fr 1fr; }
+.lite-mode .hero-with-feed { display: block; }
 .lite-mode .hero-with-feed .live-feed { display: none !important; }
+
+/* Reduce animations */
+.lite-mode * { animation-duration:0s !important; transition-duration:0.05s !important; }
+.lite-mode .currency-strip .strip-right { animation:none !important; }
+
+/* Compact hero — no image, text-only card */
+.lite-mode .hero-main {
+  aspect-ratio:auto !important; min-height:auto !important;
+  background:var(--surface-2) !important;
+}
+.lite-mode .hero-main-body {
+  position:relative !important;
+  background:var(--surface-2) !important;
+  padding:var(--space-4) !important;
+}
+.lite-mode .hero-main-title {
+  color:var(--text) !important;
+  text-shadow:none !important;
+  font-size:clamp(1.1rem, 1rem + 1vw, 1.5rem) !important;
+}
+.lite-mode .hero-main-body .cat-name { color:var(--text-muted) !important; }
+.lite-mode .hero-main-body .cat-dot { background:var(--accent) !important; }
+.lite-mode .hero-main-sub { color:var(--text-secondary) !important; text-shadow:none !important; }
+.lite-mode .hero-main-date { color:var(--text-faint) !important; text-shadow:none !important; }
+
+/* Compact spacing */
+.lite-mode .section-header { margin-bottom:var(--space-2); }
+.lite-mode .section-block { margin-bottom:var(--space-4); }
 
 /* Lite banner */
 .lite-banner {
