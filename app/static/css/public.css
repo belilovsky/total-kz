@@ -135,6 +135,24 @@ p { text-wrap:pretty; }
   color:var(--accent); text-transform:uppercase;
 }
 @media (min-width:640px) { .site-logo-text { font-size:1.75rem; } }
+/* ═══ ANNIVERSARY BADGE ═══ */
+.anniversary-badge {
+  display:inline-flex; align-items:center;
+  margin-left:6px;
+  padding:2px 7px;
+  font-family:'Montserrat',var(--font-display),sans-serif;
+  font-weight:900; font-size:0.55rem; letter-spacing:0.04em;
+  line-height:1; text-transform:uppercase;
+  color:#fff; background:var(--accent);
+  border-radius:3px;
+  vertical-align:middle;
+  position:relative; top:-1px;
+  white-space:nowrap;
+}
+@media (min-width:640px) {
+  .anniversary-badge { font-size:0.625rem; padding:2px 8px; margin-left:8px; }
+}
+.footer-logo .anniversary-badge { display:none; }
 .footer-logo .site-logo-text { font-size:1.25rem; }
 @media (min-width:640px) { .footer-logo .site-logo-text { font-size:1.375rem; } }
 .header-nav { flex:1; display:none; }

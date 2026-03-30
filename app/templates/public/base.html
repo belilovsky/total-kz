@@ -96,7 +96,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="/static/css/public.min.css?v=18.2">
+  <link rel="stylesheet" href="/static/css/public.min.css?v=18.3">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -132,6 +132,7 @@
     <div class="header-inner">
       <a href="{{ lang_prefix|default('') }}/" class="site-logo" aria-label="Total.kz">
         <span class="site-logo-text">ТÓТАЛ</span>
+        <span class="anniversary-badge">15 лет</span>
       </a>
 
       <nav class="header-nav" aria-label="{{ t('header.menu') if t is defined else 'Разделы' }}">
@@ -296,7 +297,7 @@
     <div class="mobile-menu-backdrop" id="mobile-menu-overlay"></div>
     <div class="mobile-menu-drawer">
       <div class="mobile-menu-header">
-        <a href="/" class="site-logo" aria-label="Total.kz"><span class="site-logo-text">ТÓТАЛ</span></a>
+        <a href="/" class="site-logo" aria-label="Total.kz"><span class="site-logo-text">ТÓТАЛ</span><span class="anniversary-badge">15 лет</span></a>
         <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Закрыть">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
