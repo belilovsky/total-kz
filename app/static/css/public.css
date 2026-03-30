@@ -4816,8 +4816,11 @@ a.related-item:visited .related-title {
   pointer-events: none;
 }
 /* Ensure info strip sits above sticky header so tooltips aren't clipped */
-.currency-strip { position: relative; z-index: 200; overflow: visible; }
-.currency-strip-inner { overflow: visible; }
+.currency-strip { position: relative; z-index: 200; }
+@media (min-width:768px) {
+  .currency-strip { overflow: visible; }
+  .currency-strip-inner { overflow: visible; }
+}
 .cur-flat { color: var(--text-faint); font-size: 11px; margin-left: 2px; }
 
 /* ═══ Feature 1: Currency Change Indicators ═══ */
@@ -5157,3 +5160,78 @@ a.related-item:visited .related-title {
   background: var(--surface-1);
   color: var(--text-muted);
 }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE FIX PACK v18.4
+   ═══════════════════════════════════════════════ */
+
+/* FIX-R1: Global overflow safety net */
+html, body { overflow-x:hidden; }
+
+/* FIX-R2: mobile-menu-drawer — position:fixed prevents scrollWidth contribution */
+.mobile-menu-drawer {
+  position:fixed !important;
+  top:0; right:0; bottom:0;
+}
+
+/* FIX-R3: currency-strip must clip overflow on all viewports */
+.currency-strip { overflow:hidden !important; }
+.currency-strip-inner { overflow:hidden !important; }
+@media (max-width:767px) {
+  .currency-strip-inner {
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+  }
+}
+
+/* FIX-R4: Header actions — shrink on narrow screens */
+@media (max-width:359px) {
+  .header-inner { padding:0 var(--space-2) !important; gap:var(--space-1) !important; }
+  .header-actions { gap:0 !important; }
+  .header-btn { width:32px; height:32px; }
+  .lang-switcher { margin-right:0; }
+  .lang-btn { font-size:10px !important; padding:2px 5px !important; }
+  .anniversary-badge { font-size:0.5rem; padding:2px 5px; margin-left:4px; }
+  .site-logo-text { font-size:1.35rem !important; }
+}
+@media (max-width:299px) {
+  /* Galaxy Fold cover: hide lang switcher, move to menu */
+  .lang-switcher { display:none !important; }
+  .header-actions { gap:0 !important; }
+  .header-btn { width:28px; height:28px; }
+  .anniversary-badge { font-size:0.45rem; padding:2px 4px; margin-left:3px; }
+  .site-logo-text { font-size:1.2rem !important; }
+}
+
+/* FIX-R5: Engage bar wraps on narrow screens */
+@media (max-width:359px) {
+  .engage-bar {
+    flex-wrap:wrap !important;
+    gap:6px !important;
+    justify-content:center;
+    padding:8px !important;
+  }
+  .engage-bar-divider { display:none !important; }
+  .engage-bar-reactions { justify-content:center; }
+  .engage-bar-share { justify-content:center; }
+  .engage-reaction { padding:4px 5px !important; }
+  .engage-reaction .reaction-emoji { font-size:16px !important; }
+  .engage-share-btn { width:30px !important; height:30px !important; }
+}
+
+/* FIX-R6: Footer links wrap on narrow screens */
+@media (max-width:359px) {
+  .footer-nav-links { flex-wrap:wrap; gap:var(--space-2); }
+  .footer-inner { padding:0 var(--space-2); }
+}
+
+/* FIX-R7: persons-strip, trending-tags — isolate scroll */
+.persons-strip-scroll,
+.trending-tags-row {
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.persons-strip-scroll::-webkit-scrollbar,
+.trending-tags-row::-webkit-scrollbar { display:none; }
