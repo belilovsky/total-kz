@@ -4580,7 +4580,7 @@ a.related-item:visited .related-title {
   color: var(--text);
 }
 .nlp-key-facts-list li + li {
-  border-top: 1px solid var(--border-light, #f0f0f0);
+  border-top: none;
 }
 .nlp-key-facts-list li::before {
   content: '';

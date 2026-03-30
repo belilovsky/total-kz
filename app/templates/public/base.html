@@ -96,7 +96,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="/static/css/public.min.css?v=16.3">
+  <link rel="stylesheet" href="/static/css/public.min.css?v=16.4">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -246,7 +246,7 @@
           <span class="info-tooltip">
             <strong>{{ full_name }}</strong><br>
             1 {{ r.code }} = {{ r.rate }} ₸<br>
-            {% if lang is defined and lang == 'kz' %}Өзгеріс{% else %}Изменение{% endif %}: {{ r.change }} ₸ {{ r.direction }}
+            {% if r.change and r.change != '0.00' and r.change != '0' %}{% if lang is defined and lang == 'kz' %}Өзгеріс{% else %}Изменение за день{% endif %}: {{ '↑' if r.direction == '↑' else '↓' }} {{ r.change }} ₸{% else %}{% if lang is defined and lang == 'kz' %}Өзгеріссіз{% else %}Без изменений за день{% endif %}{% endif %}
           </span>
         </span>
         {% endfor %}
@@ -263,7 +263,7 @@
           <span class="info-tooltip">
             <strong>{{ commodity_full }}</strong><br>
             {% if lang is defined and lang == 'kz' %}Бағасы{% else %}Цена{% endif %}: {{ c.value }}<br>
-            {% if c.direction %}{% if lang is defined and lang == 'kz' %}Бағыт{% else %}Тренд{% endif %}: {{ c.direction }}{% endif %}
+            {% if c.direction %}{% if lang is defined and lang == 'kz' %}Бағыт{% else %}Тренд{% endif %}: {% if c.direction == '↑' %}▲ рост{% else %}▼ снижение{% endif %}{% endif %}
           </span>
         </span>
         {% endfor %}
