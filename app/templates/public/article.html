@@ -177,6 +177,9 @@
   <header class="article-page-header">
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
+      {% if article.excerpt %}
+      <p class="article-lead">{{ article.excerpt }}</p>
+      {% endif %}
       <div class="article-header-aside">
         <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
@@ -192,11 +195,6 @@
       </div>
     </div>
   </header>
-
-  {# ── Lead / excerpt (under title, before hero) ── #}
-  {% if article.excerpt %}
-  <p class="article-lead">{{ article.excerpt }}</p>
-  {% endif %}
 
   {# ── Hero image / placeholder ── #}
   {% if article.main_image %}

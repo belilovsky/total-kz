@@ -851,13 +851,13 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
   .article-title { font-size:clamp(1.625rem, 1.4rem + 0.5vw, 1.925rem); }
 }
 
-/* Lead paragraph — shown under title, above hero */
+/* Lead paragraph — directly under title, before meta */
 .article-lead {
-  margin:var(--space-2) 0 var(--space-3);
-  font-size:var(--text-base); font-weight:600; color:var(--text-secondary);
-  line-height:1.5;
+  margin:var(--space-2) 0 0;
+  font-size:var(--text-lg); font-weight:500; color:var(--text-secondary);
+  line-height:1.45;
 }
-@media (min-width:640px) { .article-lead { font-size:var(--text-lg); margin:var(--space-3) 0 var(--space-4); } }
+@media (min-width:640px) { .article-lead { font-size:clamp(1.1rem, 1rem + 0.3vw, 1.25rem); } }
 
 /* Excerpt + meta on one compact line if short */
 .article-excerpt {
