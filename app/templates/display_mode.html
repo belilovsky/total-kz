@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% set active = "settings" %}
+
+{% block title %}Режим оформления – Total.kz{% endblock %}
+{% block page_title %}Режим оформления{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:0 auto;">
+  <a href="/admin/settings" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Настройки
+  </a>
+
+  <h2 style="margin-bottom:24px;font-size:20px;">Режим оформления сайта</h2>
+
+  <!-- Mode selector -->
+  <div id="dm-app">
+    <div class="dm-modes">
+      <button class="dm-mode-card" data-mode="normal" onclick="selectMode('normal')">
+        <div class="dm-mode-icon">🌐</div>
+        <div class="dm-mode-label">Обычный</div>
+        <div class="dm-mode-desc">Стандартное оформление</div>
+      </button>
+      <button class="dm-mode-card" data-mode="mourning" onclick="selectMode('mourning')">
+        <div class="dm-mode-icon">🕯️</div>
+        <div class="dm-mode-label">Траур</div>
+        <div class="dm-mode-desc">Приглушённые тона, баннер, без развлечений</div>
+      </button>
+      <button class="dm-mode-card" data-mode="holiday" onclick="selectMode('holiday')">
+        <div class="dm-mode-icon">🎉</div>
+        <div class="dm-mode-label">Праздник</div>
+        <div class="dm-mode-desc">Праздничные декорации и оформление</div>
+      </button>
+      <button class="dm-mode-card" data-mode="evening" onclick="selectMode('evening')">
+        <div class="dm-mode-icon">🌙</div>
+        <div class="dm-mode-label">Вечерний</div>
+        <div class="dm-mode-desc">Позитивный контент в вечернее время</div>
+      </button>
+    </div>
+
+    <!-- Mourning settings -->
+    <div class="dm-panel" id="panel-mourning" style="display:none;">
+      <h3>Настройки траурного режима</h3>
+      <div class="dm-field">
+        <label>Текст баннера (рус)</label>
+        <input type="text" id="mourning_text" placeholder="Светлая память жертвам трагедии..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+      </div>
+      <div class="dm-field">
+        <label>Текст баннера (каз)</label>
+        <input type="text" id="mourning_text_kz" placeholder="Қайғылы оқиға құрбандарын еске аламыз..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+      </div>
+      <p class="dm-note">При траурном режиме: чёрно-белые фильтры, приглушённая реклама, скрыт развлекательный контент из главных блоков.</p>
+    </div>
+
+    <!-- Holiday settings -->
+    <div class="dm-panel" id="panel-holiday" style="display:none;">
+      <h3>Настройки праздника</h3>
+      <div class="dm-field">
+        <label>Праздник</label>
+        <select id="holiday_name" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+          <option value="nauryz">Наурыз мейрамы (21–23 марта)</option>
+          <option value="unity">День единства народа (1 мая)</option>
+          <option value="defender">День защитника Отечества (7 мая)</option>
+          <option value="capital">День столицы (6 июля)</option>
+          <option value="constitution">День Конституции (30 августа)</option>
+          <option value="republic">День Республики (25 октября)</option>
+          <option value="first_president">День Первого Президента (1 декабря)</option>
+          <option value="independence">День Независимости (16–17 декабря)</option>
+          <option value="newyear">Новый год (31 декабря – 1 января)</option>
+        </select>
+      </div>
+      <div class="dm-field">
+        <label>Поздравительный текст (рус)</label>
+        <input type="text" id="holiday_label" placeholder="С Наурызом!" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+      </div>
+      <div class="dm-field">
+        <label>Поздравительный текст (каз)</label>
+        <input type="text" id="holiday_label_kz" placeholder="Наурыз мейрамымен!" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+      </div>
+      <p class="dm-note">Каждый праздник имеет свои декоративные элементы: орнаменты, цвета, анимации.</p>
+    </div>
+
+    <!-- Evening settings -->
+    <div class="dm-panel" id="panel-evening" style="display:none;">
+      <h3>Настройки вечернего режима</h3>
+      <div class="dm-field" style="display:flex;gap:16px;">
+        <div style="flex:1;">
+          <label>Начало (час, UTC+5)</label>
+          <input type="number" id="evening_start" min="18" max="23" value="21" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+        </div>
+        <div style="flex:1;">
+          <label>Конец (час, UTC+5)</label>
+          <input type="number" id="evening_end" min="4" max="10" value="7" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+        </div>
+      </div>
+      <p class="dm-note">В указанный период: меньше негативного контента, больше позитивных новостей. Развлекательный, культурный и спортивный контент поднимается выше.</p>
+    </div>
+
+    <!-- Save button -->
+    <div style="margin-top:24px;display:flex;gap:12px;align-items:center;">
+      <button id="dm-save" onclick="saveMode()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">
+        Сохранить
+      </button>
+      <span id="dm-status" style="font-size:13px;color:var(--text-muted);"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+.dm-modes {
+  display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;
+}
+@media (max-width:640px) { .dm-modes { grid-template-columns: repeat(2, 1fr); } }
+.dm-mode-card {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:20px 12px; border:2px solid var(--border); border-radius:12px;
+  background:var(--surface); cursor:pointer; transition:all .2s;
+  text-align:center;
+}
+.dm-mode-card:hover { border-color:var(--text-muted); }
+.dm-mode-card.active { border-color:var(--accent); background:var(--accent-bg); }
+.dm-mode-icon { font-size:32px; }
+.dm-mode-label { font-size:14px; font-weight:700; color:var(--text); }
+.dm-mode-desc { font-size:12px; color:var(--text-muted); line-height:1.4; }
+.dm-panel {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:20px; margin-top:16px;
+}
+.dm-panel h3 { font-size:15px; margin-bottom:16px; color:var(--text); }
+.dm-field { margin-bottom:14px; }
+.dm-field label { display:block; font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.dm-note { font-size:12px; color:var(--text-muted); line-height:1.5; margin-top:12px; }
+</style>
+
+<script>
+(function() {
+  var currentMode = 'normal';
+  var config = {};
+
+  // Load current config
+  fetch('/api/display-mode')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      config = data;
+      currentMode = data.mode || 'normal';
+      // Highlight active mode
+      document.querySelectorAll('.dm-mode-card').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.mode === currentMode);
+      });
+      // Fill form fields
+      if (data.mourning_text) document.getElementById('mourning_text').value = data.mourning_text;
+      if (data.mourning_text_kz) document.getElementById('mourning_text_kz').value = data.mourning_text_kz;
+      if (data.holiday_name) document.getElementById('holiday_name').value = data.holiday_name;
+      if (data.holiday_label) document.getElementById('holiday_label').value = data.holiday_label;
+      if (data.holiday_label_kz) document.getElementById('holiday_label_kz').value = data.holiday_label_kz;
+      if (data.evening_start) document.getElementById('evening_start').value = data.evening_start;
+      if (data.evening_end) document.getElementById('evening_end').value = data.evening_end;
+      // Show relevant panel
+      showPanel(currentMode);
+    })
+    .catch(function() {});
+
+  window.selectMode = function(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.dm-mode-card').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.mode === mode);
+    });
+    showPanel(mode);
+  };
+
+  function showPanel(mode) {
+    ['mourning','holiday','evening'].forEach(function(m) {
+      var panel = document.getElementById('panel-' + m);
+      if (panel) panel.style.display = (m === mode) ? 'block' : 'none';
+    });
+  }
+
+  window.saveMode = function() {
+    var body = {
+      mode: currentMode,
+      mourning_text: document.getElementById('mourning_text').value,
+      mourning_text_kz: document.getElementById('mourning_text_kz').value,
+      holiday_name: document.getElementById('holiday_name').value,
+      holiday_label: document.getElementById('holiday_label').value,
+      holiday_label_kz: document.getElementById('holiday_label_kz').value,
+      evening_start: parseInt(document.getElementById('evening_start').value) || 21,
+      evening_end: parseInt(document.getElementById('evening_end').value) || 7,
+    };
+    document.getElementById('dm-status').textContent = 'Сохранение...';
+    fetch('/api/admin/display-mode', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        document.getElementById('dm-status').textContent = '✓ Сохранено';
+        document.getElementById('dm-status').style.color = 'var(--green)';
+        setTimeout(function() { document.getElementById('dm-status').textContent = ''; }, 3000);
+      } else {
+        document.getElementById('dm-status').textContent = 'Ошибка: ' + (data.error || 'неизвестная');
+        document.getElementById('dm-status').style.color = 'var(--red)';
+      }
+    })
+    .catch(function(err) {
+      document.getElementById('dm-status').textContent = 'Ошибка сети';
+      document.getElementById('dm-status').style.color = 'var(--red)';
+    });
+  };
+})();
+</script>
+{% endblock %}

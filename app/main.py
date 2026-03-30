@@ -1155,6 +1155,18 @@ async def admin_comments_page(request: Request, status: str = "pending", page: i
 
 
 # ══════════════════════════════════════════════
+#  DISPLAY MODE  /admin/display-mode
+# ══════════════════════════════════════════════
+
+@app.get("/admin/display-mode", response_class=HTMLResponse)
+async def admin_display_mode_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") not in ("admin", "editor"):
+        return RedirectResponse(url="/admin/articles", status_code=302)
+    return templates.TemplateResponse("display_mode.html", _ctx(request))
+
+
+# ══════════════════════════════════════════════
 #  CONTENT CALENDAR  /admin/calendar
 # ══════════════════════════════════════════════
 

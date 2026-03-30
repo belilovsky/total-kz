@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="{{ 'kk' if lang|default('ru') == 'kz' else lang|default('ru') }}" data-theme="light">
+{% set _dm = get_display_mode() if get_display_mode is defined else {} %}
+<html lang="{{ 'kk' if lang|default('ru') == 'kz' else lang|default('ru') }}" data-theme="light" data-display-mode="{{ _dm.get('mode', 'normal') }}"{% if _dm.get('mode') == 'mourning' %} class="mourning-mode"{% elif _dm.get('mode') == 'holiday' %} class="holiday-mode" data-holiday="{{ _dm.get('holiday_name', '') }}"{% elif _dm.get('mode') == 'evening' %} data-evening-start="{{ _dm.get('evening_start', 21) }}" data-evening-end="{{ _dm.get('evening_end', 7) }}"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,7 +97,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Montserrat:wght@900&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% endif %}
 
-  <link rel="stylesheet" href="/static/css/public.min.css?v=18.5">
+  <link rel="stylesheet" href="/static/css/public.min.css?v=19.0">
   <link rel="alternate" type="application/rss+xml" title="ТÓТАЛ — RSS" href="/rss">
   <link rel="alternate" type="application/feed+json" title="ТÓТАЛ — JSON Feed" href="/feed.json">
   <link rel="alternate" type="application/ld+json" href="/stories">
@@ -110,6 +111,28 @@
 </head>
 <body>
   <a href="#main-content" class="skip-link">{{ t('skip_link') if t is defined else 'Перейти к содержимому' }}</a>
+
+  {% if _dm.get('mode') == 'mourning' and (_dm.get('mourning_text') or _dm.get('mourning_text_kz')) %}
+  <div class="mourning-banner">
+    <span class="mourning-icon">🕯️</span>
+    {% if lang|default('ru') == 'kz' and _dm.get('mourning_text_kz') %}
+      {{ _dm.mourning_text_kz }}
+    {% else %}
+      {{ _dm.get('mourning_text', '') }}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if _dm.get('mode') == 'holiday' and (_dm.get('holiday_label') or _dm.get('holiday_label_kz')) %}
+  <div class="holiday-banner" data-holiday="{{ _dm.get('holiday_name', '') }}">
+    <span class="holiday-icon">{{ {'nauryz':'🌞','unity':'🤝','defender':'🇰🇿','capital':'🏙️','constitution':'📜','republic':'🇰🇿','independence':'🇰🇿','first_president':'⭐','newyear':'🎄','':''}[_dm.get('holiday_name', '')] }}</span>
+    {% if lang|default('ru') == 'kz' and _dm.get('holiday_label_kz') %}
+      {{ _dm.holiday_label_kz }}
+    {% else %}
+      {{ _dm.get('holiday_label', '') }}
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if _lite %}
   <div class="lite-banner">
@@ -841,6 +864,76 @@
     applyLite(isLite);
   })();
   </script>
+
+  <!-- ═══ DISPLAY MODE: evening content prioritization ═══ -->
+  {% if _dm.get('mode') == 'evening' %}
+  <script>
+  (function() {
+    var root = document.documentElement;
+    var start = parseInt(root.getAttribute('data-evening-start')) || 21;
+    var end = parseInt(root.getAttribute('data-evening-end')) || 7;
+    // Get local KZ time (UTC+5)
+    var now = new Date();
+    var utcH = now.getUTCHours();
+    var kzH = (utcH + 5) % 24;
+    var isEvening = (start > end) ? (kzH >= start || kzH < end) : (kzH >= start && kzH < end);
+    if (isEvening) {
+      root.classList.add('evening-mode');
+      // Reorder feed: move positive/entertainment items higher
+      var feed = document.querySelector('.feed-grid');
+      if (feed) {
+        var items = Array.from(feed.querySelectorAll('.feed-item'));
+        var positive = ['sport', 'kultura', 'stil_zhizni', 'zhizn', 'nauka', 'tehno'];
+        var negative = ['proisshestviya', 'bezopasnost'];
+        items.sort(function(a, b) {
+          var catA = (a.querySelector('[data-cat]') || {}).dataset;
+          var catB = (b.querySelector('[data-cat]') || {}).dataset;
+          var cA = catA && catA.cat ? catA.cat : '';
+          var cB = catB && catB.cat ? catB.cat : '';
+          var scoreA = positive.indexOf(cA) >= 0 ? -1 : (negative.indexOf(cA) >= 0 ? 1 : 0);
+          var scoreB = positive.indexOf(cB) >= 0 ? -1 : (negative.indexOf(cB) >= 0 ? 1 : 0);
+          return scoreA - scoreB;
+        });
+        items.forEach(function(item) { feed.appendChild(item); });
+      }
+      // Dim negative content in category highlights
+      document.querySelectorAll('.cat-highlight-item, .feed-item').forEach(function(el) {
+        var badge = el.querySelector('[data-cat]');
+        if (badge) {
+          var cat = badge.dataset.cat;
+          if (cat === 'proisshestviya' || cat === 'bezopasnost') {
+            el.style.order = '99';
+            el.style.opacity = '0.7';
+          }
+        }
+      });
+    }
+  })();
+  </script>
+  {% endif %}
+
+  <!-- ═══ DISPLAY MODE: mourning — hide entertainment content ═══ -->
+  {% if _dm.get('mode') == 'mourning' %}
+  <script>
+  (function() {
+    // Hide entertainment categories from highlights and feed
+    var entertainCats = {{ _dm.get('entertainment_cats', ['sport', 'stil_zhizni', 'kultura', 'zhizn'])|tojson }};
+    document.querySelectorAll('.cat-section').forEach(function(sec) {
+      var h = sec.querySelector('[data-cat]');
+      if (h && entertainCats.indexOf(h.dataset.cat) >= 0) {
+        sec.style.display = 'none';
+      }
+    });
+    // Dim entertainment items in feeds
+    document.querySelectorAll('.cat-highlight-item, .feed-item, .popular-item').forEach(function(el) {
+      var badge = el.querySelector('[data-cat]');
+      if (badge && entertainCats.indexOf(badge.dataset.cat) >= 0) {
+        el.style.display = 'none';
+      }
+    });
+  })();
+  </script>
+  {% endif %}
 
   {% block extra_js %}{% endblock %}
 </body>

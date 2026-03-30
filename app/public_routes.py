@@ -746,6 +746,83 @@ def is_lite_mode(request: Request) -> bool:
 templates.env.globals["is_lite_mode"] = is_lite_mode
 
 
+# ══════════════════════════════════════════════
+#  DISPLAY MODE SYSTEM (mourning / holiday / evening)
+# ══════════════════════════════════════════════
+_DISPLAY_MODE_FILE = Path(__file__).parent / "display_mode.json"
+
+# Default config
+_DISPLAY_MODE_DEFAULTS = {
+    "mode": "normal",  # normal | mourning | holiday | evening
+    "mourning_text": "",  # banner text for mourning mode
+    "mourning_text_kz": "",  # Kazakh translation
+    "holiday_name": "",  # e.g. "nauryz", "independence", "constitution", "unity", "capital", "republic", "first_president"
+    "holiday_label": "",  # display label e.g. "Наурыз мейрамы"
+    "holiday_label_kz": "",
+    "evening_start": 21,  # hour (local KZ time, UTC+5/6)
+    "evening_end": 7,
+    "entertainment_cats": ["sport", "stil_zhizni", "kultura", "zhizn"],
+}
+
+
+def _read_display_mode() -> dict:
+    """Read display mode config from JSON file."""
+    try:
+        if _DISPLAY_MODE_FILE.exists():
+            with open(_DISPLAY_MODE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Merge with defaults for missing keys
+            result = {**_DISPLAY_MODE_DEFAULTS, **data}
+            return result
+    except Exception:
+        pass
+    return dict(_DISPLAY_MODE_DEFAULTS)
+
+
+def _write_display_mode(data: dict) -> bool:
+    """Write display mode config to JSON file."""
+    try:
+        merged = {**_DISPLAY_MODE_DEFAULTS, **data}
+        with open(_DISPLAY_MODE_FILE, "w", encoding="utf-8") as f:
+            json.dump(merged, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to write display mode: {e}")
+        return False
+
+
+def get_display_mode(request=None) -> dict:
+    """Get current display mode for templates."""
+    return _read_display_mode()
+
+
+templates.env.globals["get_display_mode"] = get_display_mode
+
+
+# ── API: Read/Write display mode ──
+@router.get("/api/display-mode")
+async def api_get_display_mode(request: Request):
+    return JSONResponse(_read_display_mode())
+
+
+@router.post("/api/admin/display-mode")
+async def api_set_display_mode(request: Request):
+    """Set display mode (admin only)."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") not in ("admin", "editor"):
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    body = await request.json()
+    # Validate mode
+    allowed_modes = ("normal", "mourning", "holiday", "evening")
+    if body.get("mode") and body["mode"] not in allowed_modes:
+        return JSONResponse({"ok": False, "error": f"Неизвестный режим: {body['mode']}"}, status_code=400)
+    ok = _write_display_mode(body)
+    if ok:
+        # Clear template cache
+        cache.clear_all()
+    return JSONResponse({"ok": ok, "config": _read_display_mode()})
+
+
 def get_views_func(article):
     """Get real view count from article dict or fallback to deterministic fake."""
     if isinstance(article, dict):
