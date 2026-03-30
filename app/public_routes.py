@@ -392,6 +392,17 @@ def cat_label(slug: str) -> str:
     return CATEGORY_LABELS.get(slug, slug.replace("_", " ").title())
 
 
+def _humanize_story_title(title: str) -> str:
+    """Replace category slugs in story titles with human-readable labels."""
+    parts = [p.strip() for p in title.split(":")]
+    result = []
+    for p in parts:
+        slug = p.lower().replace(" ", "_")
+        label = CATEGORY_LABELS.get(slug)
+        result.append(label if label else p)
+    return ": ".join(result)
+
+
 def nav_slug_for(subcat: str) -> str:
     """Get the nav section slug for a sub_category."""
     return SUBCAT_TO_NAV.get(subcat, subcat)
@@ -1531,6 +1542,9 @@ async def article_page(request: Request, category: str, slug: str):
             timeline_total = 0
     except Exception:
         logger.exception("Error loading timeline for %s/%s", category, slug)
+
+    if timeline_topic:
+        timeline_topic = _humanize_story_title(timeline_topic)
 
     article_slug = article.get("url", "").replace(
         f"https://total.kz/ru/news/{category}/", ""
@@ -3701,6 +3715,9 @@ async def kz_article_page(request: Request, category: str, slug: str):
             timeline_total = 0
     except Exception:
         logger.exception("Error loading timeline for kz/%s/%s", category, slug)
+
+    if timeline_topic:
+        timeline_topic = _humanize_story_title(timeline_topic)
 
     _apply_translations_to_list(timeline.get("prev", []), "kz")
     _apply_translations_to_list(timeline.get("next", []), "kz")
