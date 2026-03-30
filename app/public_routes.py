@@ -2341,6 +2341,7 @@ def _build_rss_xml(title: str, description: str, self_url: str, articles: list) 
     <description>{description}</description>
     <language>ru</language>
     <atom:link href="{self_url}" rel="self" type="application/rss+xml"/>
+    <link rel="hub" href="https://pubsubhubbub.appspot.com/" xmlns="http://www.w3.org/2005/Atom"/>
     <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
 {chr(10).join(items)}
   </channel>
@@ -2980,9 +2981,69 @@ async def stories_index(request: Request):
 #  YANDEX TURBO PAGES RSS
 # ══════════════════════════════════════════════
 
+def _article_link(art: dict) -> str | None:
+    """Build canonical article link from article dict. Returns None if URL can't be parsed."""
+    url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
+    if len(url_parts) >= 2:
+        return f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
+    return None
+
+
+def _article_rfc_date(art: dict) -> str:
+    """Format article pub_date as RFC 822 date string."""
+    try:
+        dt = datetime.strptime(art.get("pub_date", "")[:19].replace('T', ' '), "%Y-%m-%d %H:%M:%S")
+        return dt.strftime("%a, %d %b %Y %H:%M:%S +0500")
+    except Exception:
+        return ""
+
+
+def _clean_body_html(body_html: str) -> str:
+    """Strip scripts, iframes, and style tags from body HTML for feed consumption."""
+    body = body_html or ""
+    body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL)
+    body = re.sub(r'<iframe[^>]*>.*?</iframe>', '', body, flags=re.DOTALL)
+    body = re.sub(r'<style[^>]*>.*?</style>', '', body, flags=re.DOTALL)
+    return body
+
+
+def _abs_img_url(img: str) -> str:
+    """Ensure image URL is absolute."""
+    if not img:
+        return ""
+    return img if img.startswith("http") else f"{SITE_DOMAIN}{img}"
+
+
+def ping_websub_hub(feed_urls: list[str] | None = None):
+    """Ping WebSub/PubSubHubbub hub for the given feed URLs (fire-and-forget)."""
+    import threading
+
+    if feed_urls is None:
+        feed_urls = [
+            f"{SITE_DOMAIN}/rss",
+            f"{SITE_DOMAIN}/feed.json",
+            f"{SITE_DOMAIN}/turbo/rss.xml",
+            f"{SITE_DOMAIN}/zen/rss.xml",
+            f"{SITE_DOMAIN}/flipboard/rss.xml",
+        ]
+
+    def _do_ping():
+        for url in feed_urls:
+            try:
+                httpx.post(
+                    "https://pubsubhubbub.appspot.com/",
+                    data={"hub.mode": "publish", "hub.url": url},
+                    timeout=10,
+                )
+            except Exception:
+                logger.debug("WebSub ping failed for %s", url)
+
+    threading.Thread(target=_do_ping, daemon=True).start()
+
+
 @router.get("/turbo/rss.xml", response_class=Response)
 async def turbo_rss():
-    """Yandex Turbo Pages RSS feed."""
+    """Yandex Turbo Pages RSS feed — full article body_html."""
     import html as html_mod
     try:
         articles = db.get_latest_articles(limit=100)
@@ -2992,20 +3053,37 @@ async def turbo_rss():
 
     items = []
     for art in articles:
-        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
-        if len(url_parts) < 2:
+        link = _article_link(art)
+        if not link:
             continue
-        link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
+        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
 
         img_tag = ""
         if art.get("main_image"):
-            img_url = art["main_image"] if art["main_image"].startswith("http") else f"{SITE_DOMAIN}{art['main_image']}"
-            img_tag = f'<figure><img src="{html_mod.escape(img_url)}"/></figure>'
+            img_url = _abs_img_url(art["main_image"])
+            img_tag = f'<figure><img src="{html_mod.escape(img_url)}"/><figcaption>{html_mod.escape(art["title"])}</figcaption></figure>'
 
-        body = art.get("body_html", "") or art.get("excerpt", "")
-        body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL)
+        body = _clean_body_html(art.get("body_html", "") or art.get("excerpt", ""))
+        # Wrap plain text paragraphs in <p> tags if body doesn't contain HTML tags
+        if body and '<' not in body:
+            body = ''.join(f'<p>{p.strip()}</p>' for p in body.split('\n\n') if p.strip())
 
         nav_cat = cat_label(nav_slug_for(art.get('sub_category', '')))
+
+        # Build related articles section
+        related_html = ""
+        related_arts = [a for a in articles if a.get("id") != art.get("id") and a.get("sub_category") == art.get("sub_category")][:3]
+        if related_arts:
+            related_items = []
+            for ra in related_arts:
+                ra_link = _article_link(ra)
+                if ra_link:
+                    ra_img = _abs_img_url(ra.get("main_image", ""))
+                    img_attr = f' img="{html_mod.escape(ra_img)}"' if ra_img else ""
+                    related_items.append(f'<a href="{ra_link}"{img_attr}>{html_mod.escape(ra["title"])}</a>')
+            if related_items:
+                related_html = f'\n<div data-block="widget-related">{"".join(related_items)}</div>'
+
         turbo_content = f"""<header>
           <h1>{html_mod.escape(art['title'])}</h1>
           {img_tag}
@@ -3014,14 +3092,9 @@ async def turbo_rss():
             <a href="{SITE_DOMAIN}/news/{url_parts[0]}">{html_mod.escape(nav_cat)}</a>
           </menu>
         </header>
-        {body}"""
+        {body}{related_html}"""
 
-        pub_date_rfc = ""
-        try:
-            dt = datetime.strptime(art.get("pub_date", "")[:19].replace('T', ' '), "%Y-%m-%d %H:%M:%S")
-            pub_date_rfc = dt.strftime("%a, %d %b %Y %H:%M:%S +0500")
-        except Exception:
-            pass
+        pub_date_rfc = _article_rfc_date(art)
 
         items.append(f"""    <item turbo="true">
       <title>{html_mod.escape(art['title'])}</title>
@@ -3042,6 +3115,212 @@ async def turbo_rss():
   </channel>
 </rss>"""
     return Response(content=xml, media_type="application/xml; charset=utf-8")
+
+
+# ══════════════════════════════════════════════
+#  YANDEX ZEN/DZEN RSS FEED
+# ══════════════════════════════════════════════
+
+@router.get("/zen/rss.xml", response_class=Response)
+async def zen_rss():
+    """Yandex Zen/Dzen RSS feed — full content:encoded for syndication."""
+    import html as html_mod
+    try:
+        articles = db.get_latest_articles(limit=50)
+    except Exception:
+        logger.exception("Database error in zen_rss")
+        return Response(content="Service unavailable", status_code=503)
+
+    items = []
+    for art in articles:
+        link = _article_link(art)
+        if not link:
+            continue
+        cat = cat_label(nav_slug_for(art.get("sub_category", "")))
+        pub_date_rfc = _article_rfc_date(art)
+        desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
+
+        body = _clean_body_html(art.get("body_html", ""))
+        content_tag = ""
+        if body:
+            content_tag = f"\n      <content:encoded><![CDATA[{body}]]></content:encoded>"
+
+        media_tag = ""
+        img = art.get("main_image", "")
+        if img:
+            img_url = _abs_img_url(img)
+            media_tag = f'\n      <enclosure url="{html_mod.escape(img_url)}" type="image/jpeg" length="0"/>'
+
+        author_tag = ""
+        if art.get("author"):
+            author_tag = f"\n      <dc:creator>{html_mod.escape(art['author'])}</dc:creator>"
+
+        items.append(f"""    <item>
+      <title>{html_mod.escape(art['title'])}</title>
+      <link>{link}</link>
+      <description>{desc}</description>{content_tag}{media_tag}{author_tag}
+      <category>{html_mod.escape(cat)}</category>
+      <pubDate>{pub_date_rfc}</pubDate>
+      <guid isPermaLink="true">{link}</guid>
+    </item>""")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>ТÓТАЛ — Новости Казахстана</title>
+    <link>{SITE_DOMAIN}</link>
+    <description>Последние новости Казахстана — политика, экономика, общество, спорт</description>
+    <language>ru</language>
+    <atom:link href="{SITE_DOMAIN}/zen/rss.xml" rel="self" type="application/rss+xml"/>
+    <link rel="hub" href="https://pubsubhubbub.appspot.com/" xmlns="http://www.w3.org/2005/Atom"/>
+    <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
+
+
+# ══════════════════════════════════════════════
+#  FACEBOOK INSTANT ARTICLES RSS FEED
+# ══════════════════════════════════════════════
+
+@router.get("/fb-ia/rss.xml", response_class=Response)
+async def fb_instant_articles_rss():
+    """Facebook Instant Articles RSS feed."""
+    import html as html_mod
+    try:
+        articles = db.get_latest_articles(limit=30)
+    except Exception:
+        logger.exception("Database error in fb_instant_articles_rss")
+        return Response(content="Service unavailable", status_code=503)
+
+    items = []
+    for art in articles:
+        link = _article_link(art)
+        if not link:
+            continue
+        pub_date_rfc = _article_rfc_date(art)
+        pub_iso = (art.get("pub_date") or "")[:19]
+
+        body = _clean_body_html(art.get("body_html", ""))
+        hero_img = ""
+        if art.get("main_image"):
+            img_url = _abs_img_url(art["main_image"])
+            hero_img = f'<figure><img src="{html_mod.escape(img_url)}"/></figure>'
+
+        author_name = html_mod.escape(art.get("author") or "Total.kz")
+
+        ia_html = f"""<!doctype html>
+<html lang="ru" prefix="op: http://media.facebook.com/op#">
+<head>
+  <meta charset="utf-8">
+  <link rel="canonical" href="{link}">
+  <meta property="op:markup_version" content="v1.0">
+</head>
+<body>
+  <article>
+    <header>
+      {hero_img}
+      <h1>{html_mod.escape(art['title'])}</h1>
+      <time class="op-published" datetime="{pub_iso}">{pub_iso}</time>
+      <address><a>{author_name}</a></address>
+    </header>
+    {body}
+    <footer>
+      <aside><p>&copy; Total.kz</p></aside>
+    </footer>
+  </article>
+</body>
+</html>"""
+
+        desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
+        items.append(f"""    <item>
+      <title>{html_mod.escape(art['title'])}</title>
+      <link>{link}</link>
+      <description>{desc}</description>
+      <content:encoded><![CDATA[{ia_html}]]></content:encoded>
+      <pubDate>{pub_date_rfc}</pubDate>
+      <guid isPermaLink="true">{link}</guid>
+    </item>""")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>ТÓТАЛ — Новости Казахстана</title>
+    <link>{SITE_DOMAIN}</link>
+    <description>Total.kz — Facebook Instant Articles</description>
+    <language>ru</language>
+    <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
+
+
+# ══════════════════════════════════════════════
+#  FLIPBOARD RSS FEED
+# ══════════════════════════════════════════════
+
+@router.get("/flipboard/rss.xml", response_class=Response)
+async def flipboard_rss():
+    """Flipboard RSS feed — full content with media:content."""
+    import html as html_mod
+    try:
+        articles = db.get_latest_articles(limit=30)
+    except Exception:
+        logger.exception("Database error in flipboard_rss")
+        return Response(content="Service unavailable", status_code=503)
+
+    items = []
+    for art in articles:
+        link = _article_link(art)
+        if not link:
+            continue
+        cat = cat_label(nav_slug_for(art.get("sub_category", "")))
+        pub_date_rfc = _article_rfc_date(art)
+        desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
+
+        body = _clean_body_html(art.get("body_html", ""))
+        content_tag = ""
+        if body:
+            content_tag = f"\n      <content:encoded><![CDATA[{body}]]></content:encoded>"
+
+        media_tag = ""
+        img = art.get("main_image", "")
+        if img:
+            img_url = _abs_img_url(img)
+            esc_url = html_mod.escape(img_url)
+            media_tag = f'\n      <media:content url="{esc_url}" medium="image" width="1200" height="675"/>'
+            media_tag += f'\n      <media:thumbnail url="{esc_url}" width="400" height="225"/>'
+            media_tag += f'\n      <enclosure url="{esc_url}" type="image/jpeg" length="0"/>'
+
+        author_tag = ""
+        if art.get("author"):
+            author_tag = f"\n      <dc:creator>{html_mod.escape(art['author'])}</dc:creator>"
+
+        items.append(f"""    <item>
+      <title>{html_mod.escape(art['title'])}</title>
+      <link>{link}</link>
+      <description>{desc}</description>{content_tag}{media_tag}{author_tag}
+      <category>{html_mod.escape(cat)}</category>
+      <pubDate>{pub_date_rfc}</pubDate>
+      <guid isPermaLink="true">{link}</guid>
+    </item>""")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>ТÓТАЛ — Новости Казахстана</title>
+    <link>{SITE_DOMAIN}</link>
+    <description>Последние новости Казахстана — политика, экономика, общество, спорт</description>
+    <language>ru</language>
+    <atom:link href="{SITE_DOMAIN}/flipboard/rss.xml" rel="self" type="application/rss+xml"/>
+    <link rel="hub" href="https://pubsubhubbub.appspot.com/" xmlns="http://www.w3.org/2005/Atom"/>
+    <lastBuildDate>{datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0500")}</lastBuildDate>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return Response(content=xml, media_type="application/rss+xml; charset=utf-8")
 
 
 # ══════════════════════════════════════════════

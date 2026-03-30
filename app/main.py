@@ -170,8 +170,12 @@ async def lifespan(app: FastAPI):
     # Start scheduled publishing loop
     from .scheduler import scheduler_loop
     task = asyncio.create_task(scheduler_loop())
+    # Start Telegram auto-posting loop
+    from .autopost import autopost_loop
+    autopost_task = asyncio.create_task(autopost_loop())
     yield
     task.cancel()
+    autopost_task.cancel()
 
 
 app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
@@ -2051,6 +2055,13 @@ async def api_update_article(article_id: int, request: Request):
                 meili.index_article(article_data)
         except Exception:
             pass
+        # Ping WebSub when article is published
+        if updates.get("status") == "published":
+            try:
+                from .public_routes import ping_websub_hub
+                ping_websub_hub()
+            except Exception:
+                pass
         # Audit log (skip auto_save to avoid noise)
         if user and revision_type != "auto_save":
             try:
@@ -2120,6 +2131,13 @@ async def api_create_article(request: Request):
             meili.index_article(data)
         except Exception:
             pass
+        # Ping WebSub hub for real-time feed notifications
+        if data.get("status") == "published":
+            try:
+                from .public_routes import ping_websub_hub
+                ping_websub_hub()
+            except Exception:
+                pass
         # Audit log
         user = getattr(request.state, "current_user", None)
         if user:
@@ -2169,6 +2187,48 @@ async def api_article_revisions(article_id: int):
         return {"ok": True, "revisions": revisions}
     except Exception as e:
         return {"ok": False, "error": str(e), "revisions": []}
+
+
+@app.get("/api/admin/auto-post")
+async def api_autopost_status(request: Request):
+    """Get auto-posting status and config."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    from .autopost import is_autopost_enabled
+    from . import social
+    config = social.get_autopost_config()
+    return {
+        "ok": True,
+        "enabled": is_autopost_enabled(),
+        "telegram_configured": "telegram" in config,
+        "config": {k: {"account_name": v["account_name"], "account_id": v["account_id_str"]} for k, v in config.items()},
+    }
+
+
+@app.post("/api/admin/auto-post")
+async def api_autopost_toggle(request: Request):
+    """Enable/disable auto-posting."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    body = await request.json()
+    enabled = body.get("enabled", True)
+    from .autopost import set_autopost_enabled
+    set_autopost_enabled(bool(enabled))
+    return {"ok": True, "enabled": bool(enabled)}
+
+
+@app.post("/api/admin/auto-post/trigger")
+async def api_autopost_trigger(request: Request):
+    """Manually trigger one auto-posting cycle."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    import asyncio
+    from .autopost import _do_autopost_cycle
+    count = await asyncio.to_thread(_do_autopost_cycle)
+    return {"ok": True, "posted": count}
 
 
 @app.post("/api/admin/article/{article_id}/restore/{revision_id}")

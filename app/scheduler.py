@@ -120,6 +120,12 @@ async def scheduler_loop(interval: int = 60) -> None:
             count = await asyncio.to_thread(publish_scheduled_articles_sync)
             if count:
                 logger.info("Scheduler: опубликовано %d статей", count)
+                # Ping WebSub hub when scheduled articles go live
+                try:
+                    from app.public_routes import ping_websub_hub
+                    ping_websub_hub()
+                except Exception:
+                    pass
         except Exception as exc:
             logger.error("Scheduler: необработанная ошибка: %s", exc, exc_info=True)
         await asyncio.sleep(interval)

@@ -87,5 +87,43 @@
             <p>Обзор контента и сущностей</p>
         </div>
     </a>
+    <div class="settings-card" id="autopost-card" style="cursor:pointer" onclick="document.getElementById('autopost-panel').classList.toggle('hidden')">
+        <div class="settings-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div class="settings-card-body">
+            <h3>Авто-постинг</h3>
+            <p>Telegram: автоматическая публикация новостей</p>
+        </div>
+    </div>
 </div>
+
+<div id="autopost-panel" class="hidden" style="margin-top:24px;padding:20px;background:var(--bg-card,#fff);border-radius:12px;border:1px solid var(--border,#e5e7eb)">
+    <h3 style="margin:0 0 16px">Telegram авто-постинг</h3>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+        <label style="font-weight:600">Статус:</label>
+        <span id="autopost-status" style="padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600">...</span>
+        <button id="autopost-toggle" onclick="toggleAutopost()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border,#ccc);cursor:pointer;font-size:13px">Переключить</button>
+        <button onclick="triggerAutopost()" style="padding:6px 16px;border-radius:6px;border:1px solid var(--border,#ccc);cursor:pointer;font-size:13px">Запустить сейчас</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted,#666);margin:0">
+        Настройте Telegram-бот и канал в разделе <a href="/admin/social">Соцсети</a> (включите auto_post в конфигурации аккаунта).
+        Автопостинг проверяет новые статьи каждые 5 минут.
+    </p>
+</div>
+<script>
+async function loadAutopostStatus(){
+    try{const r=await fetch('/api/admin/auto-post');const d=await r.json();
+    const s=document.getElementById('autopost-status');
+    if(d.enabled){s.textContent='Включён';s.style.background='#dcfce7';s.style.color='#166534'}
+    else{s.textContent='Выключен';s.style.background='#fee2e2';s.style.color='#991b1b'}}catch(e){}}
+async function toggleAutopost(){
+    const r=await fetch('/api/admin/auto-post');const d=await r.json();
+    await fetch('/api/admin/auto-post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!d.enabled})});
+    loadAutopostStatus()}
+async function triggerAutopost(){
+    const r=await fetch('/api/admin/auto-post/trigger',{method:'POST'});const d=await r.json();
+    alert('Опубликовано: '+d.posted)}
+loadAutopostStatus();
+</script>
 {% endblock %}

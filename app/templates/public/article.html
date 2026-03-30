@@ -21,6 +21,7 @@
 {% for kw in _meta_tags[:5] %}<meta property="article:tag" content="{{ kw }}">
 {% endfor %}
 <meta property="tg:site_name" content="Total.kz">
+<meta name="tg:site_verification" content="PLACEHOLDER_TOKEN_FROM_BOTFATHER">
 {% endblock %}
 
 {% block jsonld %}
@@ -85,6 +86,10 @@
   {% if article.body_text %}"wordCount": {{ article.body_text.split()|length }},{% endif %}
   {% set _ld_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
   {% if _ld_tags %}"keywords": {{ _ld_tags | tojson }},{% endif %}
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "cssSelector": [".article-title", ".article-lead", ".article-body"]
+  },
   "potentialAction": {
     "@type": "ReadAction",
     "target": {{ _art_url | tojson }}
@@ -156,6 +161,15 @@
   </button>
 </div>
 
+<!-- Telegram Instant View targets:
+     title:       //article//h1[@class='article-title']
+     subtitle:    //p[@class='article-lead']
+     author:      //span[@class='header-author']
+     published:   //time[@class='header-date']
+     hero image:  //figure[@class='article-hero-image']//img
+     body:        //div[@class='article-body']
+     cover:       //figure[@class='article-hero-image']
+-->
 <article class="article-page">
 
   {# ── Print-only header (hidden on screen, visible on print) ── #}

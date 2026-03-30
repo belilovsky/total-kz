@@ -532,10 +532,22 @@ def get_content_plan_stats() -> dict:
 # ══════════════════════════════════════════════
 
 def format_telegram_post(article: dict, site_url: str = "https://total.kz") -> str:
-    """Format article for Telegram channel post."""
+    """Format article for Telegram channel post.
+
+    Includes: bold title, 1-2 sentence excerpt, source name, link, hashtags from tags.
+    """
+    import re as _re
     title = article.get("title", "")
     excerpt = article.get("excerpt", "")
     url = article.get("url", "")
+    source = article.get("author") or "Total.kz"
+    tags = article.get("tags") or []
+    if isinstance(tags, str):
+        try:
+            tags = json.loads(tags)
+        except Exception:
+            tags = []
+
     # Build new URL
     parts = url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
     if len(parts) >= 2:
@@ -543,12 +555,52 @@ def format_telegram_post(article: dict, site_url: str = "https://total.kz") -> s
     else:
         link = site_url
 
-    text = f"📰 <b>{title}</b>"
+    text = f"\U0001f4f0 <b>{title}</b>"
     if excerpt:
-        short = excerpt[:200] + ("…" if len(excerpt) > 200 else "")
+        short = excerpt[:200] + ("\u2026" if len(excerpt) > 200 else "")
         text += f"\n\n{short}"
-    text += f"\n\n👉 <a href=\"{link}\">Читать на Total.kz</a>"
+    text += f"\n\n\U0001f4dd {source}"
+    text += f"\n\n\U0001f449 <a href=\"{link}\">\u0427\u0438\u0442\u0430\u0442\u044c \u043d\u0430 Total.kz</a>"
+
+    # Hashtags from tags (up to 5)
+    if tags:
+        hashtags = []
+        for tag in tags[:5]:
+            cleaned = _re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9_]', '', tag.replace(' ', '_'))
+            if cleaned:
+                hashtags.append(f"#{cleaned}")
+        if hashtags:
+            text += f"\n\n{' '.join(hashtags)}"
+
     return text
+
+
+def send_telegram_message(bot_token: str, chat_id: str, text: str, photo_url: str = "") -> dict:
+    """Send a message to a Telegram channel via Bot API.
+
+    Returns dict with 'ok' and 'result' or 'description' on error.
+    """
+    import requests
+    base = f"https://api.telegram.org/bot{bot_token}"
+
+    try:
+        if photo_url:
+            resp = requests.post(f"{base}/sendPhoto", data={
+                "chat_id": chat_id,
+                "caption": text,
+                "parse_mode": "HTML",
+                "photo": photo_url,
+            }, timeout=15)
+        else:
+            resp = requests.post(f"{base}/sendMessage", data={
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": "false",
+            }, timeout=15)
+        return resp.json()
+    except Exception as e:
+        return {"ok": False, "description": str(e)}
 
 
 def get_autopost_config() -> dict:
