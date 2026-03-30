@@ -206,10 +206,6 @@
       <figcaption>{{ article.image_credit }}</figcaption>
     {% endif %}
   </figure>
-  {% else %}
-  <div class="article-hero-placeholder" data-cat="{{ nav_section }}">
-    <span class="hero-ph-cat">{{ nav_section_name }}</span>
-  </div>
   {% endif %}
 
   <!-- ═══ AD: UNDER HERO (R1) ═══ -->
@@ -338,6 +334,51 @@
         </div>
         {% endif %}
 
+        {# ── Организации упомянутые в статье ── #}
+        {% set _article_orgs = article.entities|selectattr("entity_type", "equalto", "org")|list if article.entities is defined and article.entities else [] %}
+        {% if _article_orgs %}
+        <div class="sidebar-orgs">
+          <div class="sidebar-persons-title">{{ t('article.organizations') if t is defined else 'Организации' }}</div>
+          {% for org in _article_orgs[:6] %}
+          <a href="{{ lang_prefix|default('') }}/organization/{{ org.slug or org.normalized or org.name|lower|replace(' ', '-') }}" class="sidebar-org-card">
+            <div class="sidebar-org-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 21h18M3 7v14M21 7v14M6 11h2M6 15h2M10 11h2M10 15h2M14 11h2M14 15h2M18 11h2M18 15h2M6 7l6-4 6 4"/>
+              </svg>
+            </div>
+            <span class="sidebar-org-name">{{ org.short_name or org.name }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# ── Reactions (moved to sidebar) ── #}
+        <div class="sidebar-reactions" id="sidebarReactions" data-article-id="{{ article.id }}">
+          <div class="sidebar-persons-title">{{ t('article.reactions') if t is defined else 'Реакции' }}</div>
+          <div class="sidebar-reactions-grid">
+            <button class="sidebar-reaction-btn" data-reaction="like" type="button">
+              <span class="reaction-emoji">👍</span>
+              <span class="reaction-count" data-count="like">0</span>
+            </button>
+            <button class="sidebar-reaction-btn" data-reaction="useful" type="button">
+              <span class="reaction-emoji">💡</span>
+              <span class="reaction-count" data-count="useful">0</span>
+            </button>
+            <button class="sidebar-reaction-btn" data-reaction="funny" type="button">
+              <span class="reaction-emoji">😄</span>
+              <span class="reaction-count" data-count="funny">0</span>
+            </button>
+            <button class="sidebar-reaction-btn" data-reaction="sad" type="button">
+              <span class="reaction-emoji">😢</span>
+              <span class="reaction-count" data-count="sad">0</span>
+            </button>
+            <button class="sidebar-reaction-btn" data-reaction="angry" type="button">
+              <span class="reaction-emoji">😡</span>
+              <span class="reaction-count" data-count="angry">0</span>
+            </button>
+          </div>
+        </div>
+
         {# ── Сейчас читают (popular articles) ── #}
         {% if popular %}
         <div class="popular-widget">
@@ -446,19 +487,19 @@
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
+        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title | striptags | truncate(120) }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
-        <span class="timeline-title">{{ article.title }}</span>
+        <span class="timeline-title">{{ article.title | striptags | truncate(120) }}</span>
       </div>
       {% for art in timeline.prev %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
         <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
-        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
+        <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title | striptags | truncate(120) }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
     </div>
@@ -475,7 +516,36 @@
   <!-- ═══ AD: AFTER ARTICLE (R6) ═══ -->
   <div class="ad-placeholder ad-after-article" data-ad-slot="R6" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  {# ── Related articles: 6 cards ── #}
+  {# ── Copyright block ── #}
+  <div class="article-copyright">
+    {{ t('article.copyright') if t is defined else 'При использовании материалов Total.kz ссылка на источник обязательна. Полное или частичное копирование материалов без согласия редакции запрещено.' }}
+  </div>
+
+  {# ── Comments section (compact, after tags) ── #}
+  <section class="comments-section" id="comments">
+    <h2 class="comments-heading">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      {{ t('comments.title') if t is defined else 'Комментарии' }} <span class="comments-count" id="commentsCount"></span>
+    </h2>
+
+    <div id="commentsList" class="comments-list">
+      <p class="comments-loading">{{ t('comments.loading') if t is defined else 'Загрузка…' }}</p>
+    </div>
+
+    <h3 class="cf-heading">{{ t('comments.leave') if t is defined else 'Оставить комментарий' }}</h3>
+    <form class="comment-form" id="commentForm">
+      <div class="cf-row">
+        <input type="text" name="author_name" placeholder="{{ t('comments.name') if t is defined else 'Ваше имя' }}" required maxlength="80" class="cf-name">
+      </div>
+      <textarea name="text" placeholder="{{ t('comments.placeholder') if t is defined else 'Напишите комментарий…' }}" required maxlength="2000" rows="3" class="cf-text"></textarea>
+      <div class="cf-actions">
+        <span class="cf-hint">{{ t('comments.hint') if t is defined else 'Комментарий появится после модерации' }}</span>
+        <button type="submit" class="cf-submit">{{ t('comments.submit') if t is defined else 'Отправить' }}</button>
+      </div>
+    </form>
+  </section>
+
+  {# ── Related articles: 6 cards (after comments) ── #}
   {% if related %}
   <section class="related-section">
     <h2 class="related-heading">{{ t('article.related') if t is defined else 'Читайте также' }}</h2>
@@ -501,64 +571,6 @@
     </div>
   </section>
   {% endif %}
-
-  {# ── Copyright block ── #}
-  <div class="article-copyright">
-    {{ t('article.copyright') if t is defined else 'При использовании материалов Total.kz ссылка на источник обязательна. Полное или частичное копирование материалов без согласия редакции запрещено.' }}
-  </div>
-
-  {# ── Reactions engagement bar ── #}
-  <div class="engagement-bar" id="engagementBar" data-article-id="{{ article.id }}">
-    <button class="reaction-btn" data-reaction="like" type="button">
-      <span class="reaction-emoji">👍</span>
-      <span class="reaction-label">{{ t('reaction.like') if t is defined else 'Нравится' }}</span>
-      <span class="reaction-count" data-count="like">0</span>
-    </button>
-    <button class="reaction-btn" data-reaction="useful" type="button">
-      <span class="reaction-emoji">💡</span>
-      <span class="reaction-label">{{ t('reaction.useful') if t is defined else 'Полезно' }}</span>
-      <span class="reaction-count" data-count="useful">0</span>
-    </button>
-    <button class="reaction-btn" data-reaction="funny" type="button">
-      <span class="reaction-emoji">😄</span>
-      <span class="reaction-label">{{ t('reaction.funny') if t is defined else 'Забавно' }}</span>
-      <span class="reaction-count" data-count="funny">0</span>
-    </button>
-    <button class="reaction-btn" data-reaction="sad" type="button">
-      <span class="reaction-emoji">😢</span>
-      <span class="reaction-label">{{ t('reaction.sad') if t is defined else 'Сочувствую' }}</span>
-      <span class="reaction-count" data-count="sad">0</span>
-    </button>
-    <button class="reaction-btn" data-reaction="angry" type="button">
-      <span class="reaction-emoji">😡</span>
-      <span class="reaction-label">{{ t('reaction.angry') if t is defined else 'Возмутительно' }}</span>
-      <span class="reaction-count" data-count="angry">0</span>
-    </button>
-  </div>
-
-  {# ── Comments section ── #}
-  <section class="comments-section" id="comments">
-    <h2 class="comments-heading">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      {{ t('comments.title') if t is defined else 'Комментарии' }} <span class="comments-count" id="commentsCount"></span>
-    </h2>
-
-    <div id="commentsList" class="comments-list">
-      <p class="comments-loading">{{ t('comments.loading') if t is defined else 'Загрузка…' }}</p>
-    </div>
-
-    <h3 class="cf-heading">{{ t('comments.leave') if t is defined else 'Оставить комментарий' }}</h3>
-    <form class="comment-form" id="commentForm">
-      <div class="cf-row">
-        <input type="text" name="author_name" placeholder="{{ t('comments.name') if t is defined else 'Ваше имя' }}" required maxlength="80" class="cf-name">
-      </div>
-      <textarea name="text" placeholder="{{ t('comments.placeholder') if t is defined else 'Напишите комментарий…' }}" required maxlength="2000" rows="3" class="cf-text"></textarea>
-      <div class="cf-actions">
-        <span class="cf-hint">{{ t('comments.hint') if t is defined else 'Комментарий появится после модерации' }}</span>
-        <button type="submit" class="cf-submit">{{ t('comments.submit') if t is defined else 'Отправить' }}</button>
-      </div>
-    </form>
-  </section>
 
   {# ── Print-only footer (hidden on screen) ── #}
   <div class="print-footer" style="display:none">
@@ -870,7 +882,7 @@ function toggleBookmark(id, title, url, image, date) {
 </script>
 <script>
 (function() {
-  var bar = document.getElementById('engagementBar');
+  var bar = document.getElementById('sidebarReactions');
   if (!bar) return;
   var articleId = bar.dataset.articleId;
   var lsKey = 'reactions_' + articleId;
@@ -878,7 +890,7 @@ function toggleBookmark(id, title, url, image, date) {
   try { userReactions = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch(e) {}
 
   function updateUI(counts) {
-    bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
+    bar.querySelectorAll('.sidebar-reaction-btn').forEach(function(btn) {
       var rtype = btn.dataset.reaction;
       var countEl = btn.querySelector('.reaction-count');
       if (countEl && counts[rtype] !== undefined) {
@@ -892,7 +904,7 @@ function toggleBookmark(id, title, url, image, date) {
     .then(function(r) { return r.json(); })
     .then(function(data) { updateUI(data); });
 
-  bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
+  bar.querySelectorAll('.sidebar-reaction-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var rtype = btn.dataset.reaction;
       btn.classList.add('reaction-pulse');
