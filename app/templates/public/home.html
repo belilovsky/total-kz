@@ -46,7 +46,7 @@
                   <span class="cat-dot"></span>
                   <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
                 </span>
-                <span class="hero-side-meta">{{ format_date_short(hero.pub_date) }}</span>
+                <span class="hero-side-meta">{{ format_date_day(hero.pub_date) }}</span>
               </div>
               <h3 class="hero-side-title">{{ hero.title }}</h3>
             </div>
@@ -100,7 +100,7 @@
         <div class="shelf-card-meta">
           <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
           <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-          <span class="shelf-card-date">{{ format_date_short(art.pub_date) }}</span>
+          <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
         </div>
       </a>
       {% endfor %}
@@ -132,7 +132,7 @@
           <div class="shelf-card-meta">
             <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
             <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-            <span class="shelf-card-date">{{ format_date_short(art.pub_date) }}</span>
+            <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
             <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
           </div>
         </a>
@@ -241,7 +241,7 @@
           <span class="popular-num">{{ loop.index }}</span>
           <div class="popular-body">
             <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a>
-            <span class="popular-meta">{{ format_date_short(art.pub_date) }}</span>
+            <span class="popular-meta">{{ format_date_day(art.pub_date) }}</span>
           </div>
         </li>
         {% endfor %}

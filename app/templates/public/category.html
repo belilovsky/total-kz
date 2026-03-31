@@ -93,7 +93,7 @@
         {% if art.excerpt %}
           <p class="cat2-top-excerpt">{{ art.excerpt[:100] }}{% if art.excerpt|length > 100 %}…{% endif %}</p>
         {% endif %}
-        <span class="cat-top-card-meta">{{ format_date_short(art.pub_date) }}</span>
+        <span class="cat-top-card-meta">{{ format_date_day(art.pub_date) }}</span>
       </div>
     </a>
     {% endfor %}

@@ -186,6 +186,7 @@ def _build_lang_ctx(lang: str) -> dict:
         # Override date formatters with lang-aware versions
         "format_date": lambda d: format_date(d, lang),
         "format_date_short": lambda d: format_date_short(d, lang),
+        "format_date_day": lambda d: format_date_day(d, lang),
         # Override cat_label to use i18n version
         "cat_label": lambda slug: cat_label_i18n(slug, lang),
     }
@@ -553,21 +554,20 @@ def format_date_short(date_str: str | None, lang: str = "ru") -> str:
         return f"{dt.day} {months[dt.month - 1]}, {dt.year}"
 
 
-def format_date_day(date_str: str | None) -> str:
-    """Date-only format for timelines.
+def format_date_day(date_str: str | None, lang: str = "ru") -> str:
+    """Date-only format for timelines / small cards (no time).
     Current year:  26 марта   (day + full genitive month)
     Past years:    25.03.2025  (DD.MM.YYYY)
     """
     if not date_str:
         return ""
-    months_gen = ["января", "февраля", "марта", "апреля", "мая", "июня",
-                  "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+    months = _get_months(lang)
     dt = _parse_datetime(date_str)
     if dt is None:
         return date_str[:10] if len(date_str) >= 10 else date_str
     now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
     if dt.year == now.year:
-        return f"{dt.day} {months_gen[dt.month - 1]}"
+        return f"{dt.day} {months[dt.month - 1]}"
     else:
         return f"{dt.day:02d}.{dt.month:02d}.{dt.year}"
 
