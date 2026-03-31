@@ -1,6 +1,7 @@
 """Public frontend routes for Total.kz news portal."""
 
 import hashlib
+import html as html_mod_top
 import httpx
 import json
 import logging
@@ -1560,7 +1561,12 @@ async def category_page(
 async def article_page(request: Request, category: str, slug: str):
     """Single article page."""
     try:
-        article = db.get_article_by_slug(category, slug)
+        # Handle _id_XXXXX URLs: extract numeric ID and look up directly
+        m_id = re.search(r'_id_(\d+)$', slug)
+        if m_id:
+            article = db.get_article(int(m_id.group(1)))
+        else:
+            article = db.get_article_by_slug(category, slug)
     except Exception:
         logger.exception("Database error in article_page for %s/%s", category, slug)
         return templates.TemplateResponse("public/404.html", {
@@ -1835,10 +1841,15 @@ async def tag_page(
     result = db.search_articles(tag=tag_name, page=page, per_page=20)
     if result.get("articles"):
         result["articles"] = rewrite_articles_images(result["articles"])
+        for art in result["articles"]:
+            if art.get("excerpt"):
+                art["excerpt"] = html_mod_top.unescape(art["excerpt"])
+
+    display_name = tag_name[:1].upper() + tag_name[1:] if tag_name else tag_name
 
     return templates.TemplateResponse("public/tag.html", {
         "request": request,
-        "tag_name": tag_name,
+        "tag_name": display_name,
         "result": result,
         "page": page,
         "nav_sections": NAV_SECTIONS,
@@ -2292,11 +2303,7 @@ def _build_rss_items(articles: list) -> list[str]:
     import html as html_mod
     items = []
     for art in articles:
-        url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
-        if len(url_parts) >= 2:
-            link = f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
-        else:
-            link = f"{SITE_DOMAIN}/"
+        link = f"{SITE_DOMAIN}{article_url(art)}"
         cat = cat_label(nav_slug_for(art.get("sub_category", "")))
         pub = art.get("pub_date", "")
         # RFC 822 date
@@ -2308,7 +2315,8 @@ def _build_rss_items(articles: list) -> list[str]:
         desc = html_mod.escape(art.get("excerpt") or art.get("title", ""))
         body_cdata = ""
         if art.get("body_html"):
-            body_cdata = f"\n      <content:encoded><![CDATA[{art['body_html']}]]></content:encoded>"
+            clean_body = _clean_body_html(art['body_html'])
+            body_cdata = f"\n      <content:encoded><![CDATA[{clean_body}]]></content:encoded>"
         media_tag = ""
         img = art.get("main_image", "")
         if img:
@@ -2983,9 +2991,9 @@ async def stories_index(request: Request):
 
 def _article_link(art: dict) -> str | None:
     """Build canonical article link from article dict. Returns None if URL can't be parsed."""
-    url_parts = art["url"].replace("https://total.kz/ru/news/", "").strip("/").split("/")
-    if len(url_parts) >= 2:
-        return f"{SITE_DOMAIN}/news/{url_parts[0]}/{url_parts[1]}"
+    path = article_url(art)
+    if path and path != "/":
+        return f"{SITE_DOMAIN}{path}"
     return None
 
 
@@ -3001,10 +3009,12 @@ def _article_rfc_date(art: dict) -> str:
 def _clean_body_html(body_html: str) -> str:
     """Strip scripts, iframes, and style tags from body HTML for feed consumption."""
     body = body_html or ""
-    body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL)
-    body = re.sub(r'<iframe[^>]*>.*?</iframe>', '', body, flags=re.DOTALL)
-    body = re.sub(r'<style[^>]*>.*?</style>', '', body, flags=re.DOTALL)
-    return body
+    body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL | re.IGNORECASE)
+    body = re.sub(r'<noscript[^>]*>.*?</noscript>', '', body, flags=re.DOTALL | re.IGNORECASE)
+    body = re.sub(r'<!--.*?-->', '', body, flags=re.DOTALL)
+    body = re.sub(r'<iframe[^>]*>.*?</iframe>', '', body, flags=re.DOTALL | re.IGNORECASE)
+    body = re.sub(r'<style[^>]*>.*?</style>', '', body, flags=re.DOTALL | re.IGNORECASE)
+    return body.strip()
 
 
 def _abs_img_url(img: str) -> str:
