@@ -191,7 +191,9 @@
   <header class="article-page-header">
     <div class="article-header-grid">
       <h1 class="article-title">{{ article.title }}</h1>
-      {# Lead removed — excerpt already shown as first sentence of body #}
+      {% if article.excerpt %}
+      <p class="article-lead">{{ article.excerpt }}</p>
+      {% endif %}
       <div class="article-header-aside">
         <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
         {% if article.author %}
@@ -942,6 +944,27 @@ function toggleBookmark(id, title, url, image, date) {
       });
     });
   });
+})();
+</script>
+<script>
+// ── Dedup: remove first paragraph of body if it matches the lead/excerpt ──
+(function(){
+  var lead = document.querySelector('.article-lead');
+  var body = document.getElementById('article-body');
+  if (!lead || !body) return;
+  var leadText = lead.textContent.trim().replace(/\s+/g,' ').substring(0,80);
+  if (!leadText) return;
+  // Check first few elements in body (could be <p>, <strong>, <b>, or text node)
+  var children = body.children;
+  for (var i = 0; i < Math.min(children.length, 3); i++) {
+    var el = children[i];
+    var elText = el.textContent.trim().replace(/\s+/g,' ');
+    // If the body element starts with the same text as the lead, remove it
+    if (elText && leadText.substring(0,60) === elText.substring(0,60)) {
+      el.remove();
+      break;
+    }
+  }
 })();
 </script>
 {% endblock %}
