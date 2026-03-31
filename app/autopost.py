@@ -82,14 +82,16 @@ def _do_autopost_cycle() -> int:
                 body=text,
                 media_url=photo_url,
             )
-            social.update_post_status(
-                post_id=social.get_posts(platform="telegram", status="draft", limit=1)["posts"][0]["id"]
-                if social.get_posts(platform="telegram", status="draft", limit=1)["posts"]
-                else 0,
-                status="published",
-                post_url=post_url,
-                platform_post_id=str(tg_msg.get("message_id", "")),
-            )
+            # Update post status — find the just-created draft post
+            drafts = social.get_posts(platform="telegram", status="draft", limit=1)
+            draft_posts = drafts.get("posts", [])
+            if draft_posts:
+                social.update_post_status(
+                    post_id=draft_posts[0]["id"],
+                    status="published",
+                    post_url=post_url,
+                    platform_post_id=str(tg_msg.get("message_id", "")),
+                )
             posted += 1
             logger.info("Auto-posted article id=%d to Telegram", article["id"])
         else:
