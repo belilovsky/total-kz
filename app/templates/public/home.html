@@ -73,7 +73,7 @@
     <div class="section-header">
       <h2 class="section-title">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        {% if lang is defined and lang == "kz" %}СІЗДІҢ АЙМАҒЫҢЫЗДА{% else %}В ВАШЕМ РЕГИОНЕ{% endif %}: {{ region_label }}
+{{ region_label }}
       </h2>
       <a href="{{ lang_prefix|default('') }}/search?q={{ region_label }}" class="section-more">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
     </div>
