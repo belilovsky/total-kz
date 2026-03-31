@@ -2473,3 +2473,28 @@ def track_view(article_id: int) -> int:
             select(Article.views).where(Article.id == article_id)
         ).scalar()
         return row or 0
+
+
+# ══════════════════════════════════════════════
+#  AD PLACEMENTS (stub — table lives in SQLite for now)
+# ══════════════════════════════════════════════
+
+def get_all_ad_placements(page_filter: str = "") -> list:
+    """Get all ad placements. Returns empty list until PG migration is run."""
+    return []
+
+
+def get_ad_placement(slot_id: str) -> dict | None:
+    return None
+
+
+def toggle_ad_placement(slot_id: str) -> bool:
+    return False
+
+
+def update_ad_placement(slot_id: str, data: dict) -> bool:
+    return False
+
+
+def get_ad_stats() -> dict:
+    return {'total': 0, 'active': 0, 'inactive': 0, 'booked': 0, 'available': 0}

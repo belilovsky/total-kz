@@ -59,6 +59,9 @@ async def social_dashboard(request: Request):
     return templates.TemplateResponse("social.html", {
         "request": request,
         "active": "social",
+        "current_user": user,
+        "notifications": [],
+        "notification_count": 0,
         "accounts": accounts,
         "post_stats": post_stats,
         "plan_stats": plan_stats,
