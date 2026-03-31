@@ -67,15 +67,15 @@
   <!-- ═══ AD: AFTER HERO ═══ -->
   <div class="ad-placeholder ad-leaderboard" data-ad-slot="H1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
 
-  <!-- ═══ REGIONAL SECTION: "В ВАШЕМ РЕГИОНЕ" ═══ -->
+  <!-- ═══ REGIONAL SECTION: "В ВАШЕМ РЕГИОНЕ" (shelf-row, light bg) ═══ -->
   {% if regional_articles %}
-  <section class="shelf-section regional-section">
+  <section class="hp-section hp-section--light">
     <div class="section-header">
       <h2 class="section-title">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
 {{ region_label }}
       </h2>
-      <a href="{{ lang_prefix|default('') }}/search?q={{ region_label }}" class="section-more">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+      <a href="{{ lang_prefix|default('') }}/search?q={{ region_label }}" class="section-more-pill">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
     </div>
     <div class="shelf-row">
       {% for art in regional_articles[:4] %}
@@ -84,15 +84,121 @@
         <div class="shelf-card-img">
           <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
                onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          <span class="shelf-card-date-overlay">{{ format_date_day(art.pub_date) }}</span>
         </div>
         {% else %}
         <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
         {% endif %}
         <h3 class="shelf-card-title">{{ art.title }}</h3>
-        <div class="shelf-card-meta">
-          <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
-          <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-          <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ═══ CATEGORY SECTIONS (alternating layouts) ═══ -->
+  {% if category_highlights %}
+
+  {# -- Helper: build lookup dict from category_highlights -- #}
+  {% set cats = {} %}
+  {% for cat in category_highlights %}
+    {% set _ = cats.update({cat.slug: cat}) %}
+  {% endfor %}
+
+  <!-- ── ПОЛИТИКА — featured layout (1 big + 3 small) [white bg] ── -->
+  {% if cats.get('politika') %}
+  {% set cat = cats['politika'] %}
+  <section class="hp-section hp-section--white">
+    <div class="section-header">
+      <h2 class="section-title">{{ cat.label }}</h2>
+      <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more-pill">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+    </div>
+    <div class="featured-layout">
+      {% if cat.articles|length > 0 %}
+      {% set main_art = cat.articles[0] %}
+      <a href="{{ (article_url_i18n(main_art) if article_url_i18n is defined else article_url(main_art)) }}" class="featured-big">
+        {% if main_art.main_image or main_art.thumbnail %}
+        <div class="featured-big-img">
+          <img src="{{ imgproxy_url(main_art.main_image or main_art.thumbnail, 600) }}" alt="{{ main_art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+        </div>
+        {% endif %}
+        <h3 class="featured-big-title">{{ main_art.title }}</h3>
+        {% if main_art.excerpt %}
+        <p class="featured-big-excerpt">{{ main_art.excerpt[:160] }}{% if main_art.excerpt|length > 160 %}…{% endif %}</p>
+        {% endif %}
+        <span class="featured-big-date">{{ format_date_short(main_art.pub_date) }}</span>
+      </a>
+      {% endif %}
+      <div class="featured-side">
+        {% for art in cat.articles[1:4] %}
+        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="featured-side-item">
+          {% if art.main_image or art.thumbnail %}
+          <div class="featured-side-thumb">
+            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 200) }}" alt="{{ art.title }}" loading="lazy"
+                 onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          </div>
+          {% endif %}
+          <div class="featured-side-body">
+            <h4 class="featured-side-title">{{ art.title }}</h4>
+            <span class="featured-side-date">{{ format_date_day(art.pub_date) }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── ЭКОНОМИКА — shelf-row (4 cards) [light bg] ── -->
+  {% if cats.get('ekonomika') %}
+  {% set cat = cats['ekonomika'] %}
+  <section class="hp-section hp-section--light">
+    <div class="section-header">
+      <h2 class="section-title">{{ cat.label }}</h2>
+      <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more-pill">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+    </div>
+    <div class="shelf-row">
+      {% for art in cat.articles[:4] %}
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
+        {% if art.main_image or art.thumbnail %}
+        <div class="shelf-card-img">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          <span class="shelf-card-date-overlay">{{ format_date_day(art.pub_date) }}</span>
+        </div>
+        {% else %}
+        <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
+        {% endif %}
+        <h3 class="shelf-card-title">{{ art.title }}</h3>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── ОБЩЕСТВО — compact-list (5 headlines) [white bg] ── -->
+  {% if cats.get('obshchestvo') %}
+  {% set cat = cats['obshchestvo'] %}
+  <section class="hp-section hp-section--white">
+    <div class="section-header">
+      <h2 class="section-title">{{ cat.label }}</h2>
+      <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more-pill">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+    </div>
+    <div class="compact-list">
+      {% for art in cat.articles[:5] %}
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="compact-list-item">
+        {% if art.main_image or art.thumbnail %}
+        <div class="compact-list-thumb">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 120) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+        </div>
+        {% else %}
+        <div class="compact-list-thumb compact-list-thumb--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
+        {% endif %}
+        <div class="compact-list-body">
+          <h4 class="compact-list-title">{{ art.title }}</h4>
+          <span class="compact-list-date">{{ format_date_day(art.pub_date) }}</span>
         </div>
       </a>
       {% endfor %}
@@ -100,151 +206,138 @@
   </section>
   {% endif %}
 
-  <!-- ═══ CATEGORY SHELVES (all categories) ═══ -->
-  {% if category_highlights %}
-  <div class="category-shelves">
-    {% for cat in category_highlights %}
-    <section class="shelf-section">
-      <div class="section-header">
-        <h2 class="section-title">{{ cat.label }}</h2>
-        <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
-      </div>
-      <div class="shelf-row">
-        {% for art in cat.articles[:4] %}
-        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
-          {% if art.main_image or art.thumbnail %}
-          <div class="shelf-card-img">
-            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
-                 onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-          </div>
-          {% else %}
-          <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
-          {% endif %}
-          <h3 class="shelf-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</h3>
-          <div class="shelf-card-meta">
-            <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
-            <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-            <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
-            <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
-          </div>
-        </a>
+  <!-- ── ЕЩЁ — tabbed: Закон | Наука | Мир (4 cards per tab) [light bg] ── -->
+  {% set tab_cats = [] %}
+  {% if cats.get('zakon') %}{% set _ = tab_cats.append(cats['zakon']) %}{% endif %}
+  {% if cats.get('nauka') %}{% set _ = tab_cats.append(cats['nauka']) %}{% endif %}
+  {% if cats.get('mir') %}{% set _ = tab_cats.append(cats['mir']) %}{% endif %}
+  {% if tab_cats|length > 0 %}
+  <section class="hp-section hp-section--light">
+    <div class="section-header">
+      <h2 class="section-title">{{ t('homepage.more') if t is defined else 'Ещё' }}</h2>
+    </div>
+    <div class="tabbed-section">
+      <div class="tab-buttons" role="tablist">
+        {% for tc in tab_cats %}
+        <button class="tab-btn{% if loop.first %} tab-btn--active{% endif %}"
+                role="tab"
+                aria-selected="{{ 'true' if loop.first else 'false' }}"
+                data-tab="tab-{{ tc.slug }}">{{ tc.label }}</button>
         {% endfor %}
       </div>
-    </section>
-    {% endfor %}
-  </div>
+      {% for tc in tab_cats %}
+      <div class="tab-panel{% if loop.first %} tab-panel--active{% endif %}" id="tab-{{ tc.slug }}" role="tabpanel">
+        <div class="shelf-row">
+          {% for art in tc.articles[:4] %}
+          <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
+            {% if art.main_image or art.thumbnail %}
+            <div class="shelf-card-img">
+              <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+                   onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+              <span class="shelf-card-date-overlay">{{ format_date_day(art.pub_date) }}</span>
+            </div>
+            {% else %}
+            <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
+            {% endif %}
+            <h3 class="shelf-card-title">{{ art.title }}</h3>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
   {% endif %}
 
+  <!-- ── СПОРТ — shelf-row (4 cards) [white bg] ── -->
+  {% if cats.get('sport') %}
+  {% set cat = cats['sport'] %}
+  <section class="hp-section hp-section--white">
+    <div class="section-header">
+      <h2 class="section-title">{{ cat.label }}</h2>
+      <a href="{{ lang_prefix|default('') }}/news/{{ cat.slug }}" class="section-more-pill">{{ t('homepage.all_section') if t is defined else 'Все →' }}</a>
+    </div>
+    <div class="shelf-row">
+      {% for art in cat.articles[:4] %}
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
+        {% if art.main_image or art.thumbnail %}
+        <div class="shelf-card-img">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          <span class="shelf-card-date-overlay">{{ format_date_day(art.pub_date) }}</span>
+        </div>
+        {% else %}
+        <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
+        {% endif %}
+        <h3 class="shelf-card-title">{{ art.title }}</h3>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% endif %}{# end category_highlights #}
+
   <!-- ═══ "ДЛЯ ВАС" / "РЕКОМЕНДУЕМ" — loaded via AJAX from reading history ═══ -->
-  <section class="shelf-section" id="for-you-section" style="display:none">
+  <section class="hp-section hp-section--light" id="for-you-section" style="display:none">
     <div class="section-header">
       <h2 class="section-title" id="for-you-title">
-        {% if lang is defined and lang == "kz" %}СІЗГЕ АРНАЛҒАН{% else %}ДЛЯ ВАС{% endif %}
+        {% if lang is defined and lang == "kz" %}Сізге арналған{% else %}Для вас{% endif %}
       </h2>
     </div>
     <div class="shelf-row" id="for-you-grid"></div>
   </section>
 
-  <!-- ═══ KEY PERSONS STRIP ═══ -->
-  {% if homepage_persons %}
-  <section class="persons-strip">
+  <!-- ═══ PERSONS — 4 person cards with latest headline [light bg] ═══ -->
+  {% if homepage_persons_headlines is defined and homepage_persons_headlines %}
+  <section class="hp-section hp-section--light">
     <div class="section-header">
-      <h2 class="section-title">{{ t('homepage.key_persons') if t is defined else 'Ключевые персоны' }}</h2>
-      <a href="{{ lang_prefix|default('') }}/persons" class="section-more">{{ t('homepage.all_persons') if t is defined else 'Все →' }}</a>
+      <h2 class="section-title">{{ t('homepage.key_persons') if t is defined else 'Персоны' }}</h2>
+      <a href="{{ lang_prefix|default('') }}/persons" class="section-more-pill">{{ t('homepage.all_persons') if t is defined else 'Все →' }}</a>
     </div>
-    <div class="persons-strip-scroll">
-      {% for p in homepage_persons %}
-      <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="persons-strip-card">
-        {% if p.photo_url %}
-        <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 120) }}{% endif %}"
-             alt="{{ p.short_name }}" class="persons-strip-photo" loading="lazy">
-        {% else %}
-        <div class="persons-strip-photo persons-strip-photo--ph">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
+    <div class="person-cards-row">
+      {% for p in homepage_persons_headlines[:4] %}
+      <div class="person-card">
+        <a href="{{ lang_prefix|default('') }}/person/{{ p.slug }}" class="person-card-header">
+          {% if p.photo_url %}
+          <img src="{% if p.photo_url.startswith('/') %}{{ p.photo_url }}{% else %}{{ imgproxy_url(p.photo_url, 96) }}{% endif %}"
+               alt="{{ p.short_name }}" class="person-card-photo" loading="lazy">
+          {% else %}
+          <div class="person-card-photo person-card-photo--ph">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          {% endif %}
+          <span class="person-card-name">{{ p.short_name }}</span>
+        </a>
+        {% if p.latest_article %}
+        <a href="{{ (article_url_i18n(p.latest_article) if article_url_i18n is defined else article_url(p.latest_article)) }}" class="person-card-headline">
+          {{ p.latest_article.title[:90] }}{% if p.latest_article.title|length > 90 %}…{% endif %}
+        </a>
         {% endif %}
-        <span class="persons-strip-name">{{ p.short_name }}</span>
-        {% if p.current_position %}
-        <span class="persons-strip-pos">{{ p.current_position }}</span>
-        {% endif %}
-        <span class="persons-strip-count">{{ pluralize_materials(p.article_count) }}</span>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </section>
   {% endif %}
 
-  <!-- ═══ FEED: LATEST + POPULAR SIDEBAR ═══ -->
-  {% if latest|length > 0 %}
-  <div class="feed-duo" id="feed-section">
-    <div class="feed-duo-main">
-      <div class="section-header">
-        <h2 class="section-title">{{ t('homepage.latest') if t is defined else 'Последние новости' }}</h2>
-        <a href="{{ lang_prefix|default('') }}/news/politika" class="section-more">{{ t('homepage.all_news') if t is defined else 'Все новости →' }}</a>
-      </div>
-      <div class="feed-cards-grid">
-        {% for art in latest[:10] %}
-        <article class="feed-card">
-          {% if art.main_image or art.thumbnail %}
-          <div class="feed-card-img" style="position:relative">
-            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
-            <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
-                 onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-          </div>
-          {% else %}
-          <div class="feed-card-img feed-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}" style="position:relative">
-            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
-            <img src="/static/img/placeholder.svg" alt="" loading="lazy">
-          </div>
-          {% endif %}
-          <div class="feed-card-body">
-            <div class="feed-item-meta">
-              <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-                <span class="cat-dot"></span>
-                <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-              </span>
-              <span class="sep">·</span>
-              <span>{{ format_date_short(art.pub_date) }}</span>
-              <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
-            </div>
-            <h3 class="feed-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a></h3>
-            {% if art.excerpt %}
-              <p class="feed-card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
-            {% endif %}
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      <div style="text-align:center;padding:var(--space-6) 0">
-        <button class="btn-load-more" id="loadMoreBtn" onclick="loadMoreFeed()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 32px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);color:var(--text-primary);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;">
-          {{ t('homepage.show_more') if t is defined else 'Показать ещё' }}
-        </button>
-      </div>
-    </div>
-    <aside class="feed-duo-sidebar">
-      <div class="section-header">
-        <h2 class="section-title">{{ t('homepage.popular') if t is defined else 'Популярные' }}</h2>
-      </div>
-      <ol class="popular-list">
-        {% for art in popular[:10] %}
-        <li class="popular-item">
-          <span class="popular-num">{{ loop.index }}</span>
-          <div class="popular-body">
-            <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a>
-            <span class="popular-meta">{{ format_date_day(art.pub_date) }}</span>
-          </div>
-        </li>
-        {% endfor %}
-      </ol>
-    </aside>
+  <!-- ═══ INFINITE SCROLL DIVIDER ═══ -->
+  <div class="infinite-scroll-divider" id="feed-section">
+    <span class="infinite-scroll-line"></span>
+    <span class="infinite-scroll-label">{{ t('homepage.more_news') if t is defined else 'Ещё новости' }}</span>
+    <span class="infinite-scroll-line"></span>
   </div>
-  {% endif %}
+  <div class="infinite-feed" id="infinite-feed-grid"></div>
+  <div style="text-align:center;padding:var(--space-4) 0 var(--space-8)">
+    <div class="infinite-loader" id="infiniteLoader" style="display:none">
+      <span class="infinite-spinner"></span>
+    </div>
+  </div>
 
-  <!-- ═══ TRENDING TAGS (no header, no border) ═══ -->
+  <!-- ═══ TRENDING TAGS ═══ -->
   {% if trending_tags %}
-  <div class="trending-tags-row" style="padding:var(--space-6) 0 var(--space-8);">
+  <div class="trending-tags-row" style="padding:var(--space-4) 0 var(--space-8);">
     {% for t in trending_tags[:15] %}
     <a href="/tag/{{ t.tag }}" class="trending-pill">{{ t.tag }}</a>
     {% endfor %}
@@ -256,49 +349,61 @@
 
 {% block extra_js %}
 <script>
+/* Tab switching for ЕЩЁ section */
 (function() {
-  var feedOffset = 30;
-  var feedLoading = false;
-  var btn = document.getElementById('loadMoreBtn');
-  if (!btn) return;
+  var btns = document.querySelectorAll('.tab-btn');
+  var panels = document.querySelectorAll('.tab-panel');
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      btns.forEach(function(b) { b.classList.remove('tab-btn--active'); b.setAttribute('aria-selected','false'); });
+      panels.forEach(function(p) { p.classList.remove('tab-panel--active'); });
+      btn.classList.add('tab-btn--active');
+      btn.setAttribute('aria-selected','true');
+      var target = document.getElementById(btn.dataset.tab);
+      if (target) target.classList.add('tab-panel--active');
+    });
+  });
+})();
 
-  window.loadMoreFeed = function() {
-    if (feedLoading) return;
+/* Infinite scroll feed */
+(function() {
+  var feedOffset = 0;
+  var feedLoading = false;
+  var feedDone = false;
+  var grid = document.getElementById('infinite-feed-grid');
+  var loader = document.getElementById('infiniteLoader');
+  var langPrefix = '{{ lang_prefix|default("") }}';
+
+  function loadMore() {
+    if (feedLoading || feedDone) return;
     feedLoading = true;
-    btn.textContent = '{{ t("homepage.loading") if t is defined else "Загрузка..." }}';
-    btn.style.opacity = '0.6';
-    var langPrefix = '{{ lang_prefix|default("") }}';
-    fetch(langPrefix + '/api/feed?offset=' + feedOffset + '&limit=20')
+    if (loader) loader.style.display = 'flex';
+    fetch(langPrefix + '/api/feed?offset=' + feedOffset + '&limit=10')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         feedLoading = false;
-        btn.textContent = '{{ t("homepage.show_more") if t is defined else "Показать ещё" }}';
-        btn.style.opacity = '1';
-        if (!html.trim()) {
-          btn.textContent = '{{ t("homepage.no_more") if t is defined else "Больше нет новостей" }}';
-          btn.disabled = true;
-          btn.style.opacity = '0.5';
-          return;
-        }
-        var grid = document.querySelector('.feed-cards-grid');
-        if (grid) {
-          grid.insertAdjacentHTML('beforeend', html);
-          // Animate new items
-          if ('IntersectionObserver' in window) {
-            grid.querySelectorAll('.feed-item:not(.will-animate)').forEach(function(el) {
-              el.classList.add('will-animate');
-              el.classList.add('visible');
-            });
-          }
-        }
-        feedOffset += 20;
+        if (loader) loader.style.display = 'none';
+        if (!html.trim()) { feedDone = true; return; }
+        if (grid) grid.insertAdjacentHTML('beforeend', html);
+        feedOffset += 10;
       })
       .catch(function() {
         feedLoading = false;
-        btn.textContent = '{{ t("homepage.show_more") if t is defined else "Показать ещё" }}';
-        btn.style.opacity = '1';
+        if (loader) loader.style.display = 'none';
       });
-  };
+  }
+
+  /* Trigger on scroll near bottom */
+  var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '400px' });
+
+  var sentinel = document.getElementById('infiniteLoader');
+  if (sentinel) {
+    sentinel.style.display = 'flex';
+    observer.observe(sentinel);
+    loadMore(); /* initial load */
+  }
 })();
 </script>
 <script src="/static/js/reading_history.js"></script>
@@ -313,7 +418,6 @@
       grid.innerHTML = html;
       section.style.display = '';
     } else {
-      // No reading history — hide section
       section.style.display = 'none';
     }
   });

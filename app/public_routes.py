@@ -1292,6 +1292,40 @@ def _get_homepage_persons() -> list:
     return _persons_preloaded.get("homepage", [])
 
 
+def _get_homepage_persons_with_headlines(lang: str = "ru") -> list:
+    """Get top 4 persons with photos and their latest article headline."""
+    _ensure_persons_loaded()
+    persons = _persons_preloaded.get("homepage", [])[:4]
+    if not persons:
+        return []
+    try:
+        conn = _get_persons_db()
+        result = []
+        for p in persons:
+            entity_id = p.get("entity_id")
+            if not entity_id:
+                result.append({**p, "latest_article": None})
+                continue
+            row = conn.execute("""
+                SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+                FROM articles a
+                JOIN article_entities ae ON a.id = ae.article_id
+                WHERE ae.entity_id = ?
+                AND a.pub_date IS NOT NULL AND a.pub_date != ''
+                ORDER BY a.pub_date DESC
+                LIMIT 1
+            """, (entity_id,)).fetchone()
+            latest = dict(row) if row else None
+            if latest and lang == "kz":
+                _apply_translations_to_list([latest], "kz")
+            result.append({**p, "latest_article": latest})
+        conn.close()
+        return result
+    except Exception:
+        logger.exception("Error fetching persons with headlines")
+        return [{**p, "latest_article": None} for p in persons]
+
+
 @router.get("/offline", response_class=HTMLResponse)
 async def offline_page(request: Request):
     """Offline fallback page served by the service worker."""
@@ -1327,7 +1361,7 @@ async def homepage(request: Request):
             hero_articles = all_latest[:5]
             latest = all_latest[5:]
 
-            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
+            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=5)
             category_highlights = []
             for section in NAV_SECTIONS:
                 articles = highlights_map.get(section["slug"], [])
@@ -1336,7 +1370,7 @@ async def homepage(request: Request):
                     try:
                         legal = _get_legal_articles(
                             ["закон", "суд", "право", "конституция", "законопроект"],
-                            limit=4, offset=0,
+                            limit=5, offset=0,
                         )
                         articles = legal.get("articles", [])
                     except Exception:
@@ -1353,6 +1387,7 @@ async def homepage(request: Request):
 
         popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
         homepage_persons = _get_homepage_persons()
+        homepage_persons_headlines = _get_homepage_persons_with_headlines("ru")
         try:
             trending_tags = db.get_trending_tags(limit=15)
         except Exception:
@@ -1367,6 +1402,7 @@ async def homepage(request: Request):
             "nav_categories": NAV_CATEGORIES,
             "ticker_articles": hero_articles[:5],
             "homepage_persons": homepage_persons,
+            "homepage_persons_headlines": homepage_persons_headlines,
             "trending_tags": trending_tags,
         }
         cache.set("homepage", cached)
@@ -3867,7 +3903,7 @@ async def kz_homepage(request: Request):
             hero_articles = all_latest[:5]
             latest = all_latest[5:]
 
-            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=4)
+            highlights_map = db.get_category_highlights_batch(NAV_SECTIONS, per_section=5)
             category_highlights = []
             for section in NAV_SECTIONS:
                 articles = highlights_map.get(section["slug"], [])
@@ -3875,7 +3911,7 @@ async def kz_homepage(request: Request):
                     try:
                         legal = _get_legal_articles(
                             ["закон", "суд", "право", "конституция"],
-                            limit=4, offset=0,
+                            limit=5, offset=0,
                         )
                         articles = legal.get("articles", [])
                     except Exception:
@@ -3892,6 +3928,7 @@ async def kz_homepage(request: Request):
 
         popular = sorted(latest, key=lambda a: get_views_func(a), reverse=True)[:10]
         homepage_persons = _get_homepage_persons()
+        homepage_persons_headlines = _get_homepage_persons_with_headlines("kz")
 
         try:
             trending_tags = db.get_trending_tags(limit=15)
@@ -3913,6 +3950,7 @@ async def kz_homepage(request: Request):
             "nav_categories": NAV_CATEGORIES,
             "ticker_articles": hero_articles[:5],
             "homepage_persons": homepage_persons,
+            "homepage_persons_headlines": homepage_persons_headlines,
             "trending_tags": trending_tags,
         }
         cache.set("kz_homepage", cached)
