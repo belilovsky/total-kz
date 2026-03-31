@@ -34,22 +34,14 @@
         <div class="hero-side">
           {% for hero in hero_articles[1:5] %}
           <a href="{{ (article_url_i18n(hero) if article_url_i18n is defined else article_url(hero)) }}" class="hero-side-item">
-            {% if hero.main_image or hero.thumbnail %}
             <div class="hero-side-thumb">
+              {% if hero.main_image or hero.thumbnail %}
               <img src="{{ imgproxy_url(hero.main_image or hero.thumbnail, 300) }}" alt="{{ hero.title }}" loading="eager"
                    onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+              {% endif %}
+              <span class="hero-side-date">{{ format_date_day(hero.pub_date) }}</span>
             </div>
-            {% endif %}
-            <div class="hero-side-body">
-              <div class="hero-side-top">
-                <span class="cat-badge cat-badge--sm" data-cat="{{ nav_slug_for(hero.sub_category) }}">
-                  <span class="cat-dot"></span>
-                  <span class="cat-name">{{ cat_label(nav_slug_for(hero.sub_category)) }}</span>
-                </span>
-                <span class="hero-side-meta">{{ format_date_day(hero.pub_date) }}</span>
-              </div>
-              <h3 class="hero-side-title">{{ hero.title }}</h3>
-            </div>
+            <h3 class="hero-side-title">{{ hero.title }}</h3>
           </a>
           {% endfor %}
         </div>
