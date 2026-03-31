@@ -1660,7 +1660,7 @@ async def article_page(request: Request, category: str, slug: str):
     try:
         popular = rewrite_articles_images(db.get_latest_articles(limit=20))
         popular = [a for a in popular if a.get("id") != article["id"]]
-        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:10]
+        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:5]
     except Exception:
         popular = []
 
@@ -4115,7 +4115,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
     try:
         popular = rewrite_articles_images(db.get_latest_articles(limit=20))
         popular = [a for a in popular if a.get("id") != article["id"]]
-        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:10]
+        popular = sorted(popular, key=lambda a: get_views_func(a), reverse=True)[:5]
         _apply_translations_to_list(popular, "kz")
     except Exception:
         popular = []
