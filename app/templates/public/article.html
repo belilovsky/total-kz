@@ -187,46 +187,46 @@
     </div>
   </nav>
 
-  {# ── Header: full-width title, meta below ── #}
-  <header class="article-page-header">
-    <div class="article-header-grid">
-      <h1 class="article-title">{{ article.title }}</h1>
-      {% if article.excerpt %}
-      <p class="article-lead">{{ article.excerpt }}</p>
-      {% endif %}
-      <div class="article-header-aside">
-        <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
-        {% if article.author %}
-        <span class="sep">·</span>
-        <span class="header-author">{{ article.author }}</span>
-        {% endif %}
-        <span class="sep">·</span>
-        <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} {{ t('article.min') if t is defined else 'мин' }}</span>
-        {% if nlp %}
-        <span class="sep">·</span>
-        <span class="nlp-sentiment-badge nlp-sentiment-{{ nlp.sentiment }}" title="{% if nlp.sentiment == 'positive' %}Позитивная{% elif nlp.sentiment == 'negative' %}Негативная{% else %}Нейтральная{% endif %} тональность">{% if nlp.sentiment == 'positive' %}&#x1F7E2;{% elif nlp.sentiment == 'negative' %}&#x1F534;{% else %}&#x26AA;{% endif %} {% if lang is defined and lang == 'kz' %}{% if nlp.sentiment == 'positive' %}позитивті{% elif nlp.sentiment == 'negative' %}негативті{% else %}бейтарап{% endif %}{% else %}{% if nlp.sentiment == 'positive' %}позитивная{% elif nlp.sentiment == 'negative' %}негативная{% else %}нейтральная{% endif %}{% endif %}</span>
-        {% endif %}
-      </div>
-    </div>
-  </header>
-
-  {# ── Hero image / placeholder ── #}
-  {% if article.main_image %}
-  <figure class="article-hero-image article-hero">
-    <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
-         srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
-         sizes="(max-width: 768px) 100vw, 800px"
-         onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-    {% if article.image_credit %}
-      <figcaption>{{ article.image_credit }}</figcaption>
-    {% endif %}
-  </figure>
-  {% endif %}
-
-  <!-- ═══ AD: UNDER HERO (R1) ═══ -->
-  <div class="ad-placeholder ad-article-top" data-ad-slot="R1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
-
   <div class="article-layout">
+
+    {# ── Header: full-width title, spans both columns ── #}
+    <header class="article-page-header article-full-width">
+      <div class="article-header-grid">
+        <h1 class="article-title">{{ article.title }}</h1>
+        {% if article.excerpt %}
+        <p class="article-lead">{{ article.excerpt }}</p>
+        {% endif %}
+        <div class="article-header-aside">
+          <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
+          {% if article.author %}
+          <span class="sep">·</span>
+          <span class="header-author">{{ article.author }}</span>
+          {% endif %}
+          <span class="sep">·</span>
+          <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} {{ t('article.min') if t is defined else 'мин' }}</span>
+          {% if nlp %}
+          <span class="sep">·</span>
+          <span class="nlp-sentiment-badge nlp-sentiment-{{ nlp.sentiment }}" title="{% if nlp.sentiment == 'positive' %}Позитивная{% elif nlp.sentiment == 'negative' %}Негативная{% else %}Нейтральная{% endif %} тональность">{% if nlp.sentiment == 'positive' %}&#x1F7E2;{% elif nlp.sentiment == 'negative' %}&#x1F534;{% else %}&#x26AA;{% endif %} {% if lang is defined and lang == 'kz' %}{% if nlp.sentiment == 'positive' %}позитивті{% elif nlp.sentiment == 'negative' %}негативті{% else %}бейтарап{% endif %}{% else %}{% if nlp.sentiment == 'positive' %}позитивная{% elif nlp.sentiment == 'negative' %}негативная{% else %}нейтральная{% endif %}{% endif %}</span>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {# ── Hero image / placeholder ── #}
+    {% if article.main_image %}
+    <figure class="article-hero-image article-hero article-full-width">
+      <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
+           srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
+           sizes="(max-width: 768px) 100vw, 800px"
+           onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+      {% if article.image_credit %}
+        <figcaption>{{ article.image_credit }}</figcaption>
+      {% endif %}
+    </figure>
+    {% endif %}
+
+    <!-- ═══ AD: UNDER HERO (R1) ═══ -->
+    <div class="ad-placeholder ad-article-top article-full-width" data-ad-slot="R1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
     <div class="article-content">
       {% if nlp and nlp.key_facts %}
       {% set facts = nlp.key_facts_kz if (lang is defined and lang == 'kz' and nlp.key_facts_kz) else nlp.key_facts %}
@@ -946,25 +946,5 @@ function toggleBookmark(id, title, url, image, date) {
   });
 })();
 </script>
-<script>
-// ── Dedup: remove first paragraph of body if it matches the lead/excerpt ──
-(function(){
-  var lead = document.querySelector('.article-lead');
-  var body = document.getElementById('article-body');
-  if (!lead || !body) return;
-  var leadText = lead.textContent.trim().replace(/\s+/g,' ').substring(0,80);
-  if (!leadText) return;
-  // Check first few elements in body (could be <p>, <strong>, <b>, or text node)
-  var children = body.children;
-  for (var i = 0; i < Math.min(children.length, 3); i++) {
-    var el = children[i];
-    var elText = el.textContent.trim().replace(/\s+/g,' ');
-    // If the body element starts with the same text as the lead, remove it
-    if (elText && leadText.substring(0,60) === elText.substring(0,60)) {
-      el.remove();
-      break;
-    }
-  }
-})();
-</script>
+
 {% endblock %}

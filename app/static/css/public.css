@@ -723,6 +723,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 @media (min-width:1100px) {
   .article-layout { display:grid; grid-template-columns:1fr 280px; gap:var(--space-6); align-items:start; }
 }
+/* Elements that must span full width across both grid columns */
+.article-full-width { width:100%; }
+@media (min-width:1100px) {
+  .article-full-width { grid-column: 1 / -1; }
+}
 
 /* Sidebar – TOC + share on desktop */
 .article-sidebar { display:none; }
