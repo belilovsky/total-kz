@@ -4287,10 +4287,9 @@ a.related-item:visited .related-title {
   background:var(--surface-3);
 }
 .shelf-card-title {
-  padding:var(--space-2) var(--space-3);
-  font-size:var(--text-sm); font-weight:600; line-height:1.4;
+  padding:var(--space-2) var(--space-3) var(--space-1);
+  font-size:12.5px; font-weight:600; line-height:1.45;
   color:var(--text);
-  display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;
   flex:1 1 auto;
 }
 .shelf-card:hover .shelf-card-title { color:var(--accent); }
@@ -4927,7 +4926,7 @@ a.related-item:visited .related-title {
   display: flex;
   gap: var(--space-5);
   margin-bottom: var(--space-6);
-  align-items: flex-start;
+  align-items: stretch;
 }
 .hero-with-feed__main {
   flex: 1 1 68%;
@@ -4940,6 +4939,14 @@ a.related-item:visited .related-title {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.live-feed__list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   overflow-y: auto;
 }
 .live-feed__header {
@@ -4967,10 +4974,6 @@ a.related-item:visited .related-title {
   letter-spacing: 0.5px;
   color: var(--text);
   margin: 0;
-}
-.live-feed__list {
-  display: flex;
-  flex-direction: column;
 }
 .live-feed__item {
   display: flex;
