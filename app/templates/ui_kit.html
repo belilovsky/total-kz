@@ -28,6 +28,94 @@
 {% block content %}
 <p style="margin-bottom:32px;color:var(--text-muted,#666)">Визуальный каталог компонентов публичного сайта Total.kz. Все примеры используют <code>/static/css/public.min.css</code> и реальные CSS-классы.</p>
 
+<!-- ═══════════════════════════════════════════════════════
+     SUMMARY TABLE — Typography reference for all components
+     ═══════════════════════════════════════════════════════ -->
+<div style="margin-bottom:40px;overflow-x:auto">
+  <h2 style="font-size:18px;font-weight:700;margin-bottom:12px">Typography Summary — All Components</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;line-height:1.5">
+    <thead>
+      <tr style="background:var(--surface-2,#f4f5f7);text-align:left">
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700">Component</th>
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700">CSS Class</th>
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700">Page</th>
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700;white-space:nowrap">font-size</th>
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700;white-space:nowrap">font-weight</th>
+        <th style="padding:8px 10px;border:1px solid var(--border-light,#ebedf0);font-weight:700;white-space:nowrap">line-height</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Homepage / Hero -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Hero Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.hero-main-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage</td><td style="padding:6px 10px;border:1px solid var(--border-light)">clamp(1.25rem,1rem+1.2vw,1.75rem)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.2</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Hero Excerpt</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.hero-main-excerpt</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.45</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Hero Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.hero-main-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Hero Side Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.hero-side-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.4</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Hero Side Date</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.hero-side-date</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Shelf -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Shelf Card Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.shelf-card-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage, Categories</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.4</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Shelf Overlay Cat</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.shelf-card-overlay-cat</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage, Categories</td><td style="padding:6px 10px;border:1px solid var(--border-light)">9px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">700</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Shelf Overlay Date</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.shelf-card-overlay-date</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage, Categories</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Feed -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Feed Item Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.feed-item-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Main Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.4</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Feed Item Excerpt</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.feed-item-excerpt</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Main Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.45</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Feed Item Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.feed-item-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Main Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Popular -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Popular Number</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.popular-num</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Popular Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.popular-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.35</td></tr>
+      <!-- Related -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Related Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.related-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.4</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Related Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.related-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">11px / var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Section -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Section Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.section-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">All Sections</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Section More</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.section-more</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">All Sections</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- NLP / Engage / Keywords -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">NLP Facts Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.nlp-key-facts-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">11px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">NLP Facts List</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.nlp-key-facts-list li</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">14px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.55</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Reaction Emoji</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.reaction-emoji</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">16px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Reaction Count</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.reaction-count</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">12px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">700</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Keyword Chip</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.keyword-chip</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">500</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Sidebar Person -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Sidebar Person Name</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.sidebar-person-name</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.82rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.2</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Sidebar Person Pos</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.sidebar-person-pos</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Article Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.7rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.3</td></tr>
+      <!-- Live Feed -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Live Feed Time</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.live-feed__time</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">11px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">700</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Live Feed Text</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.live-feed__text</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Homepage Sidebar</td><td style="padding:6px 10px;border:1px solid var(--border-light)">12.5px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.38</td></tr>
+      <!-- Breaking / Cat Badge -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Breaking Badge</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.breaking-badge</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Cards, Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.5</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Category Name</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-name</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Cards, Feed, Article</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Category Page -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat Lead Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-top-lead-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category</td><td style="padding:6px 10px;border:1px solid var(--border-light)">clamp(1.125rem,0.9rem+1vw,1.5rem)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.2</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat Lead Excerpt</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-top-lead-excerpt</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.45</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat Lead Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-top-lead-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat Top Card Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-top-card-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.35</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat Top Card Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat-top-card-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat2 Card Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat2-card-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-base)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.35</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat2 Card Excerpt</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat2-card-excerpt</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.5</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Cat2 Card Meta</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.cat2-card-meta</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category Feed</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Breadcrumbs</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.breadcrumbs</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Category, Tags</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-xs)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.4</td></tr>
+      <!-- Persons Page -->
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons Page Title</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.persons-title</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons</td><td style="padding:6px 10px;border:1px solid var(--border-light)">2rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">800</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.15</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Person Card Name</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.person-card-name</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons, Orgs</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.9rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.2</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Person Card Position</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.person-card-pos</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons, Orgs</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.75rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">1.3</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Person Card Count</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.person-card-count</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons, Orgs</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.72rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons Search</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.persons-search-input</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons, Orgs</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr style="background:var(--surface-2,#f4f5f7)"><td style="padding:6px 10px;border:1px solid var(--border-light)">Alpha Filter Letter</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.alpha-letter</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Persons</td><td style="padding:6px 10px;border:1px solid var(--border-light)">0.78rem</td><td style="padding:6px 10px;border:1px solid var(--border-light)">500</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <!-- Tags Page -->
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags Cloud Item</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.tags-cloud-item</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags</td><td style="padding:6px 10px;border:1px solid var(--border-light)">dynamic (inline)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">500</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags Cloud Top</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.tags-cloud-top</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags</td><td style="padding:6px 10px;border:1px solid var(--border-light)">dynamic (inline)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">700</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags Card Name</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.tags-card-name</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags (search)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">500</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags Card Count</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.tags-card-count</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags (search)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">10px</td><td style="padding:6px 10px;border:1px solid var(--border-light)">600</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+      <tr><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags Search</td><td style="padding:6px 10px;border:1px solid var(--border-light)"><code>.tags-search-input</code></td><td style="padding:6px 10px;border:1px solid var(--border-light)">Tags</td><td style="padding:6px 10px;border:1px solid var(--border-light)">var(--text-sm)</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td><td style="padding:6px 10px;border:1px solid var(--border-light)">inherit</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:8px;font-size:11px;color:var(--text-muted,#888)">
+    Design tokens: <code>--text-xs</code> = clamp(0.75rem, 0.7rem + 0.25vw, 0.8125rem) &nbsp;|&nbsp;
+    <code>--text-sm</code> = clamp(0.8125rem, 0.78rem + 0.2vw, 0.875rem) &nbsp;|&nbsp;
+    <code>--text-base</code> = clamp(0.9375rem, 0.9rem + 0.2vw, 1rem) &nbsp;|&nbsp;
+    <code>--text-lg</code> = clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem)
+  </p>
+</div>
+
 <div class="uikit-grid">
 
 <!-- ═══ SHELF CARD ═══ -->
@@ -315,6 +403,247 @@
       <span class="cat-badge"><span class="cat-dot" data-cat="nauka"></span><span class="cat-name">Наука</span></span>
       <span class="cat-badge"><span class="cat-dot" data-cat="mir"></span><span class="cat-name">Мир</span></span>
       <span class="cat-badge"><span class="cat-dot" data-cat="sport"></span><span class="cat-name">Спорт</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CATEGORY PAGE COMPONENTS
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- ═══ BREADCRUMBS ═══ -->
+<div class="uikit-card">
+  <h3>Breadcrumbs</h3>
+  <div class="uikit-class">.breadcrumbs</div>
+  <div class="uikit-usage">Используется: страница категории, тегов</div>
+  <div class="uikit-demo">
+    <nav class="breadcrumbs">
+      <a href="#">Главная</a> › <span>Политика</span>
+    </nav>
+  </div>
+</div>
+
+<!-- ═══ CAT TOP LEAD ═══ -->
+<div class="uikit-card">
+  <h3>Cat Top Lead</h3>
+  <div class="uikit-class">.cat-top-lead .cat-top-lead-body .cat-top-lead-title .cat-top-lead-excerpt .cat-top-lead-meta</div>
+  <div class="uikit-usage">Используется: страница категории (главная карточка вверху)</div>
+  <div class="uikit-demo">
+    <a href="#" class="cat-top-lead" style="min-height:200px">
+      <img src="/static/img/placeholder.svg" alt="demo">
+      <div class="cat-top-lead-body">
+        <h2 class="cat-top-lead-title">Президент провёл совещание по вопросам экономической политики</h2>
+        <p class="cat-top-lead-excerpt">Обсуждены меры поддержки малого и среднего бизнеса в условиях новых экономических реалий.</p>
+        <span class="cat-top-lead-meta">1 апреля 2026</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ CAT TOP CARD ═══ -->
+<div class="uikit-card">
+  <h3>Cat Top Card</h3>
+  <div class="uikit-class">.cat-top-card .cat-top-card-img .cat-top-card-body .cat-top-card-title .cat-top-card-meta</div>
+  <div class="uikit-usage">Используется: страница категории (малые карточки в верхнем ряду)</div>
+  <div class="uikit-demo">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      {% for i in range(3) %}
+      <a href="#" class="cat-top-card">
+        <div class="cat-top-card-img">
+          <img src="/static/img/placeholder.svg" alt="demo">
+        </div>
+        <div class="cat-top-card-body">
+          <h3 class="cat-top-card-title">{{ ['Нацбанк снизил базовую ставку','Новый закон о цифровизации','Парламент одобрил бюджет'][i] }}</h3>
+          <span class="cat-top-card-meta">{{ ['31 мар','30 мар','29 мар'][i] }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CAT2 CARD ═══ -->
+<div class="uikit-card uikit-full">
+  <h3>Cat2 Card (Category Feed)</h3>
+  <div class="uikit-class">.cat2-card .cat2-card-link .cat2-card-img .cat2-card-body .cat2-card-meta .cat2-card-title .cat2-card-excerpt</div>
+  <div class="uikit-usage">Используется: основной фид страницы категории</div>
+  <div class="uikit-demo">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      {% for i in range(2) %}
+      <article class="cat2-card">
+        <a href="#" class="cat2-card-link">
+          <div class="cat2-card-img">
+            <img src="/static/img/placeholder.svg" alt="demo">
+          </div>
+          <div class="cat2-card-body">
+            <div class="cat2-card-meta">
+              <span class="cat-badge"><span class="cat-dot" data-cat="politika"></span><span class="cat-name">ПОЛИТИКА</span></span>
+              <span class="meta-sep">&middot;</span>
+              <span>{{ ['1 апр 2026','31 мар 2026'][i] }}</span>
+            </div>
+            <h3 class="cat2-card-title">{{ ['Инвестиции в инфраструктуру достигли рекордного уровня за последние 5 лет','Государственная программа модернизации образования получила одобрение'][i] }}</h3>
+            <p class="cat2-card-excerpt">{{ ['Объём инвестиций вырос на 23% за первый квартал текущего года.','Программа затронет более 3000 школ по всей стране.'][i] }}</p>
+          </div>
+        </a>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PERSONS PAGE COMPONENTS
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- ═══ PERSONS SEARCH ═══ -->
+<div class="uikit-card">
+  <h3>Persons Search</h3>
+  <div class="uikit-class">.persons-search .persons-search-input</div>
+  <div class="uikit-usage">Используется: /persons, /organizations (поиск по имени)</div>
+  <div class="uikit-demo">
+    <div class="persons-search">
+      <svg class="persons-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+      <input type="text" class="persons-search-input" placeholder="Поиск по имени..." disabled>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALPHA FILTER ═══ -->
+<div class="uikit-card">
+  <h3>Alpha Filter</h3>
+  <div class="uikit-class">.persons-alpha .alpha-letter</div>
+  <div class="uikit-usage">Используется: /persons (фильтр по алфавиту)</div>
+  <div class="uikit-demo">
+    <div class="persons-alpha">
+      <a href="#" class="alpha-letter active">Все</a>
+      {% for letter in ['А','Б','В','Г','Д','Е','Ж','З','И','К','Л','М','Н','О','П'] %}
+      <a href="#" class="alpha-letter">{{ letter }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PERSON CARD ═══ -->
+<div class="uikit-card uikit-full">
+  <h3>Person Card</h3>
+  <div class="uikit-class">.person-card .person-card-avatar .person-card-info .person-card-name .person-card-pos .person-card-count</div>
+  <div class="uikit-usage">Используется: /persons, /organizations (карточка персоны)</div>
+  <div class="uikit-demo">
+    <div class="persons-grid">
+      {% for i in range(4) %}
+      <a href="#" class="person-card">
+        <div class="person-card-avatar{{ ' has-photo' if i < 2 else '' }}">
+          {% if i < 2 %}
+          <img src="/static/img/placeholder.svg" alt="photo">
+          {% else %}
+          <span class="person-initials">{{ ['','','А','М'][i] }}</span>
+          {% endif %}
+        </div>
+        <div class="person-card-info">
+          <span class="person-card-name">{{ ['Касым-Жомарт Токаев','Алихан Смаилов','Аскар Жумагалиев','Маулен Ашимбаев'][i] }}</span>
+          <span class="person-card-pos">{{ ['Президент Республики Казахстан','Премьер-министр РК','Министр цифрового развития','Председатель Сената'][i] }}</span>
+          <span class="person-card-count">{{ ['42 статей','28 статей','15 статей','19 статей'][i] }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PERSONS GRID LAYOUT ═══ -->
+<div class="uikit-card">
+  <h3>Persons Grid</h3>
+  <div class="uikit-class">.persons-grid</div>
+  <div class="uikit-usage">Используется: /persons, /organizations (сетка карточек, адаптивная)</div>
+  <div class="uikit-demo">
+    <p style="font-size:12px;color:var(--text-muted,#888);margin-bottom:8px">Адаптивная сетка: автозаполнение колонок min(260px). Смотрите пример выше (Person Card) — он использует <code>.persons-grid</code>.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     TAGS PAGE COMPONENTS
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- ═══ TAGS SEARCH ═══ -->
+<div class="uikit-card">
+  <h3>Tags Search</h3>
+  <div class="uikit-class">.tags-search .tags-search-input .tags-search-btn</div>
+  <div class="uikit-usage">Используется: /tags (поиск тем)</div>
+  <div class="uikit-demo">
+    <form class="tags-search" onsubmit="return false">
+      <input type="search" class="tags-search-input" placeholder="Найти тему…" disabled>
+      <button type="button" class="tags-search-btn">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ TAGS CLOUD ITEM ═══ -->
+<div class="uikit-card uikit-full">
+  <h3>Tags Cloud</h3>
+  <div class="uikit-class">.tags-cloud .tags-cloud-item .tags-cloud-top</div>
+  <div class="uikit-usage">Используется: /tags (облако тегов, размер зависит от количества статей)</div>
+  <div class="uikit-demo">
+    <div class="tags-cloud-section" style="padding:20px;border:1px solid var(--border-light,#ebedf0);border-radius:var(--radius-lg,12px)">
+      <div class="tags-cloud">
+        <a href="#" class="tags-cloud-item tags-cloud-top" style="font-size:1.9rem">экономика</a>
+        <a href="#" class="tags-cloud-item tags-cloud-top" style="font-size:1.7rem">политика</a>
+        <a href="#" class="tags-cloud-item tags-cloud-top" style="font-size:1.5rem">нефть</a>
+        <a href="#" class="tags-cloud-item" style="font-size:1.2rem">образование</a>
+        <a href="#" class="tags-cloud-item" style="font-size:1.1rem">Астана</a>
+        <a href="#" class="tags-cloud-item" style="font-size:1.05rem">транспорт</a>
+        <a href="#" class="tags-cloud-item" style="font-size:0.95rem">тенге</a>
+        <a href="#" class="tags-cloud-item" style="font-size:0.9rem">здравоохранение</a>
+        <a href="#" class="tags-cloud-item" style="font-size:0.85rem">IT</a>
+        <a href="#" class="tags-cloud-item" style="font-size:0.85rem">Алматы</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAGS CARD ═══ -->
+<div class="uikit-card">
+  <h3>Tags Card (search results)</h3>
+  <div class="uikit-class">.tags-card .tags-card-name .tags-card-count</div>
+  <div class="uikit-usage">Используется: /tags?q=… (результаты поиска тегов)</div>
+  <div class="uikit-demo">
+    <div class="tags-grid" style="grid-template-columns:1fr 1fr">
+      {% for i in range(6) %}
+      <a href="#" class="tags-card">
+        <span class="tags-card-name">{{ ['экономика','политика','нефть','образование','тенге','IT'][i] }}</span>
+        <span class="tags-card-count">{{ ['234','189','156','98','87','64'][i] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     ORGANIZATIONS PAGE
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- ═══ ORGANIZATION CARD (reuses .person-card) ═══ -->
+<div class="uikit-card uikit-full">
+  <h3>Organization Card (reuses .person-card)</h3>
+  <div class="uikit-class">.person-card .person-card-avatar .person-initials .person-card-info .person-card-name .person-card-pos .person-card-count</div>
+  <div class="uikit-usage">Используется: /organizations — та же карточка что и Person Card, но с иконкой здания вместо фото</div>
+  <div class="uikit-demo">
+    <div class="persons-grid">
+      {% for i in range(3) %}
+      <a href="#" class="person-card">
+        <div class="person-card-avatar">
+          <span class="person-initials" style="font-size:1rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22V12h6v10"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01"/></svg>
+          </span>
+        </div>
+        <div class="person-card-info">
+          <span class="person-card-name">{{ ['Самрук-Казына','КазМунайГаз','Казахтелеком'][i] }}</span>
+          <span class="person-card-pos">{{ ['Фонд национального благосостояния','Национальная нефтегазовая компания','Национальный оператор связи'][i] }}</span>
+          <span class="person-card-count">{{ ['67 упоминаний','45 упоминаний','23 упоминания'][i] }}</span>
+        </div>
+      </a>
+      {% endfor %}
     </div>
   </div>
 </div>
