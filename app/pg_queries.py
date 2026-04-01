@@ -430,7 +430,7 @@ def get_stats() -> dict:
         avg_recent = db.scalar(
             select(func.round(func.avg(text("cnt")))).select_from(
                 select(func.count().label("cnt"))
-                .where(Article.pub_date.isnot(None), _pub_ts >= _12m)
+                .where(Article.pub_date.isnot(None), Article.pub_date != '', _pub_ts >= _12m)
                 .group_by(func.substring(Article.pub_date, 1, 7))
                 .subquery()
             )
@@ -439,7 +439,7 @@ def get_stats() -> dict:
         avg_prev = db.scalar(
             select(func.round(func.avg(text("cnt")))).select_from(
                 select(func.count().label("cnt"))
-                .where(Article.pub_date.isnot(None), _pub_ts >= _24m, _pub_ts < _12m)
+                .where(Article.pub_date.isnot(None), Article.pub_date != '', _pub_ts >= _24m, _pub_ts < _12m)
                 .group_by(func.substring(Article.pub_date, 1, 7))
                 .subquery()
             )
