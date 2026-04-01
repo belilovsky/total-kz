@@ -763,6 +763,7 @@ _DISPLAY_MODE_DEFAULTS = {
     "evening_start": 21,  # hour (local KZ time, UTC+5/6)
     "evening_end": 7,
     "entertainment_cats": ["sport", "stil_zhizni", "kultura", "zhizn"],
+    "show_views": True,  # show/hide view counts on public site
 }
 
 
@@ -824,6 +825,27 @@ async def api_set_display_mode(request: Request):
     return JSONResponse({"ok": ok, "config": _read_display_mode()})
 
 
+# ── API: Views toggle (show/hide view counts on public site) ──
+@router.get("/api/admin/views-toggle")
+async def api_get_views_toggle(request: Request):
+    dm = _read_display_mode()
+    return JSONResponse({"show_views": dm.get("show_views", True)})
+
+
+@router.post("/api/admin/views-toggle")
+async def api_set_views_toggle(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") not in ("admin", "editor"):
+        return JSONResponse({"ok": False, "error": "Нет доступа"}, status_code=403)
+    body = await request.json()
+    dm = _read_display_mode()
+    dm["show_views"] = bool(body.get("show_views", True))
+    ok = _write_display_mode(dm)
+    if ok:
+        cache.clear_all()
+    return JSONResponse({"ok": ok, "show_views": dm["show_views"]})
+
+
 def get_views_func(article):
     """Get real view count from article dict or fallback to deterministic fake."""
     if isinstance(article, dict):
@@ -876,6 +898,23 @@ def format_time_hhmm(date_str) -> str:
 
 
 templates.env.globals["format_time_hhmm"] = format_time_hhmm
+
+
+def _strip_duplicate_lead(body_html: str, excerpt: str) -> str:
+    """Strip the first paragraph from body_html if it duplicates the excerpt."""
+    if not body_html or not excerpt:
+        return body_html or ""
+    excerpt_clean = excerpt.strip()[:60]
+    # Check first <p> or <b> or <strong> block
+    match = re.match(
+        r'^(\s*<(?:p|b|strong)[^>]*>)(.*?)(</(?:p|b|strong)>)',
+        body_html, re.DOTALL | re.IGNORECASE,
+    )
+    if match:
+        first_text = re.sub(r'<[^>]+>', '', match.group(2)).strip()
+        if first_text[:50] == excerpt_clean[:50]:
+            body_html = body_html[match.end():].lstrip()
+    return body_html
 
 
 # ══════════════════════════════════════════════
@@ -1586,21 +1625,9 @@ async def article_page(request: Request, category: str, slug: str):
 
     # ── Strip duplicate lead: if body_html starts with the excerpt text,
     #    remove that first paragraph so it isn't shown twice.
-    excerpt = (article.get("excerpt") or "").strip()
-    body_html = (article.get("body_html") or "").strip()
-    if excerpt and body_html:
-        # Check if body starts with a <p> containing the excerpt text
-        m = re.match(r'^<p[^>]*>(.*?)</p>', body_html, re.DOTALL | re.IGNORECASE)
-        if m:
-            first_p_text = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-            # Compare normalized (no extra whitespace)
-            norm_exc = ' '.join(excerpt.split())
-            norm_fp = ' '.join(first_p_text.split())
-            if norm_exc and norm_fp and (
-                norm_fp.startswith(norm_exc) or norm_exc.startswith(norm_fp)
-                or norm_fp == norm_exc
-            ):
-                article["body_html"] = body_html[m.end():].lstrip()
+    article["body_html"] = _strip_duplicate_lead(
+        article.get("body_html", ""), article.get("excerpt", "")
+    )
 
     # Entity IDs for smart matching (timeline + related)
     entity_ids = [e["id"] for e in article.get("entities", [])]
@@ -4049,19 +4076,9 @@ async def kz_article_page(request: Request, category: str, slug: str):
     _apply_translation(article, "kz")
 
     # Strip duplicate lead
-    excerpt = (article.get("excerpt") or "").strip()
-    body_html = (article.get("body_html") or "").strip()
-    if excerpt and body_html:
-        m = re.match(r'^<p[^>]*>(.*?)</p>', body_html, re.DOTALL | re.IGNORECASE)
-        if m:
-            first_p_text = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-            norm_exc = ' '.join(excerpt.split())
-            norm_fp = ' '.join(first_p_text.split())
-            if norm_exc and norm_fp and (
-                norm_fp.startswith(norm_exc) or norm_exc.startswith(norm_fp)
-                or norm_fp == norm_exc
-            ):
-                article["body_html"] = body_html[m.end():].lstrip()
+    article["body_html"] = _strip_duplicate_lead(
+        article.get("body_html", ""), article.get("excerpt", "")
+    )
 
     entity_ids = [e["id"] for e in article.get("entities", [])]
 

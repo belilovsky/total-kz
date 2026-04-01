@@ -87,6 +87,22 @@
             <p>Обзор контента и сущностей</p>
         </div>
     </a>
+    <div class="settings-card" id="views-toggle-card" style="cursor:default">
+        <div class="settings-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="settings-card-body">
+            <h3>Просмотры</h3>
+            <p>Показать/скрыть счётчики просмотров на сайте</p>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
+                <label style="position:relative;display:inline-block;width:44px;height:24px">
+                    <input type="checkbox" id="viewsToggle" onchange="toggleViews(this.checked)" style="opacity:0;width:0;height:0">
+                    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:24px;transition:.3s;display:block" id="viewsSlider"><span style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s" id="viewsKnob"></span></span>
+                </label>
+                <span id="viewsStatus" style="font-size:13px;font-weight:600">...</span>
+            </div>
+        </div>
+    </div>
     <div class="settings-card" id="autopost-card" style="cursor:pointer" onclick="document.getElementById('autopost-panel').classList.toggle('hidden')">
         <div class="settings-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
@@ -125,5 +141,19 @@ async function triggerAutopost(){
     const r=await fetch('/api/admin/auto-post/trigger',{method:'POST'});const d=await r.json();
     alert('Опубликовано: '+d.posted)}
 loadAutopostStatus();
+
+async function loadViewsStatus(){
+    try{const r=await fetch('/api/admin/views-toggle');const d=await r.json();
+    const cb=document.getElementById('viewsToggle');
+    const st=document.getElementById('viewsStatus');
+    const sl=document.getElementById('viewsSlider');
+    const kn=document.getElementById('viewsKnob');
+    cb.checked=d.show_views;
+    if(d.show_views){st.textContent='Включены';st.style.color='#166534';sl.style.background='#16a34a';kn.style.transform='translateX(20px)'}
+    else{st.textContent='Скрыты';st.style.color='#991b1b';sl.style.background='#ccc';kn.style.transform='translateX(0)'}}catch(e){}}
+async function toggleViews(checked){
+    await fetch('/api/admin/views-toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({show_views:checked})});
+    loadViewsStatus()}
+loadViewsStatus();
 </script>
 {% endblock %}

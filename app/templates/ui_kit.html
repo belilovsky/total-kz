@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% set active = "ui-kit" %}
+
+{% block title %}UI Kit – Total.kz{% endblock %}
+{% block page_title %}UI Kit{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/public.min.css?v=26.3">
+<style>
+  .uikit-section { margin-bottom: 48px; }
+  .uikit-section h2 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+  .uikit-class { font-size: 12px; color: var(--text-muted, #888); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  .uikit-note { font-size: 13px; color: var(--text-muted, #666); margin-bottom: 16px; }
+  .uikit-demo { border: 1px solid var(--border, #e5e7eb); border-radius: 12px; padding: 24px; background: var(--bg-card, #fff); overflow: hidden; }
+  .uikit-demo a { pointer-events: none; }
+  .uikit-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .uikit-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .uikit-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .uikit-inline { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  @media (max-width: 768px) {
+    .uikit-grid-2, .uikit-grid-3, .uikit-grid-4 { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<p style="margin-bottom:32px;color:var(--text-muted,#666)">Визуальный каталог компонентов публичного сайта Total.kz. Все примеры используют <code>/static/css/public.min.css</code>.</p>
+
+<!-- ═══ HERO MAIN ═══ -->
+<div class="uikit-section">
+  <h2>Hero Card</h2>
+  <div class="uikit-class">.hero-main, .hero-main-body, .hero-main-title, .hero-main-meta</div>
+  <div class="uikit-note">Главная карточка героя на домашней странице. Текст поверх изображения с градиентным оверлеем.</div>
+  <div class="uikit-demo">
+    <a href="#" class="hero-main" style="display:block;position:relative;aspect-ratio:16/9;min-height:340px;border-radius:16px;overflow:hidden;background:#222">
+      <img src="https://picsum.photos/seed/hero1/900/500" alt="demo" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0">
+      <div class="hero-main-body">
+        <span class="cat-badge"><span class="cat-dot" data-cat="politika"></span><span class="cat-name">Политика</span></span>
+        <h2 class="hero-main-title">Президент подписал закон о новых мерах поддержки бизнеса</h2>
+        <p class="hero-main-excerpt">Документ вступает в силу с 1 мая и затрагивает малый и средний бизнес по всей стране.</p>
+        <time class="hero-main-meta">1 апреля 2026</time>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ HERO SIDE ITEMS ═══ -->
+<div class="uikit-section">
+  <h2>Hero Sub-cards</h2>
+  <div class="uikit-class">.hero-side-item, .hero-side-thumb, .hero-side-title, .hero-side-date</div>
+  <div class="uikit-note">Боковые карточки героя — миниатюра с оверлеем даты и заголовком.</div>
+  <div class="uikit-demo">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:400px">
+      {% for i in range(3) %}
+      <a href="#" class="hero-side-item">
+        <div class="hero-side-thumb" style="position:relative;width:120px;min-width:120px;height:80px;border-radius:8px;overflow:hidden;background:#333">
+          <img src="https://picsum.photos/seed/side{{ i }}/240/160" alt="demo" style="width:100%;height:100%;object-fit:cover">
+          <span class="hero-side-date">{{ ['28 мар','29 мар','30 мар'][i] }}</span>
+        </div>
+        <span class="hero-side-title">{{ ['Новый транспортный хаб откроется в Астане','Курс тенге стабилизировался на валютном рынке','Казахстан увеличил экспорт зерна на 15%'][i] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHELF CARDS ═══ -->
+<div class="uikit-section">
+  <h2>Shelf Cards</h2>
+  <div class="uikit-class">.shelf-card, .shelf-card-img, .shelf-card-overlay-cat, .shelf-card-overlay-date, .shelf-card-title</div>
+  <div class="uikit-note">Карточки в сетках категорий и региональных секциях. Бейдж категории и дата на изображении, заголовок ниже.</div>
+  <div class="uikit-demo">
+    <div class="uikit-grid-4">
+      {% for i in range(4) %}
+      <a href="#" class="shelf-card" style="text-decoration:none">
+        <div class="shelf-card-img" style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:16/10;background:#333">
+          <img src="https://picsum.photos/seed/shelf{{ i }}/400/250" alt="demo" style="width:100%;height:100%;object-fit:cover">
+          <span class="shelf-card-overlay-cat">{{ ['Экономика','Спорт','Технологии','Общество'][i] }}</span>
+          <span class="shelf-card-overlay-date">{{ ['1 апр','31 мар','30 мар','29 мар'][i] }}</span>
+        </div>
+        <h3 class="shelf-card-title">{{ ['Нацбанк снизил базовую ставку до 14%','Сборная Казахстана выиграла чемпионат Азии','Казахстан запустил национальный ИИ-центр','В Алматы открылся новый парк на 50 гектаров'][i] }}</h3>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FEED ITEMS ═══ -->
+<div class="uikit-section">
+  <h2>Feed Items</h2>
+  <div class="uikit-class">.feed-item, .feed-item-thumb, .feed-item-title, .feed-item-excerpt, .feed-item-meta</div>
+  <div class="uikit-note">Элементы хронологической ленты — миниатюра + текст. Используются в основном фиде и лентах категорий.</div>
+  <div class="uikit-demo">
+    {% for i in range(3) %}
+    <a href="#" class="feed-item" style="text-decoration:none;display:flex;gap:16px;padding:16px;border-bottom:1px solid var(--border,#e5e7eb)">
+      <div style="flex:1">
+        <span class="cat-badge" style="margin-bottom:6px"><span class="cat-dot" data-cat="{{ ['ekonomika','sport','obshchestvo'][i] }}"></span><span class="cat-name">{{ ['Экономика','Спорт','Общество'][i] }}</span></span>
+        <h3 class="feed-item-title">{{ ['Инвестиции в инфраструктуру достигли рекордного уровня','Футбольный клуб Астана обновил состав перед Лигой Чемпионов','Программа «Ауыл – ел бесігі» расширяется на новые регионы'][i] }}</h3>
+        <p class="feed-item-excerpt">{{ ['Объём инвестиций вырос на 23% за первый квартал 2026 года.','Трансферное окно принесло три новых игрока в состав команды.','К 2027 году планируется охватить все области Казахстана.'][i] }}</p>
+        <div class="feed-item-meta">{{ ['2 часа назад','5 часов назад','вчера'][i] }}</div>
+      </div>
+      <div class="feed-item-thumb" style="width:160px;height:100px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#333">
+        <img src="https://picsum.photos/seed/feed{{ i }}/320/200" alt="demo" style="width:100%;height:100%;object-fit:cover">
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ═══ POPULAR ITEMS ═══ -->
+<div class="uikit-section">
+  <h2>Popular Items</h2>
+  <div class="uikit-class">.popular-item, .popular-num, .popular-title</div>
+  <div class="uikit-note">Нумерованный список популярных статей в сайдбаре. Первый элемент выделен красным номером.</div>
+  <div class="uikit-demo" style="max-width:400px">
+    {% for i in range(5) %}
+    <div class="popular-item" style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border,#e5e7eb)">
+      <span class="popular-num" style="min-width:32px;text-align:center;font-weight:700;font-size:18px;{% if i == 0 %}color:#d83236{% endif %}">{{ i + 1 }}</span>
+      <a href="#" class="popular-title" style="font-weight:600;font-size:14px;text-decoration:none;color:inherit">{{ ['Токаев провёл переговоры с лидерами G7','Нефть Brent поднялась выше $85 за баррель','Новая линия метро свяжет центр Алматы с аэропортом','Казахстан занял 1-е место по росту IT-сектора в ЦА','Медицинская реформа: что изменится с 2027 года'][i] }}</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ═══ PERSON CARDS ═══ -->
+<div class="uikit-section">
+  <h2>Person Cards</h2>
+  <div class="uikit-class">.person-chip (homepage), .person-card (person page)</div>
+  <div class="uikit-note">Аватар + имя. Используются на главной странице в секции «Персоны» и на страницах персон.</div>
+  <div class="uikit-demo">
+    <div class="uikit-inline">
+      {% for i in range(4) %}
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:40px;background:var(--bg-surface-2,#f5f5f5);text-decoration:none;color:inherit">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent,#d83236);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">{{ ['КТ','АН','БС','ДК'][i] }}</div>
+        <span style="font-weight:600;font-size:14px">{{ ['Касым-Жомарт Токаев','Алихан Нурланов','Бакытжан Сагинтаев','Дарига Камалова'][i] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TIMELINE ITEMS ═══ -->
+<div class="uikit-section">
+  <h2>Timeline Items</h2>
+  <div class="uikit-class">.timeline-item, .timeline-dot, .timeline-date, .timeline-title</div>
+  <div class="uikit-note">Хронология статей в сюжете на странице статьи. Точка + дата + заголовок.</div>
+  <div class="uikit-demo" style="max-width:500px">
+    <div style="position:relative;padding-left:24px;border-left:2px solid var(--border,#e5e7eb)">
+      {% for i in range(4) %}
+      <div style="position:relative;padding:12px 0 12px 16px">
+        <div style="position:absolute;left:-30px;top:16px;width:12px;height:12px;border-radius:50%;background:{% if i == 1 %}var(--accent,#d83236){% else %}var(--border,#ccc){% endif %};border:2px solid var(--bg-card,#fff)"></div>
+        <time style="font-size:12px;color:var(--text-muted,#999);display:block;margin-bottom:2px">{{ ['25 марта 2026','28 марта 2026','30 марта 2026','1 апреля 2026'][i] }}</time>
+        <a href="#" style="font-weight:600;font-size:14px;text-decoration:none;color:inherit">{{ ['Начало расследования по делу о хищениях','Задержаны трое подозреваемых','Суд вынес решение о заключении под стражу','Прокуратура предъявила обвинение'][i] }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LIVE FEED ITEMS ═══ -->
+<div class="uikit-section">
+  <h2>Live Feed Items</h2>
+  <div class="uikit-class">.live-feed__item, .live-feed__time, .live-feed__text</div>
+  <div class="uikit-note">Бегущая лента новостей в сайдбаре главной страницы. Время + заголовок одной строкой.</div>
+  <div class="uikit-demo" style="max-width:400px">
+    {% for i in range(5) %}
+    <a href="#" class="live-feed__item" style="text-decoration:none">
+      <span class="live-feed__time">{{ ['14:32','14:15','13:58','13:41','13:20'][i] }}</span>
+      <span class="live-feed__text">{{ ['Сенат одобрил поправки в Налоговый кодекс','Температура в Астане поднимется до +18°С','МВД: аварийность снизилась на 12%','Новый рейс Алматы—Стамбул с 15 апреля','Индекс KASE вырос на 1,3% за день'][i] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ═══ TAG CHIPS ═══ -->
+<div class="uikit-section">
+  <h2>Tag Chips</h2>
+  <div class="uikit-class">.keyword-chip</div>
+  <div class="uikit-note">Теги/ключевые слова. Используются в трендах, на страницах статей и тегов.</div>
+  <div class="uikit-demo">
+    <div class="uikit-inline">
+      {% for tag in ['Токаев','экономика','Астана','нефть','тенге','образование','IT','транспорт'] %}
+      <a href="#" class="keyword-chip">{{ tag }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION HEADERS ═══ -->
+<div class="uikit-section">
+  <h2>Section Headers</h2>
+  <div class="uikit-class">.section-title, .section-more</div>
+  <div class="uikit-note">Заголовки секций с ссылкой «Все».</div>
+  <div class="uikit-demo">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 class="section-title" style="margin:0">Экономика</h2>
+      <a href="#" class="section-more">Все <span>&rarr;</span></a>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 class="section-title" style="margin:0">Популярное</h2>
+      <a href="#" class="section-more">Все <span>&rarr;</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BUTTONS ═══ -->
+<div class="uikit-section">
+  <h2>Buttons</h2>
+  <div class="uikit-class">.sidebar-action-btn, .cat-badge</div>
+  <div class="uikit-note">Кнопки действий сайдбара и бейджи категорий.</div>
+  <div class="uikit-demo">
+    <div class="uikit-inline" style="margin-bottom:16px">
+      <button class="sidebar-action-btn">Поделиться</button>
+      <button class="sidebar-action-btn sidebar-action-btn--bookmark">В закладки</button>
+      <button class="sidebar-action-btn">Комментарии</button>
+    </div>
+    <div class="uikit-inline">
+      <span class="cat-badge"><span class="cat-dot" data-cat="politika"></span><span class="cat-name">Политика</span></span>
+      <span class="cat-badge"><span class="cat-dot" data-cat="ekonomika"></span><span class="cat-name">Экономика</span></span>
+      <span class="cat-badge"><span class="cat-dot" data-cat="sport"></span><span class="cat-name">Спорт</span></span>
+      <span class="cat-badge"><span class="cat-dot" data-cat="tekhnologii"></span><span class="cat-name">Технологии</span></span>
+      <span class="cat-badge"><span class="cat-dot" data-cat="obshchestvo"></span><span class="cat-name">Общество</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NLP KEY FACTS ═══ -->
+<div class="uikit-section">
+  <h2>NLP Key Facts Block</h2>
+  <div class="uikit-class">.nlp-keyfacts, .nlp-fact-item</div>
+  <div class="uikit-note">Блок ключевых фактов из NLP-обогащения статьи. Выводится на странице статьи, если есть nlp-данные.</div>
+  <div class="uikit-demo">
+    <div style="background:var(--bg-surface-2,#f8f9fa);border-radius:12px;padding:20px">
+      <h3 style="font-size:15px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+        Ключевые факты
+      </h3>
+      <ul style="margin:0;padding:0 0 0 20px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5">
+        <li>Объём государственных инвестиций увеличился на 23% по сравнению с 2025 годом</li>
+        <li>Основные направления: транспорт, здравоохранение и цифровизация</li>
+        <li>Три региона получат приоритетное финансирование: Туркестанская, Кызылординская и Мангистауская области</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ENGAGE BAR ═══ -->
+<div class="uikit-section">
+  <h2>Engage Bar (Reactions + Share)</h2>
+  <div class="uikit-class">.engage-bar, .reaction-btn, .share-btn</div>
+  <div class="uikit-note">Панель взаимодействия под статьёй: реакции и кнопки шеринга.</div>
+  <div class="uikit-demo">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border,#e5e7eb);border-bottom:1px solid var(--border,#e5e7eb)">
+      <div style="display:flex;gap:8px">
+        <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border,#e5e7eb);background:none;cursor:pointer;font-size:13px;color:var(--text-secondary,#555)">👍 <span>24</span></button>
+        <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border,#e5e7eb);background:none;cursor:pointer;font-size:13px;color:var(--text-secondary,#555)">😮 <span>8</span></button>
+        <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border,#e5e7eb);background:none;cursor:pointer;font-size:13px;color:var(--text-secondary,#555)">😡 <span>3</span></button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border,#e5e7eb);background:none;cursor:pointer;font-size:13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          Telegram
+        </button>
+        <button style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border,#e5e7eb);background:none;cursor:pointer;font-size:13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Поделиться
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

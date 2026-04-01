@@ -1036,6 +1036,14 @@ async def admin_settings_page(request: Request):
     return templates.TemplateResponse("settings.html", _ctx(request))
 
 
+@app.get("/admin/ui-kit", response_class=HTMLResponse)
+async def admin_ui_kit_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=302)
+    return templates.TemplateResponse("ui_kit.html", _ctx(request))
+
+
 @app.get("/admin/stories", response_class=HTMLResponse)
 async def admin_stories_page(request: Request, q: str = "", page: int = Query(1, ge=1)):
     result = db.get_all_stories(q=q, page=page)

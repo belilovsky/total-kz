@@ -112,7 +112,7 @@
   </style>
   {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body{% if not _dm.get('show_views', True) %} class="hide-views"{% endif %}>
   <a href="#main-content" class="skip-link">{{ t('skip_link') if t is defined else 'Перейти к содержимому' }}</a>
 
   {% if _dm.get('mode') == 'mourning' and (_dm.get('mourning_text') or _dm.get('mourning_text_kz')) %}

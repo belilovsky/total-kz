@@ -5012,11 +5012,11 @@ a.related-item:visited .related-title {
   }
 }
 
-/* ═══ Feature 7: View Counts on Cards (hidden on public site) ═══ */
-.card-views,
-.feed-item-views,
-.views-count,
-[data-views] {
+/* ═══ Feature 7: View Counts on Cards (toggle via admin settings) ═══ */
+body.hide-views .card-views,
+body.hide-views .feed-item-views,
+body.hide-views .views-count,
+body.hide-views [data-views] {
   display: none !important;
 }
 
