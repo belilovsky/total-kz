@@ -53,7 +53,7 @@
         <h2 class="live-feed__title">{{ t('homepage.live_feed') if t is defined else 'Лента новостей' }}</h2>
       </div>
       <div class="live-feed__list">
-        {% for art in latest[:15] %}
+        {% for art in latest[:12] %}
         <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="live-feed__item">
           <span class="live-feed__time">{{ format_time_hhmm(art.pub_date) or format_date_short(art.pub_date) }}</span>
           <span class="live-feed__text">{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}</span>
