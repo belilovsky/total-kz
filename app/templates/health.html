@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% set active = "health" %}
+
+{% block title %}Мониторинг – Total.kz{% endblock %}
+{% block page_title %}Мониторинг{% endblock %}
+
+{% block actions %}
+<button class="btn btn-primary btn-sm" id="runBtn" onclick="runHealthCheck()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    Запустить проверку
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+    .health-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    .health-stat {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+    }
+    .health-stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .health-stat-label {
+        font-size: 12px;
+        color: var(--text-muted, #6b7280);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .health-stat-value.pass { color: var(--green, #22c55e); }
+    .health-stat-value.fail { color: var(--red, #ef4444); }
+    .health-stat-value.warn { color: var(--yellow, #f59e0b); }
+    .health-stat-value.total { color: var(--text, #111827); }
+
+    .health-meta {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: var(--text-muted, #6b7280);
+        flex-wrap: wrap;
+    }
+    .health-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+    .health-table-wrap {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .health-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .health-table th {
+        text-align: left;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted, #6b7280);
+        background: var(--bg-alt, #f9fafb);
+        border-bottom: 1px solid var(--border, #e5e7eb);
+    }
+    .health-table td {
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--border-light, #f3f4f6);
+        vertical-align: middle;
+    }
+    .health-table tr:last-child td { border-bottom: none; }
+    .health-table tr:hover td { background: var(--bg-hover, #f9fafb); }
+
+    .status-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .status-icon.pass { background: #dcfce7; color: #16a34a; }
+    .status-icon.fail { background: #fee2e2; color: #dc2626; }
+    .status-icon.warn { background: #fef3c7; color: #d97706; }
+
+    .health-detail {
+        color: var(--text-muted, #6b7280);
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .health-time {
+        font-variant-numeric: tabular-nums;
+        color: var(--text-muted, #6b7280);
+        white-space: nowrap;
+    }
+
+    .health-loading {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted, #6b7280);
+    }
+    .health-loading .spinner {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border, #e5e7eb);
+        border-top-color: var(--primary, #3b82f6);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .filter-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .filter-tab {
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid var(--border, #e5e7eb);
+        background: var(--card-bg, #fff);
+        color: var(--text-muted, #6b7280);
+        transition: all 0.15s;
+    }
+    .filter-tab:hover { border-color: var(--primary, #3b82f6); color: var(--primary, #3b82f6); }
+    .filter-tab.active { background: var(--primary, #3b82f6); color: #fff; border-color: var(--primary, #3b82f6); }
+</style>
+
+<!-- Summary cards -->
+<div class="health-summary" id="healthSummary" style="display:none">
+    <div class="health-stat">
+        <div class="health-stat-value total" id="statTotal">-</div>
+        <div class="health-stat-label">Всего тестов</div>
+    </div>
+    <div class="health-stat">
+        <div class="health-stat-value pass" id="statPassed">-</div>
+        <div class="health-stat-label">Пройдено</div>
+    </div>
+    <div class="health-stat">
+        <div class="health-stat-value fail" id="statFailed">-</div>
+        <div class="health-stat-label">Ошибок</div>
+    </div>
+    <div class="health-stat">
+        <div class="health-stat-value warn" id="statWarnings">-</div>
+        <div class="health-stat-label">Предупреждений</div>
+    </div>
+</div>
+
+<!-- Meta info -->
+<div class="health-meta" id="healthMeta" style="display:none">
+    <span id="metaTimestamp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="metaTime">—</span>
+    </span>
+    <span id="metaDuration">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span id="metaDur">—</span>
+    </span>
+</div>
+
+<!-- Filters -->
+<div class="filter-tabs" id="filterTabs" style="display:none">
+    <button class="filter-tab active" onclick="filterResults('all', this)">Все</button>
+    <button class="filter-tab" onclick="filterResults('fail', this)">Ошибки</button>
+    <button class="filter-tab" onclick="filterResults('warn', this)">Предупреждения</button>
+    <button class="filter-tab" onclick="filterResults('pass', this)">Пройдено</button>
+</div>
+
+<!-- Loading state -->
+<div class="health-loading" id="healthLoading" style="display:none">
+    <div class="spinner"></div>
+    <div>Выполняется проверка...</div>
+    <div style="font-size:12px;margin-top:4px">Это может занять 10–30 секунд</div>
+</div>
+
+<!-- Results table -->
+<div class="health-table-wrap" id="healthTable" style="display:none">
+    <table class="health-table">
+        <thead>
+            <tr>
+                <th style="width:36px"></th>
+                <th>Тест</th>
+                <th>Статус</th>
+                <th>Время</th>
+                <th>Детали</th>
+            </tr>
+        </thead>
+        <tbody id="healthBody"></tbody>
+    </table>
+</div>
+
+<!-- Initial state: show last saved results or prompt to run -->
+<div id="healthInitial" style="text-align:center;padding:60px 20px;color:var(--text-muted,#6b7280)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:12px;opacity:.4"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px">Мониторинг системы</div>
+    <div style="font-size:13px">Нажмите «Запустить проверку» или подождите автоматического запуска</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilter = 'all';
+let currentResults = [];
+
+function renderResults(data) {
+    currentResults = data.results || [];
+    const s = data.summary || {};
+
+    document.getElementById('statTotal').textContent = s.total || 0;
+    document.getElementById('statPassed').textContent = s.passed || 0;
+    document.getElementById('statFailed').textContent = s.failed || 0;
+    document.getElementById('statWarnings').textContent = s.warnings || 0;
+
+    document.getElementById('metaTime').textContent = data.timestamp || '—';
+    document.getElementById('metaDur').textContent = (data.duration_ms || 0).toFixed(0) + ' мс';
+
+    document.getElementById('healthSummary').style.display = '';
+    document.getElementById('healthMeta').style.display = '';
+    document.getElementById('filterTabs').style.display = '';
+    document.getElementById('healthTable').style.display = '';
+    document.getElementById('healthInitial').style.display = 'none';
+    document.getElementById('healthLoading').style.display = 'none';
+
+    applyFilter();
+}
+
+function applyFilter() {
+    const tbody = document.getElementById('healthBody');
+    const rows = currentResults
+        .filter(r => currentFilter === 'all' || r.status === currentFilter)
+        .map(r => {
+            const icon = r.status === 'pass' ? '&#10003;' : r.status === 'fail' ? '&#10007;' : '!';
+            const label = r.status === 'pass' ? 'OK' : r.status === 'fail' ? 'FAIL' : 'WARN';
+            return `<tr data-status="${r.status}">
+                <td><span class="status-icon ${r.status}">${icon}</span></td>
+                <td style="font-weight:500">${escHtml(r.name)}</td>
+                <td><span style="font-size:11px;font-weight:600;text-transform:uppercase">${label}</span></td>
+                <td class="health-time">${r.response_time_ms.toFixed(0)} мс</td>
+                <td class="health-detail" title="${escAttr(r.details)}">${escHtml(r.details)}</td>
+            </tr>`;
+        });
+    tbody.innerHTML = rows.join('');
+}
+
+function filterResults(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilter();
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function runHealthCheck() {
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+
+    document.getElementById('healthLoading').style.display = '';
+    document.getElementById('healthTable').style.display = 'none';
+    document.getElementById('healthInitial').style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/admin/health-check', { method: 'POST' });
+        const data = await resp.json();
+        renderResults(data);
+    } catch (err) {
+        document.getElementById('healthLoading').style.display = 'none';
+        document.getElementById('healthInitial').style.display = '';
+        document.getElementById('healthInitial').innerHTML =
+            '<div style="color:var(--red,#ef4444);font-size:14px">Ошибка: ' + escHtml(err.message) + '</div>';
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '';
+    }
+}
+
+// On page load: try to show last saved results, then auto-run
+(async function() {
+    try {
+        const resp = await fetch('/api/admin/health-check/last');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.results) {
+                renderResults(data);
+                return;
+            }
+        }
+    } catch (e) {}
+    // No saved results — auto-run
+    runHealthCheck();
+})();
+</script>
+{% endblock %}

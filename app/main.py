@@ -168,14 +168,17 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Failed to preload persons on startup")
     # Start scheduled publishing loop
-    from .scheduler import scheduler_loop
+    from .scheduler import scheduler_loop, health_check_loop
     task = asyncio.create_task(scheduler_loop())
     # Start Telegram auto-posting loop
     from .autopost import autopost_loop
     autopost_task = asyncio.create_task(autopost_loop())
+    # Start periodic health check (every 6 hours)
+    health_task = asyncio.create_task(health_check_loop())
     yield
     task.cancel()
     autopost_task.cancel()
+    health_task.cancel()
 
 
 app = FastAPI(title="Total.kz", version="11.0.0", lifespan=lifespan)
@@ -1034,6 +1037,43 @@ async def admin_settings_page(request: Request):
     if not user or user.get("role") != "admin":
         return RedirectResponse(url="/admin/articles", status_code=302)
     return templates.TemplateResponse("settings.html", _ctx(request))
+
+
+# ══════════════════════════════════════════════
+#  HEALTH MONITORING  /admin/health
+# ══════════════════════════════════════════════
+
+@app.get("/admin/health", response_class=HTMLResponse)
+async def admin_health_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
+    return templates.TemplateResponse("health.html", _ctx(request))
+
+
+@app.post("/api/admin/health-check")
+async def api_admin_health_check(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    from app.healthcheck import run_and_save
+    report = await asyncio.to_thread(run_and_save)
+    return JSONResponse(report)
+
+
+@app.get("/api/admin/health-check/last")
+async def api_admin_health_last(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    from app.healthcheck import HEALTH_DATA_PATH
+    if HEALTH_DATA_PATH.exists():
+        try:
+            data = json.loads(HEALTH_DATA_PATH.read_text())
+            return JSONResponse(data)
+        except Exception:
+            pass
+    return JSONResponse(None)
 
 
 @app.get("/admin/ui-kit", response_class=HTMLResponse)

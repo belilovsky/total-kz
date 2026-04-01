@@ -129,3 +129,36 @@ async def scheduler_loop(interval: int = 60) -> None:
         except Exception as exc:
             logger.error("Scheduler: необработанная ошибка: %s", exc, exc_info=True)
         await asyncio.sleep(interval)
+
+
+# ── Health check periodic task ───────────────────────────────────
+
+HEALTH_CHECK_INTERVAL = 6 * 60 * 60  # 6 hours
+
+
+async def health_check_loop() -> None:
+    """Run health checks every 6 hours and save results to disk."""
+    logger.info("Health check loop started (interval %ds)", HEALTH_CHECK_INTERVAL)
+    # Wait 60s after startup before first run to let services stabilize
+    await asyncio.sleep(60)
+    while True:
+        try:
+            from app.healthcheck import run_and_save
+            report = await asyncio.to_thread(run_and_save)
+            summary = report.get("summary", {})
+            if summary.get("failed", 0) > 0:
+                failed_names = [r["name"] for r in report.get("results", []) if r["status"] == "fail"]
+                logger.warning(
+                    "Health check: %d failures — %s",
+                    summary["failed"],
+                    ", ".join(failed_names),
+                )
+            else:
+                logger.info(
+                    "Health check OK: %d tests passed, %d warnings",
+                    summary.get("passed", 0),
+                    summary.get("warnings", 0),
+                )
+        except Exception as exc:
+            logger.error("Health check loop error: %s", exc, exc_info=True)
+        await asyncio.sleep(HEALTH_CHECK_INTERVAL)
