@@ -52,6 +52,12 @@ def _publish_scheduled_pg() -> int:
                     meili.index_article(article_data)
             except Exception as exc:
                 logger.warning("Scheduler: ошибка индексации id=%d: %s", row[0], exc)
+            # Auto-translate to Kazakh (background)
+            try:
+                from app.auto_translate import auto_translate_article
+                auto_translate_article(row[0])
+            except Exception:
+                pass
 
     return published_count
 
@@ -96,6 +102,12 @@ def _publish_scheduled_sqlite() -> int:
                     meili.index_article(article_data)
             except Exception as exc:
                 logger.warning("Scheduler: ошибка индексации id=%d: %s", article_id, exc)
+            # Auto-translate to Kazakh (background)
+            try:
+                from app.auto_translate import auto_translate_article
+                auto_translate_article(article_id)
+            except Exception:
+                pass
 
     return published_count
 

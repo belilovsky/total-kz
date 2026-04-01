@@ -752,6 +752,17 @@ async def admin_article_detail(request: Request, article_id: int):
     # Get journalists for assignment dropdown
     all_users = db.get_all_users()
     journalists = [u for u in all_users if u.get("is_active")]
+    # Check translation status for Kazakh
+    translation_status = "none"
+    try:
+        tr_row = db.execute_raw(
+            "SELECT id FROM article_translations WHERE article_id = %s AND lang = %s",
+            (article_id, "kz"),
+        )
+        if tr_row:
+            translation_status = "translated"
+    except Exception:
+        pass
     return templates.TemplateResponse("article.html", _ctx(request,
         article=article,
         categories=cat_slugs,
@@ -763,6 +774,7 @@ async def admin_article_detail(request: Request, article_id: int):
         comments=comments,
         workflow_history=workflow_history,
         journalists=journalists,
+        translation_status=translation_status,
     ))
 
 
@@ -1082,6 +1094,63 @@ async def admin_ui_kit_page(request: Request):
     if not user:
         return RedirectResponse(url="/admin/login", status_code=302)
     return templates.TemplateResponse("ui_kit.html", _ctx(request))
+
+
+@app.get("/admin/content-analytics", response_class=HTMLResponse)
+async def admin_content_analytics_page(request: Request):
+    """Content Analytics Dashboard — charts and tables from article data."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
+
+    from datetime import date, timedelta
+    today = date.today()
+    d30 = (today - timedelta(days=30)).isoformat()
+    d7 = (today - timedelta(days=7)).isoformat()
+
+    # Top articles by views (last 30 days)
+    top_views_30 = db.execute_raw_many(
+        "SELECT id, title, views, pub_date, sub_category FROM articles "
+        "WHERE pub_date >= %s AND status = 'published' ORDER BY views DESC LIMIT 20",
+        (d30,),
+    )
+    # Top articles by views (last 7 days)
+    top_views_7 = db.execute_raw_many(
+        "SELECT id, title, views, pub_date, sub_category FROM articles "
+        "WHERE pub_date >= %s AND status = 'published' ORDER BY views DESC LIMIT 20",
+        (d7,),
+    )
+    # Articles per day (last 30 days)
+    articles_per_day = db.execute_raw_many(
+        "SELECT DATE(pub_date) as day, COUNT(*) as cnt FROM articles "
+        "WHERE pub_date >= %s AND status = 'published' GROUP BY DATE(pub_date) ORDER BY day",
+        (d30,),
+    )
+    # Category distribution (last 30 days)
+    category_dist = db.execute_raw_many(
+        "SELECT sub_category, COUNT(*) as cnt FROM articles "
+        "WHERE pub_date >= %s AND status = 'published' GROUP BY sub_category ORDER BY cnt DESC",
+        (d30,),
+    )
+    # Author productivity
+    author_prod = db.execute_raw_many(
+        "SELECT author, COUNT(*) as cnt, COALESCE(AVG(views), 0) as avg_views FROM articles "
+        "WHERE pub_date >= %s AND status = 'published' AND author IS NOT NULL AND author != '' "
+        "GROUP BY author ORDER BY cnt DESC LIMIT 20",
+        (d30,),
+    )
+
+    return templates.TemplateResponse("content_analytics.html", _ctx(
+        request,
+        active="content-analytics",
+        top_views_30=top_views_30,
+        top_views_7=top_views_7,
+        articles_per_day=articles_per_day,
+        category_dist=category_dist,
+        author_prod=author_prod,
+        format_num=_format_num,
+        cat_label=cat_label,
+    ))
 
 
 @app.get("/admin/stories", response_class=HTMLResponse)
@@ -2049,7 +2118,8 @@ async def api_update_article(article_id: int, request: Request):
     body = await request.json()
     allowed = {"title", "excerpt", "sub_category", "author", "main_image", "tags",
                "body_html", "body_text", "status", "editor_note",
-               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to"}
+               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to",
+               "is_breaking"}
     updates = {k: v for k, v in body.items() if k in allowed}
 
     # If body_blocks provided, auto-generate body_html and body_text
@@ -2108,6 +2178,12 @@ async def api_update_article(article_id: int, request: Request):
             try:
                 from .public_routes import ping_websub_hub
                 ping_websub_hub()
+            except Exception:
+                pass
+            # Auto-translate to Kazakh (background, non-blocking)
+            try:
+                from .auto_translate import auto_translate_article
+                asyncio.get_event_loop().run_in_executor(None, auto_translate_article, article_id)
             except Exception:
                 pass
         # Audit log (skip auto_save to avoid noise)
@@ -2186,6 +2262,12 @@ async def api_create_article(request: Request):
                 ping_websub_hub()
             except Exception:
                 pass
+            # Auto-translate to Kazakh (background, non-blocking)
+            try:
+                from .auto_translate import auto_translate_article
+                asyncio.get_event_loop().run_in_executor(None, auto_translate_article, new_id)
+            except Exception:
+                pass
         # Audit log
         user = getattr(request.state, "current_user", None)
         if user:
@@ -2226,6 +2308,89 @@ async def api_duplicate_article(article_id: int):
         return {"ok": True, "id": new_id}
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/article/{article_id}/breaking")
+async def api_toggle_breaking(article_id: int, request: Request):
+    """Toggle the is_breaking flag on an article. Sends push notification when marked breaking."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") not in ("admin", "editor"):
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+    body = await request.json()
+    is_breaking = bool(body.get("is_breaking", False))
+    try:
+        db.update_article(article_id, {
+            "is_breaking": 1 if is_breaking else 0,
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+        })
+        # Send web push notification when marked as breaking
+        if is_breaking:
+            article = db.get_article(article_id)
+            if article:
+                asyncio.create_task(_send_breaking_push(article))
+        # Audit log
+        ip = request.client.host if request.client else ""
+        db.log_audit(
+            user["user_id"], user["username"], "breaking",
+            "article", article_id,
+            f"Срочная новость: {'вкл' if is_breaking else 'выкл'}", ip
+        )
+        return {"ok": True, "is_breaking": is_breaking}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+async def _send_breaking_push(article: dict):
+    """Send Web Push notifications for breaking news to all subscribers."""
+    import sqlite3 as _sqlite3
+    try:
+        db_path = str(Path(__file__).parent.parent / "data" / "total.db")
+        conn = _sqlite3.connect(db_path)
+        conn.row_factory = _sqlite3.Row
+        subs = conn.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions").fetchall()
+        conn.close()
+    except Exception:
+        subs = []
+
+    if not subs:
+        return
+
+    vapid_private = os.environ.get("VAPID_PRIVATE_KEY", "")
+    vapid_email = os.environ.get("VAPID_EMAIL", "mailto:admin@total.kz")
+    if not vapid_private:
+        logger.warning("VAPID_PRIVATE_KEY not set — skipping breaking news push")
+        return
+
+    title = article.get("title", "")
+    excerpt = (article.get("excerpt") or "")[:200]
+    article_url = article.get("url", "")
+    payload = json.dumps({
+        "title": f"СРОЧНО: {title}",
+        "body": excerpt,
+        "url": article_url,
+        "icon": "/static/images/icon-192.png",
+    }, ensure_ascii=False)
+
+    try:
+        from pywebpush import webpush, WebPushException
+        for sub in subs:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub["endpoint"],
+                        "keys": {"p256dh": sub["p256dh"], "auth": sub["auth"]},
+                    },
+                    data=payload,
+                    vapid_private_key=vapid_private,
+                    vapid_claims={"sub": vapid_email},
+                    timeout=10,
+                )
+            except WebPushException:
+                pass
+            except Exception:
+                pass
+    except ImportError:
+        logger.warning("pywebpush not installed — skipping breaking news push")
 
 
 @app.get("/api/article/{article_id}/revisions")
@@ -3061,3 +3226,234 @@ async def api_audit():
                 "orphans": orphan_entities,
             },
         }
+
+
+# ══════════════════════════════════════════════
+#  SENTIMENT DASHBOARD  /admin/sentiment
+# ══════════════════════════════════════════════
+
+@app.get("/admin/sentiment", response_class=HTMLResponse)
+async def admin_sentiment_page(request: Request):
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/admin/articles", status_code=302)
+    return templates.TemplateResponse("sentiment.html", _ctx(request))
+
+
+@app.get("/api/admin/sentiment-data")
+async def api_admin_sentiment_data(request: Request):
+    """Return sentiment analytics data for the dashboard."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+
+    try:
+        result = await asyncio.to_thread(_query_sentiment_data)
+        return JSONResponse(result)
+    except Exception as e:
+        logger.exception("Sentiment data error")
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/admin/sentiment-govt")
+async def api_admin_sentiment_govt(request: Request, filter: str = "all"):
+    """Return government-mentions sentiment trend data."""
+    user = getattr(request.state, "current_user", None)
+    if not user or user.get("role") != "admin":
+        return JSONResponse({"ok": False, "error": "Forbidden"}, status_code=403)
+
+    try:
+        result = await asyncio.to_thread(_query_govt_sentiment, filter)
+        return JSONResponse(result)
+    except Exception as e:
+        logger.exception("Govt sentiment data error")
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+def _query_sentiment_data() -> dict:
+    """Query article_nlp for sentiment dashboard data (SQLite)."""
+    with db.get_db() as conn:
+        # Check if article_nlp table exists
+        table_check = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='article_nlp'"
+        ).fetchone()
+        if not table_check:
+            return {"total": 0, "positive_count": 0, "neutral_count": 0, "negative_count": 0,
+                    "pie": {"positive": 0, "neutral": 0, "negative": 0},
+                    "trend": {"dates": [], "positive": [], "neutral": [], "negative": []},
+                    "by_category": {"categories": [], "positive": [], "neutral": [], "negative": []},
+                    "most_positive": [], "most_negative": [], "govt_trend": {"dates": [], "scores": [], "counts": []}}
+
+        # Overall counts (last 30 days)
+        counts = conn.execute("""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
+                SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
+                SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
+            FROM article_nlp n
+            JOIN articles a ON a.id = n.article_id
+            WHERE a.pub_date >= date('now', '-30 days')
+              AND n.sentiment IS NOT NULL
+        """).fetchone()
+
+        total = counts[0] or 0
+        pos = counts[1] or 0
+        neu = counts[2] or 0
+        neg = counts[3] or 0
+
+        # Pie chart data
+        pie = {"positive": pos, "neutral": neu, "negative": neg}
+
+        # Trend: daily counts by sentiment (last 30 days)
+        trend_rows = conn.execute("""
+            SELECT date(a.pub_date) as day,
+                SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
+                SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
+                SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
+            FROM article_nlp n
+            JOIN articles a ON a.id = n.article_id
+            WHERE a.pub_date >= date('now', '-30 days')
+              AND n.sentiment IS NOT NULL
+            GROUP BY day
+            ORDER BY day
+        """).fetchall()
+
+        trend = {
+            "dates": [r[0] for r in trend_rows],
+            "positive": [r[1] for r in trend_rows],
+            "neutral": [r[2] for r in trend_rows],
+            "negative": [r[3] for r in trend_rows],
+        }
+
+        # Sentiment by category
+        cat_rows = conn.execute("""
+            SELECT a.sub_category,
+                SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
+                SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
+                SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
+            FROM article_nlp n
+            JOIN articles a ON a.id = n.article_id
+            WHERE a.pub_date >= date('now', '-30 days')
+              AND n.sentiment IS NOT NULL
+              AND a.sub_category IS NOT NULL AND a.sub_category != ''
+            GROUP BY a.sub_category
+            ORDER BY (pos + neu + neg) DESC
+            LIMIT 15
+        """).fetchall()
+
+        by_category = {
+            "categories": [r[0] for r in cat_rows],
+            "positive": [r[1] for r in cat_rows],
+            "neutral": [r[2] for r in cat_rows],
+            "negative": [r[3] for r in cat_rows],
+        }
+
+        # Most positive articles (top 10)
+        most_pos = conn.execute("""
+            SELECT a.id, a.title, n.sentiment, n.sentiment_score, a.sub_category
+            FROM article_nlp n
+            JOIN articles a ON a.id = n.article_id
+            WHERE n.sentiment_score IS NOT NULL
+              AND a.pub_date >= date('now', '-30 days')
+            ORDER BY n.sentiment_score DESC
+            LIMIT 10
+        """).fetchall()
+
+        most_positive = [
+            {"id": r[0], "title": r[1], "sentiment": r[2], "sentiment_score": r[3], "category": r[4]}
+            for r in most_pos
+        ]
+
+        # Most negative articles (top 10)
+        most_neg = conn.execute("""
+            SELECT a.id, a.title, n.sentiment, n.sentiment_score, a.sub_category
+            FROM article_nlp n
+            JOIN articles a ON a.id = n.article_id
+            WHERE n.sentiment_score IS NOT NULL
+              AND a.pub_date >= date('now', '-30 days')
+            ORDER BY n.sentiment_score ASC
+            LIMIT 10
+        """).fetchall()
+
+        most_negative = [
+            {"id": r[0], "title": r[1], "sentiment": r[2], "sentiment_score": r[3], "category": r[4]}
+            for r in most_neg
+        ]
+
+        # Government mentions trend
+        govt_trend = _query_govt_sentiment("all", conn)
+
+        return {
+            "total": total,
+            "positive_count": pos,
+            "neutral_count": neu,
+            "negative_count": neg,
+            "pie": pie,
+            "trend": trend,
+            "by_category": by_category,
+            "most_positive": most_positive,
+            "most_negative": most_negative,
+            "govt_trend": govt_trend,
+        }
+
+
+def _query_govt_sentiment(filter_type: str = "all", conn=None) -> dict:
+    """Query sentiment for government-related articles."""
+    close_conn = False
+    if conn is None:
+        conn = db.get_db()
+        close_conn = True
+
+    try:
+        # Keywords for government entity filtering
+        govt_keywords = {
+            "all": "%",
+            "president": "%президент%",
+            "government": "%правительств%",
+            "parliament": "%парламент%",
+        }
+        pattern = govt_keywords.get(filter_type, "%")
+
+        if pattern == "%":
+            # All government mentions — search for common government terms
+            rows = conn.execute("""
+                SELECT date(a.pub_date) as day,
+                    AVG(n.sentiment_score) as avg_score,
+                    COUNT(*) as cnt
+                FROM article_nlp n
+                JOIN articles a ON a.id = n.article_id
+                WHERE a.pub_date >= date('now', '-30 days')
+                  AND n.sentiment_score IS NOT NULL
+                  AND (a.title LIKE '%правительств%'
+                       OR a.title LIKE '%президент%'
+                       OR a.title LIKE '%парламент%'
+                       OR a.title LIKE '%министр%'
+                       OR a.title LIKE '%Токаев%'
+                       OR a.title LIKE '%Мажилис%'
+                       OR a.title LIKE '%Сенат%')
+                GROUP BY day
+                ORDER BY day
+            """).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT date(a.pub_date) as day,
+                    AVG(n.sentiment_score) as avg_score,
+                    COUNT(*) as cnt
+                FROM article_nlp n
+                JOIN articles a ON a.id = n.article_id
+                WHERE a.pub_date >= date('now', '-30 days')
+                  AND n.sentiment_score IS NOT NULL
+                  AND a.title LIKE ?
+                GROUP BY day
+                ORDER BY day
+            """, (pattern,)).fetchall()
+
+        return {
+            "dates": [r[0] for r in rows],
+            "scores": [round(r[1], 3) if r[1] else 0 for r in rows],
+            "counts": [r[2] for r in rows],
+        }
+    finally:
+        if close_conn:
+            conn.close()

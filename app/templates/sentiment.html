@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% set active = "sentiment" %}
+
+{% block title %}Тональность — Total.kz{% endblock %}
+{% block page_title %}Тональность контента{% endblock %}
+
+{% block content %}
+<style>
+.sentiment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+.sentiment-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.sentiment-card h3 { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: var(--text); }
+.sentiment-card canvas { width: 100% !important; }
+.sentiment-full { grid-column: 1 / -1; }
+.sentiment-stats { display: flex; gap: 16px; margin-bottom: 24px; }
+.sentiment-stat { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; text-align: center; }
+.sentiment-stat .stat-value { font-size: 28px; font-weight: 700; }
+.sentiment-stat .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.stat-positive { color: #16a34a; }
+.stat-neutral { color: #a16207; }
+.stat-negative { color: #d83236; }
+.stat-total { color: var(--accent); }
+.articles-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.articles-table th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.articles-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.articles-table tr:hover td { background: var(--bg-hover); }
+.articles-table a { color: var(--accent); text-decoration: none; }
+.articles-table a:hover { text-decoration: underline; }
+.score-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+.score-positive { background: rgba(22,163,74,.12); color: #16a34a; }
+.score-neutral { background: rgba(234,179,8,.12); color: #a16207; }
+.score-negative { background: rgba(216,50,54,.12); color: #d83236; }
+.govt-filter { margin-bottom: 16px; }
+.govt-filter label { font-size: 13px; color: var(--text-muted); margin-right: 8px; }
+@media (max-width: 768px) {
+    .sentiment-grid { grid-template-columns: 1fr; }
+    .sentiment-stats { flex-direction: column; }
+}
+</style>
+
+<!-- Summary stats -->
+<div class="sentiment-stats" id="sentimentStats">
+    <div class="sentiment-stat">
+        <div class="stat-value stat-total" id="statTotal">—</div>
+        <div class="stat-label">Всего статей с анализом</div>
+    </div>
+    <div class="sentiment-stat">
+        <div class="stat-value stat-positive" id="statPositive">—</div>
+        <div class="stat-label">Позитивные</div>
+    </div>
+    <div class="sentiment-stat">
+        <div class="stat-value stat-neutral" id="statNeutral">—</div>
+        <div class="stat-label">Нейтральные</div>
+    </div>
+    <div class="sentiment-stat">
+        <div class="stat-value stat-negative" id="statNegative">—</div>
+        <div class="stat-label">Негативные</div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="sentiment-grid">
+    <!-- Pie chart: overall sentiment -->
+    <div class="sentiment-card">
+        <h3>Распределение тональности (30 дней)</h3>
+        <canvas id="sentimentPieChart" height="280"></canvas>
+    </div>
+
+    <!-- Line chart: sentiment trend -->
+    <div class="sentiment-card">
+        <h3>Тренд тональности по дням</h3>
+        <canvas id="sentimentTrendChart" height="280"></canvas>
+    </div>
+
+    <!-- Stacked bar: sentiment by category -->
+    <div class="sentiment-card sentiment-full">
+        <h3>Тональность по категориям</h3>
+        <canvas id="sentimentByCategoryChart" height="320"></canvas>
+    </div>
+
+    <!-- Government mentions sentiment trend -->
+    <div class="sentiment-card sentiment-full">
+        <h3>Тональность упоминаний государственных органов</h3>
+        <div class="govt-filter">
+            <label>Фильтр:</label>
+            <select id="govtFilter" onchange="loadGovtTrend()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:13px">
+                <option value="all">Все госорганы</option>
+                <option value="president">Президент</option>
+                <option value="government">Правительство</option>
+                <option value="parliament">Парламент</option>
+            </select>
+        </div>
+        <canvas id="govtSentimentChart" height="260"></canvas>
+    </div>
+
+    <!-- Most positive articles -->
+    <div class="sentiment-card">
+        <h3>Самые позитивные статьи</h3>
+        <table class="articles-table">
+            <thead><tr><th>Статья</th><th>Оценка</th><th>Категория</th></tr></thead>
+            <tbody id="positiveTable"><tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Загрузка...</td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- Most negative articles -->
+    <div class="sentiment-card">
+        <h3>Самые негативные статьи</h3>
+        <table class="articles-table">
+            <thead><tr><th>Статья</th><th>Оценка</th><th>Категория</th></tr></thead>
+            <tbody id="negativeTable"><tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Загрузка...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COLORS = {
+    positive: '#16a34a',
+    neutral: '#eab308',
+    negative: '#d83236',
+    positiveBg: 'rgba(22,163,74,.15)',
+    neutralBg: 'rgba(234,179,8,.15)',
+    negativeBg: 'rgba(216,50,54,.15)',
+};
+
+let pieChart, trendChart, categoryChart, govtChart;
+
+async function loadSentimentData() {
+    try {
+        const resp = await fetch('/api/admin/sentiment-data');
+        if (!resp.ok) throw new Error('Failed to load');
+        const data = await resp.json();
+
+        // Summary stats
+        document.getElementById('statTotal').textContent = data.total || 0;
+        document.getElementById('statPositive').textContent = data.positive_count || 0;
+        document.getElementById('statNeutral').textContent = data.neutral_count || 0;
+        document.getElementById('statNegative').textContent = data.negative_count || 0;
+
+        // Pie chart
+        renderPieChart(data.pie);
+
+        // Trend chart
+        renderTrendChart(data.trend);
+
+        // Category chart
+        renderCategoryChart(data.by_category);
+
+        // Tables
+        renderTable('positiveTable', data.most_positive || []);
+        renderTable('negativeTable', data.most_negative || []);
+
+        // Government trend
+        if (data.govt_trend) renderGovtChart(data.govt_trend);
+
+    } catch (e) {
+        console.error('Sentiment load error:', e);
+    }
+}
+
+function renderPieChart(pie) {
+    if (!pie) return;
+    const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+    pieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Позитивные', 'Нейтральные', 'Негативные'],
+            datasets: [{
+                data: [pie.positive || 0, pie.neutral || 0, pie.negative || 0],
+                backgroundColor: [COLORS.positive, COLORS.neutral, COLORS.negative],
+                borderWidth: 0,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } },
+            },
+            cutout: '55%',
+        }
+    });
+}
+
+function renderTrendChart(trend) {
+    if (!trend || !trend.dates) return;
+    const ctx = document.getElementById('sentimentTrendChart').getContext('2d');
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trend.dates,
+            datasets: [
+                {
+                    label: 'Позитивные',
+                    data: trend.positive,
+                    borderColor: COLORS.positive,
+                    backgroundColor: COLORS.positiveBg,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                },
+                {
+                    label: 'Нейтральные',
+                    data: trend.neutral,
+                    borderColor: COLORS.neutral,
+                    backgroundColor: COLORS.neutralBg,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                },
+                {
+                    label: 'Негативные',
+                    data: trend.negative,
+                    borderColor: COLORS.negative,
+                    backgroundColor: COLORS.negativeBg,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+            },
+        }
+    });
+}
+
+function renderCategoryChart(byCategory) {
+    if (!byCategory || !byCategory.categories) return;
+    const ctx = document.getElementById('sentimentByCategoryChart').getContext('2d');
+    categoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: byCategory.categories,
+            datasets: [
+                { label: 'Позитивные', data: byCategory.positive, backgroundColor: COLORS.positive },
+                { label: 'Нейтральные', data: byCategory.neutral, backgroundColor: COLORS.neutral },
+                { label: 'Негативные', data: byCategory.negative, backgroundColor: COLORS.negative },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } },
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+            },
+        }
+    });
+}
+
+function renderGovtChart(data) {
+    const ctx = document.getElementById('govtSentimentChart').getContext('2d');
+    if (govtChart) govtChart.destroy();
+    govtChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates || [],
+            datasets: [
+                {
+                    label: 'Средняя тональность',
+                    data: data.scores || [],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                },
+                {
+                    label: 'Кол-во статей',
+                    data: data.counts || [],
+                    borderColor: '#94a3b8',
+                    backgroundColor: 'rgba(148,163,184,.1)',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    yAxisID: 'y1',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { position: 'left', title: { display: true, text: 'Тональность' } },
+                y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Статей' }, beginAtZero: true },
+            },
+        }
+    });
+}
+
+function renderTable(id, articles) {
+    const tbody = document.getElementById(id);
+    if (!articles.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Нет данных</td></tr>';
+        return;
+    }
+    tbody.innerHTML = articles.map(a => {
+        const cls = a.sentiment === 'positive' ? 'score-positive' : a.sentiment === 'negative' ? 'score-negative' : 'score-neutral';
+        const score = a.sentiment_score != null ? a.sentiment_score.toFixed(2) : '—';
+        return `<tr>
+            <td><a href="/admin/article/${a.id}" title="${(a.title||'').replace(/"/g,'&quot;')}">${truncate(a.title, 50)}</a></td>
+            <td><span class="score-badge ${cls}">${score}</span></td>
+            <td style="color:var(--text-muted);font-size:12px">${a.category || ''}</td>
+        </tr>`;
+    }).join('');
+}
+
+function truncate(s, n) {
+    if (!s) return '';
+    return s.length > n ? s.substring(0, n) + '...' : s;
+}
+
+async function loadGovtTrend() {
+    const filter = document.getElementById('govtFilter').value;
+    try {
+        const resp = await fetch('/api/admin/sentiment-govt?filter=' + encodeURIComponent(filter));
+        if (!resp.ok) return;
+        const data = await resp.json();
+        renderGovtChart(data);
+    } catch (e) { console.error(e); }
+}
+
+// Load data on page ready
+loadSentimentData();
+</script>
+{% endblock %}

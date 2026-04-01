@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% set active = "content-analytics" %}
+
+{% block title %}Аналитика контента – Total.kz{% endblock %}
+{% block page_title %}Аналитика контента{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:24px">
+
+  <!-- Period Toggle -->
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:13px;color:var(--text-muted)">Топ статей за:</span>
+    <button class="btn btn-sm btn-primary" id="btnPeriod7" onclick="togglePeriod('7')">7 дней</button>
+    <button class="btn btn-sm btn-ghost" id="btnPeriod30" onclick="togglePeriod('30')">30 дней</button>
+  </div>
+
+  <!-- Row 1: Top Articles + Articles Per Day -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="card" style="padding:20px">
+      <h3 style="margin:0 0 16px;font-size:15px;font-weight:600">Топ статей по просмотрам</h3>
+      <canvas id="topArticlesChart" height="300"></canvas>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="margin:0 0 16px;font-size:15px;font-weight:600">Статей в день (30 дней)</h3>
+      <canvas id="articlesPerDayChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Row 2: Category Distribution + Author Productivity -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="card" style="padding:20px">
+      <h3 style="margin:0 0 16px;font-size:15px;font-weight:600">Распределение по категориям (30 дней)</h3>
+      <canvas id="categoryChart" height="300"></canvas>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="margin:0 0 16px;font-size:15px;font-weight:600">Продуктивность авторов (30 дней)</h3>
+      <div style="max-height:360px;overflow-y:auto">
+        <table class="data-table" style="width:100%">
+          <thead>
+            <tr><th>Автор</th><th style="text-align:right">Статей</th><th style="text-align:right">Ср. просмотры</th></tr>
+          </thead>
+          <tbody>
+            {% for a in author_prod %}
+            <tr>
+              <td>{{ a.author }}</td>
+              <td style="text-align:right">{{ a.cnt }}</td>
+              <td style="text-align:right">{{ format_num(a.avg_views|int) }}</td>
+            </tr>
+            {% endfor %}
+            {% if not author_prod %}
+            <tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Нет данных</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var topViews7 = {{ top_views_7 | tojson }};
+var topViews30 = {{ top_views_30 | tojson }};
+var articlesPerDay = {{ articles_per_day | tojson }};
+var categoryDist = {{ category_dist | tojson }};
+
+var topChart, dayChart, catChart;
+var activePeriod = '7';
+
+var COLORS = [
+    '#d83236','#2563eb','#16a34a','#ea580c','#7c3aed',
+    '#0891b2','#be185d','#65a30d','#dc2626','#2dd4bf',
+    '#f59e0b','#6366f1','#ec4899','#14b8a6','#f97316',
+    '#8b5cf6','#06b6d4','#84cc16','#e11d48','#a855f7'
+];
+
+function truncate(str, len) { return str && str.length > len ? str.substring(0, len) + '...' : str; }
+
+function renderTopArticles(data) {
+    var labels = data.slice(0, 10).map(function(a) { return truncate(a.title, 40); });
+    var values = data.slice(0, 10).map(function(a) { return a.views || 0; });
+    var ctx = document.getElementById('topArticlesChart').getContext('2d');
+    if (topChart) topChart.destroy();
+    topChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Просмотры',
+                data: values,
+                backgroundColor: COLORS.slice(0, 10),
+                borderRadius: 4,
+                barPercentage: 0.7
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { ticks: { font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+function renderArticlesPerDay() {
+    var labels = articlesPerDay.map(function(d) { return d.day ? d.day.substring(5) : ''; });
+    var values = articlesPerDay.map(function(d) { return d.cnt; });
+    var ctx = document.getElementById('articlesPerDayChart').getContext('2d');
+    if (dayChart) dayChart.destroy();
+    dayChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Статей',
+                data: values,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxRotation: 45 } },
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function renderCategoryDist() {
+    var labels = categoryDist.slice(0, 12).map(function(c) { return c.sub_category || 'Другое'; });
+    var values = categoryDist.slice(0, 12).map(function(c) { return c.cnt; });
+    var ctx = document.getElementById('categoryChart').getContext('2d');
+    if (catChart) catChart.destroy();
+    catChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: COLORS.slice(0, 12),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } }
+            }
+        }
+    });
+}
+
+function togglePeriod(p) {
+    activePeriod = p;
+    document.getElementById('btnPeriod7').className = p === '7' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost';
+    document.getElementById('btnPeriod30').className = p === '30' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost';
+    renderTopArticles(p === '7' ? topViews7 : topViews30);
+}
+
+renderTopArticles(topViews7);
+renderArticlesPerDay();
+renderCategoryDist();
+</script>
+{% endblock %}

@@ -4689,5 +4689,34 @@ async def kz_organization_page(request: Request, name: str):
         return _error_response(request)
 
 
+# ══════════════════════════════════════════════
+#  OG CARD GENERATOR — /og/{article_id}.png
+# ══════════════════════════════════════════════
+
+@router.get("/og/{article_id}.png")
+async def og_card_image(article_id: int):
+    """Serve generated OG card image (1200x630 PNG) for social sharing."""
+    from .og_generator import generate_og_card
+
+    article = db.get_article(article_id)
+    if not article:
+        return Response(status_code=404, content="Article not found")
+
+    title = article.get("title", "")
+    image_url = article.get("main_image", "")
+    category = article.get("sub_category", "")
+
+    import asyncio
+    path = await asyncio.to_thread(generate_og_card, article_id, title, image_url, category)
+    if not path or not path.exists():
+        return Response(status_code=500, content="Failed to generate OG card")
+
+    return FileResponse(
+        str(path),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=3600"},
+    )
+
+
 # Register the Kazakh router
 router.include_router(kz_router)

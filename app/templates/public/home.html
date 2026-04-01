@@ -54,9 +54,9 @@
       </div>
       <div class="live-feed__list">
         {% for art in latest[:12] %}
-        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="live-feed__item">
-          <span class="live-feed__time">{{ format_time_hhmm(art.pub_date) or format_date_short(art.pub_date) }}</span>
-          <span class="live-feed__text">{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}</span>
+        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="live-feed__item{% if art.is_breaking %} breaking{% endif %}">
+          <span class="live-feed__time{% if art.is_breaking %}" style="color:#d83236;font-weight:700{% endif %}">{% if art.is_breaking %}⚡{% endif %}{{ format_time_hhmm(art.pub_date) or format_date_short(art.pub_date) }}</span>
+          <span class="live-feed__text">{% if art.is_breaking %}<strong>{% endif %}{{ art.title[:80] }}{% if art.title|length > 80 %}…{% endif %}{% if art.is_breaking %}</strong>{% endif %}</span>
         </a>
         {% endfor %}
       </div>
@@ -87,6 +87,7 @@
           {% else %}
           <img src="/static/img/placeholder.svg" alt="" loading="lazy">
           {% endif %}
+          {% if art.is_breaking %}<span class="breaking-badge">СРОЧНО</span>{% endif %}
           <span class="shelf-card-overlay-cat" data-cat="{{ nav_slug_for(art.sub_category) }}">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
           <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
         </div>
@@ -116,6 +117,7 @@
             {% else %}
             <img src="/static/img/placeholder.svg" alt="" loading="lazy">
             {% endif %}
+            {% if art.is_breaking %}<span class="breaking-badge">СРОЧНО</span>{% endif %}
             <span class="shelf-card-overlay-cat" data-cat="{{ nav_slug_for(art.sub_category) }}">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
             <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
           </div>

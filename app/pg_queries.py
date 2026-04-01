@@ -232,6 +232,46 @@ def init_db() -> None:
     """Create all tables and seed initial data."""
     Base.metadata.create_all(engine)
 
+    # v15.1: add is_breaking column if missing (safe for existing DBs)
+    try:
+        from sqlalchemy import text as _sa_text
+        with engine.connect() as _conn:
+            _conn.execute(_sa_text(
+                "ALTER TABLE articles ADD COLUMN IF NOT EXISTS is_breaking INTEGER DEFAULT 0"
+            ))
+            _conn.commit()
+    except Exception:
+        pass
+
+    # v15.1: create article_translations table if missing
+    try:
+        from sqlalchemy import text as _sa_text
+        with engine.connect() as _conn:
+            _conn.execute(_sa_text("""
+                CREATE TABLE IF NOT EXISTS article_translations (
+                    id SERIAL PRIMARY KEY,
+                    article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+                    lang CHAR(2) NOT NULL DEFAULT 'kz',
+                    title TEXT,
+                    excerpt TEXT,
+                    body_html TEXT,
+                    body_text TEXT,
+                    meta_description TEXT,
+                    translated_at TIMESTAMP DEFAULT NOW(),
+                    translation_quality FLOAT,
+                    reviewed BOOLEAN DEFAULT FALSE,
+                    reviewed_by TEXT,
+                    reviewed_at TIMESTAMP,
+                    UNIQUE(article_id, lang)
+                )
+            """))
+            _conn.execute(_sa_text(
+                "CREATE INDEX IF NOT EXISTS idx_translations_article ON article_translations(article_id, lang)"
+            ))
+            _conn.commit()
+    except Exception:
+        pass
+
     with get_pg_session() as db:
         # Seed admin user if users table is empty
         user_count = db.scalar(select(func.count()).select_from(User))
@@ -611,6 +651,7 @@ def update_article(article_id: int, updates: dict) -> None:
         "title", "excerpt", "sub_category", "author", "main_image",
         "body_html", "body_text", "status", "editor_note", "updated_at",
         "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to",
+        "is_breaking",
     }
     with get_pg_session() as db:
         tags = updates.pop("tags", None)

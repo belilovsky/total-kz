@@ -204,6 +204,40 @@
         </div>
     </div>
 
+    <!-- Breaking News Toggle -->
+    {% if current_user and current_user.role in ('editor', 'admin') %}
+    <div class="editor-section">
+        <label class="editor-label">Срочная новость</label>
+        <div style="display:flex;align-items:center;gap:12px">
+            <label class="toggle-switch">
+                <input type="checkbox" id="breakingToggle" {% if article.is_breaking %}checked{% endif %} onchange="toggleBreaking()">
+                <span class="toggle-slider"></span>
+            </label>
+            <span id="breakingLabel" style="font-size:13px;color:var(--text-muted)">
+                {% if article.is_breaking %}
+                <span class="breaking-badge">СРОЧНО</span> Включено — читатели получат push-уведомление
+                {% else %}
+                Отметить как срочную новость
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Translation Status -->
+    <div class="editor-section">
+        <label class="editor-label">Перевод на казахский</label>
+        <div id="translationStatus" style="font-size:13px;color:var(--text-muted)">
+            {% if translation_status == 'translated' %}
+            <span style="color:var(--green)">Переведено на казахский ✓</span>
+            {% elif translation_status == 'pending' %}
+            <span style="color:var(--yellow)">Перевод в очереди...</span>
+            {% else %}
+            <span>Перевод будет запущен при публикации</span>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Assignment -->
     {% if current_user and current_user.role in ('editor', 'admin') %}
     <div class="editor-section">
@@ -333,6 +367,7 @@
         <button class="btn btn-ghost" onclick="duplicateArticle()" title="Дублировать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Дублировать</button>
         <a href="/admin/preview/{{ article.id }}" target="_blank" class="btn btn-ghost" title="Превью"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Превью</a>
         <button class="btn btn-primary" onclick="saveArticle()" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить</button>
+        {% if article and article.id %}<a href="/og/{{ article.id }}.png" download="og_{{ article.id }}.png" class="btn btn-ghost" title="Скачать OG-карточку"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Карточка</a>{% endif %}
     </div>
 </div>
 {% endblock %}
@@ -709,6 +744,31 @@ setInterval(function() {
 
 function archiveArticle() { fetch('/api/article/'+ARTICLE_ID,{method:'DELETE'}).then(function(r){return r.json();}).then(function(res){if(res.ok){showToast('Статья удалена');setTimeout(function(){window.location.href='/admin/articles';},800);}else showToast('Ошибка: '+(res.error||'неизвестная'));}).catch(function(){showToast('Ошибка сети');}); }
 function duplicateArticle() { fetch('/api/article/'+ARTICLE_ID+'/duplicate',{method:'POST'}).then(function(r){return r.json();}).then(function(res){if(res.ok&&res.id){showToast('Статья дублирована');setTimeout(function(){window.location.href='/admin/article/'+res.id;},600);}else showToast('Ошибка: '+(res.error||'неизвестная'));}).catch(function(){showToast('Ошибка сети');}); }
+
+function toggleBreaking() {
+    var checked = document.getElementById('breakingToggle').checked;
+    fetch('/api/article/'+ARTICLE_ID+'/breaking', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({is_breaking: checked})
+    }).then(function(r){return r.json();}).then(function(res){
+        if(res.ok){
+            var label = document.getElementById('breakingLabel');
+            if(checked) {
+                label.innerHTML = '<span class="breaking-badge">СРОЧНО</span> Включено — читатели получат push-уведомление';
+                showToast('Срочная новость включена. Push-уведомления отправлены.');
+            } else {
+                label.textContent = 'Отметить как срочную новость';
+                showToast('Срочная новость отключена');
+            }
+        } else {
+            document.getElementById('breakingToggle').checked = !checked;
+            showToast('Ошибка: '+(res.error||'неизвестная'));
+        }
+    }).catch(function(){
+        document.getElementById('breakingToggle').checked = !checked;
+        showToast('Ошибка сети');
+    });
+}
 
 function setPreviewWidth(w,btn){document.getElementById('previewContent').style.maxWidth=w;document.querySelectorAll('.preview-viewport-toggle button').forEach(function(b){b.classList.remove('active');});if(btn)btn.classList.add('active');}
 

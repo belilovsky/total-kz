@@ -5465,3 +5465,28 @@ html.evening-mode .site-header::after {
 @media (max-width:900px) {
   html.evening-mode .site-header::after { display:none; }
 }
+
+/* ══ Breaking News (v15.1) ══ */
+.breaking-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 3px;
+    background: #d83236; color: #fff;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase; line-height: 1.5;
+    animation: breaking-pulse 2s ease-in-out infinite;
+    z-index: 2;
+}
+@keyframes breaking-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+.breaking-banner {
+    background: linear-gradient(90deg, #d83236, #e74c3c);
+    color: #fff; padding: 10px 20px; text-align: center;
+    font-weight: 700; font-size: 15px; letter-spacing: 0.03em;
+    animation: breaking-pulse 2s ease-in-out infinite;
+}
+.shelf-card .breaking-badge {
+    position: absolute; top: 8px; left: 8px;
+}
+.live-feed-item.breaking .live-feed-time { color: #d83236; font-weight: 700; }

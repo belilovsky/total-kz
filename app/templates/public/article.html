@@ -6,7 +6,7 @@
 {% block og_type %}article{% endblock %}
 {% block og_title %}{{ article.title }}{% endblock %}
 {% block og_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
-{% block og_image %}{% if article.main_image %}<meta property="og:image" content="{% if article.main_image.startswith('http') %}{{ article.main_image }}{% else %}{{ site_domain }}{{ article.main_image }}{% endif %}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">{% endif %}{% endblock %}
+{% block og_image %}<meta property="og:image" content="{{ site_domain }}/og/{{ article.id }}.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">{% endblock %}
 {% block twitter_title %}{{ article.title }}{% endblock %}
 {% block twitter_description %}{{ article.enrichment.meta_description if article.enrichment and article.enrichment.meta_description else (article.excerpt or article.title) }}{% endblock %}
 {% block twitter_image %}{% if article.main_image %}<meta name="twitter:image" content="{{ article.main_image if article.main_image.startswith('http') else site_domain + article.main_image }}">{% endif %}{% endblock %}
@@ -188,6 +188,11 @@
   </nav>
 
   <div class="article-layout">
+
+    {# ── Breaking news banner ── #}
+    {% if article.is_breaking %}
+    <div class="breaking-banner article-full-width">СРОЧНО</div>
+    {% endif %}
 
     {# ── Header: full-width title, spans both columns ── #}
     <header class="article-page-header article-full-width">

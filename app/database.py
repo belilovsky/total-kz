@@ -129,6 +129,10 @@ def init_db():
         if "editor_note" not in article_cols:
             conn.execute("ALTER TABLE articles ADD COLUMN editor_note TEXT")
 
+        # v15.1: add is_breaking flag
+        if "is_breaking" not in article_cols:
+            conn.execute("ALTER TABLE articles ADD COLUMN is_breaking INTEGER DEFAULT 0")
+
         # v10.2: add body_blocks, scheduled_at, focal_x, focal_y
         if "body_blocks" not in article_cols:
             conn.execute("ALTER TABLE articles ADD COLUMN body_blocks TEXT")
@@ -251,6 +255,27 @@ def init_db():
         # v12: Workflow — assigned_to column on articles
         if "assigned_to" not in article_cols:
             conn.execute("ALTER TABLE articles ADD COLUMN assigned_to TEXT")
+
+        # v15.1: article_translations table
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS article_translations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+                lang TEXT NOT NULL DEFAULT 'kz',
+                title TEXT,
+                excerpt TEXT,
+                body_html TEXT,
+                body_text TEXT,
+                meta_description TEXT,
+                translated_at TEXT DEFAULT (datetime('now')),
+                translation_quality REAL,
+                reviewed INTEGER DEFAULT 0,
+                reviewed_by TEXT,
+                reviewed_at TEXT,
+                UNIQUE(article_id, lang)
+            );
+            CREATE INDEX IF NOT EXISTS idx_translations_article ON article_translations(article_id, lang);
+        """)
 
         # Seed admin user if users table is empty
         from . import auth as _auth
@@ -791,7 +816,8 @@ def update_article(article_id: int, updates: dict) -> None:
     """Update article fields."""
     allowed = {"title", "excerpt", "sub_category", "author", "main_image",
                "body_html", "body_text", "status", "editor_note", "updated_at",
-               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to"}
+               "body_blocks", "scheduled_at", "focal_x", "focal_y", "assigned_to",
+               "is_breaking"}
     with get_db() as conn:
         # Separate tags (JSON) from scalar fields
         tags = updates.pop("tags", None)

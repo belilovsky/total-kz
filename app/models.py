@@ -67,6 +67,9 @@ class Article(Base):
     # v12 — Workflow
     assigned_to: Mapped[str | None] = mapped_column(Text)
 
+    # v15.1 — Breaking news flag
+    is_breaking: Mapped[bool] = mapped_column(Integer, server_default="0")
+
     # Relationships
     entities: Mapped[list["ArticleEntity"]] = relationship(
         back_populates="article", cascade="all, delete-orphan"
