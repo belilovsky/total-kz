@@ -20,12 +20,13 @@ sources:
     rewrite: false
 
   - name: "Kazinform"
-    url: "https://www.inform.kz/ru/rss"
-    type: rss
+    url: "https://www.inform.kz"
+    type: scrape
     category: official_kz
     priority: high
     language: ru
     rewrite: false
+    disabled: true  # RSS discontinued, needs scraper implementation
 
   - name: "Правительство РК"
     url: "https://www.gov.kz/memleket/entities/government/press/news/rss?lang=ru"
@@ -64,8 +65,8 @@ sources:
       - Токаев
 
   # ── Foreign top news ─────────────────────────────
-  - name: "Reuters World"
-    url: "https://www.reutersagency.com/feed/?best-topics=world&post_type=best"
+  - name: "Reuters via Google News"
+    url: "https://news.google.com/rss/search?q=reuters+world+news&hl=en&gl=US&ceid=US:en"
     type: rss
     category: foreign_top
     priority: low
