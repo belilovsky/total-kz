@@ -80,20 +80,17 @@
     <div class="shelf-row">
       {% for art in regional_articles[:4] %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
-        {% if art.main_image or art.thumbnail %}
         <div class="shelf-card-img">
+          {% if art.main_image or art.thumbnail %}
           <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
                onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+          {% else %}
+          <img src="/static/img/placeholder.svg" alt="" loading="lazy">
+          {% endif %}
+          <span class="shelf-card-overlay-cat" data-cat="{{ nav_slug_for(art.sub_category) }}">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+          <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
         </div>
-        {% else %}
-        <div class="shelf-card-img shelf-card-img--ph"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
-        {% endif %}
         <h3 class="shelf-card-title">{{ art.title }}</h3>
-        <div class="shelf-card-meta">
-          <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
-          <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-          <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
-        </div>
       </a>
       {% endfor %}
     </div>
@@ -112,21 +109,17 @@
       <div class="shelf-row">
         {% for art in cat.articles[:4] %}
         <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
-          {% if art.main_image or art.thumbnail %}
           <div class="shelf-card-img">
+            {% if art.main_image or art.thumbnail %}
             <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
                  onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+            {% else %}
+            <img src="/static/img/placeholder.svg" alt="" loading="lazy">
+            {% endif %}
+            <span class="shelf-card-overlay-cat" data-cat="{{ nav_slug_for(art.sub_category) }}">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+            <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
           </div>
-          {% else %}
-          <div class="shelf-card-img shelf-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
-          {% endif %}
           <h3 class="shelf-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</h3>
-          <div class="shelf-card-meta">
-            <span class="cat-dot" data-cat="{{ nav_slug_for(art.sub_category) }}"></span>
-            <span class="shelf-card-cat">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-            <span class="shelf-card-date">{{ format_date_day(art.pub_date) }}</span>
-            <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
-          </div>
         </a>
         {% endfor %}
       </div>
