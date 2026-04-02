@@ -1698,7 +1698,7 @@ async def article_page(request: Request, category: str, slug: str):
     except Exception:
         popular = []
 
-    # ── More from category ──
+    # ── More from category (with fallback to latest) ──
     try:
         _cat_data = db.get_latest_by_category(category, limit=7)
         more_from_category = rewrite_articles_images(
@@ -1706,6 +1706,25 @@ async def article_page(request: Request, category: str, slug: str):
         )
     except Exception:
         more_from_category = []
+    if not more_from_category:
+        try:
+            more_from_category = rewrite_articles_images(
+                [a for a in db.get_latest_articles(limit=7) if a.get("id") != article["id"]][:6]
+            )
+        except Exception:
+            pass
+
+    # ── Author → person lookup for JSON-LD ──
+    _author_person = None
+    try:
+        if article.get("author"):
+            _author_name = article["author"].strip()
+            for p in (article_persons or []):
+                if p.get("short_name", "").strip() == _author_name or _author_name in p.get("name", ""):
+                    _author_person = p
+                    break
+    except Exception:
+        pass
 
     # Load NLP data if available
     nlp_data = None
@@ -1738,6 +1757,7 @@ async def article_page(request: Request, category: str, slug: str):
         "popular": popular,
         "more_from_category": more_from_category,
         "nlp": nlp_data,
+        "_author_person": _author_person,
     })
 
 
