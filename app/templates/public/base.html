@@ -11,6 +11,7 @@
   <title>{% block title %}{% if lang|default('ru') == 'kz' %}Total.kz – Қазақстан жаңалықтары{% else %}Total.kz – Новости Казахстана{% endif %}{% endblock %}</title>
 
   {% block meta %}
+  <meta name="revised" content="{{ current_timestamp() if current_timestamp is defined else '' }}">
   <meta name="description" content="{% block description %}{{ t('site_description') if t is defined else 'Total.kz – ведущий новостной портал Казахстана. Политика, экономика, общество, спорт и технологии.' }}{% endblock %}">
   <link rel="canonical" href="{{ site_domain }}{% block canonical %}{{ request.url.path }}{% endblock %}">
   {% block hreflang %}
@@ -22,6 +23,9 @@
   <link rel="alternate" hreflang="kk" href="{{ site_domain }}{{ _kz_path }}">
   <link rel="alternate" hreflang="x-default" href="{{ site_domain }}{{ _ru_path }}">
   {% endblock %}
+  <link rel="author" href="/page/contacts">
+  <meta name="geo.region" content="KZ">
+  <meta name="geo.placename" content="Almaty, Kazakhstan">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:title" content="{% block og_title %}{{ t('site_tagline') if t is defined else 'Total.kz – Новости Казахстана' }}{% endblock %}">
   <meta property="og:description" content="{% block og_description %}{{ t('site_description_og') if t is defined else 'Ведущий новостной портал Казахстана' }}{% endblock %}">
@@ -58,7 +62,7 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "NewsMediaOrganization",
     "name": "Total.kz",
     "alternateName": "ТÓТАЛ",
     "url": "{{ site_domain }}",
@@ -419,6 +423,8 @@
           <span>{{ t('footer.address') if t is defined else 'г. Алматы, пр. Жибек жолы, 115/46, оф. 306' }}</span>
           <span class="footer-legal-sep">·</span>
           <a href="tel:+77009787854">+7 700 978-78-54</a>
+          <span class="footer-legal-sep">·</span>
+          <a href="mailto:info@total.kz">info@total.kz</a>
         </div>
         <div class="footer-social">
           <a href="https://t.me/total_kz" target="_blank" rel="noopener" aria-label="Telegram" class="footer-social-link">

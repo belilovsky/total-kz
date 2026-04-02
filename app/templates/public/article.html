@@ -15,6 +15,7 @@
 {{ super() }}
 <meta property="article:published_time" content="{{ article.pub_date }}">
 <meta property="article:modified_time" content="{{ article.updated_at or article.pub_date }}">
+<meta http-equiv="last-modified" content="{{ article.updated_at or article.pub_date }}">
 {% if article.author %}<meta property="article:author" content="{{ article.author }}">{% endif %}
 <meta property="article:section" content="{{ category_name }}">
 {% set _meta_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
@@ -136,6 +137,8 @@
 {% endblock %}
 
 {% block content %}
+{% set _author_person_content = None %}
+{% if article.author and article_persons %}{% for p in article_persons %}{% if p.short_name and article.author and p.short_name in article.author %}{% set _author_person_content = p %}{% endif %}{% endfor %}{% endif %}
 {% if is_preview %}
 <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#d83236;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-size:15px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,.2)">
     ПРЕВЬЮ — не опубликовано
@@ -184,6 +187,8 @@
       <a href="{{ lang_prefix|default('') }}/">{{ t('breadcrumb.home') if t is defined else 'Главная' }}</a>
       <span class="sep">›</span>
       <a href="{{ lang_prefix|default('') }}/news/{{ nav_section }}">{{ nav_section_name }}</a>
+      <span class="sep">›</span>
+      <span>{{ article.title | truncate(70, True) }}</span>
     </div>
   </nav>
 
@@ -205,7 +210,11 @@
           <time class="header-date article-meta-date" datetime="{{ article.pub_date }}">{{ format_date_full(article.pub_date) }}</time>
           {% if article.author %}
           <span class="sep">·</span>
+          {% if _author_person_content %}
+          <a href="{{ lang_prefix|default('') }}/person/{{ _author_person_content.slug }}" class="header-author" rel="author">{{ article.author }}</a>
+          {% else %}
           <span class="header-author">{{ article.author }}</span>
+          {% endif %}
           {% endif %}
           <span class="sep">·</span>
           <span class="reading-time" style="font-size:var(--text-xs);color:var(--text-muted)">{{ reading_time }} {{ t('article.min') if t is defined else 'мин' }}</span>
@@ -257,6 +266,10 @@
           {% endfor %}
         {% endif %}
       </div>
+
+      {% if article.source_url is defined and article.source_url %}
+      <p class="article-source">{{ t('article.source') if t is defined else 'Источник' }}: <a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.source_name if article.source_name is defined and article.source_name else article.source_url }}</a></p>
+      {% endif %}
 
       {# NLP topics shown inline — dedup happens in combined tags section below #}
 
@@ -621,6 +634,33 @@
   </section>
   {% endif %}
 
+  {# ── More from category ── #}
+  {% if more_from_category %}
+  <section class="related-section">
+    <h2 class="related-heading">{{ t('article.more_from_cat') if t is defined else 'Больше из категории' }} «{{ category_name }}»</h2>
+    <div class="related-grid">
+      {% for art in more_from_category %}
+      <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="related-item">
+        {% if art.main_image or art.thumbnail %}
+        <div class="related-thumb">
+          <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
+               onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
+        </div>
+        {% else %}
+        <div class="related-thumb related-thumb--ph" data-cat="{{ nav_slug_for(art.sub_category) }}">
+          <span class="ph-label">{{ cat_label(art.sub_category) }}</span>
+        </div>
+        {% endif %}
+        <div class="related-body">
+          <span class="related-title">{{ art.title }}</span>
+          <div class="related-meta">{{ format_date_short(art.pub_date) }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {# ── Print-only footer (hidden on screen) ── #}
   <div class="print-footer" style="display:none">
     Источник: <a href="{{ site_domain }}/news/{{ category }}/{{ slug }}">total.kz/news/{{ category }}/{{ slug }}</a>
@@ -752,6 +792,19 @@ function sharePDF() {
   });
 
   // Mobile share bar removed — replaced by inline .share-buttons-inline
+
+  // ── SEO: ensure external links have rel="noopener noreferrer" ──
+  var articleBody = document.getElementById('article-body');
+  if (articleBody) {
+    articleBody.querySelectorAll('a[href^="http"]').forEach(function(a) {
+      if (a.hostname !== location.hostname) {
+        var rel = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
+        if (rel.indexOf('noopener') === -1) rel.push('noopener');
+        if (rel.indexOf('noreferrer') === -1) rel.push('noreferrer');
+        a.setAttribute('rel', rel.join(' '));
+      }
+    });
+  }
 })();
 
 // Track page view

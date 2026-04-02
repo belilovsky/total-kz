@@ -703,6 +703,7 @@ def imgproxy_url(source_url: str, width: int = 800) -> str:
 
 templates.env.globals["dedup_entities"] = dedup_entities
 templates.env.globals["current_year"] = lambda: datetime.now().year
+templates.env.globals["current_timestamp"] = lambda: datetime.now().strftime("%Y-%m-%dT%H:%M:%S+06:00")
 templates.env.globals["imgproxy_url"] = imgproxy_url
 
 # ── Localization globals ──
@@ -1697,6 +1698,15 @@ async def article_page(request: Request, category: str, slug: str):
     except Exception:
         popular = []
 
+    # ── More from category ──
+    try:
+        _cat_data = db.get_latest_by_category(category, limit=7)
+        more_from_category = rewrite_articles_images(
+            [a for a in _cat_data["articles"] if a.get("id") != article["id"]][:6]
+        )
+    except Exception:
+        more_from_category = []
+
     # Load NLP data if available
     nlp_data = None
     try:
@@ -1726,6 +1736,7 @@ async def article_page(request: Request, category: str, slug: str):
         "ticker_articles": ticker_articles,
         "article_persons": article_persons,
         "popular": popular,
+        "more_from_category": more_from_category,
         "nlp": nlp_data,
     })
 
@@ -2195,7 +2206,9 @@ async def sitemap_articles(page: int):
         parts = old_url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
         if len(parts) >= 2:
             new_path = f"/news/{parts[0]}/{parts[1]}"
-            lastmod = u["pub_date"][:10] if u.get("pub_date") else ""
+            _pd = u.get("pub_date", "") or ""
+            _ud = u.get("updated_at", "") or ""
+            lastmod = max(_pd[:10], _ud[:10]) if _pd or _ud else ""
             xml_parts.append(f"<url><loc>{SITE_DOMAIN}{new_path}</loc>")
             if lastmod:
                 xml_parts.append(f"<lastmod>{lastmod}</lastmod>")
@@ -2315,7 +2328,9 @@ async def kz_sitemap():
             parts = old_url.replace("https://total.kz/ru/news/", "").strip("/").split("/")
             if len(parts) >= 2:
                 new_path = f"/kz/news/{parts[0]}/{parts[1]}"
-                lastmod = u["pub_date"][:10] if u.get("pub_date") else ""
+                _pd = u.get("pub_date", "") or ""
+                _ud = u.get("updated_at", "") or ""
+                lastmod = max(_pd[:10], _ud[:10]) if _pd or _ud else ""
                 xml_parts.append(f"<url><loc>{SITE_DOMAIN}{new_path}</loc>")
                 if lastmod:
                     xml_parts.append(f"<lastmod>{lastmod}</lastmod>")
@@ -4147,6 +4162,15 @@ async def kz_article_page(request: Request, category: str, slug: str):
     except Exception:
         popular = []
 
+    # ── More from category ──
+    try:
+        _cat_data = db.get_latest_by_category(category, limit=7)
+        more_from_category = rewrite_articles_images(
+            [a for a in _cat_data["articles"] if a.get("id") != article["id"]][:6]
+        )
+    except Exception:
+        more_from_category = []
+
     # Load NLP data if available
     nlp_data = None
     try:
@@ -4176,6 +4200,7 @@ async def kz_article_page(request: Request, category: str, slug: str):
         "ticker_articles": ticker_articles,
         "article_persons": article_persons,
         "popular": popular,
+        "more_from_category": more_from_category,
         "nlp": nlp_data,
         **_build_lang_ctx("kz"),
     })
