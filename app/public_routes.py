@@ -4763,5 +4763,29 @@ async def og_card_image(article_id: int):
     )
 
 
+# ══════════════════════════════════════════════
+#  Legacy /ru/ → / redirect (old total.kz URL format)
+# ══════════════════════════════════════════════
+@router.get("/ru/{path:path}", response_class=RedirectResponse)
+async def redirect_ru_legacy(path: str):
+    """301 redirect from old /ru/... URLs to new /... format."""
+    return RedirectResponse(url=f"/{path}", status_code=301)
+
+
+# ══════════════════════════════════════════════
+#  English version /en/
+# ══════════════════════════════════════════════
+@router.get("/en", response_class=HTMLResponse)
+@router.get("/en/", response_class=HTMLResponse)
+async def en_homepage(request: Request):
+    """English homepage — redirect to main with lang param for now."""
+    return RedirectResponse(url="/?lang=en", status_code=302)
+
+@router.get("/en/{path:path}", response_class=RedirectResponse)
+async def redirect_en(path: str):
+    """English URLs — redirect to main site (no English content yet)."""
+    return RedirectResponse(url=f"/{path}", status_code=302)
+
+
 # Register the Kazakh router
 router.include_router(kz_router)
