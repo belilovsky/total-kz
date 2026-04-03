@@ -1,0 +1,29 @@
+{% extends "public/base.html" %}
+{% block title %}Total.kz — Kazakhstan News in English{% endblock %}
+{% block meta %}{{ super() }}
+<meta name="description" content="Total.kz — Kazakhstan's leading news aggregator. Breaking news, politics, economy, society.">
+<meta property="og:locale" content="en_US">
+{% endblock %}
+{% block content %}
+<div style="max-width:800px; margin:60px auto; padding:0 var(--space-4); text-align:center;">
+  <h1 style="font-size:2.5rem; font-weight:800; margin-bottom:var(--space-4); color:var(--text);">Total.kz</h1>
+  <p style="font-size:1.25rem; color:var(--text-secondary); margin-bottom:var(--space-6);">Kazakhstan's leading news aggregator since 2011.<br>English version coming soon.</p>
+  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+    <a href="/" style="padding:12px 32px; background:var(--accent); color:#fff; border-radius:8px; font-weight:600; text-decoration:none;">Русская версия</a>
+    <a href="/kz/" style="padding:12px 32px; border:2px solid var(--accent); color:var(--accent); border-radius:8px; font-weight:600; text-decoration:none;">Қазақша</a>
+  </div>
+  <div style="margin-top:60px; padding:32px; background:var(--surface-2); border-radius:12px; text-align:left;">
+    <h2 style="font-size:1.25rem; margin-bottom:16px;">About Total.kz</h2>
+    <p style="line-height:1.7; color:var(--text-secondary);">Total.kz is a Kazakh news portal aggregating and enriching news from over 15 sources. We cover politics, economy, society, law, science, world affairs, and sports. Our AI-powered pipeline processes 200+ articles daily with NLP enrichment, entity extraction, and sentiment analysis.</p>
+    <p style="line-height:1.7; color:var(--text-secondary); margin-top:12px;">📍 Almaty, Kazakhstan · 📰 186,000+ articles · 👤 145,000+ persons tracked</p>
+  </div>
+  <div style="margin-top:40px;">
+    <h3 style="font-size:1rem; color:var(--text-muted); margin-bottom:16px;">Subscribe to our feeds</h3>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/rss" style="color:var(--accent);">RSS</a>
+      <a href="/feed.json" style="color:var(--accent);">JSON Feed</a>
+      <a href="/sitemap.xml" style="color:var(--accent);">Sitemap</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

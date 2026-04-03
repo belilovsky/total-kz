@@ -4778,8 +4778,12 @@ async def redirect_ru_legacy(path: str):
 @router.get("/en", response_class=HTMLResponse)
 @router.get("/en/", response_class=HTMLResponse)
 async def en_homepage(request: Request):
-    """English homepage — redirect to main with lang param for now."""
-    return RedirectResponse(url="/?lang=en", status_code=302)
+    """English landing page."""
+    return templates.TemplateResponse("public/en_landing.html", {
+        "request": request,
+        "nav_sections": NAV_SECTIONS,
+        "nav_categories": NAV_CATEGORIES,
+    })
 
 @router.get("/en/{path:path}", response_class=RedirectResponse)
 async def redirect_en(path: str):
