@@ -1121,11 +1121,12 @@ async def admin_content_analytics_page(request: Request):
         (d7,),
     )
     # Articles per day (last 30 days)
-    articles_per_day = db.execute_raw_many(
-        "SELECT DATE(pub_date) as day, COUNT(*) as cnt FROM articles "
-        "WHERE pub_date >= %s AND status = 'published' GROUP BY DATE(pub_date) ORDER BY day",
+    _apd_raw = db.execute_raw_many(
+        "SELECT LEFT(pub_date, 10) as day, COUNT(*) as cnt FROM articles "
+        "WHERE pub_date >= %s AND pub_date != '' AND status = 'published' GROUP BY LEFT(pub_date, 10) ORDER BY day",
         (d30,),
     )
+    articles_per_day = [{"day": str(r.get("day", "")), "cnt": r.get("cnt", 0)} for r in (_apd_raw or [])]
     # Category distribution (last 30 days)
     category_dist = db.execute_raw_many(
         "SELECT sub_category, COUNT(*) as cnt FROM articles "

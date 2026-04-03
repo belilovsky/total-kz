@@ -1980,6 +1980,7 @@ STATIC_PAGES = {
     "reklama": {"title": "Реклама", "template": "public/page_reklama.html"},
     "pravila": {"title": "Правила использования материалов", "template": "public/page_pravila.html"},
     "contacts": {"title": "Контакты", "template": "public/page_contacts.html"},
+    "about": {"title": "О редакции", "template": "public/page_about.html"},
 }
 
 

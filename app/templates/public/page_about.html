@@ -1,0 +1,62 @@
+{% extends "public/base.html" %}
+{% block title %}О редакции — Total.kz{% endblock %}
+{% block meta %}{{ super() }}
+<meta name="description" content="Total.kz — казахстанское информационное агентство. О редакции, миссия, принципы, команда.">
+<link rel="author" href="/page/about">
+{% endblock %}
+{% block content %}
+<div class="static-page" style="max-width:800px; margin:0 auto; padding:var(--space-6) var(--space-4);">
+
+  <nav class="breadcrumbs" style="margin-bottom:var(--space-4);">
+    <a href="/">Главная</a> › <span>О редакции</span>
+  </nav>
+
+  <h1 style="font-size:2rem; font-weight:800; margin-bottom:var(--space-6);">О редакции</h1>
+
+  <section style="margin-bottom:var(--space-8);">
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-3);">О Total.kz</h2>
+    <p style="line-height:1.7; color:var(--text-secondary); margin-bottom:var(--space-3);">
+      <strong>Total.kz</strong> — казахстанское информационное агентство, работающее с 2011 года. Мы агрегируем, обрабатываем и публикуем новости из более чем 15 источников, покрывая ключевые темы Казахстана: политику, экономику, общество, право, науку, мировые события и спорт.
+    </p>
+    <p style="line-height:1.7; color:var(--text-secondary);">
+      В нашей базе более 186 000 статей, 145 000 персон и 112 000 организаций. Каждая статья проходит автоматическое NLP-обогащение: ключевые факты, тональность, извлечение сущностей.
+    </p>
+  </section>
+
+  <section style="margin-bottom:var(--space-8);">
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-3);">Редакционные принципы</h2>
+    <ul style="line-height:1.8; color:var(--text-secondary); padding-left:var(--space-5);">
+      <li><strong>Объективность</strong> — мы представляем факты, а не мнения</li>
+      <li><strong>Оперативность</strong> — мониторинг источников в режиме реального времени</li>
+      <li><strong>Прозрачность</strong> — каждая публикация содержит ссылку на первоисточник</li>
+      <li><strong>Мультиязычность</strong> — контент на русском и казахском языках</li>
+      <li><strong>Технологичность</strong> — AI-обогащение, NER, sentiment-анализ</li>
+    </ul>
+  </section>
+
+  <section style="margin-bottom:var(--space-8);">
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-3);">Свидетельство о регистрации</h2>
+    <p style="line-height:1.7; color:var(--text-secondary);">
+      Свидетельство о постановке на учёт СМИ №16942-ИА<br>
+      Выдано Министерством информации и общественного развития Республики Казахстан
+    </p>
+  </section>
+
+  <section style="margin-bottom:var(--space-8);">
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-3);">Контакты редакции</h2>
+    <table style="line-height:1.8; color:var(--text-secondary);">
+      <tr><td style="padding-right:var(--space-4); font-weight:600;">Адрес</td><td>г. Алматы, пр. Жибек жолы, 115/46, оф. 306</td></tr>
+      <tr><td style="padding-right:var(--space-4); font-weight:600;">Телефон</td><td><a href="tel:+77009787854">+7 700 978-78-54</a></td></tr>
+      <tr><td style="padding-right:var(--space-4); font-weight:600;">Email</td><td><a href="mailto:info@total.kz">info@total.kz</a></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-3);">Учредитель</h2>
+    <p style="line-height:1.7; color:var(--text-secondary);">
+      © 2011–2026 Total Media Qazaqstan
+    </p>
+  </section>
+
+</div>
+{% endblock %}
