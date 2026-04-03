@@ -43,7 +43,8 @@
       "url": {{ _img_full | tojson }},
       "width": 1200,
       "height": 675,
-      "caption": {{ article.title | tojson }}
+      "caption": {{ article.title | tojson }}{% if article.image_credit %},
+      "creditText": {{ article.image_credit | tojson }}{% endif %}
     },
     {
       "@type": "ImageObject",
@@ -87,6 +88,36 @@
   {% if article.body_text %}"wordCount": {{ article.body_text.split()|length }},{% endif %}
   {% set _ld_tags = (article.enrichment.keywords if article.enrichment and article.enrichment.keywords else article.tags) or [] %}
   {% if _ld_tags %}"keywords": {{ _ld_tags | tojson }},{% endif %}
+  {% if _img_full %}"thumbnailUrl": "{{ site_domain }}/imgproxy/insecure/resize:fill:400:225/gravity:sm/plain/{{ _img_full }}@webp",{% endif %}
+  {% if _img_full %}"associatedMedia": {
+    "@type": "ImageObject",
+    "contentUrl": {{ _img_full | tojson }},
+    "caption": {{ article.title | tojson }}{% if article.image_credit %},
+    "creditText": {{ article.image_credit | tojson }}{% endif %},
+    "width": 1200,
+    "height": 675
+  },{% endif %}
+  {% if article.source_url is defined and article.source_url %}"isBasedOn": {{ article.source_url | tojson }},
+  "citation": [{
+    "@type": "CreativeWork",
+    "url": {{ article.source_url | tojson }},
+    "name": {{ (article.source_name if article.source_name is defined and article.source_name else article.source_url) | tojson }}
+  }],{% endif %}
+  {% if article_persons or (article.entities is defined and article.entities) %}"about": [
+    {% set _about_items = [] %}
+    {% if article_persons %}{% for p in article_persons[:5] %}{% if _about_items.append(1) %}{% endif %}{% if not loop.first %},{% endif %}
+    {"@type": "Person", "name": {{ p.short_name | tojson }}, "url": "{{ site_domain }}/person/{{ p.slug }}"}{% endfor %}{% endif %}
+    {% set _about_orgs = article.entities|selectattr("entity_type", "equalto", "org")|list if article.entities is defined and article.entities else [] %}
+    {% for org in _about_orgs[:3] %}{% if _about_items or not loop.first %},{% endif %}{% if _about_items.append(1) %}{% endif %}
+    {"@type": "Organization", "name": {{ (org.short_name or org.name) | tojson }}}{% endfor %}
+  ],
+  "mentions": [
+    {% set _first_mention = [true] %}
+    {% if article_persons %}{% for p in article_persons %}{% if not _first_mention[0] %},{% endif %}{% if _first_mention.pop() %}{% endif %}{% if _first_mention.append(false) or true %}{% endif %}
+    {"@type": "Person", "name": {{ p.short_name | tojson }}, "url": "{{ site_domain }}/person/{{ p.slug }}"}{% endfor %}{% endif %}
+    {% for org in _about_orgs %}{% if not _first_mention[0] %},{% endif %}{% if _first_mention.pop() %}{% endif %}{% if _first_mention.append(false) or true %}{% endif %}
+    {"@type": "Organization", "name": {{ (org.short_name or org.name) | tojson }}}{% endfor %}
+  ],{% endif %}
   "speakable": {
     "@type": "SpeakableSpecification",
     "cssSelector": [".article-title", ".article-lead", ".article-body"]
@@ -108,7 +139,7 @@
   ]
 }
 </script>
-{% if article.enrichment and article.enrichment.summary and article.enrichment.quote %}
+{% if article.enrichment and article.enrichment.summary %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -121,7 +152,7 @@
         "@type": "Answer",
         "text": {{ article.enrichment.summary | tojson }}
       }
-    },
+    }{% if article.enrichment.quote %},
     {
       "@type": "Question",
       "name": "Что говорят эксперты?",
@@ -129,8 +160,28 @@
         "@type": "Answer",
         "text": {{ (article.enrichment.quote ~ ((' — ' ~ article.enrichment.quote_author) if article.enrichment.quote_author else '')) | tojson }}
       }
-    }
+    }{% endif %}{% if nlp and nlp.key_facts %}{% for fact in nlp.key_facts[:5] %},
+    {
+      "@type": "Question",
+      "name": {{ fact | tojson }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ fact | tojson }}
+      }
+    }{% endfor %}{% endif %}
   ]
+}
+</script>
+{% endif %}
+{% if article.enrichment and article.enrichment.quote %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Quotation",
+  "text": {{ article.enrichment.quote | tojson }},
+  {% if article.enrichment.quote_author %}"creator": {"@type": "Person", "name": {{ article.enrichment.quote_author | tojson }}},{% endif %}
+  {% if article.source_url is defined and article.source_url %}"isBasedOn": {{ article.source_url | tojson }},{% endif %}
+  "inLanguage": "{{ lang|default('ru') }}"
 }
 </script>
 {% endif %}
@@ -262,18 +313,21 @@
           {{ article.body_html | safe }}
         {% elif article.body_text %}
           {% for para in article.body_text.split('\n\n') %}
-            {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+            {% if para.strip() %}<p id="section-{{ loop.index }}">{{ para.strip() }}</p>{% endif %}
           {% endfor %}
         {% endif %}
       </div>
 
+      {% if article.enrichment and article.enrichment.quote %}
+      <blockquote class="article-pullquote"{% if article.source_url is defined and article.source_url %} cite="{{ article.source_url }}"{% endif %}>
+        <p>{{ article.enrichment.quote }}</p>
+        {% if article.enrichment.quote_author %}<footer>— {{ article.enrichment.quote_author }}</footer>{% endif %}
+      </blockquote>
+      {% endif %}
+
       {% if article.source_url is defined and article.source_url %}
       <p class="article-source">{{ t('article.source') if t is defined else 'Источник' }}: <a href="{{ article.source_url }}" target="_blank" rel="noopener noreferrer">{{ article.source_name if article.source_name is defined and article.source_name else article.source_url }}</a></p>
       {% endif %}
-
-      {# NLP topics shown inline — dedup happens in combined tags section below #}
-
-      {# Pull quote hidden — data kept for social cards / sharing #}
 
       {# ── Mobile engagement bar: reactions + share in one card (≤ 1099px) ── #}
       <div class="engage-bar" id="mobileReactions" data-article-id="{{ article.id }}">
@@ -549,19 +603,19 @@
       {% for art in timeline.next|reverse %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
-        <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <time class="timeline-date" datetime="{{ art.pub_date }}">{{ format_date_day(art.pub_date) }}</time>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title | striptags | truncate(120) }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
       <div class="timeline-item is-current">
         <span class="timeline-dot"></span>
-        <span class="timeline-date">{{ format_date_day(article.pub_date) }}</span>
+        <time class="timeline-date" datetime="{{ article.pub_date }}">{{ format_date_day(article.pub_date) }}</time>
         <span class="timeline-title">{{ article.title | striptags | truncate(120) }}</span>
       </div>
       {% for art in timeline.prev %}
       <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="timeline-item">
         <span class="timeline-dot"></span>
-        <span class="timeline-date">{{ format_date_day(art.pub_date) }}</span>
+        <time class="timeline-date" datetime="{{ art.pub_date }}">{{ format_date_day(art.pub_date) }}</time>
         <span class="timeline-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title | striptags | truncate(120) }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
       </a>
       {% endfor %}
@@ -626,7 +680,7 @@
         {% endif %}
         <div class="related-body">
           <span class="related-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</span>
-          <div class="related-meta">{{ format_date_short(art.pub_date) }}</div>
+          <div class="related-meta"><time datetime="{{ art.pub_date }}">{{ format_date_short(art.pub_date) }}</time></div>
         </div>
       </a>
       {% endfor %}
@@ -653,7 +707,7 @@
         {% endif %}
         <div class="related-body">
           <span class="related-title">{{ art.title }}</span>
-          <div class="related-meta">{{ format_date_short(art.pub_date) }}</div>
+          <div class="related-meta"><time datetime="{{ art.pub_date }}">{{ format_date_short(art.pub_date) }}</time></div>
         </div>
       </a>
       {% endfor %}

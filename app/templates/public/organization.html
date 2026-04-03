@@ -5,11 +5,14 @@
 {% block canonical %}{{ lang_prefix|default('') }}/organization/{{ org['name'] | urlencode }}{% endblock %}
 
 {% block jsonld %}
+{{ super() }}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": {{ (org['short_name'] or org['name']) | tojson }},
+  {% if org['short_name'] and org['short_name'] != org['name'] %}"alternateName": {{ org['name'] | tojson }},{% endif %}
+  {% if org.get('sameAs') %}"sameAs": {{ org['sameAs'] | tojson }},{% endif %}
   "url": "{{ site_domain }}{{ lang_prefix|default('') }}/organization/{{ org['name'] | urlencode }}"
 }
 </script>

@@ -44,6 +44,17 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "{% block webpage_name %}Total.kz{% endblock %}",
+    "url": "{{ site_domain }}{{ request.url.path }}",
+    "isPartOf": {"@type": "WebSite", "name": "Total.kz", "url": "{{ site_domain }}"},
+    "inLanguage": "{{ 'kk' if lang|default('ru') == 'kz' else lang|default('ru') }}",
+    "dateModified": "{{ current_timestamp() if current_timestamp is defined else '' }}"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Total.kz",
     "url": "{{ site_domain }}",
@@ -72,6 +83,7 @@
       "https://www.facebook.com/total.kz",
       "https://www.instagram.com/total.kz"
     ],
+    "knowsAbout": ["Казахстан", "новости", "политика", "экономика", "общество", "спорт", "технологии"],
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "+7-700-978-78-54",

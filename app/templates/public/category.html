@@ -30,7 +30,8 @@
   "name": "{{ category_name }} — Total.kz",
   "description": "Последние новости раздела {{ category_name }}",
   "url": "{{ site_domain }}/news/{{ category }}",
-  "isPartOf": {"@type": "WebSite", "name": "Total.kz", "url": "{{ site_domain }}"}
+  "isPartOf": {"@type": "WebSite", "name": "Total.kz", "url": "{{ site_domain }}"},
+  "dateModified": "{{ current_timestamp() if current_timestamp is defined else '' }}"
 }
 </script>
 {% endblock %}
