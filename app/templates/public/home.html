@@ -179,37 +179,21 @@
         <h2 class="section-title">{{ t('homepage.latest') if t is defined else 'Последние новости' }}</h2>
         <a href="{{ lang_prefix|default('') }}/news/politika" class="section-more">{{ t('homepage.all_news') if t is defined else 'Все новости →' }}</a>
       </div>
-      <div class="feed-cards-grid">
-        {% for art in latest[:10] %}
-        <article class="feed-card">
-          {% if art.main_image or art.thumbnail %}
-          <div class="feed-card-img" style="position:relative">
-            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
+      <div class="shelf-row">
+        {% for art in latest[:8] %}
+        <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="shelf-card">
+          <div class="shelf-card-img">
+            {% if art.main_image or art.thumbnail %}
             <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="lazy"
                  onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-          </div>
-          {% else %}
-          <div class="feed-card-img feed-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}" style="position:relative">
-            {% if get_nlp_importance(art.id) >= 4 %}<span class="nlp-importance-badge">&#x1F525; {% if lang is defined and lang == 'kz' %}МАҢЫЗДЫ{% else %}ВАЖНО{% endif %}</span>{% endif %}
+            {% else %}
             <img src="/static/img/placeholder.svg" alt="" loading="lazy">
-          </div>
-          {% endif %}
-          <div class="feed-card-body">
-            <div class="feed-item-meta">
-              <span class="cat-badge" data-cat="{{ nav_slug_for(art.sub_category) }}">
-                <span class="cat-dot"></span>
-                <span class="cat-name">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
-              </span>
-              <span class="sep">·</span>
-              <span>{{ format_date_short(art.pub_date) }}</span>
-              <span class="card-views">👁 {{ format_views(get_views(art)) }}</span>
-            </div>
-            <h3 class="feed-card-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}"><a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a></h3>
-            {% if art.excerpt %}
-              <p class="feed-card-excerpt">{{ art.excerpt[:120] }}{% if art.excerpt|length > 120 %}…{% endif %}</p>
             {% endif %}
+            <span class="shelf-card-overlay-cat" data-cat="{{ nav_slug_for(art.sub_category) }}">{{ cat_label(nav_slug_for(art.sub_category)) }}</span>
+            <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
           </div>
-        </article>
+          <h3 class="shelf-card-title">{{ art.title }}</h3>
+        </a>
         {% endfor %}
       </div>
       <div style="text-align:center;padding:var(--space-6) 0">

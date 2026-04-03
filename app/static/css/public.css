@@ -3629,8 +3629,10 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 /* ── Card grid ── */
 .cat2-grid {
-  display:grid; grid-template-columns:1fr; gap:16px; align-items:stretch;
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--space-4); align-items:start;
 }
+@media (min-width:640px) { .cat2-grid { grid-template-columns:repeat(3, 1fr); } }
+@media (min-width:1100px) { .cat2-grid { grid-template-columns:repeat(4, 1fr); } }
 
 /* ── Card ── */
 .cat2-card {

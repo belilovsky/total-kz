@@ -905,15 +905,25 @@ def _strip_duplicate_lead(body_html: str, excerpt: str) -> str:
     """Strip the first paragraph from body_html if it duplicates the excerpt."""
     if not body_html or not excerpt:
         return body_html or ""
-    excerpt_clean = excerpt.strip()[:60]
-    # Check first <p> or <b> or <strong> block
+    excerpt_clean = re.sub(r'\s+', ' ', excerpt.strip())[:80]
+    if not excerpt_clean:
+        return body_html
+    # Match first block element: <p>, <p><strong>, <p><b>, <strong>, <b>, <h2>, etc.
     match = re.match(
-        r'^(\s*<(?:p|b|strong)[^>]*>)(.*?)(</(?:p|b|strong)>)',
+        r'^(\s*<(?:p|div|h[2-6])[^>]*>(?:\s*<(?:strong|b|em|a)[^>]*>)?)(.*?)(?:</(?:strong|b|em|a)>\s*)?</(?:p|div|h[2-6])>',
         body_html, re.DOTALL | re.IGNORECASE,
     )
+    if not match:
+        # Try bare <strong> or <b> not wrapped in <p>
+        match = re.match(
+            r'^(\s*<(?:strong|b)[^>]*>)(.*?)(</(?:strong|b)>)',
+            body_html, re.DOTALL | re.IGNORECASE,
+        )
     if match:
         first_text = re.sub(r'<[^>]+>', '', match.group(2)).strip()
-        if first_text[:50] == excerpt_clean[:50]:
+        first_text = re.sub(r'\s+', ' ', first_text)
+        # Compare normalized text (first 60 chars)
+        if first_text[:60] == excerpt_clean[:60]:
             body_html = body_html[match.end():].lstrip()
     return body_html
 
