@@ -78,25 +78,22 @@
         <span class="cat-top-lead-meta">{{ format_date_short(main.pub_date) }}</span>
       </div>
     </a>
-    {% for art in articles[1:4] %}
-    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="cat-top-card">
-      {% if art.main_image or art.thumbnail %}
-      <div class="cat-top-card-img">
+    <div class="shelf-row" style="margin-top:var(--space-4)">
+    {% for art in articles[1:5] %}
+    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="shelf-card">
+      <div class="shelf-card-img">
+        {% if art.main_image or art.thumbnail %}
         <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager"
              onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-      </div>
-      {% else %}
-      <div class="cat-top-card-img cat-top-card-img--ph" data-cat="{{ nav_slug_for(art.sub_category) }}"><img src="/static/img/placeholder.svg" alt="" loading="lazy"></div>
-      {% endif %}
-      <div class="cat-top-card-body">
-        <h3 class="cat-top-card-title">{{ art.title }}</h3>
-        {% if art.excerpt %}
-          <p class="cat2-top-excerpt">{{ art.excerpt[:100] }}{% if art.excerpt|length > 100 %}…{% endif %}</p>
+        {% else %}
+        <img src="/static/img/placeholder.svg" alt="" loading="lazy">
         {% endif %}
-        <span class="cat-top-card-meta">{{ format_date_day(art.pub_date) }}</span>
+        <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
       </div>
+      <h3 class="shelf-card-title">{{ art.title }}</h3>
     </a>
     {% endfor %}
+    </div>
   </div>
   {% endif %}
 
@@ -107,7 +104,7 @@
   {% if articles|length > 4 %}
   <div class="cat2-layout">
     <div class="cat2-grid">
-      {% for art in articles[4:] %}
+      {% for art in articles[5:] %}
         <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="shelf-card">
           <div class="shelf-card-img">
             {% if art.main_image or art.thumbnail %}
