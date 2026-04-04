@@ -4659,3 +4659,1086 @@ translate_articles_kz.py: error: unrecognized arguments: --workers 1
 [reindex] Starting full reindex of all articles...
 [reindex] Done in 61.0s
 2026-04-04 05:34:11 — Pipeline complete
+2026-04-04 06:34:11 — Pipeline start
+2026-04-04 06:34:11 — [1/7] Fetching new articles...
+[2026-04-04 06:34:11] Fetching RSS feed...
+[2026-04-04 06:34:12] RSS: 40 items
+[2026-04-04 06:34:14] New articles: 2 (already in DB: 38)
+[2026-04-04 06:34:14]   Downloading: 260 миллионов тенге за рекламу начислили незаконно: в Шымкен...
+[2026-04-04 06:34:14]     OK: 1782 chars
+[2026-04-04 06:34:15]   Downloading: Самокаты под запретом: в Алматы заблокировали 22 аккаунта по...
+[2026-04-04 06:34:15]     OK: 1472 chars
+[2026-04-04 06:34:16] Done: 2 new articles imported
+2026-04-04 06:34:16 — [1.5/8] Media pipeline (new images)...
+2026-04-04 06:34:16,757 [INFO] Ensuring media table columns...
+2026-04-04 06:34:16,812 [INFO] Collecting unique image URLs...
+2026-04-04 06:34:16,998 [INFO] Found 6 unique storage URLs in articles.main_image
+2026-04-04 06:34:18,656 [INFO] Total unique URLs including media table: 86874
+2026-04-04 06:34:18,938 [INFO] Already downloaded: 86869, pending: 5
+2026-04-04 06:34:18,939 [INFO]   From img_cache (no download): 1
+2026-04-04 06:34:18,940 [INFO]   Need download from total.kz: 4
+2026-04-04 06:34:18,973 [INFO] Processing 5 images (1 cached + rest remote) with 2 workers...
+2026-04-04 06:34:18,973 [INFO] Batch 1/1: processing 5 images...
+2026-04-04 06:34:19,391 [INFO] HTTP Request: GET https://total.kz/storage/d0/d0cef0fbe96842618e673879cadf06a7_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 06:34:19,689 [INFO] HTTP Request: GET https://total.kz/storage/1f/1f871da9122f8fb806fe76baa24616c0.jpg "HTTP/1.1 200 OK"
+2026-04-04 06:34:20,235 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-04 06:34:20,245 [INFO] HTTP Request: GET https://total.kz/storage/80/803ecf10ae5a819efb95293e25430bfb_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 06:34:20,372 [INFO]   Batch done: ok=1, failed=3, not_found=1
+2026-04-04 06:34:20,372 [INFO]   Running total: ok=1, failed=3, not_found=1
+2026-04-04 06:34:20,372 [INFO] Download complete: {'ok': 1, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-04 06:34:20,372 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-04 06:34:20,372 [INFO] Rewriting article image URLs to local paths...
+2026-04-04 06:34:20,801 [INFO] URL mapping has 86870 entries
+2026-04-04 06:34:21,162 [INFO] Rewrote 2 article image URLs to local paths
+2026-04-04 06:34:22,342 [INFO] ==================================================
+2026-04-04 06:34:22,342 [INFO] MEDIA PIPELINE STATS
+2026-04-04 06:34:22,342 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86870}
+2026-04-04 06:34:22,342 [INFO]   Optimized: 86870
+2026-04-04 06:34:22,342 [INFO]   Total local size: 4184.3 MB
+2026-04-04 06:34:22,342 [INFO]   Articles with local images: 160802
+2026-04-04 06:34:22,342 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-04 06:34:22,342 [INFO] ==================================================
+2026-04-04 06:34:22 — [2/8] Enriching articles (batch 200)...
+2026-04-04 06:34:23,118 INFO Found 31937 unenriched articles, will process 150 (model: gpt-4o-mini, workers: 10)
+2026-04-04 06:34:26,835 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:27,742 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:27,751 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:27,899 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:27,914 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:28,071 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:28,158 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:28,346 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:28,677 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:28,947 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:30,425 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,299 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,347 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,400 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,515 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,788 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:31,989 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:32,047 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:32,057 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:33,845 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:34,230 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:34,568 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:34,691 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:35,128 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:35,327 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:35,334 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:35,358 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:35,631 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:36,324 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:36,797 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:37,305 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:37,799 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:38,149 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:38,556 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:39,553 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:39,741 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:39,764 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:39,918 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:40,092 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:40,356 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:41,140 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:41,591 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:41,916 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:42,119 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,278 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,298 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,531 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,627 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,732 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:43,831 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:44,090 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:44,424 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:45,327 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:45,353 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:46,428 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:46,672 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,105 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,343 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,383 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,435 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,556 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:47,656 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:48,157 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:49,106 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:49,343 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:49,890 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:50,392 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:50,511 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:50,638 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:50,648 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:51,700 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:51,711 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:51,921 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:52,037 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:52,330 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:52,994 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:53,188 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:53,542 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:53,819 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:54,625 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,536 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,547 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,579 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,609 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,753 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:55,938 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:56,519 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:57,290 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:57,488 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:57,674 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:58,544 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:58,681 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:58,741 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:59,021 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:34:59,134 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:00,300 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:00,577 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:01,370 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:01,477 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:01,970 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:02,646 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:03,319 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:03,391 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:03,599 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:03,635 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:03,696 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:04,193 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:04,731 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:05,910 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,014 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,151 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,160 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,263 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,485 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,757 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:06,850 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:07,428 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:07,920 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:08,479 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:08,895 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:09,420 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:09,582 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:09,887 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:10,010 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:10,114 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:10,846 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:11,503 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:11,559 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:12,025 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:12,884 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:13,059 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:13,308 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:13,364 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:13,576 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:14,202 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:14,500 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:14,516 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:14,659 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:16,016 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:16,282 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:16,337 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:17,011 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:17,137 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:17,737 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:17,811 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:18,052 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:18,201 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:18,782 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:19,685 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:19,768 INFO Saved batch of 149 enrichments to PG.
+2026-04-04 06:35:19,769 INFO Chunk done: 149/150 total processed so far.
+2026-04-04 06:35:19,778 INFO ============================================================
+2026-04-04 06:35:19,778 INFO ENRICHMENT COMPLETE
+2026-04-04 06:35:19,778 INFO   Total processed: 149
+2026-04-04 06:35:19,778 INFO   Success:         149
+2026-04-04 06:35:19,778 INFO   Errors:          0
+2026-04-04 06:35:19,778 INFO   Skipped:         1
+2026-04-04 06:35:19,778 INFO   Time:            57.0s (2.6 articles/sec)
+2026-04-04 06:35:19,779 INFO   Est. cost:       $0.0291
+2026-04-04 06:35:19,779 INFO ============================================================
+2026-04-04 06:35:19 — [2.5/8] NLP extraction (batch 100)...
+2026-04-04 06:35:20,077 INFO NLP extraction starting (model=gpt-4o-mini, batch=100, delay=0.3s, dry_run=False)
+2026-04-04 06:35:20,213 INFO Found 100 articles to process
+2026-04-04 06:35:26,895 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:33,611 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:41,094 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:49,623 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:35:56,861 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:02,852 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:09,023 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:16,236 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:24,622 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:34,747 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:34,749 INFO Processed 10/100 articles (errors: 0)
+2026-04-04 06:36:44,316 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:52,813 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:36:59,830 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:07,347 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:17,471 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:26,717 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:37,358 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:44,221 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:51,719 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:58,056 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:37:58,060 INFO Processed 20/100 articles (errors: 0)
+2026-04-04 06:38:04,381 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:09,944 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:17,617 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:24,524 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:33,318 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:38,926 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:46,237 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:38:55,653 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:02,378 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:10,019 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:10,023 INFO Processed 30/100 articles (errors: 0)
+2026-04-04 06:39:20,036 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:26,653 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:34,628 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:44,762 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:39:51,669 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:02,343 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:08,279 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:15,952 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:24,153 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:29,283 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:29,287 INFO Processed 40/100 articles (errors: 0)
+2026-04-04 06:40:37,307 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:44,183 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:40:53,790 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:00,859 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:09,941 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:17,648 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:24,883 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:29,483 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:36,637 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:42,793 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:42,800 INFO Processed 50/100 articles (errors: 0)
+2026-04-04 06:41:42,895 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 06:41:50,688 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:41:55,994 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:03,170 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:08,171 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:12,327 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:18,290 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:24,664 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:32,649 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:39,221 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:46,866 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:42:46,868 INFO Processed 60/100 articles (errors: 0)
+2026-04-04 06:42:53,318 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:04,019 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:09,509 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:18,693 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:27,394 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:37,940 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:46,562 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:51,991 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:43:58,860 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:09,090 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:09,103 INFO Processed 70/100 articles (errors: 0)
+2026-04-04 06:44:15,210 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:24,425 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:31,901 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:40,005 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:48,119 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:44:53,249 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:02,043 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:11,702 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:20,092 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:29,092 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:29,094 INFO Processed 80/100 articles (errors: 0)
+2026-04-04 06:45:35,948 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:44,834 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:45:53,203 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:02,559 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:13,290 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:20,817 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:26,508 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:42,330 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:46:54,602 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:03,016 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:03,028 INFO Processed 90/100 articles (errors: 0)
+2026-04-04 06:47:09,442 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:17,448 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:25,628 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:32,255 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:38,587 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:44,796 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:47:53,687 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:48:01,642 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:48:11,170 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:48:20,899 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 06:48:20,900 INFO Processed 100/100 articles (errors: 0)
+2026-04-04 06:48:20,967 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 06:48:20,970 INFO Done: 100 processed, 0 errors in 780.8s (7.7 articles/min)
+2026-04-04 06:48:21 — [3/8] NER extraction (batch 500, 2 workers)...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155209 статей
+  Статей для обработки: 149
+  Готово: 779 тегов добавлено
+
+═══ NER-извлечение сущностей (1 workers) ═══
+  Статей для обработки: 7
+  [7/7] 100.0% | связей: 19 | ошибок: 0 | 3 ст/сек | 2с
+  Обновляем mention_count в entities...
+
+  Готово: 19 связей, 0 ошибок, 15с
+
+============================================================
+  ГОТОВО: 779 тегов, 19 NER-связей
+============================================================
+2026-04-04 06:48:39 — [3.5/7] Auto-assigning articles to stories...
+Before: 44113 stories, 33429 with ≤1 article
+
+=== Auto-assigning new articles to stories ===
+  Assigned to existing: 4
+  New stories created: 3
+  Changes committed.
+2026-04-04 06:48:44 — [3.6/7] Translating to Kazakh (batch 50)...
+usage: translate_articles_kz.py [-h] [--batch BATCH] [--model MODEL]
+                                [--delay DELAY] [--dry-run]
+translate_articles_kz.py: error: unrecognized arguments: --workers 1
+2026-04-04 06:48:44 — [4/7] Denormalizing tags...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155358 статей
+  Статей для обработки: 0
+  Готово: 0 тегов добавлено
+
+============================================================
+  ГОТОВО: 0 тегов, 0 NER-связей
+============================================================
+2026-04-04 06:48:45 — [5/7] Reindexing Meilisearch...
+[reindex] Setting up Meilisearch index + settings...
+[reindex] Starting full reindex of all articles...
+[reindex] Done in 80.4s
+2026-04-04 06:50:06 — Pipeline complete
+2026-04-04 07:50:06 — Pipeline start
+2026-04-04 07:50:06 — [1/7] Fetching new articles...
+[2026-04-04 07:50:07] Fetching RSS feed...
+[2026-04-04 07:50:07] RSS: 40 items
+[2026-04-04 07:50:08] New articles: 2 (already in DB: 38)
+[2026-04-04 07:50:08]   Downloading: Движение судов приостановлено в Босфорском заливе...
+[2026-04-04 07:50:09]     OK: 1006 chars
+[2026-04-04 07:50:09]   Downloading: Власти Беларуси обещают ответные меры на удаление госканалов...
+[2026-04-04 07:50:10]     OK: 1716 chars
+[2026-04-04 07:50:10] Done: 2 new articles imported
+2026-04-04 07:50:11 — [1.5/8] Media pipeline (new images)...
+2026-04-04 07:50:11,218 [INFO] Ensuring media table columns...
+2026-04-04 07:50:11,250 [INFO] Collecting unique image URLs...
+2026-04-04 07:50:11,400 [INFO] Found 6 unique storage URLs in articles.main_image
+2026-04-04 07:50:13,364 [INFO] Total unique URLs including media table: 86876
+2026-04-04 07:50:13,572 [INFO] Already downloaded: 86870, pending: 6
+2026-04-04 07:50:13,577 [INFO]   From img_cache (no download): 1
+2026-04-04 07:50:13,577 [INFO]   Need download from total.kz: 5
+2026-04-04 07:50:13,599 [INFO] Processing 6 images (1 cached + rest remote) with 2 workers...
+2026-04-04 07:50:13,599 [INFO] Batch 1/1: processing 6 images...
+2026-04-04 07:50:13,773 [INFO] HTTP Request: GET https://total.kz/storage/80/803ecf10ae5a819efb95293e25430bfb_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 07:50:14,139 [INFO] HTTP Request: GET https://total.kz/storage/e4/e41e37f56801061b70cd9d4bfdaf9ad2.jpg "HTTP/1.1 200 OK"
+2026-04-04 07:50:15,052 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-04 07:50:15,060 [INFO] HTTP Request: GET https://total.kz/storage/d0/d0cef0fbe96842618e673879cadf06a7_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 07:50:15,417 [INFO] HTTP Request: GET https://total.kz/storage/f1/f13f4487255cb512f61c2cb6322e96e9.jpg "HTTP/1.1 200 OK"
+2026-04-04 07:50:15,814 [INFO]   Batch done: ok=2, failed=3, not_found=1
+2026-04-04 07:50:15,814 [INFO]   Running total: ok=2, failed=3, not_found=1
+2026-04-04 07:50:15,814 [INFO] Download complete: {'ok': 2, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-04 07:50:15,814 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-04 07:50:15,814 [INFO] Rewriting article image URLs to local paths...
+2026-04-04 07:50:15,999 [INFO] URL mapping has 86872 entries
+2026-04-04 07:50:16,290 [INFO] Rewrote 2 article image URLs to local paths
+2026-04-04 07:50:17,028 [INFO] ==================================================
+2026-04-04 07:50:17,028 [INFO] MEDIA PIPELINE STATS
+2026-04-04 07:50:17,028 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86872}
+2026-04-04 07:50:17,028 [INFO]   Optimized: 86872
+2026-04-04 07:50:17,028 [INFO]   Total local size: 4184.4 MB
+2026-04-04 07:50:17,028 [INFO]   Articles with local images: 160804
+2026-04-04 07:50:17,028 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-04 07:50:17,028 [INFO] ==================================================
+2026-04-04 07:50:17 — [2/8] Enriching articles (batch 200)...
+2026-04-04 07:50:17,898 INFO Found 31791 unenriched articles, will process 150 (model: gpt-4o-mini, workers: 10)
+2026-04-04 07:50:21,814 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:21,978 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,000 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,025 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,115 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,446 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,667 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,940 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:22,965 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:23,795 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:24,603 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:25,079 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:25,159 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:25,219 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:25,511 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:26,026 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:26,195 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:26,577 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:27,000 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:27,343 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:27,781 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:27,828 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:28,118 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:28,637 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:28,807 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:28,936 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:29,995 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:30,028 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:30,188 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:30,683 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:30,796 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:31,318 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:31,401 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:31,871 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:31,926 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:32,677 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:32,690 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:33,107 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:33,317 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:33,672 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:33,819 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:34,095 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:34,370 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:35,090 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:35,719 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:35,777 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:36,052 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:36,289 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:36,544 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:36,551 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:36,671 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:37,007 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:37,611 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:38,197 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,102 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,269 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,277 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,420 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,422 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,549 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:39,876 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:40,002 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:41,060 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,150 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,219 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,255 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,495 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,790 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,858 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:42,881 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:43,197 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:43,419 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:43,634 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:44,872 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:45,102 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:45,567 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:45,780 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:45,790 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:45,950 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:46,022 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:46,331 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:46,621 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:46,934 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:47,559 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:47,790 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:48,030 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:48,674 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:48,845 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:48,860 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:49,104 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:49,195 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:49,281 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:49,858 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:50,753 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:50,822 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:51,188 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:51,525 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,029 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,079 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,135 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,277 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,470 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:52,722 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:53,411 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:53,891 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:53,918 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:54,520 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:54,745 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:55,076 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:55,165 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:55,336 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:55,363 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:55,558 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:56,137 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:56,621 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:57,446 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:57,831 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:58,122 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:58,182 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:58,346 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:58,693 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:58,763 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:59,055 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:59,565 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:59,584 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:50:59,935 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:01,036 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,226 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,393 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,457 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,678 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,698 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,716 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:02,947 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:03,021 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:03,588 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:04,315 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,470 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,703 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,734 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,804 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,886 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:05,901 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:06,161 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:06,754 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:06,768 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:07,827 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:08,956 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:09,449 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:09,502 INFO Saved batch of 149 enrichments to PG.
+2026-04-04 07:51:09,502 INFO Chunk done: 149/150 total processed so far.
+2026-04-04 07:51:09,503 INFO ============================================================
+2026-04-04 07:51:09,503 INFO ENRICHMENT COMPLETE
+2026-04-04 07:51:09,503 INFO   Total processed: 149
+2026-04-04 07:51:09,503 INFO   Success:         149
+2026-04-04 07:51:09,503 INFO   Errors:          0
+2026-04-04 07:51:09,503 INFO   Skipped:         1
+2026-04-04 07:51:09,503 INFO   Time:            52.3s (2.9 articles/sec)
+2026-04-04 07:51:09,504 INFO   Est. cost:       $0.0291
+2026-04-04 07:51:09,504 INFO ============================================================
+2026-04-04 07:51:09 — [2.5/8] NLP extraction (batch 100)...
+2026-04-04 07:51:09,726 INFO NLP extraction starting (model=gpt-4o-mini, batch=100, delay=0.3s, dry_run=False)
+2026-04-04 07:51:09,869 INFO Found 100 articles to process
+2026-04-04 07:51:16,161 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:21,266 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:28,847 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:34,004 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:42,113 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:49,970 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:51:57,069 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:06,253 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:10,703 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:16,672 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:16,679 INFO Processed 10/100 articles (errors: 0)
+2026-04-04 07:52:24,339 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:31,651 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:36,937 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:44,357 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:51,859 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:52:58,048 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:03,243 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:11,849 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:21,344 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:30,088 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:30,093 INFO Processed 20/100 articles (errors: 0)
+2026-04-04 07:53:36,064 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:41,600 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:49,061 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:53:56,603 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:03,323 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:11,295 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:17,948 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:29,915 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:39,281 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:45,252 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:45,264 INFO Processed 30/100 articles (errors: 0)
+2026-04-04 07:54:52,229 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:54:55,102 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2026-04-04 07:54:55,103 ERROR OpenAI HTTP 400: {
+    "error": {
+        "message": "We could not parse the JSON body of your request. (HINT: This likely means you aren't using your HTTP library correctly. The OpenAI API expects a JSON payload, but
+2026-04-04 07:55:04,490 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:10,876 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:18,504 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:25,340 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:33,209 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:43,279 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:49,034 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:55:57,584 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:04,396 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:04,402 INFO Processed 40/100 articles (errors: 0)
+2026-04-04 07:56:13,890 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:27,455 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:37,776 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:46,104 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:56:56,866 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:07,084 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:15,662 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:24,878 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:30,226 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:36,325 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:36,331 INFO Processed 50/100 articles (errors: 0)
+2026-04-04 07:57:36,398 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 07:57:44,036 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:50,563 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:57:56,064 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:06,212 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:11,395 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:17,408 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:25,194 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:34,083 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:41,650 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:47,667 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:58:47,672 INFO Processed 60/100 articles (errors: 0)
+2026-04-04 07:58:57,524 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:04,992 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:11,981 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:18,661 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:27,065 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:33,196 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:42,755 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:51,207 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 07:59:59,490 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:07,296 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:07,308 INFO Processed 70/100 articles (errors: 0)
+2026-04-04 08:00:15,930 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:31,365 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:40,422 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:51,254 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:00:58,643 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:11,249 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:25,086 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:32,344 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:44,370 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:52,344 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:01:52,349 INFO Processed 80/100 articles (errors: 0)
+2026-04-04 08:02:02,235 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:11,579 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:22,930 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:30,953 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:38,001 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:45,462 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:51,616 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:02:58,750 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:07,819 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:15,705 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:15,714 INFO Processed 90/100 articles (errors: 0)
+2026-04-04 08:03:26,081 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:33,396 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:40,415 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:50,332 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:03:57,516 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:06,114 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:15,148 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:21,913 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:34,749 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:43,736 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 08:04:43,739 INFO Processed 100/100 articles (errors: 0)
+2026-04-04 08:04:43,780 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 08:04:43,782 INFO Done: 100 processed, 0 errors in 813.9s (7.4 articles/min)
+2026-04-04 08:04:43 — [3/8] NER extraction (batch 500, 2 workers)...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155358 статей
+  Статей для обработки: 149
+  Готово: 769 тегов добавлено
+
+═══ NER-извлечение сущностей (1 workers) ═══
+  Статей для обработки: 3
+  [3/3] 100.0% | связей: 34 | ошибок: 0 | 2 ст/сек | 2с
+  Обновляем mention_count в entities...
+
+  Готово: 34 связей, 0 ошибок, 16с
+
+============================================================
+  ГОТОВО: 769 тегов, 34 NER-связей
+============================================================
+2026-04-04 08:05:04 — [3.5/7] Auto-assigning articles to stories...
+Before: 44116 stories, 33432 with ≤1 article
+
+=== Auto-assigning new articles to stories ===
+  Assigned to existing: 3
+  New stories created: 0
+  Changes committed.
+2026-04-04 08:05:08 — [3.6/7] Translating to Kazakh (batch 50)...
+usage: translate_articles_kz.py [-h] [--batch BATCH] [--model MODEL]
+                                [--delay DELAY] [--dry-run]
+translate_articles_kz.py: error: unrecognized arguments: --workers 1
+2026-04-04 08:05:08 — [4/7] Denormalizing tags...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155507 статей
+  Статей для обработки: 0
+  Готово: 0 тегов добавлено
+
+============================================================
+  ГОТОВО: 0 тегов, 0 NER-связей
+============================================================
+2026-04-04 08:05:09 — [5/7] Reindexing Meilisearch...
+[reindex] Setting up Meilisearch index + settings...
+[reindex] Starting full reindex of all articles...
+[reindex] Done in 61.0s
+2026-04-04 08:06:11 — Pipeline complete
+2026-04-04 09:06:11 — Pipeline start
+2026-04-04 09:06:11 — [1/7] Fetching new articles...
+[2026-04-04 09:06:11] Fetching RSS feed...
+[2026-04-04 09:06:11] RSS: 40 items
+[2026-04-04 09:06:11] New articles: 1 (already in DB: 39)
+[2026-04-04 09:06:11]   Downloading: Дело об изнасиловании: в Туркестанской области осудили адвок...
+[2026-04-04 09:06:12]     OK: 1274 chars
+[2026-04-04 09:06:13] Done: 1 new articles imported
+2026-04-04 09:06:13 — [1.5/8] Media pipeline (new images)...
+2026-04-04 09:06:13,269 [INFO] Ensuring media table columns...
+2026-04-04 09:06:13,283 [INFO] Collecting unique image URLs...
+2026-04-04 09:06:13,424 [INFO] Found 5 unique storage URLs in articles.main_image
+2026-04-04 09:06:14,511 [INFO] Total unique URLs including media table: 86877
+2026-04-04 09:06:14,654 [INFO] Already downloaded: 86872, pending: 5
+2026-04-04 09:06:14,655 [INFO]   From img_cache (no download): 1
+2026-04-04 09:06:14,655 [INFO]   Need download from total.kz: 4
+2026-04-04 09:06:14,676 [INFO] Processing 5 images (1 cached + rest remote) with 2 workers...
+2026-04-04 09:06:14,677 [INFO] Batch 1/1: processing 5 images...
+2026-04-04 09:06:15,019 [INFO] HTTP Request: GET https://total.kz/storage/21/211ecd0e19a4bf6d95d70cf712a7912f.png "HTTP/1.1 200 OK"
+2026-04-04 09:06:16,078 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-04 09:06:16,085 [INFO] HTTP Request: GET https://total.kz/storage/d0/d0cef0fbe96842618e673879cadf06a7_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 09:06:16,195 [INFO] HTTP Request: GET https://total.kz/storage/80/803ecf10ae5a819efb95293e25430bfb_resize_w_830_h_465.jpg "HTTP/1.1 200 OK"
+2026-04-04 09:06:16,302 [INFO]   Batch done: ok=1, failed=3, not_found=1
+2026-04-04 09:06:16,302 [INFO]   Running total: ok=1, failed=3, not_found=1
+2026-04-04 09:06:16,302 [INFO] Download complete: {'ok': 1, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-04 09:06:16,302 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-04 09:06:16,302 [INFO] Rewriting article image URLs to local paths...
+2026-04-04 09:06:16,480 [INFO] URL mapping has 86873 entries
+2026-04-04 09:06:16,697 [INFO] Rewrote 1 article image URLs to local paths
+2026-04-04 09:06:17,263 [INFO] ==================================================
+2026-04-04 09:06:17,263 [INFO] MEDIA PIPELINE STATS
+2026-04-04 09:06:17,263 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86873}
+2026-04-04 09:06:17,263 [INFO]   Optimized: 86873
+2026-04-04 09:06:17,263 [INFO]   Total local size: 4184.5 MB
+2026-04-04 09:06:17,263 [INFO]   Articles with local images: 160805
+2026-04-04 09:06:17,263 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-04 09:06:17,263 [INFO] ==================================================
+2026-04-04 09:06:17 — [2/8] Enriching articles (batch 200)...
+2026-04-04 09:06:17,626 INFO Found 31646 unenriched articles, will process 150 (model: gpt-4o-mini, workers: 10)
+2026-04-04 09:06:22,012 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,113 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,443 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,476 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,492 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,643 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:22,696 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:24,966 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:25,023 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:25,828 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:26,204 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:26,917 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:27,183 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:27,442 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:27,659 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:28,021 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:28,291 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:28,929 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:29,103 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:29,417 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:30,073 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:30,219 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:30,304 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:30,944 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:31,437 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:31,638 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:31,876 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:31,895 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:32,351 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:32,392 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:32,934 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:33,181 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:33,603 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:34,677 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:35,435 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:35,657 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:35,711 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:36,163 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:36,379 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:36,397 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:36,912 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:37,046 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:37,857 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:38,502 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:38,556 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:38,821 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:39,052 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:39,526 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:39,615 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:39,727 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:40,820 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:40,907 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:41,283 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:41,507 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:42,180 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:42,255 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:43,111 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:43,242 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:43,651 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:44,043 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:44,206 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:44,592 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:44,787 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:45,108 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:46,172 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:46,658 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:46,728 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:46,892 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:47,073 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:48,526 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:48,854 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:48,972 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:49,251 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:49,254 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:49,843 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:49,913 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:50,262 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:50,493 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:51,130 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:51,829 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:52,095 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:52,242 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:52,777 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:52,883 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:52,983 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:53,275 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:53,339 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:53,654 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:53,806 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:55,310 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:55,524 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:55,680 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:55,775 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:56,120 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:56,168 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:56,443 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:57,257 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:57,569 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:57,857 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:58,034 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:58,785 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:59,300 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:59,759 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:06:59,802 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:00,132 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:00,688 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:00,804 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:01,177 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:01,427 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:01,989 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:02,249 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:02,645 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:03,022 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:03,282 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:03,302 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:04,391 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:04,486 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:05,403 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:05,806 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:05,993 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:06,017 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:06,054 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:07,113 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:07,141 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:07,494 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:07,697 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:08,116 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:08,523 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:08,756 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:09,108 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:09,165 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:10,227 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:10,527 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:10,529 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:10,957 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:11,673 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:11,823 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:11,962 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:12,407 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:12,658 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:12,976 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:13,984 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:14,015 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:14,321 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:14,808 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:15,103 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:15,843 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:15,858 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:17,565 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:17,591 INFO Saved batch of 149 enrichments to PG.
+2026-04-04 09:07:17,592 INFO Chunk done: 149/150 total processed so far.
+2026-04-04 09:07:17,593 INFO ============================================================
+2026-04-04 09:07:17,593 INFO ENRICHMENT COMPLETE
+2026-04-04 09:07:17,593 INFO   Total processed: 149
+2026-04-04 09:07:17,593 INFO   Success:         149
+2026-04-04 09:07:17,593 INFO   Errors:          0
+2026-04-04 09:07:17,593 INFO   Skipped:         1
+2026-04-04 09:07:17,593 INFO   Time:            60.2s (2.5 articles/sec)
+2026-04-04 09:07:17,593 INFO   Est. cost:       $0.0291
+2026-04-04 09:07:17,593 INFO ============================================================
+2026-04-04 09:07:17 — [2.5/8] NLP extraction (batch 100)...
+2026-04-04 09:07:17,795 INFO NLP extraction starting (model=gpt-4o-mini, batch=100, delay=0.3s, dry_run=False)
+2026-04-04 09:07:17,867 INFO Found 100 articles to process
+2026-04-04 09:07:25,321 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:32,038 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:39,038 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:49,068 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:07:57,815 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:08,233 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:15,718 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:26,119 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:40,091 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:53,560 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:08:53,566 INFO Processed 10/100 articles (errors: 0)
+2026-04-04 09:08:59,856 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:08,186 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:16,240 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:27,932 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:33,749 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:42,642 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:09:50,271 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:03,948 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:13,156 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:21,130 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:21,138 INFO Processed 20/100 articles (errors: 0)
+2026-04-04 09:10:32,881 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:46,292 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:10:54,897 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:01,921 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:09,176 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:17,906 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:25,700 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:33,743 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:41,036 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:49,387 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:11:49,393 INFO Processed 30/100 articles (errors: 0)
+2026-04-04 09:11:55,417 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:03,053 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:09,792 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:15,538 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:24,632 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:32,986 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:39,538 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:49,180 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:12:55,303 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:01,309 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:01,316 INFO Processed 40/100 articles (errors: 0)
+2026-04-04 09:13:11,164 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:17,366 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:23,954 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:33,336 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:41,440 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:48,502 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:13:59,481 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:07,137 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:13,890 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:22,911 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:22,930 INFO Processed 50/100 articles (errors: 0)
+2026-04-04 09:14:23,064 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 09:14:30,001 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:34,494 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:40,406 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:48,937 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:14:54,978 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:00,655 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:06,539 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:14,561 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:21,794 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:31,891 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:31,894 INFO Processed 60/100 articles (errors: 0)
+2026-04-04 09:15:38,993 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:45,235 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:15:52,384 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:03,785 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:13,460 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:20,245 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:28,050 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:33,796 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:42,372 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:47,889 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:47,893 INFO Processed 70/100 articles (errors: 0)
+2026-04-04 09:16:53,359 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:16:58,629 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:03,894 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:13,860 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:22,345 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:31,535 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:37,790 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:46,358 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:53,972 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:58,371 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:17:58,377 INFO Processed 80/100 articles (errors: 0)
+2026-04-04 09:18:05,892 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:13,176 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:20,474 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:27,029 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:36,798 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:44,189 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:50,925 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:18:56,491 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:05,562 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:12,420 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:12,424 INFO Processed 90/100 articles (errors: 0)
+2026-04-04 09:19:19,716 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:31,442 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:41,284 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:49,310 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:19:53,878 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:00,322 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:07,983 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:16,061 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:24,570 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:31,036 INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-04 09:20:31,041 INFO Processed 100/100 articles (errors: 0)
+2026-04-04 09:20:31,082 INFO Intermediate save: 50/50 results written to DB
+2026-04-04 09:20:31,086 INFO Done: 100 processed, 0 errors in 793.2s (7.6 articles/min)
+2026-04-04 09:20:31 — [3/8] NER extraction (batch 500, 2 workers)...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155507 статей
+  Статей для обработки: 149
+  Готово: 778 тегов добавлено
+
+═══ NER-извлечение сущностей (1 workers) ═══
+  Статей для обработки: 5
+  [5/5] 100.0% | связей: 31 | ошибок: 0 | 3 ст/сек | 2с
+  Обновляем mention_count в entities...
+
+  Готово: 31 связей, 0 ошибок, 10с
+
+============================================================
+  ГОТОВО: 778 тегов, 31 NER-связей
+============================================================
+2026-04-04 09:20:42 — [3.5/7] Auto-assigning articles to stories...
+Before: 44116 stories, 33432 with ≤1 article
+
+=== Auto-assigning new articles to stories ===
+  Assigned to existing: 5
+  New stories created: 0
+  Changes committed.
+2026-04-04 09:20:45 — [3.6/7] Translating to Kazakh (batch 50)...
+usage: translate_articles_kz.py [-h] [--batch BATCH] [--model MODEL]
+                                [--delay DELAY] [--dry-run]
+translate_articles_kz.py: error: unrecognized arguments: --workers 1
+2026-04-04 09:20:45 — [4/7] Denormalizing tags...
+
+═══ Денормализация тегов из article_enrichments ═══
+  Уже в article_tags: 155656 статей
+  Статей для обработки: 0
+  Готово: 0 тегов добавлено
+
+============================================================
+  ГОТОВО: 0 тегов, 0 NER-связей
+============================================================
+2026-04-04 09:20:46 — [5/7] Reindexing Meilisearch...
+[reindex] Setting up Meilisearch index + settings...
+[reindex] Starting full reindex of all articles...
+[reindex] Done in 51.9s
+2026-04-04 09:21:39 — Pipeline complete

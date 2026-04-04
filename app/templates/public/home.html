@@ -48,10 +48,7 @@
       </div>
     </div>
     <aside class="live-feed">
-      <div class="live-feed__header">
-        <span class="live-feed__dot"></span>
-        <h2 class="live-feed__title">{{ t('homepage.live_feed') if t is defined else 'Лента новостей' }}</h2>
-      </div>
+
       <div class="live-feed__list">
         {% for art in latest[:12] %}
         <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="live-feed__item{% if art.is_breaking %} breaking{% endif %}">
@@ -212,7 +209,7 @@
           <span class="popular-num">{{ loop.index }}</span>
           <div class="popular-body">
             <a href="{{ (article_url_i18n(art) if article_url_i18n is defined else article_url(art)) }}" class="popular-title{% if lang is defined and lang == "kz" and art._has_translation is defined and not art._has_translation %} untranslated{% endif %}">{{ art.title }}{% if lang is defined and lang == "kz" and art._lang_badge is defined %} <span class="lang-badge">{{ art._lang_badge }}</span>{% endif %}</a>
-            <span class="popular-meta">{{ format_date_day(art.pub_date) }}</span>
+            <span class="popular-meta">{{ format_date_short(art.pub_date) }}</span>
           </div>
         </li>
         {% endfor %}
