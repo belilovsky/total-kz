@@ -1,0 +1,20 @@
+2026-04-04 03:02:51 — Starting backup
+Создаю бэкап: total_20260404_030300_daily.db
+Traceback (most recent call last):
+  File "/app/scraper/backup_db.py", line 150, in <module>
+    backup(tag=args.tag)
+  File "/app/scraper/backup_db.py", line 58, in backup
+    count = verify.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such table: articles
+2026-04-04 03:03:03 — Finished backup
+2026-04-04 05:18:42 — Starting backup
+Создаю бэкап: total_20260404_051842_daily.db
+Traceback (most recent call last):
+  File "/app/scraper/backup_db.py", line 150, in <module>
+    backup(tag=args.tag)
+  File "/app/scraper/backup_db.py", line 58, in backup
+    count = verify.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such table: articles
+2026-04-04 05:18:42 — Finished backup

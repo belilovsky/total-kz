@@ -2546,8 +2546,11 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 /* ── Category page layout with sidebar ────────── */
 @media (min-width:1100px) {
 .article-page { max-width:var(--content-wide); }
-.article-layout { display:grid; grid-template-columns:1fr 280px; gap:var(--space-6); align-items:start; }
-.article-full-width { grid-column: 1 / -1; }
+.article-layout { display:block; }
+.article-body-grid { display:grid; grid-template-columns:1fr 280px; gap:var(--space-6); }
+.article-content { min-width:0; }
+
+
 .article-sidebar { display:block; position:relative; }
   .article-sidebar-inner { position:sticky; top:5rem; }
 .article-title { font-size:1.875rem; line-height:1.15; letter-spacing:-0.03em; }

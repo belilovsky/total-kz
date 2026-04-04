@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ModuleNotFoundError: No module named 'app.auto_translate'
+usage: translate_articles_kz.py [-h] [--batch BATCH] [--model MODEL]
+                                [--delay DELAY] [--dry-run]
+translate_articles_kz.py: error: unrecognized arguments: --days 30

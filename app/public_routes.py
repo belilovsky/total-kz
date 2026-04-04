@@ -27,6 +27,22 @@ from .geo import detect_region, get_regional_articles, get_region_label
 
 logger = logging.getLogger(__name__)
 
+
+def _balance_divs(html: str) -> str:
+    """Remove extra closing </div> tags that would break the article layout."""
+    if not html:
+        return html
+    opens = len(re.findall(r'<div', html))
+    closes = len(re.findall(r'</div>', html))
+    if closes > opens:
+        # Remove trailing extra </div> tags
+        diff = closes - opens
+        for _ in range(diff):
+            idx = html.rfind('</div>')
+            if idx >= 0:
+                html = html[:idx] + html[idx+6:]
+    return html
+
 router = APIRouter()
 
 # ══════════════════════════════════════════════
@@ -884,6 +900,23 @@ def format_views(n) -> str:
 
 templates.env.globals["format_views"] = format_views
 templates.env.filters["format_views"] = format_views
+
+
+def _balance_divs(html):
+    """Remove trailing extra </div> tags from scraped body_html."""
+    import re
+    if not html:
+        return html
+    opens = len(re.findall(r'<div\b', html))
+    closes = len(re.findall(r'</div>', html))
+    if closes > opens:
+        for _ in range(closes - opens):
+            idx = html.rfind('</div>')
+            if idx >= 0:
+                html = html[:idx] + html[idx+6:]
+    return html
+
+templates.env.filters["balance_divs"] = _balance_divs
 
 
 def format_time_hhmm(date_str) -> str:

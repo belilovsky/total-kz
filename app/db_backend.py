@@ -125,9 +125,9 @@ def execute_raw_many(sql: str, params: tuple = ()) -> list[dict]:
             db.close()
     else:
         from app.database import get_db
-        with get_db() as cur:
-            cur.execute(sql.replace("%s", "?"), params)
-            return [dict(r) for r in cur.fetchall()]
+        with get_db() as conn:
+            cursor = conn.execute(sql.replace("%s", "?"), params)
+            return [dict(r) for r in cursor.fetchall()]
 
 
 # ── Fallback stubs for SQLite backend (these are PG-only) ──
