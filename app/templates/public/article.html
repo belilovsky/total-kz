@@ -290,9 +290,7 @@
         <figcaption>{{ article.image_credit }}</figcaption>
       {% endif %}
     
-      {% if article.image_credit %}
-      <span class="hero-credit">{{ article.image_credit }}</span>
-      {% endif %}
+      <span class="hero-credit">{{ article.image_credit or "Фото: Total.kz" }}</span>
     </figure>
     {% endif %}
 <div class="article-body-grid">
