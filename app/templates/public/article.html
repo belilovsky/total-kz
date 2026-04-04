@@ -277,9 +277,13 @@
       </div>
     </header>
 
+    
+    <!-- ═══ AD: UNDER HERO (R1) ═══ -->
+    <div class="ad-placeholder ad-article-top article-full-width" data-ad-slot="R1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
+        <div class="article-body-grid">
     {# ── Hero image / placeholder ── #}
     {% if article.main_image %}
-    <figure class="article-hero-image article-hero article-full-width">
+    <figure class="article-hero-image article-hero">
       <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
            srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
            sizes="(max-width: 768px) 100vw, 800px"
@@ -290,9 +294,6 @@
     </figure>
     {% endif %}
 
-    <!-- ═══ AD: UNDER HERO (R1) ═══ -->
-    <div class="ad-placeholder ad-article-top article-full-width" data-ad-slot="R1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
-        <div class="article-body-grid">
 <div class="article-content">
       {% if nlp and nlp.key_facts %}
       {% set facts = nlp.key_facts_kz if (lang is defined and lang == 'kz' and nlp.key_facts_kz) else nlp.key_facts %}
