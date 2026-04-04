@@ -3918,14 +3918,10 @@ a.related-item:visited .related-title {
   display:grid;
   grid-template-columns:1fr;
   gap:var(--space-8);
-  padding-top:var(--space-8);
-  border-top:1px solid var(--border);
-  position:relative;
+  padding-top:var(--space-10);
 }
-.feed-duo::before {
-  content:''; position:absolute; top:-1px; left:0; width:64px; height:3px;
-  background:var(--accent); border-radius:0 0 2px 2px;
-}
+.feed-duo .section-header { border-bottom:none; padding-bottom:0; margin-bottom:var(--space-4); }
+
 @media (min-width:900px) {
 .header-nav { display:flex; align-items:center; justify-content:center; gap:var(--space-1); }
 .hamburger { display:none; }
