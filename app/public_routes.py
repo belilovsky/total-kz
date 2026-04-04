@@ -903,17 +903,25 @@ templates.env.filters["format_views"] = format_views
 
 
 def _balance_divs(html):
-    """Remove trailing extra </div> tags from scraped body_html."""
+    """Remove orphan closing tags from scraped body_html to prevent layout breaks."""
     import re
     if not html:
         return html
-    opens = len(re.findall(r'<div\b', html))
-    closes = len(re.findall(r'</div>', html))
-    if closes > opens:
-        for _ in range(closes - opens):
-            idx = html.rfind('</div>')
-            if idx >= 0:
-                html = html[:idx] + html[idx+6:]
+    # Fix all block-level tags that might break the grid layout
+    for tag in ['div', 'blockquote', 'section', 'article', 'aside', 'figure', 'header', 'footer', 'nav', 'main']:
+        opens = len(re.findall(rf'<{tag}\b', html, re.IGNORECASE))
+        closes = len(re.findall(rf'</{tag}>', html, re.IGNORECASE))
+        if closes > opens:
+            # Remove extra closing tags from the end
+            diff = closes - opens
+            for _ in range(diff):
+                idx = html.rfind(f'</{tag}>')
+                if idx >= 0:
+                    html = html[:idx] + html[idx+len(f'</{tag}>'):]
+        elif opens > closes:
+            # Add missing closing tags at the end
+            diff = opens - closes
+            html += f'</{tag}>' * diff
     return html
 
 templates.env.filters["balance_divs"] = _balance_divs
