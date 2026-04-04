@@ -238,8 +238,7 @@
       <a href="{{ lang_prefix|default('') }}/">{{ t('breadcrumb.home') if t is defined else 'Главная' }}</a>
       <span class="sep">›</span>
       <a href="{{ lang_prefix|default('') }}/news/{{ nav_section }}">{{ nav_section_name }}</a>
-      <span class="sep">›</span>
-      <span>{{ article.title | truncate(70, True) }}</span>
+      
     </div>
   </nav>
 
@@ -289,6 +288,10 @@
            onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
       {% if article.image_credit %}
         <figcaption>{{ article.image_credit }}</figcaption>
+      {% endif %}
+    
+      {% if article.image_credit %}
+      <span class="hero-credit">{{ article.image_credit }}</span>
       {% endif %}
     </figure>
     {% endif %}
