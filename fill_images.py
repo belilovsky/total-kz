@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Fill missing main_image for articles by fetching og:image from source URLs.
-Also stores image_credit (copyright) from og:image:alt or site name.
-"""
+"""Fill missing main_image for articles by fetching og:image from source URLs."""
 import json
 import logging
 import os
@@ -17,31 +14,28 @@ import requests
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("fill-images")
 
-DB_URL = os.environ.get("PG_DATABASE_URL", "postgresql://total_kz:T0tal_kz_2026!@localhost:5432/total_kz")
+DB_URL = os.environ.get("PG_DATABASE_URL", "postgresql://total_kz:T0tal_kz_2026!@127.0.0.1:5437/total_kz")
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; Total.kz Bot/1.0; +https://total.kz)",
-    "Accept": "text/html,application/xhtml+xml",
-}
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
-def extract_image_and_credit(url: str) -> tuple[str | None, str | None]:
+def extract_image_and_credit(url):
     """Extract og:image and credit from source article page."""
     try:
-        resp = requests.get(url, timeout=15, headers=HEADERS, allow_redirects=True)
+        resp = requests.get(url, timeout=15, headers={"User-Agent": UA}, allow_redirects=True)
         resp.raise_for_status()
-        html = resp.text[:50000]  # only first 50KB
+        html = resp.text[:80000]
 
-        # Try multiple og:image patterns (different attribute orders)
         image = None
-        for pattern in [
-            r'<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']',
-            r'<meta\s+content=["\']([^"\']+)["\']\s+property=["\']og:image["\']',
-            r'"og:image"\s*:\s*"([^"]+)"',
-            r'<meta\s+name=["\']twitter:image["\']\s+content=["\']([^"\']+)["\']',
-            r'<meta\s+content=["\']([^"\']+)["\']\s+name=["\']twitter:image["\']',
-        ]:
-            m = re.search(pattern, html, re.IGNORECASE)
+        # Flexible patterns: allow any attributes between meta and property/content
+        patterns = [
+            r'property=["\']og:image["\'][^>]*?content=["\']([^"\']+)["\']',
+            r'content=["\']([^"\']+)["\'][^>]*?property=["\']og:image["\']',
+            r'name=["\']twitter:image["\'][^>]*?content=["\']([^"\']+)["\']',
+            r'content=["\']([^"\']+)["\'][^>]*?name=["\']twitter:image["\']',
+        ]
+        for pat in patterns:
+            m = re.search(pat, html, re.IGNORECASE)
             if m:
                 image = m.group(1)
                 break
@@ -49,37 +43,33 @@ def extract_image_and_credit(url: str) -> tuple[str | None, str | None]:
         if not image:
             return None, None
 
-        # Clean up relative URLs
+        # Fix relative URLs
         if image.startswith("//"):
             image = "https:" + image
         elif image.startswith("/"):
             parsed = urlparse(url)
             image = f"{parsed.scheme}://{parsed.netloc}{image}"
 
-        # Extract credit: og:site_name or domain
+        # Extract credit from og:site_name or domain
         credit = None
-        for cp in [
-            r'<meta\s+property=["\']og:site_name["\']\s+content=["\']([^"\']+)["\']',
-            r'<meta\s+content=["\']([^"\']+)["\']\s+property=["\']og:site_name["\']',
-        ]:
+        credit_patterns = [
+            r'property=["\']og:site_name["\'][^>]*?content=["\']([^"\']+)["\']',
+            r'content=["\']([^"\']+)["\'][^>]*?property=["\']og:site_name["\']',
+        ]
+        for cp in credit_patterns:
             cm = re.search(cp, html, re.IGNORECASE)
             if cm:
                 credit = cm.group(1).strip()
                 break
-
         if not credit:
-            # Use domain as fallback
             parsed = urlparse(url)
-            domain = parsed.netloc.replace("www.", "")
-            credit = domain
+            credit = parsed.netloc.replace("www.", "")
 
-        # Prefix with "Фото:"
         credit = f"Фото: {credit}"
-
         return image, credit
 
     except Exception as e:
-        log.debug("Failed to fetch %s: %s", url[:60], e)
+        log.debug("Failed %s: %s", url[:60], e)
         return None, None
 
 
@@ -89,7 +79,6 @@ def main():
     conn = psycopg2.connect(DB_URL)
     cur = conn.cursor()
 
-    # Get articles without images
     cur.execute("""
         SELECT id, url, title, sub_category
         FROM articles
@@ -101,7 +90,7 @@ def main():
     """, (batch_size,))
 
     articles = cur.fetchall()
-    log.info("Found %d articles without images (batch=%d)", len(articles), batch_size)
+    log.info("Found %d articles without images", len(articles))
 
     updated = 0
     failed = 0
@@ -116,13 +105,11 @@ def main():
             )
             conn.commit()
             updated += 1
-            log.info("[%d/%d] ✓ %s → %s", updated, len(articles), title[:50], credit)
+            log.info("[%d] + %s -> %s", updated, title[:50], credit)
         else:
             failed += 1
-            log.info("[%d/%d] ✗ No image: %s (%s)", failed, len(articles), title[:50], url[:60])
 
-        # Rate limit: 0.5s between requests
-        time.sleep(0.5)
+        time.sleep(0.3)
 
     conn.close()
     log.info("Done: %d updated, %d failed out of %d", updated, failed, len(articles))

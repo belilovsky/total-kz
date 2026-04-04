@@ -12,16 +12,36 @@ import requests
 log = logging.getLogger("news-monitor.publisher")
 
 
-def extract_og_image(url: str) -> str | None:
-    """Extract og:image from source article."""
+def extract_og_image(url: str) -> tuple:
+    """Extract og:image and credit from source article."""
+    from urllib.parse import urlparse
+    UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     try:
-        resp = requests.get(url, timeout=10, headers={"User-Agent": "Total.kz Bot"})
-        match = re.search(r'<meta\s+property="og:image"\s+content="([^"]+)"', resp.text)
-        if match:
-            return match.group(1)
+        resp = requests.get(url, timeout=15, headers={"User-Agent": UA}, allow_redirects=True)
+        html = resp.text[:80000]
+        image = None
+        for pat in [
+            r"""property=["']og:image["'][^>]*?content=["']([^"']+)["']""",
+            r"""content=["']([^"']+)["'][^>]*?property=["']og:image["']""",
+            r"""name=["']twitter:image["'][^>]*?content=["']([^"']+)["']""",
+        ]:
+            m = re.search(pat, html, re.IGNORECASE)
+            if m:
+                image = m.group(1)
+                if image.startswith("//"):
+                    image = "https:" + image
+                break
+        if not image:
+            return None, None
+        credit = None
+        cm = re.search(r"""property=["']og:site_name["'][^>]*?content=["']([^"']+)["']""", html)
+        if cm:
+            credit = cm.group(1).strip()
+        if not credit:
+            credit = urlparse(url).netloc.replace("www.", "")
+        return image, "\u0424\u043e\u0442\u043e: " + credit
     except Exception:
-        pass
-    return None
+        return None, None
 
 
 def notify_telegram(title: str, excerpt: str, article_id: int) -> None:
@@ -87,7 +107,7 @@ def publish_article(
     body_text = re.sub(r"<[^>]+>", "", body_html).strip()
 
     # Extract og:image from source article
-    main_image = extract_og_image(original_url)
+    main_image, image_credit = extract_og_image(original_url)
 
     try:
         conn = psycopg2.connect(get_db_url())
@@ -105,9 +125,9 @@ def publish_article(
             """
             INSERT INTO articles
                 (url, title, excerpt, body_html, body_text, sub_category, tags,
-                 author, status, pub_date, imported_at, editor_note, main_image)
+                 author, status, pub_date, imported_at, editor_note, main_image, image_credit)
             VALUES
-                (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -124,6 +144,7 @@ def publish_article(
                 now,
                 f"Автоматически: {source_name} | Категория: {source_category}",
                 main_image,
+                image_credit,
             ),
         )
         article_id = cur.fetchone()[0]
