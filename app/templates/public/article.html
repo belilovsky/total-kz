@@ -282,7 +282,7 @@
     <div class="ad-placeholder ad-article-top article-full-width" data-ad-slot="R1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
             {# ── Hero image / placeholder ── #}
     {% if article.main_image %}
-    <figure class="article-hero-image article-hero article-full-width">
+    <figure class="article-hero-image article-hero">
       <img src="{{ imgproxy_url(article.main_image, 1200) }}" alt="{{ article.title }}" loading="eager"
            srcset="{{ imgproxy_url(article.main_image, 400) }} 400w, {{ imgproxy_url(article.main_image, 800) }} 800w, {{ imgproxy_url(article.main_image, 1200) }} 1200w"
            sizes="(max-width: 768px) 100vw, 800px"
@@ -387,6 +387,8 @@
 
     </div>
 
+    
+    </div>{# close article-body-grid #}
     <!-- Sidebar: TOC + Entities/Tags + Share (desktop only) -->
     <aside class="article-sidebar">
       <div class="article-sidebar-inner">
@@ -535,7 +537,7 @@
         </a>
       </div>
     </aside>
-    </div>{# close article-body-grid #}
+
   </div>
 
   {# ── Mobile: "Упоминаются" horizontal strip (hidden on desktop, deduplicated) ── #}
