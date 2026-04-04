@@ -2691,11 +2691,15 @@ async def person_page(request: Request, slug: str):
         conn.close()
         return HTMLResponse("<h1>Персона не найдена</h1>", status_code=404)
 
-    # Article count
-    article_count = conn.execute(
-        "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
-        (person["entity_id"],)
-    ).fetchone()[0]
+    # Article count (from PG)
+    try:
+        _count_row = _pg_many("SELECT COUNT(*) as cnt FROM article_entities WHERE entity_id = %s", (person["entity_id"],))
+        article_count = _count_row[0]["cnt"] if _count_row else 0
+    except Exception:
+        article_count = conn.execute(
+            "SELECT COUNT(*) FROM article_entities WHERE entity_id = ?",
+            (person["entity_id"],)
+        ).fetchone()[0]
 
     # Career positions — newest first, mark only ONE as current
     positions_raw = conn.execute(
@@ -2715,15 +2719,20 @@ async def person_page(request: Request, slug: str):
         positions.append(pd)
 
     # Articles grouped by month (latest first, limit 200)
-    articles_raw = conn.execute("""
-        SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
-        FROM articles a
-        JOIN article_entities ae ON a.id = ae.article_id
-        WHERE ae.entity_id = ?
-        AND a.pub_date IS NOT NULL AND a.pub_date != ''
-        ORDER BY a.pub_date DESC
-        LIMIT 200
-    """, (person["entity_id"],)).fetchall()
+    # Use PG backend for articles (they live in PostgreSQL)
+    from app.db_backend import execute_raw_many as _pg_many
+    try:
+        articles_raw = _pg_many("""
+            SELECT a.id, a.title, a.pub_date, a.sub_category, a.url, a.main_image, a.thumbnail
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = %s
+            AND a.pub_date IS NOT NULL AND a.pub_date != ''
+            ORDER BY a.pub_date DESC
+            LIMIT 200
+        """, (person["entity_id"],))
+    except Exception:
+        articles_raw = []
 
     # Group by month
     months = []
@@ -2743,14 +2752,24 @@ async def person_page(request: Request, slug: str):
             months.append(current_group)
         current_group["articles"].append(dict(art))
 
-    # First/last mention date range
-    date_range = conn.execute("""
-        SELECT MIN(a.pub_date), MAX(a.pub_date)
-        FROM articles a
-        JOIN article_entities ae ON a.id = ae.article_id
-        WHERE ae.entity_id = ?
-        AND a.pub_date IS NOT NULL AND a.pub_date != ''
-    """, (person["entity_id"],)).fetchone()
+    # First/last mention date range (from PG)
+    try:
+        _dr = _pg_many("""
+            SELECT MIN(a.pub_date) as min_date, MAX(a.pub_date) as max_date
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = %s
+            AND a.pub_date IS NOT NULL AND a.pub_date != ''
+        """, (person["entity_id"],))
+        date_range = (_dr[0]["min_date"], _dr[0]["max_date"]) if _dr else (None, None)
+    except Exception:
+        date_range = conn.execute("""
+            SELECT MIN(a.pub_date), MAX(a.pub_date)
+            FROM articles a
+            JOIN article_entities ae ON a.id = ae.article_id
+            WHERE ae.entity_id = ?
+            AND a.pub_date IS NOT NULL AND a.pub_date != ''
+        """, (person["entity_id"],)).fetchone()
     first_mention = date_range[0][:10] if date_range and date_range[0] else None
     last_mention = date_range[1][:10] if date_range and date_range[1] else None
 
