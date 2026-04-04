@@ -113,7 +113,7 @@ services:
     environment:
       - IMGPROXY_BIND=:8080
       - IMGPROXY_MAX_SRC_RESOLUTION=50
-      - IMGPROXY_ALLOWED_SOURCES=https://total.kz/,http://total.kz/
+      - IMGPROXY_ALLOWED_SOURCES=https://total.kz/,http://total.kz/,https://,http://
       - IMGPROXY_ENABLE_WEBP_DETECTION=true
       - IMGPROXY_ENFORCE_WEBP=true
       - IMGPROXY_QUALITY=80

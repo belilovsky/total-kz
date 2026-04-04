@@ -62,50 +62,13 @@
   </div>
   {% endif %}
 
-  {# ═══ TOP STORIES: featured grid 1 big + 3 small ═══ #}
-  {% if articles|length > 0 %}
-  <div class="cat-top">
-    {% set main = articles[0] %}
-    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(main) }}" class="cat-top-lead">
-      {% if main.main_image or main.thumbnail %}
-        <img src="{{ imgproxy_url(main.main_image or main.thumbnail, 800) }}" alt="{{ main.title }}" loading="eager"
-             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-      {% endif %}
-      <div class="cat-top-lead-body">
-        <h2 class="cat-top-lead-title">{{ main.title }}</h2>
-        {% if main.excerpt %}
-          <p class="cat-top-lead-excerpt">{{ main.excerpt[:140] }}{% if main.excerpt|length > 140 %}…{% endif %}</p>
-        {% endif %}
-        <span class="cat-top-lead-meta">{{ format_date_short(main.pub_date) }}</span>
-      </div>
-    </a>
-    <div class="shelf-row" style="margin-top:var(--space-4)">
-    {% for art in articles[1:5] %}
-    <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="shelf-card">
-      <div class="shelf-card-img">
-        {% if art.main_image or art.thumbnail %}
-        <img src="{{ imgproxy_url(art.main_image or art.thumbnail, 400) }}" alt="{{ art.title }}" loading="eager"
-             onerror="this.src='/static/img/placeholder.svg';this.onerror=null;">
-        {% else %}
-        <img src="/static/img/placeholder.svg" alt="" loading="lazy">
-        {% endif %}
-        <span class="shelf-card-overlay-date">{{ format_date_day(art.pub_date) }}</span>
-      </div>
-      <h3 class="shelf-card-title">{{ art.title }}</h3>
-    </a>
-    {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {# ═══ AD ═══ #}
-  <div class="ad-placeholder ad-leaderboard" data-ad-slot="C1" data-ad-size="728x90" aria-hidden="true">Реклама</div>
+  
 
   {# ═══ CARD GRID + SIDEBAR ═══ #}
-  {% if articles|length > 4 %}
+  {% if articles|length > 0 %}
   <div class="cat2-layout">
     <div class="cat2-grid">
-      {% for art in articles[5:] %}
+      {% for art in articles %}
         <a href="{{ (article_url_i18n if article_url_i18n is defined else article_url)(art) }}" class="shelf-card">
           <div class="shelf-card-img">
             {% if art.main_image or art.thumbnail %}
