@@ -370,7 +370,7 @@ NAV_SECTIONS = [
     {
         "slug": "zakon",
         "label": "Закон",
-        "subcats": ["zakon", "pravo", "zakonodatelstvo"],
+        "subcats": ["proisshestviya", "bezopasnost"],
     },
     {
         "slug": "nauka",
@@ -707,8 +707,10 @@ def dedup_entities(entities: list, max_count: int = 5) -> list:
 
 def imgproxy_url(source_url: str, width: int = 800) -> str:
     """Generate imgproxy URL for an image."""
+    from html import unescape as _unescape
     if not source_url:
         return ""
+    source_url = _unescape(source_url)  # fix &amp; in URLs from DB
     # Convert local /img/ paths back to origin URLs for imgproxy
     if source_url.startswith("/img/"):
         source_url = f"https://total.kz/storage/{source_url[5:]}"
@@ -2561,7 +2563,7 @@ async def json_feed():
 
 
 @router.get("/api/suggest")
-async def api_suggest(q: str = Query("", min_length=2, max_length=100)):
+async def api_suggest(q: str = Query("", min_length=1, max_length=100)):
     """Fast autocomplete: returns up to 7 article title suggestions."""
     import json as json_mod
     if len(q) < 2:
@@ -3215,7 +3217,7 @@ async def turbo_rss():
 
         # Build related articles section
         related_html = ""
-        related_arts = [a for a in articles if a.get("id") != art.get("id") and a.get("sub_category") == art.get("sub_category")][:3]
+        related_arts = [a for a in articles if a.get("id") != art.get("id") and a.get("sub_category") == art.get("sub_category") and a.get("main_image")][:3]
         if related_arts:
             related_items = []
             for ra in related_arts:

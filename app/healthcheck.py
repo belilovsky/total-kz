@@ -315,7 +315,7 @@ def _test_database() -> list[dict]:
             with get_pg_session() as sess:
                 count = sess.scalar(
                     select(func.count()).select_from(NerEntity)
-                    .where(NerEntity.entity_type == "PER")
+                    .where(NerEntity.entity_type == "person")
                 )
             ms = (time.monotonic() - t0) * 1000
             if count and count > 0:
@@ -326,7 +326,7 @@ def _test_database() -> list[dict]:
             from app.database import get_db
             with get_db() as conn:
                 count = conn.execute(
-                    "SELECT COUNT(*) FROM entities WHERE entity_type='PER'"
+                    "SELECT COUNT(*) FROM entities WHERE entity_type='person'"
                 ).fetchone()[0]
             ms = (time.monotonic() - t0) * 1000
             if count and count > 0:
