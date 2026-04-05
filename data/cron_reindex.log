@@ -12,3 +12,17 @@ Setting up Meilisearch index...
 Index 'articles' configured.
 Reindexing all articles...
 2026-04-04 05:18:42 — Finished reindex
+2026-04-05 06:30:44 — Starting Meilisearch reindex
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/scraper/reindex_meilisearch.py", line 88, in <module>
+    reindex_all()
+  File "/app/scraper/reindex_meilisearch.py", line 42, in reindex_all
+    rows = conn.execute("""
+           ^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: status
+Setting up Meilisearch index...
+Index 'articles' configured.
+Reindexing all articles...
+2026-04-05 06:30:45 — Finished reindex
