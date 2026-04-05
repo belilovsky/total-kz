@@ -2690,232 +2690,179 @@ main { padding-top:var(--space-2); padding-bottom:var(--space-3); }
 
 .persons-empty { text-align:center; padding:40px; color:var(--text-2); }
 
-/* ── Person detail page (v13.4) ── */
+/* ── Person detail page (redesigned) ── */
 .person-page { max-width:var(--content-wide); margin:0 auto; padding:0 var(--gutter); }
 
-/* Hero */
-.person-hero {
-  display:flex; gap:28px; align-items:flex-start;
+/* ── Header ── */
+.pp-header {
+  display:flex; gap:24px; align-items:flex-start;
   margin:24px 0 28px; padding:24px;
-  background:var(--accent-bg); border:1px solid var(--border-light);
+  background:var(--surface); border:1px solid var(--border-light);
   border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);
 }
-.person-hero-avatar {
-  width:140px; height:140px; border-radius:14px; flex-shrink:0;
+.pp-avatar {
+  width:120px; height:120px; border-radius:14px; flex-shrink:0;
   background:var(--surface-2); display:flex; align-items:center; justify-content:center;
   overflow:hidden; box-shadow:var(--shadow-md);
 }
-.person-hero-avatar img { width:100%; height:100%; object-fit:cover; }
-.person-hero-initials { font-size:3rem; font-weight:800; color:var(--accent); }
-.person-hero-info { flex:1; min-width:0; }
-.person-hero-name { font-size:1.8rem; font-weight:800; line-height:1.15; margin:0; }
-.person-hero-fullname { font-size:0.85rem; color:var(--text-secondary); margin-top:2px; }
-.person-hero-position { font-size:1rem; font-weight:500; color:var(--accent); margin-top:6px; }
-
-/* Hero stats row */
-.person-hero-stats {
-  display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+.pp-avatar.has-photo { background:none; }
+.pp-avatar img { width:100%; height:100%; object-fit:cover; }
+.pp-initials { font-size:2.6rem; font-weight:800; color:var(--accent); }
+.pp-info { flex:1; min-width:0; }
+.pp-name { font-size:1.7rem; font-weight:800; line-height:1.15; margin:0; }
+.pp-fullname { font-size:0.82rem; color:var(--text-secondary); margin-top:2px; }
+.pp-position { font-size:0.95rem; font-weight:500; color:var(--accent); margin-top:6px; }
+.pp-meta-row {
+  display:flex; flex-wrap:wrap; align-items:center; gap:12px;
   margin-top:12px;
 }
-.person-stat {
+.pp-meta-item {
   display:inline-flex; align-items:center; gap:5px;
-  font-size:0.8rem; color:var(--text-secondary);
+  font-size:0.78rem; color:var(--text-secondary);
 }
-.person-stat svg { color:var(--text-muted); flex-shrink:0; }
+.pp-meta-item svg { color:var(--text-muted); flex-shrink:0; }
 
-/* Hero birth info */
-.person-hero-birth {
-  display:flex; align-items:center; gap:5px;
-  font-size:0.78rem; color:var(--text-muted); margin-top:8px;
-}
-.person-hero-birth svg { flex-shrink:0; color:var(--text-faint); }
-
-.person-zakon-link {
-  display:inline-block; margin-top:10px;
-  font-size:0.78rem; color:var(--accent); text-decoration:none;
-  border:1px solid var(--accent); padding:5px 12px; border-radius:var(--radius-md);
-  transition:all var(--transition);
-}
-.person-zakon-link:hover { background:var(--accent); color:#fff; }
-
-/* Type badges */
-.person-type-badge {
-  display:inline-block; padding:3px 9px; border-radius:var(--radius-sm);
-  font-size:0.72rem; font-weight:600; letter-spacing:.02em;
-}
-.person-type-badge.government { background:#e8f4fd; color:#1976d2; }
-.person-type-badge.international { background:#fce4ec; color:#c62828; }
-.person-type-badge.other { background:var(--surface-2); color:var(--text-secondary); }
-[data-theme="dark"] .person-type-badge.government { background:rgba(25,118,210,.15); }
-[data-theme="dark"] .person-type-badge.international { background:rgba(198,40,40,.15); }
-
-/* Layout */
-.person-layout {
+/* ── Layout (main + sidebar) ── */
+.pp-layout {
   display:grid;
-  grid-template-columns:1fr 270px;
+  grid-template-columns:1fr 280px;
   gap:32px;
   margin-bottom:40px;
 }
 
-/* ── Tabs ── */
-.person-tabs {
-  display:flex; gap:6px; margin-bottom:20px;
-  overflow-x:auto; -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
+/* ── Accordion ── */
+.pp-accordion { display:flex; flex-direction:column; gap:4px; margin-bottom:24px; }
+.pp-acc-item {
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-md);
+  overflow:hidden;
 }
-.person-tabs::-webkit-scrollbar { display:none; }
-.person-tab {
-  padding:8px 18px; border-radius:20px; border:1px solid var(--border);
-  background:var(--surface); color:var(--text-secondary);
-  font-size:0.82rem; font-weight:600; cursor:pointer;
-  white-space:nowrap; transition:all var(--transition);
-  font-family:inherit;
+.pp-acc-item[open] { box-shadow:var(--shadow-sm); }
+.pp-acc-header {
+  display:flex; align-items:center; gap:8px;
+  padding:14px 16px;
+  cursor:pointer;
+  list-style:none;
+  user-select:none;
+  font-weight:600;
+  transition:background var(--transition);
 }
-.person-tab:hover { border-color:var(--accent); color:var(--accent); }
-.person-tab.active {
-  background:var(--accent); color:#fff; border-color:var(--accent);
+.pp-acc-header::-webkit-details-marker { display:none; }
+.pp-acc-header:hover { background:var(--surface-1); }
+.pp-acc-label { font-size:0.9rem; font-weight:700; }
+.pp-acc-count {
+  font-size:0.72rem; font-weight:400; color:var(--text-muted);
+  background:var(--surface-2); padding:2px 8px; border-radius:10px;
 }
-.person-tab-panel { display:none; }
-.person-tab-panel.active { display:block; }
-.ptl-month { margin-bottom:4px; }
-.ptl-month-header {
-  display:flex; align-items:center; gap:8px; width:100%;
-  padding:10px 12px; border:none; background:none; cursor:pointer;
-  border-left:3px solid var(--accent); border-radius:0;
-  font-family:inherit; text-align:left; transition:background var(--transition);
-}
-.ptl-month-header:hover { background:var(--surface-2); }
-.ptl-month-label {
-  font-size:0.9rem; font-weight:700; color:var(--text);
-  text-transform:uppercase; letter-spacing:.4px;
-}
-.ptl-month-count {
-  font-size:0.75rem; color:var(--text-muted); font-weight:400;
-}
-.ptl-chevron {
+.pp-acc-chevron {
   margin-left:auto; color:var(--text-muted);
-  transition:transform var(--transition); flex-shrink:0;
+  transition:transform .2s ease; flex-shrink:0;
 }
-.ptl-month--collapsed .ptl-chevron { transform:rotate(-90deg); }
+.pp-acc-item[open] .pp-acc-chevron { transform:rotate(180deg); }
+.pp-acc-body { padding:0 16px 16px; }
 
-.ptl-articles { display:flex; flex-direction:column; gap:2px; padding:4px 0 8px 15px; }
-.ptl-article {
-  display:flex; align-items:baseline; gap:10px;
-  padding:7px 8px; text-decoration:none; color:var(--text);
-  border-radius:var(--radius-sm);
-  transition:background var(--transition), color var(--transition);
-}
-.ptl-article:hover { background:var(--surface-2); color:var(--accent); }
-.ptl-article--hidden { display:none; }
-.ptl-date {
-  font-size:0.78rem; color:var(--text-muted); width:22px; text-align:right;
-  flex-shrink:0; font-variant-numeric:tabular-nums; font-weight:600;
-}
-.ptl-title { font-size:0.87rem; line-height:1.35; flex:1; min-width:0; }
-.ptl-cat {
-  font-size:0.65rem; color:var(--text-muted); background:var(--surface-2);
-  padding:2px 7px; border-radius:var(--radius-sm); white-space:nowrap;
-  flex-shrink:0;
-}
+/* Bio */
+.pp-bio { font-size:0.9rem; line-height:1.7; color:var(--text); margin:0; }
 
-.ptl-show-more {
-  display:inline-block; margin:6px 0 4px 30px;
-  font-size:0.78rem; color:var(--accent); background:none; border:none;
-  cursor:pointer; font-family:inherit; font-weight:500;
-  padding:4px 0;
+/* ── Career timeline ── */
+.pp-career {
+  padding-left:18px;
+  border-left:2px solid var(--border);
+  display:flex; flex-direction:column; gap:0;
 }
-.ptl-show-more:hover { text-decoration:underline; }
-
-.ptl-expand-all {
-  display:block; width:100%; margin-top:8px;
-  padding:10px; border:1px dashed var(--border); border-radius:var(--radius-md);
-  background:none; color:var(--text-secondary); font-size:0.82rem;
-  font-family:inherit; font-weight:500; cursor:pointer;
-  transition:all var(--transition);
+.pp-career-item {
+  position:relative;
+  padding:10px 0 10px 18px;
 }
-.ptl-expand-all:hover { border-color:var(--accent); color:var(--accent); }
-
-.person-empty { font-size:0.88rem; color:var(--text-muted); padding:16px 0; }
-.person-about-section { margin-bottom:20px; }
-.person-about-heading {
-  font-size:0.85rem; font-weight:700; color:var(--text-secondary);
-  margin-bottom:8px; text-transform:uppercase; letter-spacing:.04em;
-}
-.person-bio-text { font-size:0.92rem; line-height:1.7; color:var(--text); }
-.person-about-value { font-size:0.88rem; line-height:1.5; color:var(--text); }
-
-/* ── Career tab ── */
-.person-career { padding-left:20px; border-left:2px solid var(--border); }
-.career-item {
-  position:relative; padding:12px 0 12px 20px;
-}
-.career-item:last-child { padding-bottom:0; }
-.career-dot {
-  position:absolute; left:-8px; top:16px;
-  width:14px; height:14px; border-radius:50%;
+.pp-career-dot {
+  position:absolute; left:-7px; top:15px;
+  width:12px; height:12px; border-radius:50%;
   background:var(--surface); border:2px solid var(--border);
 }
-.career-current .career-dot {
+.pp-career-current .pp-career-dot {
   background:var(--accent); border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-bg);
 }
-.career-body {
-  display:flex; flex-direction:column;
+.pp-career-content {
   display:flex; flex-direction:column; gap:2px;
-  background:var(--surface-1); padding:12px 14px;
-  border-radius:var(--radius-md); border:1px solid var(--border-light);
 }
-.career-current .career-body {
-  display:flex; flex-direction:column; border-color:var(--accent); border-left:3px solid var(--accent); }
-.career-current-badge {
-  display:inline-block; width:fit-content;
-  font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  color:var(--accent); background:var(--accent-bg);
-  padding:2px 8px; border-radius:var(--radius-sm); margin-bottom:2px;
+.pp-career-title { font-size:0.88rem; font-weight:600; line-height:1.3; color:var(--text); }
+.pp-career-org { font-size:0.78rem; color:var(--text-secondary); }
+.pp-career-date { font-size:0.72rem; color:var(--text-muted); }
+
+/* ── Chronology ── */
+.pp-chrono { margin-top:4px; }
+.pp-section-title {
+  font-size:1.1rem; font-weight:800; margin:0 0 16px;
+  padding-bottom:8px; border-bottom:2px solid var(--accent);
 }
-.career-title { font-size:0.88rem; font-weight:600; line-height:1.3; }
-.career-org { font-size:0.78rem; color:var(--text-secondary); }
-.career-date { font-size:0.72rem; color:var(--text-muted); }
-.person-sidebar-block { margin-bottom:24px; }
-.psb-title {
-  font-size:0.8rem; font-weight:700; margin-bottom:10px;
+.pp-chrono-month { margin-bottom:16px; }
+.pp-chrono-label {
+  font-size:0.82rem; font-weight:700; color:var(--text-secondary);
+  text-transform:uppercase; letter-spacing:.04em;
+  margin:0 0 8px;
+}
+.pp-chrono-list { display:flex; flex-direction:column; gap:2px; }
+.pp-chrono-item {
+  display:flex; align-items:baseline; gap:10px;
+  padding:8px 10px; text-decoration:none; color:var(--text);
+  border-radius:var(--radius-sm);
+  transition:background var(--transition), color var(--transition);
+}
+.pp-chrono-item:hover { background:var(--surface-1); color:var(--accent); }
+.pp-chrono-date {
+  font-size:0.78rem; color:var(--text-muted); width:22px; text-align:right;
+  flex-shrink:0; font-variant-numeric:tabular-nums; font-weight:600;
+}
+.pp-chrono-title { font-size:0.87rem; line-height:1.4; flex:1; min-width:0; }
+
+/* ── Sidebar ── */
+.pp-sidebar { display:flex; flex-direction:column; gap:20px; }
+.pp-sb-block {
+  padding:16px; border:1px solid var(--border-light);
+  border-radius:var(--radius-md); background:var(--surface);
+}
+.pp-sb-title {
+  font-size:0.78rem; font-weight:700; margin:0 0 10px;
   color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;
 }
-.person-infobox-table {
-  width:100%; border-collapse:collapse; font-size:0.8rem;
-}
-.person-infobox-table tr { border-bottom:1px solid var(--border-light); }
-.person-infobox-table tr:last-child { border-bottom:none; }
-.infobox-label {
-  padding:7px 8px 7px 0; color:var(--text-muted); font-weight:500;
-  white-space:nowrap; vertical-align:top; width:1%;
-}
-.infobox-value {
-  padding:7px 0; color:var(--text); font-weight:400;
-}
-
-/* Related persons */
-.psb-list { display:flex; flex-direction:column; gap:6px; }
-.psb-person {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 10px; border-radius:var(--radius-md);
-  background:var(--surface-1); text-decoration:none; color:var(--text);
-  border:1px solid var(--border-light);
+.pp-sb-persons { display:flex; flex-direction:column; gap:6px; }
+.pp-sb-person {
+  display:flex; flex-direction:column; gap:1px;
+  padding:8px 10px; border-radius:var(--radius-sm);
+  text-decoration:none; color:var(--text);
+  background:var(--surface-1); border:1px solid var(--border-light);
   transition:border-color var(--transition);
 }
-.psb-person:hover { border-color:var(--accent); }
-.psb-person-avatar {
-  width:36px; height:36px; border-radius:50%; flex-shrink:0;
-  background:var(--surface-2); display:flex; align-items:center; justify-content:center;
-  overflow:hidden;
+.pp-sb-person:hover { border-color:var(--accent); }
+.pp-sb-person-name { font-size:0.82rem; font-weight:600; }
+.pp-sb-person-pos { font-size:0.7rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.pp-sb-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.pp-sb-tag {
+  font-size:0.75rem; padding:4px 10px; border-radius:var(--radius-sm);
+  background:var(--surface-2); color:var(--text-secondary);
+  text-decoration:none; transition:all var(--transition);
 }
-.psb-person-avatar img { width:100%; height:100%; object-fit:cover; }
-.psb-person-initials { font-size:0.75rem; font-weight:700; color:var(--accent); }
-.psb-person-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
-.psb-name { font-size:0.82rem; font-weight:600; }
-.psb-pos { font-size:0.7rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pp-sb-tag:hover { background:var(--accent); color:#fff; }
 
 /* ── Person page mobile ── */
+@media (max-width:768px) {
+  .pp-header {
+    flex-direction:column; align-items:center; text-align:center;
+    gap:16px; padding:20px 16px;
+  }
+  .pp-avatar { width:100px; height:100px; border-radius:12px; }
+  .pp-name { font-size:1.35rem; }
+  .pp-meta-row { justify-content:center; }
+  .pp-layout {
+    grid-template-columns:1fr;
+    gap:24px;
+  }
+  .pp-acc-header { padding:12px 14px; }
+  .pp-acc-body { padding:0 14px 14px; }
+  .pp-chrono-item { padding:7px 8px; }
+}
 
 /* ===================================================================
    PERSONS INTEGRATION: article sidebar + homepage strip  (v13.1)
