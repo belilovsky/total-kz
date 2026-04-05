@@ -221,9 +221,12 @@
   <!-- ═══ TRENDING TAGS (no header, no border) ═══ -->
   {% if trending_tags %}
   <div class="trending-tags-row" style="padding:var(--space-6) 0 var(--space-8);">
-    {% for t in trending_tags[:15] %}
+    {% for t in trending_tags[:25] %}
     <a href="/tag/{{ t.tag }}" class="trending-pill">{{ t.tag }}</a>
     {% endfor %}
+    {% if trending_tags|length > 25 %}
+    <a href="/search" class="trending-pill" style="background:var(--accent);color:#fff;">ещё →</a>
+    {% endif %}
   </div>
   {% endif %}
 

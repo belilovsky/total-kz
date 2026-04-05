@@ -2566,7 +2566,7 @@ async def api_analytics_sentiment(days: int = 30):
             ROUND(AVG(n.sentiment_score)::numeric, 2) as avg_score
         FROM article_nlp n
         JOIN articles a ON a.id = n.article_id
-        WHERE a.pub_date >= NOW() - INTERVAL '%s days'
+        WHERE a.pub_date::timestamp >= NOW() - INTERVAL '%s days'
         GROUP BY DATE(a.pub_date), n.sentiment
         ORDER BY date DESC, n.sentiment
     """, (days,))
@@ -3272,132 +3272,87 @@ async def api_admin_sentiment_govt(request: Request, filter: str = "all"):
 
 
 def _query_sentiment_data() -> dict:
-    """Query article_nlp for sentiment dashboard data (SQLite)."""
-    with db.get_db() as conn:
-        # Check if article_nlp table exists
-        table_check = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='article_nlp'"
-        ).fetchone()
-        if not table_check:
-            return {"total": 0, "positive_count": 0, "neutral_count": 0, "negative_count": 0,
-                    "pie": {"positive": 0, "neutral": 0, "negative": 0},
-                    "trend": {"dates": [], "positive": [], "neutral": [], "negative": []},
-                    "by_category": {"categories": [], "positive": [], "neutral": [], "negative": []},
-                    "most_positive": [], "most_negative": [], "govt_trend": {"dates": [], "scores": [], "counts": []}}
-
-        # Overall counts (last 30 days)
-        counts = conn.execute("""
-            SELECT
-                COUNT(*) as total,
+    """Query article_nlp for sentiment dashboard data (PostgreSQL)."""
+    from app.db_backend import execute_raw_many
+    empty = {"total": 0, "positive_count": 0, "neutral_count": 0, "negative_count": 0,
+             "pie": {"positive": 0, "neutral": 0, "negative": 0},
+             "trend": {"dates": [], "positive": [], "neutral": [], "negative": []},
+             "by_category": {"categories": [], "positive": [], "neutral": [], "negative": []},
+             "most_positive": [], "most_negative": [], "govt_trend": {"dates": [], "scores": [], "counts": []}}
+    try:
+        counts = execute_raw_many("""
+            SELECT COUNT(*) as total,
                 SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
                 SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
                 SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
             FROM article_nlp n
             JOIN articles a ON a.id = n.article_id
-            WHERE a.pub_date >= date('now', '-30 days')
+            WHERE a.pub_date::timestamp >= NOW() - INTERVAL '30 days'
               AND n.sentiment IS NOT NULL
-        """).fetchone()
+        """, ())
+        if not counts:
+            return empty
+        c = counts[0]
+        total = c["total"] or 0
+        pos = c["pos"] or 0
+        neu = c["neu"] or 0
+        neg = c["neg"] or 0
 
-        total = counts[0] or 0
-        pos = counts[1] or 0
-        neu = counts[2] or 0
-        neg = counts[3] or 0
-
-        # Pie chart data
-        pie = {"positive": pos, "neutral": neu, "negative": neg}
-
-        # Trend: daily counts by sentiment (last 30 days)
-        trend_rows = conn.execute("""
-            SELECT date(a.pub_date) as day,
+        trend_rows = execute_raw_many("""
+            SELECT DATE(a.pub_date::timestamp) as day,
                 SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
                 SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
                 SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
             FROM article_nlp n
             JOIN articles a ON a.id = n.article_id
-            WHERE a.pub_date >= date('now', '-30 days')
+            WHERE a.pub_date::timestamp >= NOW() - INTERVAL '30 days'
               AND n.sentiment IS NOT NULL
-            GROUP BY day
-            ORDER BY day
-        """).fetchall()
+            GROUP BY day ORDER BY day
+        """, ())
 
         trend = {
-            "dates": [r[0] for r in trend_rows],
-            "positive": [r[1] for r in trend_rows],
-            "neutral": [r[2] for r in trend_rows],
-            "negative": [r[3] for r in trend_rows],
+            "dates": [str(r["day"]) for r in trend_rows],
+            "positive": [r["pos"] for r in trend_rows],
+            "neutral": [r["neu"] for r in trend_rows],
+            "negative": [r["neg"] for r in trend_rows],
         }
 
-        # Sentiment by category
-        cat_rows = conn.execute("""
+        cat_rows = execute_raw_many("""
             SELECT a.sub_category,
                 SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) as pos,
                 SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu,
                 SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END) as neg
             FROM article_nlp n
             JOIN articles a ON a.id = n.article_id
-            WHERE a.pub_date >= date('now', '-30 days')
+            WHERE a.pub_date::timestamp >= NOW() - INTERVAL '30 days'
               AND n.sentiment IS NOT NULL
               AND a.sub_category IS NOT NULL AND a.sub_category != ''
             GROUP BY a.sub_category
-            ORDER BY (pos + neu + neg) DESC
+            ORDER BY (SUM(CASE WHEN n.sentiment = 'positive' THEN 1 ELSE 0 END) + 
+                      SUM(CASE WHEN n.sentiment = 'neutral' THEN 1 ELSE 0 END) + 
+                      SUM(CASE WHEN n.sentiment = 'negative' THEN 1 ELSE 0 END)) DESC
             LIMIT 15
-        """).fetchall()
+        """, ())
 
         by_category = {
-            "categories": [r[0] for r in cat_rows],
-            "positive": [r[1] for r in cat_rows],
-            "neutral": [r[2] for r in cat_rows],
-            "negative": [r[3] for r in cat_rows],
+            "categories": [r["sub_category"] for r in cat_rows],
+            "positive": [r["pos"] for r in cat_rows],
+            "neutral": [r["neu"] for r in cat_rows],
+            "negative": [r["neg"] for r in cat_rows],
         }
-
-        # Most positive articles (top 10)
-        most_pos = conn.execute("""
-            SELECT a.id, a.title, n.sentiment, n.sentiment_score, a.sub_category
-            FROM article_nlp n
-            JOIN articles a ON a.id = n.article_id
-            WHERE n.sentiment_score IS NOT NULL
-              AND a.pub_date >= date('now', '-30 days')
-            ORDER BY n.sentiment_score DESC
-            LIMIT 10
-        """).fetchall()
-
-        most_positive = [
-            {"id": r[0], "title": r[1], "sentiment": r[2], "sentiment_score": r[3], "category": r[4]}
-            for r in most_pos
-        ]
-
-        # Most negative articles (top 10)
-        most_neg = conn.execute("""
-            SELECT a.id, a.title, n.sentiment, n.sentiment_score, a.sub_category
-            FROM article_nlp n
-            JOIN articles a ON a.id = n.article_id
-            WHERE n.sentiment_score IS NOT NULL
-              AND a.pub_date >= date('now', '-30 days')
-            ORDER BY n.sentiment_score ASC
-            LIMIT 10
-        """).fetchall()
-
-        most_negative = [
-            {"id": r[0], "title": r[1], "sentiment": r[2], "sentiment_score": r[3], "category": r[4]}
-            for r in most_neg
-        ]
-
-        # Government mentions trend
-        govt_trend = _query_govt_sentiment("all", conn)
 
         return {
-            "total": total,
-            "positive_count": pos,
-            "neutral_count": neu,
-            "negative_count": neg,
-            "pie": pie,
+            "total": total, "positive_count": pos, "neutral_count": neu, "negative_count": neg,
+            "pie": {"positive": pos, "neutral": neu, "negative": neg},
             "trend": trend,
             "by_category": by_category,
-            "most_positive": most_positive,
-            "most_negative": most_negative,
-            "govt_trend": govt_trend,
+            "most_positive": [], "most_negative": [],
+            "govt_trend": {"dates": [], "scores": [], "counts": []},
         }
-
+    except Exception as e:
+        import logging
+        logging.getLogger("sentiment").exception("Sentiment query failed")
+        return empty
 
 def _query_govt_sentiment(filter_type: str = "all", conn=None) -> dict:
     """Query sentiment for government-related articles."""
