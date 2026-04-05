@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fetch latest articles from total.kz RSS feed, download full content,
-and import into PostgreSQL. Skips articles already in DB.
+and import into the database (SQLite or PostgreSQL).
 
 Usage:
     python scraper/fetch_latest.py              # fetch & import new articles
@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import re
+import sqlite3
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -19,17 +20,21 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
-import psycopg2
 from selectolax.parser import HTMLParser
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_PATH = BASE_DIR / "data" / "fetch_latest.log"
 RSS_URL = "https://total.kz/rss"
 BASE_URL = "https://total.kz"
+
+# Database: use PostgreSQL if USE_POSTGRES=true and psycopg2 available,
+# otherwise fall back to SQLite
+USE_POSTGRES = os.environ.get("USE_POSTGRES", "false").lower() == "true"
 DB_URL = os.environ.get(
     "PG_DATABASE_URL",
     "postgresql://total_kz:T0tal_kz_2026!@db:5432/total_kz",
 )
+SQLITE_PATH = BASE_DIR / "data" / "total.db"
 
 
 def log(msg):
@@ -42,6 +47,117 @@ def log(msg):
     except Exception:
         pass
 
+
+# ── Database abstraction ──
+
+class SQLiteDB:
+    def __init__(self, path):
+        self.conn = sqlite3.connect(str(path))
+        self.conn.execute("PRAGMA journal_mode=WAL")
+
+    def get_existing_urls(self):
+        cur = self.conn.execute("SELECT url FROM articles")
+        return {r[0] for r in cur.fetchall()}
+
+    def import_article(self, data):
+        cur = self.conn.execute("SELECT 1 FROM articles WHERE url = ?", (data["url"],))
+        if cur.fetchone():
+            return False
+
+        self.conn.execute("""
+            INSERT INTO articles
+            (url, pub_date, sub_category, category_label, title, author, excerpt,
+             body_text, body_html, main_image, image_credit, thumbnail, tags, inline_images,
+             imported_at, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 'published')
+        """, (
+            data["url"], data["pub_date"], data["sub_category"], data["category_label"],
+            data["title"], data["author"], data["excerpt"],
+            data["body_text"], data["body_html"], data["main_image"],
+            data["image_credit"], data["thumbnail"], data["tags"], data["inline_images"],
+        ))
+        self.conn.commit()
+
+        # Update FTS index
+        try:
+            row_id = self.conn.execute(
+                "SELECT id FROM articles WHERE url = ?", (data["url"],)
+            ).fetchone()
+            if row_id:
+                tags_list = json.loads(data["tags"]) if data["tags"] else []
+                keywords = " ".join(tags_list)
+                self.conn.execute(
+                    "INSERT INTO articles_fts(rowid, title, excerpt, keywords) VALUES (?, ?, ?, ?)",
+                    (row_id[0], data["title"], data["excerpt"], keywords),
+                )
+                self.conn.commit()
+        except Exception as e:
+            log(f"    FTS update warning: {e}")
+
+        return True
+
+    def total_count(self):
+        return self.conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+
+    def close(self):
+        self.conn.close()
+
+
+class PostgresDB:
+    def __init__(self, dsn):
+        import psycopg2
+        self.conn = psycopg2.connect(dsn)
+
+    def get_existing_urls(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT url FROM articles")
+        return {r[0] for r in cur.fetchall()}
+
+    def import_article(self, data):
+        cur = self.conn.cursor()
+        cur.execute("SELECT 1 FROM articles WHERE url = %s", (data["url"],))
+        if cur.fetchone():
+            return False
+
+        cur.execute("""
+            INSERT INTO articles
+            (url, pub_date, sub_category, category_label, title, author, excerpt,
+             body_text, body_html, main_image, image_credit, thumbnail, tags, inline_images,
+             imported_at, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'published')
+        """, (
+            data["url"], data["pub_date"], data["sub_category"], data["category_label"],
+            data["title"], data["author"], data["excerpt"],
+            data["body_text"], data["body_html"], data["main_image"],
+            data["image_credit"], data["thumbnail"], data["tags"], data["inline_images"],
+        ))
+        self.conn.commit()
+        return True
+
+    def total_count(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM articles")
+        return cur.fetchone()[0]
+
+    def close(self):
+        self.conn.close()
+
+
+def get_db():
+    """Return the appropriate DB adapter."""
+    if USE_POSTGRES:
+        try:
+            return PostgresDB(DB_URL)
+        except Exception as e:
+            log(f"PostgreSQL unavailable ({e}), falling back to SQLite")
+
+    if not SQLITE_PATH.exists():
+        log(f"SQLite database not found at {SQLITE_PATH}")
+        sys.exit(1)
+    return SQLiteDB(SQLITE_PATH)
+
+
+# ── RSS & article download ──
 
 def parse_rss():
     """Fetch and parse RSS feed, return list of {url, title, excerpt, pub_date, image}."""
@@ -64,13 +180,6 @@ def parse_rss():
             "image": image,
         })
     return items
-
-
-def get_existing_urls(conn):
-    """Get set of URLs already in DB (PostgreSQL)."""
-    cur = conn.cursor()
-    cur.execute("SELECT url FROM articles")
-    return {r[0] for r in cur.fetchall()}
 
 
 def download_article(url):
@@ -158,29 +267,6 @@ def download_article(url):
     }
 
 
-def import_article(conn, data):
-    """Insert article into PostgreSQL. Skip if already exists."""
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM articles WHERE url = %s", (data["url"],))
-    if cur.fetchone():
-        return False  # already exists
-
-    cur.execute("""
-        INSERT INTO articles
-        (url, pub_date, sub_category, category_label, title, author, excerpt,
-         body_text, body_html, main_image, image_credit, thumbnail, tags, inline_images,
-         imported_at, status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'published')
-    """, (
-        data["url"], data["pub_date"], data["sub_category"], data["category_label"],
-        data["title"], data["author"], data["excerpt"],
-        data["body_text"], data["body_html"], data["main_image"],
-        data["image_credit"], data["thumbnail"], data["tags"], data["inline_images"],
-    ))
-    conn.commit()
-    return True
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
@@ -190,21 +276,21 @@ def main():
     rss_items = parse_rss()
     log(f"RSS: {len(rss_items)} items")
 
-    conn = psycopg2.connect(DB_URL)
-    existing = get_existing_urls(conn)
+    db = get_db()
+    existing = db.get_existing_urls()
 
     new_items = [item for item in rss_items if item["url"] not in existing]
     log(f"New articles: {len(new_items)} (already in DB: {len(rss_items) - len(new_items)})")
 
     if not new_items:
         log("Nothing new.")
-        conn.close()
+        db.close()
         return
 
     if args.dry_run:
         for item in new_items:
             log(f"  NEW: {item['title'][:60]}")
-        conn.close()
+        db.close()
         return
 
     imported = 0
@@ -218,8 +304,8 @@ def main():
                 data["main_image"] = item["image"]
             if not data.get("thumbnail") and item.get("image"):
                 data["thumbnail"] = item["image"]
-            
-            if import_article(conn, data):
+
+            if db.import_article(data):
                 imported += 1
                 if data.get("body_text"):
                     log(f"    OK: {len(data['body_text'])} chars")
@@ -227,8 +313,9 @@ def main():
                     log(f"    WARNING: empty body!")
         time.sleep(0.5)
 
-    conn.close()
-    log(f"Done: {imported} new articles imported")
+    total = db.total_count()
+    db.close()
+    log(f"Done: {imported} new articles imported. Total in DB: {total}")
 
 
 if __name__ == "__main__":
