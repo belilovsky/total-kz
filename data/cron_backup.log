@@ -28,3 +28,8 @@ sqlite3.OperationalError: no such table: articles
 Сжимаю → total_20260405_063045_daily.db.gz
 ✅ Бэкап: total_20260405_063045_daily.db.gz | 16,844 статей | 68.3 MB (сжатый)
 2026-04-05 06:31:06 — Finished backup
+2026-04-05 14:42:55 — Starting backup
+Создаю бэкап: total_20260405_144255_daily.db
+Сжимаю → total_20260405_144255_daily.db.gz
+✅ Бэкап: total_20260405_144255_daily.db.gz | 16,844 статей | 68.3 MB (сжатый)
+2026-04-05 14:43:09 — Finished backup

@@ -814,3 +814,80 @@
 2026-04-05 10:32:38,573 [INFO]   Articles with local images: 160815
 2026-04-05 10:32:38,573 [INFO]   Articles still pointing to total.kz: 24815
 2026-04-05 10:32:38,573 [INFO] ==================================================
+2026-04-05 12:33:57,030 [INFO] Ensuring media table columns...
+2026-04-05 12:33:57,089 [INFO] Collecting unique image URLs...
+2026-04-05 12:33:57,290 [INFO] Found 5 unique storage URLs in articles.main_image
+2026-04-05 12:33:58,557 [INFO] Total unique URLs including media table: 86887
+2026-04-05 12:33:58,723 [INFO] Already downloaded: 86882, pending: 5
+2026-04-05 12:33:58,725 [INFO]   From img_cache (no download): 3
+2026-04-05 12:33:58,725 [INFO]   Need download from total.kz: 2
+2026-04-05 12:33:58,757 [INFO] Processing 5 images (3 cached + rest remote) with 2 workers...
+2026-04-05 12:33:58,757 [INFO] Batch 1/1: processing 5 images...
+2026-04-05 12:33:59,245 [INFO] HTTP Request: GET https://total.kz/storage/d9/d9f042c487f37b8da63ce9f9133ccacb.jpg "HTTP/1.1 200 OK"
+2026-04-05 12:33:59,998 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-05 12:34:00,011 [INFO]   Batch done: ok=1, failed=3, not_found=1
+2026-04-05 12:34:00,011 [INFO]   Running total: ok=1, failed=3, not_found=1
+2026-04-05 12:34:00,011 [INFO] Download complete: {'ok': 1, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-05 12:34:00,012 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-05 12:34:00,012 [INFO] Rewriting article image URLs to local paths...
+2026-04-05 12:34:00,430 [INFO] URL mapping has 86883 entries
+2026-04-05 12:34:00,858 [INFO] Rewrote 1 article image URLs to local paths
+2026-04-05 12:34:01,945 [INFO] ==================================================
+2026-04-05 12:34:01,945 [INFO] MEDIA PIPELINE STATS
+2026-04-05 12:34:01,945 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86883}
+2026-04-05 12:34:01,945 [INFO]   Optimized: 86883
+2026-04-05 12:34:01,945 [INFO]   Total local size: 4185.2 MB
+2026-04-05 12:34:01,945 [INFO]   Articles with local images: 160816
+2026-04-05 12:34:01,945 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-05 12:34:01,945 [INFO] ==================================================
+2026-04-05 14:35:03,987 [INFO] Ensuring media table columns...
+2026-04-05 14:35:04,037 [INFO] Collecting unique image URLs...
+2026-04-05 14:35:04,302 [INFO] Found 5 unique storage URLs in articles.main_image
+2026-04-05 14:35:05,691 [INFO] Total unique URLs including media table: 86888
+2026-04-05 14:35:05,845 [INFO] Already downloaded: 86883, pending: 5
+2026-04-05 14:35:05,847 [INFO]   From img_cache (no download): 3
+2026-04-05 14:35:05,848 [INFO]   Need download from total.kz: 2
+2026-04-05 14:35:05,877 [INFO] Processing 5 images (3 cached + rest remote) with 2 workers...
+2026-04-05 14:35:05,878 [INFO] Batch 1/1: processing 5 images...
+2026-04-05 14:35:06,510 [INFO] HTTP Request: GET https://total.kz/storage/cc/cc470b7cb908700f7de49141d03493f7.png "HTTP/1.1 200 OK"
+2026-04-05 14:35:08,908 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-05 14:35:08,919 [INFO]   Batch done: ok=1, failed=3, not_found=1
+2026-04-05 14:35:08,919 [INFO]   Running total: ok=1, failed=3, not_found=1
+2026-04-05 14:35:08,919 [INFO] Download complete: {'ok': 1, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-05 14:35:08,919 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-05 14:35:08,919 [INFO] Rewriting article image URLs to local paths...
+2026-04-05 14:35:09,099 [INFO] URL mapping has 86884 entries
+2026-04-05 14:35:09,332 [INFO] Rewrote 1 article image URLs to local paths
+2026-04-05 14:35:09,976 [INFO] ==================================================
+2026-04-05 14:35:09,976 [INFO] MEDIA PIPELINE STATS
+2026-04-05 14:35:09,976 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86884}
+2026-04-05 14:35:09,977 [INFO]   Optimized: 86884
+2026-04-05 14:35:09,977 [INFO]   Total local size: 4185.2 MB
+2026-04-05 14:35:09,977 [INFO]   Articles with local images: 160817
+2026-04-05 14:35:09,977 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-05 14:35:09,977 [INFO] ==================================================
+2026-04-05 14:43:10,596 [INFO] Ensuring media table columns...
+2026-04-05 14:43:10,610 [INFO] Collecting unique image URLs...
+2026-04-05 14:43:10,705 [INFO] Found 4 unique storage URLs in articles.main_image
+2026-04-05 14:43:11,653 [INFO] Total unique URLs including media table: 86888
+2026-04-05 14:43:11,784 [INFO] Already downloaded: 86884, pending: 4
+2026-04-05 14:43:11,785 [INFO]   From img_cache (no download): 3
+2026-04-05 14:43:11,785 [INFO]   Need download from total.kz: 1
+2026-04-05 14:43:11,804 [INFO] Processing 4 images (3 cached + rest remote) with 2 workers...
+2026-04-05 14:43:11,804 [INFO] Batch 1/1: processing 4 images...
+2026-04-05 14:43:12,388 [INFO] HTTP Request: GET https://total.kz/storage/40/4098bc337d1becdc7ae75d589f4c94fd.JPG "HTTP/1.1 404 Not Found"
+2026-04-05 14:43:12,391 [INFO]   Batch done: ok=0, failed=3, not_found=1
+2026-04-05 14:43:12,391 [INFO]   Running total: ok=0, failed=3, not_found=1
+2026-04-05 14:43:12,391 [INFO] Download complete: {'ok': 0, 'failed': 3, 'not_found': 1, 'duplicate': 0, 'skipped': 0}
+2026-04-05 14:43:12,392 [INFO] Skipping img_cache migration (--skip-cache-migrate)
+2026-04-05 14:43:12,392 [INFO] Rewriting article image URLs to local paths...
+2026-04-05 14:43:12,587 [INFO] URL mapping has 86884 entries
+2026-04-05 14:43:12,809 [INFO] Rewrote 0 article image URLs to local paths
+2026-04-05 14:43:13,390 [INFO] ==================================================
+2026-04-05 14:43:13,390 [INFO] MEDIA PIPELINE STATS
+2026-04-05 14:43:13,390 [INFO]   Media records by status: {'pending': 2855, 'not_found': 1, 'ok': 86884}
+2026-04-05 14:43:13,390 [INFO]   Optimized: 86884
+2026-04-05 14:43:13,390 [INFO]   Total local size: 4185.2 MB
+2026-04-05 14:43:13,390 [INFO]   Articles with local images: 160817
+2026-04-05 14:43:13,390 [INFO]   Articles still pointing to total.kz: 24815
+2026-04-05 14:43:13,390 [INFO] ==================================================
