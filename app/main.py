@@ -938,6 +938,13 @@ async def admin_users_page(request: Request):
     return templates.TemplateResponse("users.html", _ctx(request, users=users))
 
 
+
+@app.get("/admin/references")
+async def admin_references_redirect():
+    """Redirect /admin/references to /admin/categories."""
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url="/admin/categories", status_code=301)
+
 @app.get("/admin/categories", response_class=HTMLResponse)
 async def admin_categories_page(request: Request):
     return RedirectResponse(url="/admin/reference?tab=categories", status_code=302)
